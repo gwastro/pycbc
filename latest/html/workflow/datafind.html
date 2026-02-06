@@ -1,0 +1,859 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The workflow datafind and validation module &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The workflow injection generation module" href="injections.html" />
+    <link rel="prev" title="The workflow segment generation module" href="segments.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../devs.html">Documentation for Developers</a></li>
+          <li class="breadcrumb-item"><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+      <li class="breadcrumb-item active">The workflow datafind and validation module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/datafind.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-workflow-datafind-and-validation-module">
+<span id="workflowdatafindmod"></span><h1>The workflow datafind and validation module<a class="headerlink" href="#the-workflow-datafind-and-validation-module" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This page is designed to give you an introduction to the capabilities of the
+workflow datafind and validation module and how to use this as part of a pycbc
+workflow.</p>
+<p>This module is designed to be able to support multiple ways of obtaining
+data (different codes/interfaces whatever). Currently we only support datafind
+through the <cite>gwdatafind</cite> module (which is equivalent to using gw_data_find).</p>
+<p>This module will run the necessary queries to the datafind server to obtain
+locations for frame files at the specfied times for each interferometer.</p>
+<p>Optionally, it can also run a set of tests to verify this output and act
+accordingly. This includes</p>
+<ul class="simple">
+<li><p>A check that the all times in the input segment lists are covered with frames, and methods for dealing with cases where this is not true.</p></li>
+<li><p>A check that all returned frame files actually exist and are accessible on the cluster.</p></li>
+<li><p>A check that segment_summary flags are defined for all frames that have been returned.</p></li>
+</ul>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Using this module requires a number of things</p>
+<ul class="simple">
+<li><p>A configuration file (or files) containing the information needed to tell this module how to generate the segments (described below).</p></li>
+<li><p>An initialized instance of the pycbc workflow class, containing the ConfigParser.</p></li>
+<li><p>An ifo-keyed dictionary of igwn_segments.segmentlist instances containing the times that should be analysed for each ifo. See <a class="reference internal" href="segments.html#workflowsegmentsmod"><span class="std std-ref">The workflow segment generation module</span></a> for documentation of the segments module, which in most cases should be used to obtain this input.</p></li>
+</ul>
+<section id="configuration-file-setup">
+<h3>Configuration file setup<a class="headerlink" href="#configuration-file-setup" title="Link to this heading"></a></h3>
+<p>Here we describe the options given in the configuration file used in the
+workflow that will be needed in this section</p>
+<section id="workflow-datafind-section">
+<h4>[workflow-datafind] section<a class="headerlink" href="#workflow-datafind-section" title="Link to this heading"></a></h4>
+<p>The configuration file must have an [workflow-datafind] section, which is used to
+tell the workflow how to generate the datafind calls. The first option to choose
+and provide is</p>
+<p>datafind-method = VALUE</p>
+<p>The choices here and their description are as described below</p>
+<ul class="simple">
+<li><p>AT_RUNTIME_SINGLE_FRAMES - Find frame files at runtime using setup_datafind_runtime_frames_single_call_perifo, use one datafind query for every interferometer. This may be the quickest approach, but some of the frames returned will not be suitable for analysis. The output list will contain a single entry for every frame file returned by the datafind queries, which will enable pegasus to more easily track input files for jobs that need to read from frame files.</p></li>
+<li><p>AT_RUNTIME_MULTIPLE_FRAMES - Find frame files at runtime using setup_datafind_runtime_frames_multi_calls_perifo, use one datafind query for every science segment. This may be a little slower than the above, but only frames that overlap analysable data stretches will be returned. The output list will contain a single entry for every frame file returned by the datafind queries, which will enable pegasus to more easily track input files for jobs that need to read from frame files.</p></li>
+<li><p>AT_RUNTIME_SINGLE_CACHES - Find frame files at runtime using setup_datafind_runtime_cache_single_call_perifo, use one datafind query for every interferometer. This may be the quickest approach, but some of the frames returned will not be suitable for analysis. The output list will contain a single entry for every call made to the datafind server, which will correspond to a .lcf “frame cache” file in the output directory.</p></li>
+<li><p>AT_RUNTIME_MULTIPLE_CACHES - Find frame files at runtime using setup_datafind_runtime_cache_multi_calls_perifo, use one datafind query for every science segment. This may be a little slower than the above, but only frames that overlap analysable data stretches will be returned. The output list will contain a single entry for every call made to the datafind server, which will correspond to a .lcf “frame cache” file in the output directory.</p></li>
+<li><p>FROM_PREGENERATED_LCF_FILES - Supply a set of pregenerated .lcf files containing a list of frame files to use for analysis. This option is intended to be used in cases where a datafind server is not available. Be warned that data does move around on clusters so on standard LDG clusters the AT_RUNTIME options are recommended.</p></li>
+</ul>
+<p>Each of these options will describe which subfunction to use. These are described here</p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_cache_multi_calls_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_cache_multi_calls_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_single_call_perifo this call will one call to the
+datafind server for every science segment. This function will return a list
+of output files that correspond to the cache .lcf files that are produced,
+which list the locations of all frame files. This will cause problems with
+pegasus, which expects to know about all input files (ie. the frame files
+themselves.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_cache_single_call_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_cache_single_call_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_generated this call will only run one call to
+datafind per ifo, spanning the whole time. This function will return a list
+of output files that correspond to the cache .lcf files that are produced,
+which list the locations of all frame files. This will cause problems with
+pegasus, which expects to know about all input files (ie. the frame files
+themselves.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_frames_multi_calls_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_frames_multi_calls_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_single_call_perifo this call will one call to the
+datafind server for every science segment. This function will return a list
+of files corresponding to the individual frames returned by the datafind
+query. This will allow pegasus to more easily identify all the files used
+as input, but may cause problems for codes that need to take frame cache
+files as input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_frames_single_call_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_frames_single_call_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_generated this call will only run one call to
+datafind per ifo, spanning the whole time. This function will return a list
+of files corresponding to the individual frames returned by the datafind
+query. This will allow pegasus to more easily identify all the files used
+as input, but may cause problems for codes that need to take frame cache
+files as input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_from_pregenerated_lcf_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_from_pregenerated_lcf_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function is used if you want to run with pregenerated lcf frame
+cache files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>ifos</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>ifo strings</em>) – List of ifos to get pregenerated files for.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory. Currently this sub-module writes no output.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>When using any of the AT_RUNTIME sub-modules the following other configuration options apply in the [workflow-datafind] section</p>
+<ul class="simple">
+<li><p>datafind-X1-frame-type = NAME - REQUIRED. Where X1 is replaced by the ifo name for each ifo. The NAME should be the full frame type, which is used when querying the database.</p></li>
+<li><p>datafind-ligo-datafind-server = URL - OPTIONAL. If provided use this server when querying for frames. If not provided, which is recommended for most applications, then the LIGO_DATAFIND_SERVER environment variable will be used to determine this.</p></li>
+<li><p>datafind-backup-datafind-server = URL - OPTIONAL. This option is only available when using AT_RUNTIME_SINGLE_FRAMES or AT_RUNTIME_MULTIPLE_FRAMES. If given it will query a second datafind server (ie. a remote server) using gsiftp urltypes. This will then allow frames to be associated with both a <a class="reference external" href="file://">file://</a> and gsiftp:// url, in the case that your local site is missing a frame file, or the file is not accessible, pegasus will copy the file from gsiftp://. <strong>NOTE</strong> This will not catch the case that the frame file is available at the <strong>start</strong> of a workflow but goes missing later. Pegasus can copy <strong>all</strong> frame files around at the start of the workflow, but you may not want this (remove symlink option from the basic_pegasus.conf if you want this). <strong>WARNING</strong> gsiftp copying is largely deprecated. This option can still work, if you have a valid X509 certificate, but if this is used in a production setting we should investigate the use case. Please contact Ian if using this!</p></li>
+</ul>
+<p>When using the PREGENERATED sub-module the following configuartion options apply in the [workflow-datafind] section:</p>
+<ul class="simple">
+<li><p>datafind-pregenerated-cache-file-x1 = Path/to/file.lcf. This should be specified independently for each ifo and points to the pregenerated files.</p></li>
+</ul>
+<p>The following configuration options apply in the [workflow-datafind] section for all sub-modules and can be used as sanity checks:</p>
+<ul class="simple">
+<li><p>datafind-check-segment-gaps = STRING - OPTIONAL (default = “no_test”). If this option takes any value other than ‘no_test’ the workflow module will check that the local datafind server has returned frames covering all of the listed science times. Its behaviour is then as follows:</p>
+<ul>
+<li><p>‘no_test’: Do not perform this test. Any discrepancies will cause later failures.</p></li>
+<li><p>‘warn’: Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.</p></li>
+<li><p>‘update_times’: Perform the test, print warnings covering any discrepancies and update the input science times to remove times that are not present on the host cluster.</p></li>
+<li><p>‘raise_error’: Perform the test. If any discrepancies occur, raise a ValueError.</p></li>
+</ul>
+</li>
+<li><p>datafind-check-frames-exist = STRING - OPTIONAL (default = “no_test”). If this options takes any value other than ‘no_test’ the workflow module will check that the frames returned by the local datafind server are accessible from the machine that is running the workflow generation. Its behaviour is then as follows:</p>
+<ul>
+<li><p>‘no_test’: Do not perform this test. Any discrepancies will cause later failures.</p></li>
+<li><p>‘warn’: Perform the test, print warnings covering any discrepancies but do nothing about them. Discrepancies will cause failures later in the workflow.</p></li>
+<li><p>‘update_times’: Perform the test, print warnings covering any discrepancies and update the input science times to remove times that are not present on the host cluster.</p></li>
+<li><p>‘raise_error’: Perform the test. If any discrepancies occur, raise a ValueError.</p></li>
+</ul>
+</li>
+<li><p>datafind-check-segment-summary = STRING - OPTIONAL (default = “no_test”). If this option takes any value other than ‘no_test’ the workflow module will check that all frames returned by datafind are covered by the segment_summary table (for the science flag). Its behaviour is then as follows:</p>
+<ul>
+<li><p>‘no_test’: Do not perform this test.</p></li>
+<li><p>‘warn’: Perform the test, print warnings covering any discrepancies but do nothing about them.</p></li>
+<li><p>‘raise_error’: Perform the test. If any discrepancies occur, raise a ValueError.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="executables">
+<h4>[executables]<a class="headerlink" href="#executables" title="Link to this heading"></a></h4>
+<p>Currently no executables are needed in the datafind section. Workflow will use
+the <cite>gwdatafind</cite> module to run the calls to the datafind server.</p>
+</section>
+<section id="other-sections">
+<h4>Other sections<a class="headerlink" href="#other-sections" title="Link to this heading"></a></h4>
+<section id="datafind">
+<h5>[datafind]<a class="headerlink" href="#datafind" title="Link to this heading"></a></h5>
+<p>The other section that can be used in the datafind module is the [datafind]
+section. This section contains option,value pairs that will be send as key-word
+arguments when calling the datafind server. Valid options here</p>
+<ul class="simple">
+<li><p>match=STRING - If given return only those frames matching the given regular expression.</p></li>
+<li><p>urltype=TYPE - If given restrict the returned frames to the given scheme (e.g. “file”).</p></li>
+</ul>
+<p>the on_gaps keyword argument is not supported as sanity checking is handled by the workflow module. This is always set to ‘ignore’ (this can be overwritten, we don’t recommend this).</p>
+</section>
+</section>
+</section>
+</section>
+<section id="pycbc-workflow-datafind-module">
+<h2><a class="reference internal" href="../pycbc.workflow.html#module-pycbc.workflow.datafind" title="pycbc.workflow.datafind"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.workflow.datafind</span></code></a> Module<a class="headerlink" href="#pycbc-workflow-datafind-module" title="Link to this heading"></a></h2>
+<p>This is complete documentation of this module’s code</p>
+<p>This module is responsible for querying a datafind server to determine the
+availability of the data that the code is attempting to run on. It also
+performs a number of tests and can act on these as described below. Full
+documentation for this function can be found here:
+<a class="reference external" href="https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html</a></p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">convert_cachelist_to_filelist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datafindcache_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#convert_cachelist_to_filelist"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Take as input a list of glue.lal.Cache objects and return a pycbc FileList
+containing all frames within those caches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>datafindcache_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>glue.lal.Cache objects</em>) – The list of cache files to convert.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>datafind_filelist</strong> – The list of frame files.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">FileList</a> of frame File objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">datafind_keep_unique_backups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backup_outs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orig_outs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#datafind_keep_unique_backups"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will take a list of backup datafind files, presumably
+obtained by querying a remote datafind server, e.g. CIT, and compares
+these against a list of original datafind files, presumably obtained by
+querying the local datafind server. Only the datafind files in the backup
+list that do not appear in the original list are returned. This allows us
+to use only files that are missing from the local cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>backup_outs</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>FileList</em></a>) – List of datafind files from the remote datafind server.</p></li>
+<li><p><strong>orig_outs</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>FileList</em></a>) – List of datafind files from the local datafind server.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of datafind files in backup_outs and not in orig_outs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">FileList</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">get_missing_segs_from_frame_file_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datafindcaches</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#get_missing_segs_from_frame_file_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will use os.path.isfile to determine if all the frame files
+returned by the local datafind server actually exist on the disk. This can
+then be used to update the science times if needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>datafindcaches</strong> (<em>OutGroupList</em>) – List of all the datafind output files.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>missingFrameSegs</strong> (<em>Dict. of ifo keyed igwn_segments.segmentlist instances</em>) – The times corresponding to missing frames found in datafindOuts.</p></li>
+<li><p><strong>missingFrames</strong> (<em>Dict. of ifo keyed lal.Cache instances</em>) – The list of missing frames</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">get_science_segs_from_datafind_outs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datafindcaches</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#get_science_segs_from_datafind_outs"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will calculate the science segments that are covered in
+the OutGroupList containing the frame files returned by various
+calls to the datafind server. This can then be used to check whether this
+list covers what it is expected to cover.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>datafindcaches</strong> (<em>OutGroupList</em>) – List of all the datafind output files.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>newScienceSegs</strong> – The times covered by the frames found in datafindOuts.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of ifo keyed igwn_segments.segmentlist instances</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">get_segment_summary_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scienceFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentName</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#get_segment_summary_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will find the times for which the segment_summary is set
+for the flag given by segmentName.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scienceFile</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.SegFile" title="pycbc.workflow.core.SegFile"><em>SegFile</em></a>) – The segment file that we want to use to determine this.</p></li>
+<li><p><strong>segmentName</strong> (<em>string</em>) – The DQ flag to search for times in the segment_summary table.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>summSegList</strong> – The times that are covered in the segment summary table.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>igwn_segments.segmentlist</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">log_datafind_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observatory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startTime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endTime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">dfKwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#log_datafind_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This command will print an equivalent gw_data_find command to disk that
+can be used to debug why the internal datafind module is not working.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">run_datafind_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observatory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startTime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endTime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#run_datafind_instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will query the datafind server once to find frames between
+the specified times for the specified frame type and observatory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser instance</em>) – Source for any kwargs that should be sent to the datafind module</p></li>
+<li><p><strong>outputDir</strong> (<em>Output cache files will be written here. We also write the</em>) – commands for reproducing what is done in this function to this
+directory.</p></li>
+<li><p><strong>observatory</strong> (<em>string</em>) – The observatory to query frames for. Ex. ‘H’, ‘L’ or ‘V’.  NB: not
+‘H1’, ‘L1’, ‘V1’ which denote interferometers.</p></li>
+<li><p><strong>frameType</strong> (<em>string</em>) – The frame type to query for.</p></li>
+<li><p><strong>startTime</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Integer start time to query the datafind server for frames.</p></li>
+<li><p><strong>endTime</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Integer end time to query the datafind server for frames.</p></li>
+<li><p><strong>ifo</strong> (<em>string</em>) – The interferometer to use for naming output. Ex. ‘H1’, ‘L1’, ‘V1’.
+Maybe this could be merged with the observatory string, but this
+could cause issues if running on old ‘H2’ and ‘H1’ data.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>string</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniquify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>dfCache</strong> (<em>glue.lal.Cache instance</em>) – The glue.lal.Cache representation of the call to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>cacheFile</strong> (<em>pycbc.workflow.core.File</em>) – Cache file listing all of the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_from_pregenerated_lcf_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_from_pregenerated_lcf_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function is used if you want to run with pregenerated lcf frame
+cache files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>ifos</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>ifo strings</em>) – List of ifos to get pregenerated files for.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory. Currently this sub-module writes no output.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_cache_multi_calls_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_cache_multi_calls_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_single_call_perifo this call will one call to the
+datafind server for every science segment. This function will return a list
+of output files that correspond to the cache .lcf files that are produced,
+which list the locations of all frame files. This will cause problems with
+pegasus, which expects to know about all input files (ie. the frame files
+themselves.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_cache_single_call_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_cache_single_call_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_generated this call will only run one call to
+datafind per ifo, spanning the whole time. This function will return a list
+of output files that correspond to the cache .lcf files that are produced,
+which list the locations of all frame files. This will cause problems with
+pegasus, which expects to know about all input files (ie. the frame files
+themselves.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_frames_multi_calls_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_frames_multi_calls_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_single_call_perifo this call will one call to the
+datafind server for every science segment. This function will return a list
+of files corresponding to the individual frames returned by the datafind
+query. This will allow pegasus to more easily identify all the files used
+as input, but may cause problems for codes that need to take frame cache
+files as input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_runtime_frames_single_call_perifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_runtime_frames_single_call_perifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function uses the <cite>gwdatafind</cite> library to obtain the location of all
+the frame files that will be needed to cover the analysis of the data
+given in scienceSegs. This function will not check if the returned frames
+cover the whole time requested, such sanity checks are done in the
+pycbc.workflow.setup_datafind_workflow entry function. As opposed to
+setup_datafind_runtime_generated this call will only run one call to
+datafind per ifo, spanning the whole time. This function will return a list
+of files corresponding to the individual frames returned by the datafind
+query. This will allow pegasus to more easily identify all the files used
+as input, but may cause problems for codes that need to take frame cache
+files as input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser.ConfigParser instance</em>) – This contains a representation of the information stored within the
+workflow configuration files</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindcaches</strong> (<em>list of glue.lal.Cache instances</em>) – The glue.lal.Cache representations of the various calls to the datafind
+server and the returned frame files.</p></li>
+<li><p><strong>datafindOuts</strong> (<em>pycbc.workflow.core.FileList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.datafind.</span></span><span class="sig-name descname"><span class="pre">setup_datafind_workflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scienceSegs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputDir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/datafind.html#setup_datafind_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Setup datafind section of the workflow. This section is responsible for
+generating, or setting up the workflow to generate, a list of files that
+record the location of the frame files needed to perform the analysis.
+There could be multiple options here, the datafind jobs could be done at
+run time or could be put into a dag. The subsequent jobs will know
+what was done here from the OutFileList containing the datafind jobs
+(and the Dagman nodes if appropriate.
+For now the only implemented option is to generate the datafind files at
+runtime. This module can also check if the frameFiles actually exist, check
+whether the obtained segments line up with the original ones and update the
+science segments to reflect missing data files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The workflow class that stores the jobs that will be run.</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary</em><em> of </em><em>ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse.</p></li>
+<li><p><strong>outputDir</strong> (<em>path</em>) – All output files written by datafind processes will be written to this
+directory.</p></li>
+<li><p><strong>seg_file</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.SegFile" title="pycbc.workflow.core.SegFile"><em>SegFile</em></a><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – The file returned by get_science_segments containing the science
+segments and the associated segment_summary. This will
+be used for the segment_summary test and is required if, and only if,
+performing that test.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>string</em><em>, </em><em>optional</em><em> (</em><em>default=None</em><em>)</em>) – Use this to specify tags. This can be used if this module is being
+called more than once to give call specific configuration (by setting
+options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).
+This is also used to tag the Files returned by the class to uniqueify
+the Files and uniqueify the actual filename.
+FIXME: Filenames may not be unique with current codes!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>datafindOuts</strong> (<em>OutGroupList</em>) – List of all the datafind output files for use later in the pipeline.</p></li>
+<li><p><strong>sci_avlble_file</strong> (<em>SegFile</em>) – SegFile containing the analysable time after checks in the datafind
+module are applied to the input segment list. For production runs this
+is expected to be equal to the input segment list.</p></li>
+<li><p><strong>scienceSegs</strong> (<em>Dictionary of ifo keyed igwn_segments.segmentlist instances</em>) – This contains the times that the workflow is expected to analyse. If
+the updateSegmentTimes kwarg is given this will be updated to reflect
+any instances of missing data.</p></li>
+<li><p><strong>sci_avlble_name</strong> (<em>string</em>) – The name with which the analysable time is stored in the
+sci_avlble_file.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="segments.html" class="btn btn-neutral float-left" title="The workflow segment generation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="injections.html" class="btn btn-neutral float-right" title="The workflow injection generation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

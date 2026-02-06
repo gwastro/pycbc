@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GW150914 example with gaussian noise model &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Marginalized time model" href="margtime.html" />
+    <link rel="prev" title="Simulated BBH example" href="bbh.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">GW150914 example with gaussian noise model</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/gw150914.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gw150914-example-with-gaussian-noise-model">
+<h1>GW150914 example with gaussian noise model<a class="headerlink" href="#gw150914-example-with-gaussian-noise-model" title="Link to this heading"></a></h1>
+<p>To run on GW150914, we can use the same <a class="reference download internal" download="" href="../../_downloads/6afeaabe42f3f7fbbbc9d4ae50027fa9/emcee_pt-gw150914_like.ini"><code class="xref download docutils literal notranslate"><span class="pre">sampler</span></code></a>, <a class="reference download internal" download="" href="../../_downloads/a4a29c7b648dd581082f2d751006902f/gw150914_like.ini"><code class="xref download docutils literal notranslate"><span class="pre">prior</span>
+<span class="pre">and</span> <span class="pre">model</span></code></a> configuration files
+as was <a class="reference internal" href="bbh.html#inference-example-bbh"><span class="std std-ref">used for the simulated BBH example</span></a>. We only need to change the
+data configuration file, so that we will run on real gravitational-wave data.</p>
+<p>First, we need to download the data from the <a class="reference external" href="https://www.gwosc.org">Gravitational Wave Open Science
+Center</a>. Run:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+wget<span class="w"> </span>https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will download the appropriate data (“frame”) files to your current working
+directory.  You can now use the following data configuration file:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.43</span>
+<span class="c1">; See the documentation at</span>
+<span class="c1">; http://pycbc.org/pycbc/latest/html/inference.html#simulated-bbh-example</span>
+<span class="c1">; for details on the following settings:</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-6</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median-mean</span>
+<span class="na">psd-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-256</span>
+<span class="na">psd-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">256</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4</span>
+<span class="c1">; The frame files must be downloaded from GWOSC before running. Here, we</span>
+<span class="c1">; assume that the files have been downloaded to the same directory. Adjust</span>
+<span class="c1">; the file path as necessary if not.</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:GWOSC-16KHZ_R1_STRAIN L1:GWOSC-16KHZ_R1_STRAIN</span>
+<span class="c1">; this will cause the data to be resampled to 2048 Hz:</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+<span class="c1">; We&#39;ll use a high-pass filter so as not to get numerical errors from the large</span>
+<span class="c1">; amplitude low frequency noise. Here we use 15 Hz, which is safely below the</span>
+<span class="c1">; low frequency cutoff of our likelihood integral (20 Hz)</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="c1">; The pad-data argument is for the high-pass filter: 8s are added to the</span>
+<span class="c1">; beginning/end of the analysis/psd times when the data is loaded. After the</span>
+<span class="c1">; high pass filter is applied, the additional time is discarded. This pad is</span>
+<span class="c1">; *in addition to* the time added to the analysis start/end time for the PSD</span>
+<span class="c1">; inverse length. Since it is discarded before the data is transformed for the</span>
+<span class="c1">; likelihood integral, it has little affect on the run time.</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/f67f0956310c0d7a705b20b9bf7d5a91/data.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">frame-files</span></code> argument points to the data files that we just downloaded
+from GWOSC. If you downloaded the files to a different directory, modify this
+argument accordingly to point to the correct location.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are running on a cluster that has a <code class="docutils literal notranslate"><span class="pre">LIGO_DATAFIND_SERVER</span></code> (e.g.,
+LIGO Data Grid clusters, Atlas) you do not need to copy frame
+files. Instead, replace the <code class="docutils literal notranslate"><span class="pre">frame-files</span></code> argument with <code class="docutils literal notranslate"><span class="pre">frame-type</span></code>,
+and set it to <code class="docutils literal notranslate"><span class="pre">H1:H1_LOSC_16_V1</span> <span class="pre">L1:L1_LOSC_16_V1</span></code>.</p>
+</div>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+
+<span class="c1"># configuration files</span>
+<span class="nv">PRIOR_CONFIG</span><span class="o">=</span>gw150914_like.ini
+<span class="nv">DATA_CONFIG</span><span class="o">=</span>data.ini
+<span class="nv">SAMPLER_CONFIG</span><span class="o">=</span>emcee_pt-gw150914_like.ini
+
+<span class="nv">OUTPUT_PATH</span><span class="o">=</span>inference.hdf
+
+<span class="c1"># the following sets the number of cores to use; adjust as needed to</span>
+<span class="c1"># your computer&#39;s capabilities</span>
+<span class="nv">NPROCS</span><span class="o">=</span><span class="m">10</span>
+
+<span class="c1"># run sampler</span>
+<span class="c1"># Running with OMP_NUM_THREADS=1 stops lalsimulation</span>
+<span class="c1"># from spawning multiple jobs that would otherwise be used</span>
+<span class="c1"># by pycbc_inference and cause a reduced runtime.</span>
+<span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+pycbc_inference<span class="w"> </span>--verbose<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">1897234</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span><span class="si">${</span><span class="nv">PRIOR_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">DATA_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">SAMPLER_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span><span class="si">${</span><span class="nv">OUTPUT_PATH</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--nprocesses<span class="w"> </span><span class="si">${</span><span class="nv">NPROCS</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--force
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/f1d51bd458b4ecaf82da2987bcb1760d/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>You can optionally include marginalization over detector calibration
+uncertainties. For detailed instructions on generating a calibration
+configuration file, see the
+<a class="reference internal" href="generate_calibration_config.html#generate-calibration-config"><span class="std std-ref">GW150914 calibration instructions</span></a>.</p>
+<p>Once you have generated a calibration configuration file for a network of
+detectors, you can pass it to the <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> command. The example
+calibration configuration file for GW150914 can be downloaded from
+<a class="reference download internal" download="" href="../../_downloads/da90a4951e899a9ddf36765754683f9c/calibration-GW150914.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>You can run the following command include detector calibration uncertainties in
+parameter estimation run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+
+<span class="c1"># configuration files</span>
+<span class="nv">PRIOR_CONFIG</span><span class="o">=</span>gw150914_like.ini
+<span class="nv">DATA_CONFIG</span><span class="o">=</span>data.ini
+<span class="nv">SAMPLER_CONFIG</span><span class="o">=</span>emcee_pt-gw150914_like.ini
+<span class="nv">CALIBRATION_CONFIG</span><span class="o">=</span>calibration-GW150914.ini
+
+<span class="nv">OUTPUT_PATH</span><span class="o">=</span>inference.hdf
+
+<span class="c1"># the following sets the number of cores to use; adjust as needed to</span>
+<span class="c1"># your computer&#39;s capabilities</span>
+<span class="nv">NPROCS</span><span class="o">=</span><span class="m">10</span>
+
+<span class="c1"># run sampler</span>
+<span class="c1"># Running with OMP_NUM_THREADS=1 stops lalsimulation</span>
+<span class="c1"># from spawning multiple jobs that would otherwise be used</span>
+<span class="c1"># by pycbc_inference and cause a reduced runtime.</span>
+<span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+pycbc_inference<span class="w"> </span>--verbose<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">1897234</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span><span class="si">${</span><span class="nv">PRIOR_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">DATA_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">SAMPLER_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">CALIBRATION_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span><span class="si">${</span><span class="nv">OUTPUT_PATH</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--nprocesses<span class="w"> </span><span class="si">${</span><span class="nv">NPROCS</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--force
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bbh.html" class="btn btn-neutral float-left" title="Simulated BBH example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="margtime.html" class="btn btn-neutral float-right" title="Marginalized time model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

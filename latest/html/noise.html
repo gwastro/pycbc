@@ -1,0 +1,179 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generating Noise &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Waveforms" href="waveform.html" />
+    <link rel="prev" title="Handling PSDs" href="psd.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Generating Noise</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#generating-time-domain-gaussian-noise">Generating time domain Gaussian noise</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Generating Noise</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/noise.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="generating-noise">
+<h1>Generating Noise<a class="headerlink" href="#generating-noise" title="Link to this heading"></a></h1>
+<section id="generating-time-domain-gaussian-noise">
+<h2>Generating time domain Gaussian noise<a class="headerlink" href="#generating-time-domain-gaussian-noise" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.noise</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+
+
+<span class="c1"># The color of the noise matches a PSD which you provide</span>
+<span class="n">flow</span> <span class="o">=</span> <span class="mf">30.0</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">16</span>
+<span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2048</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">aLIGOZeroDetHighPower</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+
+<span class="c1"># Generate 32 seconds of noise at 4096 Hz</span>
+<span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">4096</span>
+<span class="n">tsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">32</span> <span class="o">/</span> <span class="n">delta_t</span><span class="p">)</span>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">noise</span><span class="o">.</span><span class="n">noise_from_psd</span><span class="p">(</span><span class="n">tsamples</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">127</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Strain&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/09a181e2efab61de2a500856035f084d/timeseries.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/a5278cc329f7b3f6ddc70b1494c95a97/timeseries.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/0d094eafc8b12aa3ffcee3d3f06e4722/timeseries.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/e19b84e28414cda9681f639913c7cf44/timeseries.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/timeseries.png" class="plot-directive" src="_images/timeseries.png" />
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="psd.html" class="btn btn-neutral float-left" title="Handling PSDs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="waveform.html" class="btn btn-neutral float-right" title="Waveforms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

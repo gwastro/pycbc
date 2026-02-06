@@ -1,0 +1,506 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.bank_output_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.bank_output_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.bank_output_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">ligolw</span><span class="p">,</span> <span class="n">lsctables</span><span class="p">,</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">ligolw_utils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">pnutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank.lambda_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">ethinca_order_from_string</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">return_empty_sngl</span><span class="p">,</span> <span class="n">return_search_summary</span><span class="p">,</span> <span class="n">create_process_table</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">PI</span><span class="p">,</span> <span class="n">MTSUN_SI</span><span class="p">,</span> <span class="n">TWOPI</span><span class="p">,</span> <span class="n">GAMMA</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_waveform_filter_length_in_time</span> <span class="k">as</span> <span class="n">gwflit</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.bank_output_utils&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="convert_to_sngl_inspiral_table">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.bank_output_utils.convert_to_sngl_inspiral_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_sngl_inspiral_table</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">proc_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Convert a list of m1,m2,spin1z,spin2z values into a basic sngl_inspiral</span>
+<span class="sd">    table with mass and spin parameters populated and event IDs assigned</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    params : iterable</span>
+<span class="sd">        Each entry in the params iterable should be a sequence of</span>
+<span class="sd">        [mass1, mass2, spin1z, spin2z] in that order</span>
+<span class="sd">    proc_id : int</span>
+<span class="sd">        Process ID to add to each row of the sngl_inspiral table</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    SnglInspiralTable</span>
+<span class="sd">        Bank of templates in SnglInspiralTable format</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">sngl_inspiral_table</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SnglInspiralTable</span><span class="o">.</span><span class="n">new</span><span class="p">()</span>
+    <span class="n">col_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">,</span><span class="s1">&#39;mass2&#39;</span><span class="p">,</span><span class="s1">&#39;spin1z&#39;</span><span class="p">,</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="n">tmplt</span> <span class="o">=</span> <span class="n">return_empty_sngl</span><span class="p">()</span>
+
+        <span class="n">tmplt</span><span class="o">.</span><span class="n">process_id</span> <span class="o">=</span> <span class="n">proc_id</span>
+        <span class="k">for</span> <span class="n">colname</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">col_names</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">tmplt</span><span class="p">,</span> <span class="n">colname</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">tmplt</span><span class="o">.</span><span class="n">mtotal</span><span class="p">,</span> <span class="n">tmplt</span><span class="o">.</span><span class="n">eta</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mass1_mass2_to_mtotal_eta</span><span class="p">(</span>
+            <span class="n">tmplt</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">tmplt</span><span class="o">.</span><span class="n">mass2</span><span class="p">)</span>
+        <span class="n">tmplt</span><span class="o">.</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mass1_mass2_to_mchirp_eta</span><span class="p">(</span>
+            <span class="n">tmplt</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">tmplt</span><span class="o">.</span><span class="n">mass2</span><span class="p">)</span>
+        <span class="n">tmplt</span><span class="o">.</span><span class="n">template_duration</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># FIXME</span>
+        <span class="n">tmplt</span><span class="o">.</span><span class="n">event_id</span> <span class="o">=</span> <span class="n">sngl_inspiral_table</span><span class="o">.</span><span class="n">get_next_id</span><span class="p">()</span>
+        <span class="n">sngl_inspiral_table</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmplt</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sngl_inspiral_table</span></div>
+
+
+<div class="viewcode-block" id="calculate_ethinca_metric_comps">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.bank_output_utils.calculate_ethinca_metric_comps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_ethinca_metric_comps</span><span class="p">(</span><span class="n">metricParams</span><span class="p">,</span> <span class="n">ethincaParams</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span>
+                                   <span class="n">spin1z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">full_ethinca</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Gamma components needed to use the ethinca metric.</span>
+<span class="sd">    At present this outputs the standard TaylorF2 metric over the end time</span>
+<span class="sd">    and chirp times \tau_0 and \tau_3.</span>
+<span class="sd">    A desirable upgrade might be to use the \chi coordinates [defined WHERE?]</span>
+<span class="sd">    for metric distance instead of \tau_0 and \tau_3.</span>
+<span class="sd">    The lower frequency cutoff is currently hard-coded to be the same as the</span>
+<span class="sd">    bank layout options fLow and f0 (which must be the same as each other).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    ethincaParams : ethincaParameters instance</span>
+<span class="sd">        Structure holding options relevant to the ethinca metric computation.</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        Mass of the heavier body in the considered template.</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        Mass of the lighter body in the considered template.</span>
+<span class="sd">    spin1z : float (optional, default=0)</span>
+<span class="sd">        Spin of the heavier body in the considered template.</span>
+<span class="sd">    spin2z : float (optional, default=0)</span>
+<span class="sd">        Spin of the lighter body in the considered template.</span>
+<span class="sd">    full_ethinca : boolean (optional, default=True)</span>
+<span class="sd">        If True calculate the ethinca components in all 3 directions (mass1,</span>
+<span class="sd">        mass2 and time). If False calculate only the time component (which is</span>
+<span class="sd">        stored in Gamma0).</span>
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    fMax_theor : float</span>
+<span class="sd">        Value of the upper frequency cutoff given by the template parameters</span>
+<span class="sd">        and the cutoff formula requested.</span>
+
+<span class="sd">    gammaVals : numpy_array</span>
+<span class="sd">        Array holding 6 independent metric components in</span>
+<span class="sd">        (end_time, tau_0, tau_3) coordinates to be stored in the Gamma0-5</span>
+<span class="sd">        slots of a SnglInspiral object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">spin1z</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="n">spin2z</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.</span><span class="p">)</span> <span class="ow">and</span> <span class="n">full_ethinca</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Ethinca cannot at present be calculated &quot;</span>
+                                  <span class="s2">&quot;for nonzero component spins!&quot;</span><span class="p">)</span>
+    <span class="n">f0</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span>
+    <span class="k">if</span> <span class="n">f0</span> <span class="o">!=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If calculating ethinca the bank f0 value must be &quot;</span>
+                         <span class="s2">&quot;equal to f-low!&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ethincaParams</span><span class="o">.</span><span class="n">fLow</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="n">ethincaParams</span><span class="o">.</span><span class="n">fLow</span> <span class="o">!=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;An ethinca metric f-low different from the&quot;</span>
+                                  <span class="s2">&quot; bank metric f-low is not supported!&quot;</span><span class="p">)</span>
+
+    <span class="n">twicePNOrder</span> <span class="o">=</span> <span class="n">ethinca_order_from_string</span><span class="p">(</span><span class="n">ethincaParams</span><span class="o">.</span><span class="n">pnOrder</span><span class="p">)</span>
+
+    <span class="n">piFl</span> <span class="o">=</span> <span class="n">PI</span> <span class="o">*</span> <span class="n">f0</span>
+    <span class="n">totalMass</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mass1_mass2_to_mtotal_eta</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="n">totalMass</span> <span class="o">=</span> <span class="n">totalMass</span> <span class="o">*</span> <span class="n">MTSUN_SI</span>
+    <span class="n">v0cube</span> <span class="o">=</span> <span class="n">totalMass</span><span class="o">*</span><span class="n">piFl</span>
+    <span class="n">v0</span> <span class="o">=</span> <span class="n">v0cube</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+
+    <span class="c1"># Get theoretical cutoff frequency and work out the closest</span>
+    <span class="c1"># frequency for which moments were calculated</span>
+    <span class="n">fMax_theor</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">frequency_cutoff_from_name</span><span class="p">(</span>
+        <span class="n">ethincaParams</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">)</span>
+    <span class="n">fMaxes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;J4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">fMaxIdx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fMaxes</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">-</span> <span class="n">fMax_theor</span><span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+    <span class="n">fMax</span> <span class="o">=</span> <span class="n">fMaxes</span><span class="p">[</span><span class="n">fMaxIdx</span><span class="p">]</span>
+
+    <span class="c1"># Set the appropriate moments</span>
+    <span class="n">Js</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">18</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;J</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">fMax</span><span class="p">]</span>
+        <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;log</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">fMax</span><span class="p">]</span>
+        <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;loglog</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">fMax</span><span class="p">]</span>
+
+    <span class="c1"># Compute the time-dependent metric term.</span>
+    <span class="n">two_pi_flower_sq</span> <span class="o">=</span> <span class="n">TWOPI</span> <span class="o">*</span> <span class="n">f0</span> <span class="o">*</span> <span class="n">TWOPI</span> <span class="o">*</span> <span class="n">f0</span>
+    <span class="n">gammaVals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">6</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">gammaVals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">two_pi_flower_sq</span> <span class="o">*</span> \
+                    <span class="p">(</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span> <span class="o">-</span> <span class="p">(</span><span class="n">Js</span><span class="p">[(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span><span class="o">*</span><span class="n">Js</span><span class="p">[(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">)])</span> <span class="p">)</span>
+
+    <span class="c1"># If mass terms not required stop here</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">full_ethinca</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fMax_theor</span><span class="p">,</span> <span class="n">gammaVals</span>
+
+    <span class="c1"># 3pN is a mess, so split it into pieces</span>
+    <span class="n">a0</span> <span class="o">=</span> <span class="mi">11583231236531</span><span class="o">/</span><span class="mi">200286535680</span> <span class="o">-</span> <span class="mi">5</span><span class="o">*</span><span class="n">PI</span><span class="o">*</span><span class="n">PI</span> <span class="o">-</span> <span class="mi">107</span><span class="o">*</span><span class="n">GAMMA</span><span class="o">/</span><span class="mi">14</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">15737765635</span><span class="o">/</span><span class="mi">130056192</span> <span class="o">+</span> <span class="mi">2255</span><span class="o">*</span><span class="n">PI</span><span class="o">*</span><span class="n">PI</span><span class="o">/</span><span class="mi">512</span><span class="p">)</span><span class="o">*</span><span class="n">eta</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">76055</span><span class="o">/</span><span class="mi">73728</span><span class="p">)</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span>
+    <span class="n">a3</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">127825</span><span class="o">/</span><span class="mi">55296</span><span class="p">)</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span>
+    <span class="n">alog</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">v0</span><span class="p">)</span> <span class="c1"># Log terms are tricky - be careful</span>
+
+    <span class="c1"># Get the Psi coefficients</span>
+    <span class="n">Psi</span> <span class="o">=</span> <span class="p">[{},{}]</span> <span class="c1">#Psi = numpy.zeros([2,8,2],dtype=float)</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span><span class="o">/</span><span class="mi">5</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">743</span><span class="o">/</span><span class="mi">756</span> <span class="o">+</span> <span class="mi">11</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">v0</span><span class="o">*</span><span class="n">v0</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">3058673</span><span class="o">/</span><span class="mi">508032</span> <span class="o">+</span> <span class="mi">5429</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">504</span> <span class="o">+</span> <span class="mi">617</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">24</span><span class="p">)</span>\
+                    <span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">7729</span><span class="o">*</span><span class="n">PI</span><span class="o">/</span><span class="mi">126</span><span class="p">)</span><span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0</span><span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="mi">3</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="o">/</span><span class="mi">15</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="n">a0</span> <span class="o">-</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">+</span> <span class="mi">3</span><span class="o">*</span><span class="n">a3</span> <span class="o">+</span> <span class="mi">107</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mi">3</span><span class="o">*</span><span class="n">alog</span><span class="p">)</span><span class="o">/</span><span class="mi">14</span><span class="p">)</span>\
+                    <span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0cube</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6848</span><span class="o">/</span><span class="mi">35</span><span class="p">)</span><span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0cube</span><span class="o">/</span><span class="mi">3</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">15419335</span><span class="o">/</span><span class="mi">63504</span> <span class="o">-</span> <span class="mi">75703</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">756</span><span class="p">)</span><span class="o">*</span><span class="n">PI</span><span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0</span>
+
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3715</span><span class="o">/</span><span class="mi">12096</span> <span class="o">-</span> <span class="mi">55</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">96</span><span class="p">)</span><span class="o">/</span><span class="n">PI</span><span class="o">/</span><span class="n">v0</span><span class="p">;</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="o">/</span><span class="mi">2</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15293365</span><span class="o">/</span><span class="mi">4064256</span> <span class="o">-</span> <span class="mi">27145</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">16128</span> <span class="o">-</span> <span class="mi">3085</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">384</span><span class="p">)</span>\
+                    <span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="n">PI</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">193225</span><span class="o">/</span><span class="mi">8064</span><span class="p">)</span><span class="o">*</span><span class="n">v0</span><span class="o">*</span><span class="n">v0</span><span class="o">/</span><span class="mi">3</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="o">/</span><span class="n">PI</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">a0</span> <span class="o">+</span> <span class="n">a1</span><span class="o">/</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">4</span><span class="o">*</span><span class="n">a2</span><span class="o">/</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">3</span><span class="o">*</span><span class="n">a3</span> <span class="o">-</span><span class="mi">107</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="mi">6</span><span class="o">*</span><span class="n">alog</span><span class="p">)</span><span class="o">/</span><span class="mi">42</span><span class="p">)</span>\
+                    <span class="o">*</span><span class="n">v0cube</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">428</span><span class="o">/</span><span class="n">PI</span><span class="o">/</span><span class="mi">7</span><span class="p">)</span><span class="o">*</span><span class="n">v0cube</span><span class="o">/</span><span class="mi">3</span>
+    <span class="n">Psi</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">77096675</span><span class="o">/</span><span class="mi">1161216</span> <span class="o">+</span> <span class="mi">378515</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">24192</span> <span class="o">+</span> <span class="mi">74045</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mi">8064</span><span class="p">)</span>\
+                    <span class="o">*</span><span class="n">v0cube</span><span class="o">*</span><span class="n">v0</span>
+
+    <span class="c1"># Set the appropriate moments</span>
+    <span class="n">Js</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">18</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;J</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">fMax</span><span class="p">]</span>
+        <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;log</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">fMax</span><span class="p">]</span>
+        <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;loglog</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">fMax</span><span class="p">]</span>
+
+    <span class="c1"># Calculate the g matrix</span>
+    <span class="n">PNterms</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span>
+    <span class="n">PNterms</span> <span class="o">=</span> <span class="p">[</span><span class="n">term</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">PNterms</span> <span class="k">if</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">twicePNOrder</span><span class="p">]</span>
+
+    <span class="c1"># Now can compute the mass-dependent gamma values</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">PNterms</span><span class="p">:</span>
+            <span class="n">gammaVals</span><span class="p">[</span><span class="mi">1</span><span class="o">+</span><span class="n">m</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">two_pi_flower_sq</span> <span class="o">*</span> <span class="n">Psi</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> \
+                                <span class="p">(</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">9</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+                                <span class="o">-</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">12</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span> <span class="p">)</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)]:</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">PNterms</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">PNterms</span><span class="p">:</span>
+                <span class="n">g</span><span class="p">[</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Psi</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">Psi</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">*</span> \
+                        <span class="p">(</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">17</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+                        <span class="o">-</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">12</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[(</span><span class="mi">12</span><span class="o">-</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="p">)</span>
+        <span class="n">g</span><span class="p">[</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">two_pi_flower_sq</span> <span class="o">*</span> <span class="n">g</span><span class="p">[</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">g</span><span class="p">[</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="n">m</span><span class="p">,</span><span class="n">n</span><span class="p">]</span>
+
+    <span class="n">gammaVals</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">gammaVals</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">gammaVals</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">fMax_theor</span><span class="p">,</span> <span class="n">gammaVals</span></div>
+
+
+<div class="viewcode-block" id="output_sngl_inspiral_table">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.bank_output_utils.output_sngl_inspiral_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">output_sngl_inspiral_table</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span> <span class="n">tempBank</span><span class="p">,</span> <span class="n">programName</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                               <span class="n">optDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">outdoc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that converts the information produced by the various PyCBC bank</span>
+<span class="sd">    generation codes into a valid LIGOLW XML file containing a sngl_inspiral</span>
+<span class="sd">    table and outputs to file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    outputFile : string</span>
+<span class="sd">        Name of the file that the bank will be written to</span>
+<span class="sd">    tempBank : iterable</span>
+<span class="sd">        Each entry in the tempBank iterable should be a sequence of</span>
+<span class="sd">        [mass1,mass2,spin1z,spin2z] in that order.</span>
+<span class="sd">    programName (key-word-argument) : string</span>
+<span class="sd">        Name of the executable that has been run</span>
+<span class="sd">    optDict (key-word argument) : dictionary</span>
+<span class="sd">        Dictionary of the command line arguments passed to the program</span>
+<span class="sd">    outdoc (key-word argument) : ligolw xml document</span>
+<span class="sd">        If given add template bank to this representation of a xml document and</span>
+<span class="sd">        write to disk. If not given create a new document.</span>
+<span class="sd">    kwargs : optional key-word arguments</span>
+<span class="sd">        Allows unused options to be passed to this function (for modularity)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">optDict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">optDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">outdoc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outdoc</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Document</span><span class="p">()</span>
+        <span class="n">outdoc</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">LIGO_LW</span><span class="p">())</span>
+
+    <span class="c1"># get IFO to put in search summary table</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="s1">&#39;channel_name&#39;</span> <span class="ow">in</span> <span class="n">optDict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;channel_name&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ifos</span> <span class="o">=</span> <span class="p">[</span><span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;channel_name&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]]</span>
+
+    <span class="n">proc</span> <span class="o">=</span> <span class="n">create_process_table</span><span class="p">(</span>
+        <span class="n">outdoc</span><span class="p">,</span>
+        <span class="n">program_name</span><span class="o">=</span><span class="n">programName</span><span class="p">,</span>
+        <span class="n">detectors</span><span class="o">=</span><span class="n">ifos</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="n">optDict</span>
+    <span class="p">)</span>
+    <span class="n">proc_id</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">process_id</span>
+    <span class="n">sngl_inspiral_table</span> <span class="o">=</span> <span class="n">convert_to_sngl_inspiral_table</span><span class="p">(</span><span class="n">tempBank</span><span class="p">,</span> <span class="n">proc_id</span><span class="p">)</span>
+
+    <span class="c1"># set per-template low-frequency cutoff</span>
+    <span class="k">if</span> <span class="s1">&#39;f_low_column&#39;</span> <span class="ow">in</span> <span class="n">optDict</span> <span class="ow">and</span> <span class="s1">&#39;f_low&#39;</span> <span class="ow">in</span> <span class="n">optDict</span> <span class="ow">and</span> \
+            <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;f_low_column&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">sngl</span> <span class="ow">in</span> <span class="n">sngl_inspiral_table</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">sngl</span><span class="p">,</span> <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;f_low_column&#39;</span><span class="p">],</span> <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;f_low&#39;</span><span class="p">])</span>
+
+    <span class="n">outdoc</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">sngl_inspiral_table</span><span class="p">)</span>
+
+    <span class="c1"># get times to put in search summary table</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="s1">&#39;gps_start_time&#39;</span> <span class="ow">in</span> <span class="n">optDict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;gps_end_time&#39;</span> <span class="ow">in</span> <span class="n">optDict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;gps_start_time&#39;</span><span class="p">]</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;gps_end_time&#39;</span><span class="p">]</span>
+
+    <span class="c1"># make search summary table</span>
+    <span class="n">search_summary_table</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SearchSummaryTable</span><span class="o">.</span><span class="n">new</span><span class="p">()</span>
+    <span class="n">search_summary</span> <span class="o">=</span> <span class="n">return_search_summary</span><span class="p">(</span>
+        <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sngl_inspiral_table</span><span class="p">),</span> <span class="n">ifos</span>
+    <span class="p">)</span>
+    <span class="n">search_summary_table</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">search_summary</span><span class="p">)</span>
+    <span class="n">outdoc</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">search_summary_table</span><span class="p">)</span>
+
+    <span class="c1"># write the xml doc to disk</span>
+    <span class="n">ligolw_utils</span><span class="o">.</span><span class="n">write_filename</span><span class="p">(</span><span class="n">outdoc</span><span class="p">,</span> <span class="n">outputFile</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="output_bank_to_hdf">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.bank_output_utils.output_bank_to_hdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">output_bank_to_hdf</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span> <span class="n">tempBank</span><span class="p">,</span> <span class="n">optDict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">programName</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                       <span class="n">approximant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_duration</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function that converts the information produced by the various PyCBC bank</span>
+<span class="sd">    generation codes into a hdf5 file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    outputFile : string</span>
+<span class="sd">        Name of the file that the bank will be written to</span>
+<span class="sd">    tempBank : iterable</span>
+<span class="sd">        Each entry in the tempBank iterable should be a sequence of</span>
+<span class="sd">        [mass1,mass2,spin1z,spin2z] in that order.</span>
+<span class="sd">    programName (key-word-argument) : string</span>
+<span class="sd">        Name of the executable that has been run</span>
+<span class="sd">    optDict (key-word argument) : dictionary</span>
+<span class="sd">        Dictionary of the command line arguments passed to the program</span>
+<span class="sd">    approximant : string</span>
+<span class="sd">        The approximant to be outputted to the file,</span>
+<span class="sd">        if output_duration is True, this is also used for that calculation.</span>
+<span class="sd">    output_duration : boolean</span>
+<span class="sd">        Output the duration of the template, calculated using</span>
+<span class="sd">        get_waveform_filter_length_in_time, to the file.</span>
+<span class="sd">    kwargs : optional key-word arguments</span>
+<span class="sd">        Allows unused options to be passed to this function (for modularity)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bank_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">tempBank</span><span class="p">))</span>
+    <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass1</span>
+    <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass2</span>
+    <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin1z</span>
+    <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin2z</span>
+
+    <span class="c1"># Add other values to the bank dictionary as appropriate</span>
+    <span class="k">if</span> <span class="n">optDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">mass1</span><span class="p">)</span> <span class="o">*</span> \
+            <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;f_low&#39;</span><span class="p">]</span>
+        <span class="n">argument_string</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">optDict</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="n">optDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;output_f_final&#39;</span><span class="p">]:</span>
+        <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">mass1</span><span class="p">)</span> <span class="o">*</span> \
+            <span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;f_upper&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">approximant</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">appx</span> <span class="o">=</span> <span class="n">approximant</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">appx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">output_duration</span><span class="p">:</span>
+        <span class="n">appx</span> <span class="o">=</span> <span class="n">approximant</span> <span class="k">if</span> <span class="n">approximant</span> <span class="k">else</span> <span class="s1">&#39;SPAtmplt&#39;</span>
+        <span class="n">tmplt_durations</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">mass1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">)):</span>
+            <span class="n">wfrm_length</span> <span class="o">=</span> <span class="n">gwflit</span><span class="p">(</span><span class="n">appx</span><span class="p">,</span>
+                                 <span class="n">mass1</span><span class="o">=</span><span class="n">mass1</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                 <span class="n">mass2</span><span class="o">=</span><span class="n">mass2</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                 <span class="n">f_lower</span><span class="o">=</span><span class="n">optDict</span><span class="p">[</span><span class="s1">&#39;f_low&#39;</span><span class="p">],</span>
+                                 <span class="n">phase_order</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+            <span class="n">tmplt_durations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">wfrm_length</span>
+        <span class="n">bank_dict</span><span class="p">[</span><span class="s1">&#39;template_duration&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmplt_durations</span>
+
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bankf_out</span><span class="p">:</span>
+        <span class="n">bankf_out</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;program&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">programName</span>
+        <span class="k">if</span> <span class="n">optDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bankf_out</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;arguments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">argument_string</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bank_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">bankf_out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span></div>
+
+
+
+<div class="viewcode-block" id="output_bank_to_file">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.bank_output_utils.output_bank_to_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">output_bank_to_file</span><span class="p">(</span><span class="n">outputFile</span><span class="p">,</span> <span class="n">tempBank</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">outputFile</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span><span class="s1">&#39;.xml.gz&#39;</span><span class="p">,</span><span class="s1">&#39;.xmlgz&#39;</span><span class="p">)):</span>
+        <span class="n">output_sngl_inspiral_table</span><span class="p">(</span>
+            <span class="n">outputFile</span><span class="p">,</span>
+            <span class="n">tempBank</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">outputFile</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.h5&#39;</span><span class="p">,</span><span class="s1">&#39;.hdf&#39;</span><span class="p">,</span><span class="s1">&#39;.hdf5&#39;</span><span class="p">)):</span>
+        <span class="n">output_bank_to_hdf</span><span class="p">(</span>
+            <span class="n">outputFile</span><span class="p">,</span>
+            <span class="n">tempBank</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unrecognized extension for file </span><span class="si">{</span><span class="n">outputFile</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

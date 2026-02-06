@@ -1,0 +1,1429 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.coordinates package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.detector package" href="pycbc.detector.html" />
+    <link rel="prev" title="pycbc.catalog package" href="pycbc.catalog.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.coordinates package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.coordinates.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-coordinates-package">
+<h1>pycbc.coordinates package<a class="headerlink" href="#pycbc-coordinates-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.coordinates.base">
+<span id="pycbc-coordinates-base-module"></span><h2>pycbc.coordinates.base module<a class="headerlink" href="#module-pycbc.coordinates.base" title="Link to this heading"></a></h2>
+<p>Base coordinate transformations, this module provides transformations between
+cartesian and spherical coordinates.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.base.cartesian_to_spherical">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.base.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.base.cartesian_to_spherical" title="Link to this definition"></a></dt>
+<dd><p>Maps cartesian coordinates (x,y,z) to spherical coordinates
+(rho,phi,theta) where phi is in [0,2*pi] and theta is in [0,pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Z-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rho</strong> (<em>{numpy.array, float}</em>) – The radial amplitude.</p></li>
+<li><p><strong>phi</strong> (<em>{numpy.array, float}</em>) – The azimuthal angle.</p></li>
+<li><p><strong>theta</strong> (<em>{numpy.array, float}</em>) – The polar angle.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.base.cartesian_to_spherical_azimuthal">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.base.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical_azimuthal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical_azimuthal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.base.cartesian_to_spherical_azimuthal" title="Link to this definition"></a></dt>
+<dd><p>Calculates the azimuthal angle in spherical coordinates from Cartesian
+coordinates. The azimuthal angle is in [0,2*pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>phi</strong> – The azimuthal angle.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{numpy.array, float}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.base.cartesian_to_spherical_polar">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.base.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical_polar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical_polar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.base.cartesian_to_spherical_polar" title="Link to this definition"></a></dt>
+<dd><p>Calculates the polar angle in spherical coordinates from Cartesian
+coordinates. The polar angle is in [0,pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Z-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>theta</strong> – The polar angle.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{numpy.array, float}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.base.cartesian_to_spherical_rho">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.base.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical_rho</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical_rho"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.base.cartesian_to_spherical_rho" title="Link to this definition"></a></dt>
+<dd><p>Calculates the magnitude in spherical coordinates from Cartesian
+coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Z-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rho</strong> – The radial amplitude.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{numpy.array, float}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.base.spherical_to_cartesian">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.base.</span></span><span class="sig-name descname"><span class="pre">spherical_to_cartesian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#spherical_to_cartesian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.base.spherical_to_cartesian" title="Link to this definition"></a></dt>
+<dd><p>Maps spherical coordinates (rho,phi,theta) to cartesian coordinates
+(x,y,z) where phi is in [0,2*pi] and theta is in [0,pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – The radial amplitude.</p></li>
+<li><p><strong>phi</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – The azimuthal angle.</p></li>
+<li><p><strong>theta</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – The polar angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array, float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array, float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array, float}</em>) – Z-coordinate.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.coordinates.space">
+<span id="pycbc-coordinates-space-module"></span><h2>pycbc.coordinates.space module<a class="headerlink" href="#module-pycbc.coordinates.space" title="Link to this heading"></a></h2>
+<p>This module provides coordinate transformations related to space-borne
+detectors, such as coordinate transformations between space-borne detectors
+and ground-based detectors. Note that current LISA orbit used in this module
+is a circular orbit, need to be replaced by a more realistic and general orbit
+model in the near future.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.earth_position_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">earth_position_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#earth_position_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.earth_position_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the position vector and angular displacement of the Earth
+in the SSB frame, at a given time. By using Astropy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of geocentric frame,
+or any other time you want.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(p, alpha)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>p</strong> (<em>numpy.array</em>) – The position vector of the Earth in the SSB frame. In the unit of ‘m’.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – The angular displacement of the Earth in the SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.geo_to_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">geo_to_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#geo_to_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.geo_to_lisa" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the geocentric frame to the LISA frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_lisa</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<em>float or numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<em>float or numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.geo_to_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">geo_to_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#geo_to_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.geo_to_ssb" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the geocentric frame to the SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_ssb</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.lisa_position_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">lisa_position_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#lisa_position_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.lisa_position_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the position vector and angular displacement of LISA
+in the SSB frame, at a given time. This function assumes LISA’s barycenter
+is orbiting around a circular orbit within the ecliptic behind the Earth.
+The period of it is one year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of LISA frame,
+or any other time you want.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(p, alpha)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>p</strong> (<em>numpy.array</em>) – The position vector of LISA in the SSB frame. In the unit of ‘m’.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – The angular displacement of LISA in the SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.lisa_to_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">lisa_to_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#lisa_to_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.lisa_to_geo" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the LISA frame to the geocentric frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_geo, longitude_geo, latitude_geo, polarization_geo)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_geo</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<em>float or numpy.array</em>) – The ecliptic longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<em>float or numpy.array</em>) – The ecliptic latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.lisa_to_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">lisa_to_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#lisa_to_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.lisa_to_ssb" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the LISA frame to the SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_ssb</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.localization_to_propagation_vector">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">localization_to_propagation_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#localization_to_propagation_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.localization_to_propagation_vector" title="Link to this definition"></a></dt>
+<dd><p>Converting the sky localization to the corresponding
+propagation unit vector of a GW signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>longitude</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The longitude, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The latitude, in the unit of ‘radian’.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+<li><p><strong>frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>[[x], [y], [z]]</strong> – The propagation unit vector of that GW signal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.polarization_newframe">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">polarization_newframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polarization</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#polarization_newframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.polarization_newframe" title="Link to this definition"></a></dt>
+<dd><p>Converting a polarization angle from a frame to a new frame
+by using rotation matrix method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>polarization</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The polarization angle in the old frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>k</strong> (<em>numpy.array</em>) – The propagation unit vector of a GW signal in the old frame.</p></li>
+<li><p><strong>rotation_matrix</strong> (<em>numpy.array</em>) – The rotation matrix (of frame basis) from the old frame to
+the new frame.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+<li><p><strong>old_frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None.</p></li>
+<li><p><strong>new_frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None. The new frame for the new polarization
+angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>polarization_new_frame</strong> – The polarization angle in the new frame of that GW signal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.propagation_vector_to_localization">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">propagation_vector_to_localization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#propagation_vector_to_localization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.propagation_vector_to_localization" title="Link to this definition"></a></dt>
+<dd><p>Converting the propagation unit vector to the corresponding
+sky localization of a GW signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>numpy.array</em>) – The propagation unit vector of a GW signal.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+<li><p><strong>frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>(longitude, latitude)</strong> – The sky localization of that GW signal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.rotation_matrix_ssb_to_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">rotation_matrix_ssb_to_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">np.float64(0.40909262775014904)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#rotation_matrix_ssb_to_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.rotation_matrix_ssb_to_geo" title="Link to this definition"></a></dt>
+<dd><p>The rotation matrix (of frame basis) from SSB frame to
+geocentric frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The Earth’s axial tilt (obliquity), in the unit of ‘radian’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>r</strong> – A 3x3 rotation matrix from SSB frame to geocentric frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.rotation_matrix_ssb_to_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">rotation_matrix_ssb_to_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#rotation_matrix_ssb_to_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.rotation_matrix_ssb_to_lisa" title="Link to this definition"></a></dt>
+<dd><p>The rotation matrix (of frame basis) from SSB frame to LISA frame.
+This function assumes the angle between LISA plane and the ecliptic
+is 60 degrees, and the period of LISA’s self-rotation and orbital
+revolution is both one year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The angular displacement of LISA in SSB frame.
+In the unit of ‘radian’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>r_total</strong> – A 3x3 rotation matrix from SSB frame to LISA frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.ssb_to_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">ssb_to_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#ssb_to_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.ssb_to_geo" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the SSB frame to the geocentric frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_geo, longitude_geo, latitude_geo, polarization_geo)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_geo</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<em>float or numpy.array</em>) – The longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<em>float or numpy.array</em>) – The latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.ssb_to_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">ssb_to_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#ssb_to_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.ssb_to_lisa" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the SSB frame to the LISA frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_lisa</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<em>float or numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<em>float or numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_lisa</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.t_geo_from_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">t_geo_from_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_geo_from_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.t_geo_from_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of the Earth, by using the time and sky localization in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_geo</strong> – The time when a GW signal arrives at the origin of geocentric frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.t_lisa_from_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">t_lisa_from_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_lisa_from_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.t_lisa_from_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of LISA, by using the time and sky localization in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_lisa</strong> – The time when a GW signal arrives at the origin of LISA frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.t_ssb_from_t_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">t_ssb_from_t_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_ssb_from_t_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.t_ssb_from_t_geo" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of SSB, by using the time in geocentric frame and sky localization
+in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_ssb</strong> – The time when a GW signal arrives at the origin of SSB frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.space.t_ssb_from_t_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.space.</span></span><span class="sig-name descname"><span class="pre">t_ssb_from_t_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_ssb_from_t_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.space.t_ssb_from_t_lisa" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of SSB, by using the time in LISA frame and sky localization in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_ssb</strong> – The time when a GW signal arrives at the origin of SSB frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.coordinates">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.coordinates" title="Link to this heading"></a></h2>
+<p>This modules provides functions for base coordinate transformations, and
+more advanced transformations between ground-based detectors and space-borne
+detectors.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.cartesian_to_spherical">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.cartesian_to_spherical" title="Link to this definition"></a></dt>
+<dd><p>Maps cartesian coordinates (x,y,z) to spherical coordinates
+(rho,phi,theta) where phi is in [0,2*pi] and theta is in [0,pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Z-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rho</strong> (<em>{numpy.array, float}</em>) – The radial amplitude.</p></li>
+<li><p><strong>phi</strong> (<em>{numpy.array, float}</em>) – The azimuthal angle.</p></li>
+<li><p><strong>theta</strong> (<em>{numpy.array, float}</em>) – The polar angle.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.cartesian_to_spherical_azimuthal">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical_azimuthal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical_azimuthal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.cartesian_to_spherical_azimuthal" title="Link to this definition"></a></dt>
+<dd><p>Calculates the azimuthal angle in spherical coordinates from Cartesian
+coordinates. The azimuthal angle is in [0,2*pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>phi</strong> – The azimuthal angle.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{numpy.array, float}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.cartesian_to_spherical_polar">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical_polar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical_polar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.cartesian_to_spherical_polar" title="Link to this definition"></a></dt>
+<dd><p>Calculates the polar angle in spherical coordinates from Cartesian
+coordinates. The polar angle is in [0,pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Z-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>theta</strong> – The polar angle.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{numpy.array, float}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.cartesian_to_spherical_rho">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">cartesian_to_spherical_rho</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#cartesian_to_spherical_rho"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.cartesian_to_spherical_rho" title="Link to this definition"></a></dt>
+<dd><p>Calculates the magnitude in spherical coordinates from Cartesian
+coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – Z-coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rho</strong> – The radial amplitude.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{numpy.array, float}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.earth_position_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">earth_position_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#earth_position_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.earth_position_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the position vector and angular displacement of the Earth
+in the SSB frame, at a given time. By using Astropy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of geocentric frame,
+or any other time you want.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(p, alpha)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>p</strong> (<em>numpy.array</em>) – The position vector of the Earth in the SSB frame. In the unit of ‘m’.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – The angular displacement of the Earth in the SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.geo_to_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">geo_to_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#geo_to_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.geo_to_lisa" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the geocentric frame to the LISA frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_lisa</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<em>float or numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<em>float or numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.geo_to_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">geo_to_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#geo_to_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.geo_to_ssb" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the geocentric frame to the SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_ssb</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.lisa_position_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">lisa_position_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#lisa_position_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.lisa_position_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the position vector and angular displacement of LISA
+in the SSB frame, at a given time. This function assumes LISA’s barycenter
+is orbiting around a circular orbit within the ecliptic behind the Earth.
+The period of it is one year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of LISA frame,
+or any other time you want.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(p, alpha)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>p</strong> (<em>numpy.array</em>) – The position vector of LISA in the SSB frame. In the unit of ‘m’.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – The angular displacement of LISA in the SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.lisa_to_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">lisa_to_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#lisa_to_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.lisa_to_geo" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the LISA frame to the geocentric frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_geo, longitude_geo, latitude_geo, polarization_geo)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_geo</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<em>float or numpy.array</em>) – The ecliptic longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<em>float or numpy.array</em>) – The ecliptic latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.lisa_to_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">lisa_to_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#lisa_to_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.lisa_to_ssb" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the LISA frame to the SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_ssb</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<em>float or numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.localization_to_propagation_vector">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">localization_to_propagation_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#localization_to_propagation_vector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.localization_to_propagation_vector" title="Link to this definition"></a></dt>
+<dd><p>Converting the sky localization to the corresponding
+propagation unit vector of a GW signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>longitude</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The longitude, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The latitude, in the unit of ‘radian’.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+<li><p><strong>frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>[[x], [y], [z]]</strong> – The propagation unit vector of that GW signal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.polarization_newframe">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">polarization_newframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polarization</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#polarization_newframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.polarization_newframe" title="Link to this definition"></a></dt>
+<dd><p>Converting a polarization angle from a frame to a new frame
+by using rotation matrix method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>polarization</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The polarization angle in the old frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>k</strong> (<em>numpy.array</em>) – The propagation unit vector of a GW signal in the old frame.</p></li>
+<li><p><strong>rotation_matrix</strong> (<em>numpy.array</em>) – The rotation matrix (of frame basis) from the old frame to
+the new frame.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+<li><p><strong>old_frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None.</p></li>
+<li><p><strong>new_frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None. The new frame for the new polarization
+angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>polarization_new_frame</strong> – The polarization angle in the new frame of that GW signal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.propagation_vector_to_localization">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">propagation_vector_to_localization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#propagation_vector_to_localization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.propagation_vector_to_localization" title="Link to this definition"></a></dt>
+<dd><p>Converting the propagation unit vector to the corresponding
+sky localization of a GW signal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>numpy.array</em>) – The propagation unit vector of a GW signal.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+<li><p><strong>frame</strong> (<em>astropy.coordinates</em>) – The frame from astropy.coordinates if use_astropy is True,
+the default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>(longitude, latitude)</strong> – The sky localization of that GW signal.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.rotation_matrix_ssb_to_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">rotation_matrix_ssb_to_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">np.float64(0.40909262775014904)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#rotation_matrix_ssb_to_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.rotation_matrix_ssb_to_geo" title="Link to this definition"></a></dt>
+<dd><p>The rotation matrix (of frame basis) from SSB frame to
+geocentric frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The Earth’s axial tilt (obliquity), in the unit of ‘radian’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>r</strong> – A 3x3 rotation matrix from SSB frame to geocentric frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.rotation_matrix_ssb_to_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">rotation_matrix_ssb_to_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#rotation_matrix_ssb_to_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.rotation_matrix_ssb_to_lisa" title="Link to this definition"></a></dt>
+<dd><p>The rotation matrix (of frame basis) from SSB frame to LISA frame.
+This function assumes the angle between LISA plane and the ecliptic
+is 60 degrees, and the period of LISA’s self-rotation and orbital
+revolution is both one year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The angular displacement of LISA in SSB frame.
+In the unit of ‘radian’.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>r_total</strong> – A 3x3 rotation matrix from SSB frame to LISA frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.spherical_to_cartesian">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">spherical_to_cartesian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/base.html#spherical_to_cartesian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.spherical_to_cartesian" title="Link to this definition"></a></dt>
+<dd><p>Maps spherical coordinates (rho,phi,theta) to cartesian coordinates
+(x,y,z) where phi is in [0,2*pi] and theta is in [0,pi].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – The radial amplitude.</p></li>
+<li><p><strong>phi</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – The azimuthal angle.</p></li>
+<li><p><strong>theta</strong> (<em>{numpy.array</em><em>, </em><em>float}</em>) – The polar angle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x</strong> (<em>{numpy.array, float}</em>) – X-coordinate.</p></li>
+<li><p><strong>y</strong> (<em>{numpy.array, float}</em>) – Y-coordinate.</p></li>
+<li><p><strong>z</strong> (<em>{numpy.array, float}</em>) – Z-coordinate.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.ssb_to_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">ssb_to_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#ssb_to_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.ssb_to_geo" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the SSB frame to the geocentric frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>use_astropy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Using Astropy to calculate the sky localization or not.
+Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_geo, longitude_geo, latitude_geo, polarization_geo)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_geo</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_geo</strong> (<em>float or numpy.array</em>) – The longitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_geo</strong> (<em>float or numpy.array</em>) – The latitude of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_geo</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in geocentric frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.ssb_to_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">ssb_to_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polarization_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#ssb_to_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.ssb_to_lisa" title="Link to this definition"></a></dt>
+<dd><p>Converting the arrive time, the sky localization, and the polarization
+from the SSB frame to the LISA frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>numpy.array</em>) – The polarization angle of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)</strong> (<em>tuple</em>)</p></li>
+<li><p><strong>t_lisa</strong> (<em>float or numpy.array</em>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_lisa</strong> (<em>float or numpy.array</em>) – The longitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_lisa</strong> (<em>float or numpy.array</em>) – The latitude of a GW signal in LISA frame, in the unit of ‘radian’.</p></li>
+<li><p><strong>polarization_lisa</strong> (<em>float or numpy.array</em>) – The polarization angle of a GW signal in LISA frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.t_geo_from_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">t_geo_from_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_geo_from_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.t_geo_from_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of the Earth, by using the time and sky localization in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_geo</strong> – The time when a GW signal arrives at the origin of geocentric frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.t_lisa_from_ssb">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">t_lisa_from_ssb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_lisa_from_ssb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.t_lisa_from_ssb" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of LISA, by using the time and sky localization in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of SSB frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_lisa</strong> – The time when a GW signal arrives at the origin of LISA frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.t_ssb_from_t_geo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">t_ssb_from_t_geo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_geo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_astropy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_ssb_from_t_geo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.t_ssb_from_t_geo" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of SSB, by using the time in geocentric frame and sky localization
+in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_geo</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of geocentric frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_ssb</strong> – The time when a GW signal arrives at the origin of SSB frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.coordinates.t_ssb_from_t_lisa">
+<span class="sig-prename descclassname"><span class="pre">pycbc.coordinates.</span></span><span class="sig-name descname"><span class="pre">t_ssb_from_t_lisa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lisa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latitude_ssb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7365189.431698299</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/coordinates/space.html#t_ssb_from_t_lisa"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.coordinates.t_ssb_from_t_lisa" title="Link to this definition"></a></dt>
+<dd><p>Calculating the time when a GW signal arrives at the barycenter
+of SSB, by using the time in LISA frame and sky localization in SSB frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t_lisa</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time when a GW signal arrives at the origin of LISA frame.
+In the unit of ‘s’.</p></li>
+<li><p><strong>longitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic longitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>latitude_ssb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The ecliptic latitude of a GW signal in SSB frame.
+In the unit of ‘radian’.</p></li>
+<li><p><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The initial time offset of LISA, in the unit of ‘s’,
+default is 7365189.431698299. This makes sure LISA is behind
+the Earth by 19-23 degrees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>t_ssb</strong> – The time when a GW signal arrives at the origin of SSB frame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.catalog.html" class="btn btn-neutral float-left" title="pycbc.catalog package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.detector.html" class="btn btn-neutral float-right" title="pycbc.detector package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

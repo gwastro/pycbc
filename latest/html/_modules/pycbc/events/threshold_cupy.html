@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.threshold_cupy &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.threshold_cupy</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.threshold_cupy</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mako.template</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.eventmgr</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseThresholdCluster</span>
+
+<span class="n">val</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">loc</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># https://stackoverflow.com/questions/77798014/cupy-rawkernel-cuda-error-not-found-named-symbol-not-found-cupy</span>
+
+<span class="n">tkernel1</span> <span class="o">=</span> <span class="n">mako</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">extern &quot;C&quot; __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold){</span>
+<span class="s2">    int s = window * blockIdx.x;</span>
+<span class="s2">    int e = s + window;</span>
+
+<span class="s2">    // shared memory for chuck size candidates</span>
+<span class="s2">    __shared__ float svr[$</span><span class="si">{chunk}</span><span class="s2">];</span>
+<span class="s2">    __shared__ float svi[$</span><span class="si">{chunk}</span><span class="s2">];</span>
+<span class="s2">    __shared__ int sl[$</span><span class="si">{chunk}</span><span class="s2">];</span>
+
+<span class="s2">    // shared memory for the warp size candidates</span>
+<span class="s2">    __shared__ float svv[32];</span>
+<span class="s2">    __shared__ int idx[32];</span>
+
+<span class="s2">    int ml = -1;</span>
+<span class="s2">    float mvr = 0;</span>
+<span class="s2">    float mvi = 0;</span>
+<span class="s2">    float re;</span>
+<span class="s2">    float im;</span>
+
+<span class="s2">    // Iterate trought the entire window size chunk and find blockDim.x number</span>
+<span class="s2">    // of candidates</span>
+<span class="s2">    for (int i = s + threadIdx.x; i &lt; e; i += blockDim.x){</span>
+<span class="s2">        re = in[i].x;</span>
+<span class="s2">        im = in[i].y;</span>
+<span class="s2">        if ((re * re + im * im) &gt; (mvr * mvr + mvi * mvi)){</span>
+<span class="s2">            mvr = re;</span>
+<span class="s2">            mvi = im;</span>
+<span class="s2">            ml = i;</span>
+<span class="s2">        }</span>
+<span class="s2">    }</span>
+
+<span class="s2">    // Save the candidate from this thread to shared memory</span>
+<span class="s2">    svr[threadIdx.x] = mvr;</span>
+<span class="s2">    svi[threadIdx.x] = mvi;</span>
+<span class="s2">    sl[threadIdx.x] = ml;</span>
+
+<span class="s2">    __syncthreads();</span>
+
+<span class="s2">    if (threadIdx.x &lt; 32){</span>
+<span class="s2">        int tl = threadIdx.x;</span>
+
+<span class="s2">        // Now that we have all the candiates for this chunk in shared memory</span>
+<span class="s2">        // Iterate through in the warp size to reduce to 32 candidates</span>
+<span class="s2">        for (int i = threadIdx.x; i &lt; $</span><span class="si">{chunk}</span><span class="s2">; i += 32){</span>
+<span class="s2">            re = svr[i];</span>
+<span class="s2">            im = svi[i];</span>
+<span class="s2">            if ((re * re + im * im) &gt; (mvr * mvr + mvi * mvi)){</span>
+<span class="s2">                tl = i;</span>
+<span class="s2">                mvr = re;</span>
+<span class="s2">                mvi = im;</span>
+<span class="s2">            }</span>
+<span class="s2">        }</span>
+
+<span class="s2">        // Store the 32 candidates into shared memory</span>
+<span class="s2">        svv[threadIdx.x] = svr[tl] * svr[tl] + svi[tl] * svi[tl];</span>
+<span class="s2">        idx[threadIdx.x] = tl;</span>
+
+<span class="s2">        // Find the 1 candidate we are looking for using a manual log algorithm</span>
+<span class="s2">        if ((threadIdx.x &lt; 16) &amp;&amp; (svv[threadIdx.x] &lt; svv[threadIdx.x + 16])){</span>
+<span class="s2">            svv[threadIdx.x] = svv[threadIdx.x + 16];</span>
+<span class="s2">            idx[threadIdx.x] = idx[threadIdx.x + 16];</span>
+<span class="s2">        }</span>
+
+<span class="s2">        if ((threadIdx.x &lt; 8) &amp;&amp; (svv[threadIdx.x] &lt; svv[threadIdx.x + 8])){</span>
+<span class="s2">            svv[threadIdx.x] = svv[threadIdx.x + 8];</span>
+<span class="s2">            idx[threadIdx.x] = idx[threadIdx.x + 8];</span>
+<span class="s2">        }</span>
+
+<span class="s2">        if ((threadIdx.x &lt; 4) &amp;&amp; (svv[threadIdx.x] &lt; svv[threadIdx.x + 4])){</span>
+<span class="s2">            svv[threadIdx.x] = svv[threadIdx.x + 4];</span>
+<span class="s2">            idx[threadIdx.x] = idx[threadIdx.x + 4];</span>
+<span class="s2">        }</span>
+
+<span class="s2">        if ((threadIdx.x &lt; 2) &amp;&amp; (svv[threadIdx.x] &lt; svv[threadIdx.x + 2])){</span>
+<span class="s2">            svv[threadIdx.x] = svv[threadIdx.x + 2];</span>
+<span class="s2">            idx[threadIdx.x] = idx[threadIdx.x + 2];</span>
+<span class="s2">        }</span>
+
+
+<span class="s2">        // Save the 1 candidate maximum and location to the output vectors</span>
+<span class="s2">        if (threadIdx.x == 0){</span>
+<span class="s2">            if (svv[threadIdx.x] &lt; svv[threadIdx.x + 1]){</span>
+<span class="s2">                idx[0] = idx[1];</span>
+<span class="s2">                svv[0] = svv[1];</span>
+<span class="s2">            }</span>
+
+<span class="s2">            if (svv[0] &gt; threshold){</span>
+<span class="s2">                tl = idx[0];</span>
+<span class="s2">                outv[blockIdx.x].x = svr[tl];</span>
+<span class="s2">                outv[blockIdx.x].y = svi[tl];</span>
+<span class="s2">                outl[blockIdx.x] = sl[tl];</span>
+<span class="s2">            } else{</span>
+<span class="s2">                outl[blockIdx.x] = -1;</span>
+<span class="s2">            }</span>
+<span class="s2">        }</span>
+<span class="s2">    }</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">tkernel2</span> <span class="o">=</span> <span class="n">mako</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">extern &quot;C&quot; __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold, int window){</span>
+<span class="s2">    __shared__ int loc[$</span><span class="si">{blocks}</span><span class="s2">];</span>
+<span class="s2">    __shared__ float val[$</span><span class="si">{blocks}</span><span class="s2">];</span>
+
+<span class="s2">    int i = threadIdx.x;</span>
+
+<span class="s2">    int l = outl[i];</span>
+<span class="s2">    loc[i] = l;</span>
+
+<span class="s2">    if (l == -1)</span>
+<span class="s2">        return;</span>
+
+<span class="s2">    val[i] = outv[i].x * outv[i].x + outv[i].y * outv[i].y;</span>
+
+
+<span class="s2">    // Check right</span>
+<span class="s2">    if ( (i &lt; ($</span><span class="si">{blocks}</span><span class="s2"> - 1)) &amp;&amp; (val[i + 1] &gt; val[i]) ){</span>
+<span class="s2">        outl[i] = -1;</span>
+<span class="s2">        return;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    // Check left</span>
+<span class="s2">    if ( (i &gt; 0) &amp;&amp; (val[i - 1] &gt; val[i]) ){</span>
+<span class="s2">        outl[i] = -1;</span>
+<span class="s2">        return;</span>
+<span class="s2">    }</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_tkernel">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.threshold_cupy.get_tkernel">[docs]</a>
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tkernel</span><span class="p">(</span><span class="n">slen</span><span class="p">,</span> <span class="n">window</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">window</span> <span class="o">&lt;</span> <span class="mi">32</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;GPU threshold kernel does not support a window smaller than 32 samples&quot;</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">window</span> <span class="o">&lt;=</span> <span class="mi">4096</span><span class="p">:</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="k">elif</span> <span class="n">window</span> <span class="o">&lt;=</span> <span class="mi">16384</span><span class="p">:</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="k">elif</span> <span class="n">window</span> <span class="o">&lt;=</span> <span class="mi">32768</span><span class="p">:</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="mi">512</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="mi">1024</span>
+
+    <span class="n">nb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">slen</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">window</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">nb</span> <span class="o">&gt;</span> <span class="mi">1024</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;More than 1024 blocks not supported yet&quot;</span><span class="p">)</span>
+
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">RawKernel</span><span class="p">(</span>
+        <span class="n">tkernel1</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">nt</span><span class="p">),</span>
+        <span class="s1">&#39;threshold_and_cluster&#39;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;nvcc&#39;</span>
+    <span class="p">)</span>
+    <span class="n">fn2</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">RawKernel</span><span class="p">(</span>
+        <span class="n">tkernel2</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">blocks</span><span class="o">=</span><span class="n">nb</span><span class="p">),</span>
+        <span class="s1">&#39;threshold_and_cluster2&#39;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;nvcc&#39;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">fn2</span><span class="p">),</span> <span class="n">nt</span><span class="p">,</span> <span class="n">nb</span></div>
+
+
+<div class="viewcode-block" id="threshold_and_cluster">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.threshold_cupy.threshold_and_cluster">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">threshold_and_cluster</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">window</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">val</span>
+    <span class="k">global</span> <span class="n">loc</span>
+    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4096</span><span class="o">*</span><span class="mi">256</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">loc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4096</span><span class="o">*</span><span class="mi">256</span><span class="p">,</span> <span class="n">cp</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+    <span class="n">outl</span> <span class="o">=</span> <span class="n">loc</span>
+    <span class="n">outv</span> <span class="o">=</span> <span class="n">val</span>
+    <span class="n">slen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">data</span>
+    <span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">fn2</span><span class="p">),</span> <span class="n">nt</span><span class="p">,</span> <span class="n">nb</span> <span class="o">=</span> <span class="n">get_tkernel</span><span class="p">(</span><span class="n">slen</span><span class="p">,</span> <span class="n">window</span><span class="p">)</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">threshold</span> <span class="o">*</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+
+    <span class="n">cl</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">nb</span><span class="p">]</span>
+    <span class="n">cv</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">nb</span><span class="p">]</span>
+
+    <span class="n">fn</span><span class="p">((</span><span class="n">nb</span><span class="p">,),</span> <span class="p">(</span><span class="n">nt</span><span class="p">,),</span> <span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">outv</span><span class="p">,</span> <span class="n">outl</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">threshold</span><span class="p">))</span>
+    <span class="n">fn2</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="p">(</span><span class="n">nb</span><span class="p">,),</span> <span class="p">(</span><span class="n">outv</span><span class="p">,</span> <span class="n">outl</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">window</span><span class="p">))</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">cl</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cv</span><span class="p">[</span><span class="n">w</span><span class="p">],</span> <span class="n">cl</span><span class="p">[</span><span class="n">w</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="CUDAThresholdCluster">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.threshold_cupy.CUDAThresholdCluster">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CUDAThresholdCluster</span><span class="p">(</span><span class="n">_BaseThresholdCluster</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">series</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series</span> <span class="o">=</span> <span class="n">series</span>
+
+        <span class="k">global</span> <span class="n">val</span>
+        <span class="k">global</span> <span class="n">loc</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4096</span><span class="o">*</span><span class="mi">256</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">cp</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">loc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loc</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4096</span><span class="o">*</span><span class="mi">256</span><span class="p">,</span> <span class="n">cp</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outl</span> <span class="o">=</span> <span class="n">loc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outv</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CUDAThresholdCluster.threshold_and_cluster">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.threshold_cupy.CUDAThresholdCluster.threshold_and_cluster">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">threshold_and_cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">window</span><span class="p">):</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">threshold</span> <span class="o">*</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">fn2</span><span class="p">),</span> <span class="n">nt</span><span class="p">,</span> <span class="n">nb</span> <span class="o">=</span> <span class="n">get_tkernel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slen</span><span class="p">,</span> <span class="n">window</span><span class="p">)</span>
+        <span class="n">cl</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">nb</span><span class="p">]</span>
+        <span class="n">cv</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">nb</span><span class="p">]</span>
+
+        <span class="n">fn</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">nt</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outl</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">fn2</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outl</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">window</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">cl</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cp</span><span class="o">.</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">cv</span><span class="p">[</span><span class="n">w</span><span class="p">]),</span> <span class="n">cp</span><span class="o">.</span><span class="n">asnumpy</span><span class="p">(</span><span class="n">cl</span><span class="p">[</span><span class="n">w</span><span class="p">])</span></div>
+</div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_threshold_cluster_factory</span><span class="p">(</span><span class="n">series</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">CUDAThresholdCluster</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

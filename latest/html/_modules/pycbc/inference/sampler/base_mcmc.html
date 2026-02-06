@@ -1,0 +1,1159 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.base_mcmc &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.base_mcmc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.base_mcmc</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Christopher M. Biwer, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Provides constructor classes and convenience functions for MCMC samplers.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">,</span> <span class="n">abstractproperty</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ConfigParser</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">autocorrelation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">validate_checkpoint_files</span><span class="p">,</span> <span class="n">loadfile</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">nsamples_in_chain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">initial_dist_from_config</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                              Convenience functions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="raw_samples_to_dict">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.raw_samples_to_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">raw_samples_to_dict</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">raw_samples</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function for converting ND array to a dict of samples.</span>
+
+<span class="sd">    The samples are assumed to have dimension</span>
+<span class="sd">    ``[sampler.base_shape x] niterations x len(sampler.sampling_params)``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampler : sampler instance</span>
+<span class="sd">        An instance of an MCMC sampler.</span>
+<span class="sd">    raw_samples : array</span>
+<span class="sd">        The array of samples to convert.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        A dictionary mapping the raw samples to the variable params. If the</span>
+<span class="sd">        sampling params are not the same as the variable params, they will</span>
+<span class="sd">        also be included. Each array will have shape</span>
+<span class="sd">        ``[sampler.base_shape x] niterations``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sampling_params</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sampling_params</span>
+    <span class="c1"># convert to dictionary</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">raw_samples</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ii</span><span class="p">]</span> <span class="k">for</span>
+               <span class="n">ii</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sampling_params</span><span class="p">)}</span>
+    <span class="c1"># apply boundary conditions</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span>
+        <span class="o">**</span><span class="n">samples</span><span class="p">)</span>
+    <span class="c1"># apply transforms to go to model&#39;s variable params space</span>
+    <span class="k">if</span> <span class="n">sampler</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="n">samples</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">samples</span></div>
+
+
+
+<div class="viewcode-block" id="blob_data_to_dict">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.blob_data_to_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">blob_data_to_dict</span><span class="p">(</span><span class="n">stat_names</span><span class="p">,</span> <span class="n">blobs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts list of &quot;blobs&quot; to a dictionary of model stats.</span>
+
+<span class="sd">    Samplers like ``emcee`` store the extra tuple returned by ``CallModel`` to</span>
+<span class="sd">    a list called blobs. This is a list of lists of tuples with shape</span>
+<span class="sd">    niterations x nwalkers x nstats, where nstats is the number of stats</span>
+<span class="sd">    returned by the model&#39;s ``default_stats``. This converts that list to a</span>
+<span class="sd">    dictionary of arrays keyed by the stat names.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stat_names : list of str</span>
+<span class="sd">        The list of the stat names.</span>
+<span class="sd">    blobs : list of list of tuples</span>
+<span class="sd">        The data to convert.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        A dictionary mapping the model&#39;s ``default_stats`` to arrays of values.</span>
+<span class="sd">        Each array will have shape ``nwalkers x niterations``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get the dtypes of each of the stats; we&#39;ll just take this from the</span>
+    <span class="c1"># first iteration and walker</span>
+    <span class="n">dtypes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">blobs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">stat_names</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">dtypes</span><span class="p">),</span> <span class="p">(</span>
+        <span class="s2">&quot;number of stat names must match length of tuples in the blobs&quot;</span><span class="p">)</span>
+    <span class="c1"># convert to an array; to ensure that we get the dtypes correct, we&#39;ll</span>
+    <span class="c1"># cast to a structured array</span>
+    <span class="n">raw_stats</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blobs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">stat_names</span><span class="p">,</span> <span class="n">dtypes</span><span class="p">)))</span>
+    <span class="c1"># transpose so that it has shape nwalkers x niterations</span>
+    <span class="n">raw_stats</span> <span class="o">=</span> <span class="n">raw_stats</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="c1"># now return as a dictionary</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">stat</span><span class="p">:</span> <span class="n">raw_stats</span><span class="p">[</span><span class="n">stat</span><span class="p">]</span> <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="n">stat_names</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="get_optional_arg_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.get_optional_arg_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function to retrieve an optional argument from a config</span>
+<span class="sd">    file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : ConfigParser</span>
+<span class="sd">        Open config parser to retrieve the argument from.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        Name of the section to retrieve from.</span>
+<span class="sd">    arg : str</span>
+<span class="sd">        Name of the argument to retrieve.</span>
+<span class="sd">    dtype : datatype, optional</span>
+<span class="sd">        Cast the retrieved value (if it exists) to the given datatype. Default</span>
+<span class="sd">        is ``str``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    val : None or str</span>
+<span class="sd">        If the argument is present, the value. Otherwise, None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">dtype</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">arg</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">val</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                              BaseMCMC definition</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="BaseMCMC">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseMCMC</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Abstract base class that provides methods common to MCMCs.</span>
+
+<span class="sd">    This is not a sampler class itself. Sampler classes can inherit from this</span>
+<span class="sd">    along with ``BaseSampler``.</span>
+
+<span class="sd">    This class provides ``set_initial_conditions``, ``run``, and ``checkpoint``</span>
+<span class="sd">    methods, which are some of the abstract methods required by</span>
+<span class="sd">    ``BaseSampler``.</span>
+
+<span class="sd">    This class introduces the following abstract properties and methods:</span>
+
+<span class="sd">    * base_shape</span>
+<span class="sd">        [`property`] Should give the shape of the samples arrays used by the</span>
+<span class="sd">        sampler, excluding the iteraitons dimension. Needed for writing</span>
+<span class="sd">        results.</span>
+<span class="sd">    * run_mcmc(niterations)</span>
+<span class="sd">        Should run the sampler for the given number of iterations. Called by</span>
+<span class="sd">        ``run``.</span>
+<span class="sd">    * clear_samples()</span>
+<span class="sd">        Should clear samples from memory. Called by ``run``.</span>
+<span class="sd">    * set_state_from_file(filename)</span>
+<span class="sd">        Should set the random state of the sampler using the given filename.</span>
+<span class="sd">        Called by ``set_initial_conditions``.</span>
+<span class="sd">    * write_results(filename)</span>
+<span class="sd">        Writes results to the given filename. Called by ``checkpoint``.</span>
+<span class="sd">    * compute_acf(filename, \**kwargs)</span>
+<span class="sd">        [`classmethod`] Should compute the autocorrelation function using</span>
+<span class="sd">        the given filename. Also allows for other keyword arguments.</span>
+<span class="sd">    * compute_acl(filename, \**kwargs)</span>
+<span class="sd">        [`classmethod`] Should compute the autocorrelation length using</span>
+<span class="sd">        the given filename. Also allows for other keyword arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_lastclear</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the iteration when samples were cleared from memory</span>
+    <span class="n">_itercounter</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># the number of iterations since the last clear</span>
+    <span class="n">_pos</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_p0</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_nchains</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_burn_in</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_acls</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_checkpoint_interval</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_checkpoint_signal</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_target_niterations</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_target_eff_nsamples</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_thin_interval</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">_max_samples_per_chain</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">base_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;What shape the sampler&#39;s samples arrays are in, excluding</span>
+<span class="sd">        the iterations dimension.</span>
+
+<span class="sd">        For example, if a sampler uses 20 chains and 3 temperatures, this</span>
+<span class="sd">        would be ``(3, 20)``. If a sampler only uses a single walker and no</span>
+<span class="sd">        temperatures this would be ``()``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nchains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The number of chains used.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nchains</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;number of chains not set&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nchains</span>
+
+    <span class="nd">@nchains</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nchains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the number of chains.&quot;&quot;&quot;</span>
+        <span class="c1"># we&#39;ll actually store it to the nchains attribute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nchains</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">niterations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The current number of iterations.&quot;&quot;&quot;</span>
+        <span class="n">itercounter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span>
+        <span class="k">if</span> <span class="n">itercounter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">itercounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">lastclear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span>
+        <span class="k">if</span> <span class="n">lastclear</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lastclear</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">itercounter</span> <span class="o">+</span> <span class="n">lastclear</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The number of iterations to do between checkpoints.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_interval</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The signal to use when checkpointing.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_signal</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">target_niterations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The number of iterations the sampler should run for.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_niterations</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">target_eff_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The target number of effective samples the sampler should get.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_eff_nsamples</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the thin interval being used.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thin_interval</span>
+
+    <span class="nd">@thin_interval</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the thin interval to use.</span>
+
+<span class="sd">        If ``None`` provided, will default to 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interval</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">interval</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;thin interval must be &gt;= 1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thin_interval</span> <span class="o">=</span> <span class="n">interval</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_safety_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The minimum value that ``max_samples_per_chain`` may be set to.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">100</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_samples_per_chain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The maximum number of samplers per chain that is written to disk.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_samples_per_chain</span>
+
+    <span class="nd">@max_samples_per_chain</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_samples_per_chain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_safety_factor</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;max samples per chain must be &gt;= </span><span class="si">{}</span><span class="s2">&quot;</span>
+                                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thin_safety_factor</span><span class="p">))</span>
+            <span class="c1"># also check that this is consistent with the target number of</span>
+            <span class="c1"># effective samples</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_eff_nsamples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">target_samps_per_chain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">target_eff_nsamples</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">target_samps_per_chain</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;max samples per chain must be &gt; target &quot;</span>
+                                     <span class="s2">&quot;effective number of samples per walker &quot;</span>
+                                     <span class="s2">&quot;(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_samps_per_chain</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_samples_per_chain</span> <span class="o">=</span> <span class="n">n</span>
+
+<div class="viewcode-block" id="BaseMCMC.get_thin_interval">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.get_thin_interval">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_thin_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the thin interval to use.</span>
+
+<span class="sd">        If ``max_samples_per_chain`` is set, this will figure out what thin</span>
+<span class="sd">        interval is needed to satisfy that criteria. In that case, the thin</span>
+<span class="sd">        interval used must be a multiple of the currently used thin interval.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_samples_per_chain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># the extra factor of 2 is to account for the fact that the thin</span>
+            <span class="c1"># interval will need to be at least twice as large as a previously</span>
+            <span class="c1"># used interval</span>
+            <span class="n">thinfactor</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_samples_per_chain</span><span class="p">)</span>
+            <span class="c1"># make sure it&#39;s at least 1</span>
+            <span class="n">thinfactor</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">thinfactor</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># make the new interval is a multiple of the previous, to ensure</span>
+            <span class="c1"># that any samples currently on disk can be thinned accordingly</span>
+            <span class="k">if</span> <span class="n">thinfactor</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span><span class="p">:</span>
+                <span class="n">thin_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">thin_interval</span> <span class="o">=</span> <span class="p">(</span><span class="n">thinfactor</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span><span class="p">)</span> <span class="o">*</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span>
+        <span class="k">return</span> <span class="n">thin_interval</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.set_target">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_target">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">niterations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eff_nsamples</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the target niterations/nsamples for the sampler.</span>
+
+<span class="sd">        One or the other must be provided, not both.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">niterations</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">eff_nsamples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a target niterations or &quot;</span>
+                             <span class="s2">&quot;eff_nsamples&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">niterations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">eff_nsamples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a target niterations or &quot;</span>
+                             <span class="s2">&quot;eff_nsamples, not both&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_niterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">niterations</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="n">niterations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_eff_nsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">eff_nsamples</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="n">eff_nsamples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.clear_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.clear_samples">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A method to clear samples from memory.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dictionary of the current walker positions.</span>
+
+<span class="sd">        If the sampler hasn&#39;t been run yet, returns p0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">p0</span>
+        <span class="c1"># convert to dict</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+               <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">p0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dictionary of the initial position of the chains.</span>
+
+<span class="sd">        This is set by using ``set_p0``. If not set yet, a ``ValueError`` is</span>
+<span class="sd">        raised when the attribute is accessed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;initial positions not set; run set_p0&quot;</span><span class="p">)</span>
+        <span class="c1"># convert to dict</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+              <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="n">p0</span>
+
+<div class="viewcode-block" id="BaseMCMC.set_p0">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_p0">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_p0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the initial position of the chains.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        samples_file : InferenceFile, optional</span>
+<span class="sd">            If provided, use the last iteration in the given file for the</span>
+<span class="sd">            starting positions.</span>
+<span class="sd">        prior : JointDistribution, optional</span>
+<span class="sd">            Use the given prior to set the initial positions rather than</span>
+<span class="sd">            ``model``&#39;s prior.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p0 : dict</span>
+<span class="sd">            A dictionary maping sampling params to the starting positions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if samples are given then use those as initial positions</span>
+        <span class="k">if</span> <span class="n">samples_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">samples_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span>
+                                          <span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="c1"># remove the (length 1) niterations dimension</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># make sure we have the same shape</span>
+                <span class="k">assert</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_shape</span><span class="p">,</span> <span class="p">(</span>
+                       <span class="s2">&quot;samples in file </span><span class="si">{}</span><span class="s2"> have shape </span><span class="si">{}</span><span class="s2">, but I have shape </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span>
+                       <span class="nb">format</span><span class="p">(</span><span class="n">samples_file</span><span class="p">,</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_shape</span><span class="p">))</span>
+            <span class="c1"># transform to sampling parameter space</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+        <span class="c1"># draw random samples if samples are not provided</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nsamples</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_shape</span><span class="p">)</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">nsamples</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">base_shape</span><span class="p">)</span>
+        <span class="c1"># store as ND array with shape [base_shape] x nparams</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_shape</span><span class="p">)</span><span class="o">+</span><span class="p">[</span><span class="n">ndim</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">):</span>
+            <span class="n">p0</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span> <span class="o">=</span> <span class="n">p0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">p0</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.set_state_from_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_state_from_file">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the state of the sampler to the instance saved in a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.set_start_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_start_from_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_start_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the initial state of the sampler from config file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;sampler&#39;</span><span class="p">,</span> <span class="s1">&#39;start-file&#39;</span><span class="p">):</span>
+            <span class="n">start_file</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sampler&#39;</span><span class="p">,</span> <span class="s1">&#39;start-file&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using file </span><span class="si">%s</span><span class="s2"> for initial positions&quot;</span><span class="p">,</span> <span class="n">start_file</span><span class="p">)</span>
+            <span class="n">init_prior</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">init_prior</span> <span class="o">=</span> <span class="n">initial_dist_from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_p0</span><span class="p">(</span><span class="n">samples_file</span><span class="o">=</span><span class="n">start_file</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">init_prior</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.resume_from_checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.resume_from_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume_from_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resume the sampler from the checkpoint file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">niterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_p0</span><span class="p">(</span><span class="n">samples_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs the sampler.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_eff_nsamples</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A checkpoint interval must be set if &quot;</span>
+                             <span class="s2">&quot;targetting an effective number of samples&quot;</span><span class="p">)</span>
+        <span class="c1"># get the starting number of samples:</span>
+        <span class="c1"># &quot;nsamples&quot; keeps track of the number of samples we&#39;ve obtained (if</span>
+        <span class="c1"># target_eff_nsamples is not None, this is the effective number of</span>
+        <span class="c1"># samples; otherwise, this is the total number of samples).</span>
+        <span class="c1"># contains (either due to sampler burn-in, or a previous checkpoint)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_checkpoint</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">niterations</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_eff_nsamples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_eff_nsamples</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">nsamples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">effective_nsamples</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_niterations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># the number of samples is the number of iterations times the</span>
+            <span class="c1"># number of chains</span>
+            <span class="n">target_nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_niterations</span>
+            <span class="n">nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must set either target_eff_nsamples or &quot;</span>
+                             <span class="s2">&quot;target_niterations; see set_target&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># figure out the interval to use</span>
+        <span class="n">iterinterval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_interval</span>
+        <span class="k">if</span> <span class="n">iterinterval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">iterinterval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_niterations</span>
+        <span class="c1"># run sampler until we have the desired number of samples</span>
+        <span class="k">while</span> <span class="n">nsamples</span> <span class="o">&lt;</span> <span class="n">target_nsamples</span><span class="p">:</span>
+            <span class="c1"># adjust the interval if we would go past the number of iterations</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_niterations</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span> <span class="o">+</span> <span class="n">iterinterval</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_niterations</span><span class="p">):</span>
+                <span class="n">iterinterval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_niterations</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span>
+            <span class="c1"># run sampler and set initial values to None so that sampler</span>
+            <span class="c1"># picks up from where it left off next call</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running sampler for </span><span class="si">{}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2"> iterations&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span> <span class="o">+</span> <span class="n">iterinterval</span><span class="p">))</span>
+            <span class="c1"># run the underlying sampler for the desired interval</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">iterinterval</span><span class="p">)</span>
+            <span class="c1"># update the itercounter</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span> <span class="o">+</span> <span class="n">iterinterval</span>
+            <span class="c1"># dump the current results</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint</span><span class="p">()</span>
+            <span class="c1"># update nsamples for next loop</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_eff_nsamples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_nsamples</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Have </span><span class="si">{}</span><span class="s2"> effective samples post burn in&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">nsamples</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">nsamples</span> <span class="o">+=</span> <span class="n">iterinterval</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">burn_in</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The class for doing burn-in tests (if specified).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_burn_in</span>
+
+<div class="viewcode-block" id="BaseMCMC.set_burn_in">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_burn_in">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_burn_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">burn_in</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the object to use for doing burn-in tests.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_burn_in</span> <span class="o">=</span> <span class="n">burn_in</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.effective_nsamples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.effective_nsamples">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">effective_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The effective number of samples post burn-in that the sampler has</span>
+<span class="sd">        acquired so far.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.run_mcmc">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run_mcmc">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_mcmc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">niterations</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the MCMC for the given number of iterations.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.write_results">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Should write all samples currently in memory to the given file.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dumps current samples to the checkpoint file.&quot;&quot;&quot;</span>
+        <span class="c1"># thin and write new samples</span>
+        <span class="c1"># get the updated thin interval to use</span>
+        <span class="n">thin_interval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_thin_interval</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="c1"># write the current number of iterations</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write_niterations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+                <span class="c1"># thin samples on disk if it changed</span>
+                <span class="k">if</span> <span class="n">thin_interval</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># if this is the first time writing, set the file&#39;s</span>
+                    <span class="c1"># thinned_by</span>
+                    <span class="k">if</span> <span class="n">fp</span><span class="o">.</span><span class="n">last_iteration</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span> <span class="o">=</span> <span class="n">thin_interval</span>
+                    <span class="k">elif</span> <span class="n">thin_interval</span> <span class="o">&lt;</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">:</span>
+                        <span class="c1"># whatever was done previously resulted in a larger</span>
+                        <span class="c1"># thin interval, so we&#39;ll set it to the file&#39;s</span>
+                        <span class="n">thin_interval</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span>
+                    <span class="k">elif</span> <span class="n">thin_interval</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">:</span>
+                        <span class="c1"># we need to thin the samples on disk</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Thinning samples in </span><span class="si">%s</span><span class="s2"> by a factor &quot;</span>
+                                     <span class="s2">&quot;of </span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">thin_interval</span><span class="p">))</span>
+                        <span class="n">fp</span><span class="o">.</span><span class="n">thin</span><span class="p">(</span><span class="n">thin_interval</span><span class="p">)</span>
+                <span class="n">fp_lastiter</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">last_iteration</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing samples to </span><span class="si">%s</span><span class="s2"> with thin interval </span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span>
+                         <span class="n">thin_interval</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_results</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="c1"># update the running thin interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span> <span class="o">=</span> <span class="n">thin_interval</span>
+        <span class="c1"># see if we had anything to write after thinning; if not, don&#39;t try</span>
+        <span class="c1"># to compute anything</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">nsamples_written</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">last_iteration</span><span class="p">()</span> <span class="o">-</span> <span class="n">fp_lastiter</span>
+        <span class="k">if</span> <span class="n">nsamples_written</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No samples written due to thinning&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check for burn in, compute the acls</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Updating burn in&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+                <span class="c1"># write</span>
+                <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+                    <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Computing autocorrelation time&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_acl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+            <span class="c1"># write acts, effective number of samples</span>
+            <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">fp</span><span class="o">.</span><span class="n">raw_acls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span>
+                        <span class="n">fp</span><span class="o">.</span><span class="n">acl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acl</span>
+                    <span class="c1"># write effective number of samples</span>
+                    <span class="n">fp</span><span class="o">.</span><span class="n">write_effective_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">effective_nsamples</span><span class="p">)</span>
+        <span class="c1"># write history</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">update_checkpoint_history</span><span class="p">()</span>
+        <span class="c1"># check validity</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Validating checkpoint and backup files&quot;</span><span class="p">)</span>
+        <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="n">validate_checkpoint_files</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">checkpoint_valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;error writing to checkpoint file&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_signal</span><span class="p">:</span>
+            <span class="c1"># kill myself with the specified signal</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Exiting with SIG</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_signal</span><span class="p">))</span>
+            <span class="n">kill_cmd</span><span class="o">=</span><span class="s2">&quot;os.kill(os.getpid(), signal.SIG</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_signal</span><span class="p">)</span>
+            <span class="n">exec</span><span class="p">(</span><span class="n">kill_cmd</span><span class="p">)</span>
+        <span class="c1"># clear the in-memory chain to save memory</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Clearing samples from memory&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_samples</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.checkpoint_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint_from_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the checkpoint interval from the given config file.</span>
+
+<span class="sd">        This looks for &#39;checkpoint-interval&#39; in the section.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : ConfigParser</span>
+<span class="sd">            Open config parser to retrieve the argument from.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Name of the section to retrieve from.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        int or None :</span>
+<span class="sd">            The checkpoint interval, if it is in the section. Otherw</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;checkpoint-interval&#39;</span><span class="p">,</span>
+                                            <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.ckpt_signal_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.ckpt_signal_from_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ckpt_signal_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the checkpoint signal from the given config file.</span>
+
+<span class="sd">        This looks for &#39;checkpoint-signal&#39; in the section.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : ConfigParser</span>
+<span class="sd">            Open config parser to retrieve the argument from.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Name of the section to retrieve from.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        int or None :</span>
+<span class="sd">            The checkpoint interval, if it is in the section. Otherw</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;checkpoint-signal&#39;</span><span class="p">,</span>
+                                            <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.set_target_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_target_from_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_target_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the target using the given config file.</span>
+
+<span class="sd">        This looks for ``niterations`` to set the ``target_niterations``, and</span>
+<span class="sd">        ``effective-nsamples`` to set the ``target_eff_nsamples``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : ConfigParser</span>
+<span class="sd">            Open config parser to retrieve the argument from.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Name of the section to retrieve from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;niterations&quot;</span><span class="p">):</span>
+            <span class="n">niterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;niterations&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">niterations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;effective-nsamples&quot;</span><span class="p">):</span>
+            <span class="n">nsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;effective-nsamples&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nsamples</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_target</span><span class="p">(</span><span class="n">niterations</span><span class="o">=</span><span class="n">niterations</span><span class="p">,</span> <span class="n">eff_nsamples</span><span class="o">=</span><span class="n">nsamples</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.set_burn_in_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_burn_in_from_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_burn_in_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the burn in class from the given config file.</span>
+
+<span class="sd">        If no burn-in section exists in the file, then this just set the</span>
+<span class="sd">        burn-in class to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_class</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="n">bit</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_burn_in</span><span class="p">(</span><span class="n">bit</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.set_thin_interval_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_thin_interval_from_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_thin_interval_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets thinning options from the given config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;thin-interval&quot;</span><span class="p">):</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;thin-interval&quot;</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Will thin samples using interval </span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">thin_interval</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;max-samples-per-chain&quot;</span><span class="p">):</span>
+            <span class="n">max_samps_per_chain</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;max-samples-per-chain&quot;</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting max samples per chain to </span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">,</span>
+                         <span class="n">max_samps_per_chain</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">max_samps_per_chain</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># check for consistency</span>
+        <span class="k">if</span> <span class="n">thin_interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">max_samps_per_chain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;provide either thin-interval or &quot;</span>
+                             <span class="s2">&quot;max-samples-per-chain, not both&quot;</span><span class="p">)</span>
+        <span class="c1"># check that the thin interval is &lt; then the checkpoint interval</span>
+        <span class="k">if</span> <span class="n">thin_interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                <span class="ow">and</span> <span class="n">thin_interval</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_interval</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;thin interval must be less than the checkpoint &quot;</span>
+                             <span class="s2">&quot;interval&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span> <span class="o">=</span> <span class="n">thin_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_samples_per_chain</span> <span class="o">=</span> <span class="n">max_samps_per_chain</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary of parameter names -&gt; autocorrelation lengths.</span>
+
+<span class="sd">        Depending on the sampler, the ACLs may be an integer, or an arrray of</span>
+<span class="sd">        values per chain and/or per temperature.</span>
+
+<span class="sd">        Returns ``None`` if no ACLs have been calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acls</span>
+
+    <span class="nd">@raw_acls</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the raw acls.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acls</span> <span class="o">=</span> <span class="n">acls</span>
+
+<div class="viewcode-block" id="BaseMCMC.acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.acl">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The autocorrelation length.</span>
+
+<span class="sd">        This method should convert the raw ACLs into an integer or array that</span>
+<span class="sd">        can be used to extract independent samples from a chain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary of parameter names -&gt; autocorrelation time(s).</span>
+
+<span class="sd">        Returns ``None`` if no ACLs have been calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">acls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span>
+        <span class="k">if</span> <span class="n">acls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">acl</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">acl</span><span class="p">)</span> <span class="ow">in</span> <span class="n">acls</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">act</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The autocorrelation time(s).</span>
+
+<span class="sd">        The autocorrelation time is defined as the autocorrelation length times</span>
+<span class="sd">        the ``thin_interval``. It gives the number of iterations between</span>
+<span class="sd">        independent samples. Depending on the sampler, this may either be</span>
+<span class="sd">        a single integer or an array of values.</span>
+
+<span class="sd">        Returns ``None`` if no ACLs have been calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">acl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acl</span>
+        <span class="k">if</span> <span class="n">acl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">acl</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">thin_interval</span>
+
+<div class="viewcode-block" id="BaseMCMC.compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acf">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acf</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A method to compute the autocorrelation function of samples in the</span>
+<span class="sd">        given file.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseMCMC.compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acl">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acl</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A method to compute the autocorrelation length of samples in the</span>
+<span class="sd">        given file.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EnsembleSupport">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnsembleSupport</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds support for ensemble MCMC samplers.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nwalkers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The number of walkers used.</span>
+
+<span class="sd">        Alias of ``nchains``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span>
+
+    <span class="nd">@nwalkers</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nwalkers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the number of walkers.&quot;&quot;&quot;</span>
+        <span class="c1"># we&#39;ll actually store it to the nchains attribute</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The autocorrelation length of the ensemble.</span>
+
+<span class="sd">        This is calculated by taking the maximum over all of the ``raw_acls``.</span>
+<span class="sd">        This works for both single and parallel-tempered ensemble samplers.</span>
+
+<span class="sd">        Returns ``None`` if no ACLs have been set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">acls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span>
+        <span class="k">if</span> <span class="n">acls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">acls</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">effective_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The effective number of samples post burn-in that the sampler has</span>
+<span class="sd">        acquired so far.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">:</span>
+            <span class="c1"># not burned in, so there&#39;s no effective samples</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">act</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span>
+        <span class="k">if</span> <span class="n">act</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start_iter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">burn_in_iteration</span>
+        <span class="n">nperwalker</span> <span class="o">=</span> <span class="n">nsamples_in_chain</span><span class="p">(</span><span class="n">start_iter</span><span class="p">,</span> <span class="n">act</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># after burn in, we always have atleast 1 sample per walker</span>
+            <span class="n">nperwalker</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">nperwalker</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nwalkers</span> <span class="o">*</span> <span class="n">nperwalker</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#              Functions for computing autocorrelation lengths</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="ensemble_compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.ensemble_compute_acf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensemble_compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">per_walker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the autocorrleation function for an ensemble MCMC.</span>
+
+<span class="sd">    By default, parameter values are averaged over all walkers at each</span>
+<span class="sd">    iteration. The ACF is then calculated over the averaged chain. An</span>
+<span class="sd">    ACF per-walker will be returned instead if ``per_walker=True``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of a samples file to compute ACFs for.</span>
+<span class="sd">    start_index : int, optional</span>
+<span class="sd">        The start index to compute the acl from. If None (the default), will</span>
+<span class="sd">        try to use the number of burn-in iterations in the file; otherwise,</span>
+<span class="sd">        will start at the first sample.</span>
+<span class="sd">    end_index : int, optional</span>
+<span class="sd">        The end index to compute the acl to. If None (the default), will go to</span>
+<span class="sd">        the end of the current iteration.</span>
+<span class="sd">    per_walker : bool, optional</span>
+<span class="sd">        Return the ACF for each walker separately. Default is False.</span>
+<span class="sd">    walkers : int or array, optional</span>
+<span class="sd">        Calculate the ACF using only the given walkers. If None (the</span>
+<span class="sd">        default) all walkers will be used.</span>
+<span class="sd">    parameters : str or array, optional</span>
+<span class="sd">        Calculate the ACF for only the given parameters. If None (the</span>
+<span class="sd">        default) will calculate the ACF for all of the model params.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of arrays giving the ACFs for each parameter. If</span>
+<span class="sd">        ``per-walker`` is True, the arrays will have shape</span>
+<span class="sd">        ``nwalkers x niterations``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">acfs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">parameters</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">per_walker</span><span class="p">:</span>
+                <span class="c1"># just call myself with a single walker</span>
+                <span class="k">if</span> <span class="n">walkers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">walkers</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">nwalkers</span><span class="p">)</span>
+                <span class="n">arrays</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">ensemble_compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
+                                         <span class="n">end_index</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span>
+                                         <span class="n">per_walker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span>
+                                         <span class="n">parameters</span><span class="o">=</span><span class="n">param</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">walkers</span><span class="p">]</span>
+                <span class="n">acfs</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">arrays</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                    <span class="n">param</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">thin_end</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="n">walkers</span><span class="p">,</span>
+                    <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">acfs</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">autocorrelation</span><span class="o">.</span><span class="n">calculate_acf</span><span class="p">(</span>
+                    <span class="n">samples</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">acfs</span></div>
+
+
+
+<div class="viewcode-block" id="ensemble_compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.ensemble_compute_acl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensemble_compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">min_nsamples</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the autocorrleation length for an ensemble MCMC.</span>
+
+<span class="sd">    Parameter values are averaged over all walkers at each iteration.</span>
+<span class="sd">    The ACL is then calculated over the averaged chain. If an ACL cannot</span>
+<span class="sd">    be calculated because there are not enough samples, it will be set</span>
+<span class="sd">    to ``inf``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of a samples file to compute ACLs for.</span>
+<span class="sd">    start_index : int, optional</span>
+<span class="sd">        The start index to compute the acl from. If None, will try to use</span>
+<span class="sd">        the number of burn-in iterations in the file; otherwise, will start</span>
+<span class="sd">        at the first sample.</span>
+<span class="sd">    end_index : int, optional</span>
+<span class="sd">        The end index to compute the acl to. If None, will go to the end</span>
+<span class="sd">        of the current iteration.</span>
+<span class="sd">    min_nsamples : int, optional</span>
+<span class="sd">        Require a minimum number of samples to compute an ACL. If the</span>
+<span class="sd">        number of samples per walker is less than this, will just set to</span>
+<span class="sd">        ``inf``. Default is 10.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary giving the ACL for each parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">acls</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                <span class="n">param</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">thin_end</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># if &lt; min number of samples, just set to inf</span>
+            <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">min_nsamples</span><span class="p">:</span>
+                <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">acl</span> <span class="o">=</span> <span class="n">autocorrelation</span><span class="o">.</span><span class="n">calculate_acl</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">acl</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">acls</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">acl</span>
+        <span class="n">maxacl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">acls</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ACT: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">maxacl</span><span class="o">*</span><span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">acls</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

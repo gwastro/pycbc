@@ -1,0 +1,680 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.population_models &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.population_models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.population_models</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2021  Shichao Wu, Alex Nitz, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides functions for star formation rate models, time delay</span>
+<span class="sd">models, merger rate density, and population models of BBH/BNS/NSBH.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">scipy_integrate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">scipy_interpolate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_cosmology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">cosmological_quantity_from_redshift</span>
+
+
+<div class="viewcode-block" id="sfr_grb_2008">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.sfr_grb_2008">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sfr_grb_2008</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; The star formation rate (SFR) calibrated by high-z GRBs data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z : float</span>
+<span class="sd">        The redshift.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rho_z : float</span>
+<span class="sd">            The SFR at redshift z, in unit of &quot;Msolar/Mpc^3/yr&quot;.</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">        Please see Eq.(5) in &lt;arXiv:0804.4008&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">rho_local</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c1"># Msolar/yr/Mpc^3</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+
+    <span class="n">rho_z</span> <span class="o">=</span> <span class="n">rho_local</span><span class="o">*</span><span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">3.4</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">/</span><span class="mi">5000</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.3</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span> <span class="o">+</span>
+                       <span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">/</span><span class="mi">9</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">3.5</span><span class="o">*</span><span class="n">eta</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">eta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rho_z</span></div>
+
+
+
+<div class="viewcode-block" id="sfr_madau_dickinson_2014">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.sfr_madau_dickinson_2014">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sfr_madau_dickinson_2014</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">2.7</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="mf">5.6</span><span class="p">,</span> <span class="n">z_peak</span><span class="o">=</span><span class="mf">1.9</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; The madau-dickinson 2014 star formation rate (SFR).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z : float</span>
+<span class="sd">        The redshift.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rho_z : float</span>
+<span class="sd">            The SFR at redshift z, in unit of &quot;Msolar/Mpc^3/yr&quot;.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see Eq.(15) in &lt;arXiv:1403.0007&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">rho_z</span> <span class="o">=</span> <span class="mf">0.015</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">**</span><span class="n">gamma</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z_peak</span><span class="p">))</span><span class="o">**</span><span class="n">kappa</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rho_z</span></div>
+
+
+
+<div class="viewcode-block" id="sfr_madau_fragos_2017">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.sfr_madau_fragos_2017">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sfr_madau_fragos_2017</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">k_imf</span><span class="o">=</span><span class="mf">0.66</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;high&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; The madau-fragos 2017 star formation rate (SFR),</span>
+<span class="sd">         which updates madau-dickinson 2014 SFR by better reproducing</span>
+<span class="sd">         a number of recent 4 &lt; z &lt; 10 results.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z : float</span>
+<span class="sd">        The redshift.</span>
+<span class="sd">    k_imf : float</span>
+<span class="sd">        The correction factor KIMF adjusts the SFR for the assumed IMF,</span>
+<span class="sd">        for the Salpeter IMF, k_imf=1.0, for the  three component broken</span>
+<span class="sd">        power-law Kroupa IMF, k_imf=0.66, here we choose Kroupa IMF as default.</span>
+<span class="sd">    model : string</span>
+<span class="sd">        The model of SFR, choose from &#39;high&#39; and &#39;low&#39;. Default to &#39;high&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rho_z : float</span>
+<span class="sd">            The SFR at redshift z, in unit of &quot;Msolar/Mpc^3/yr&quot;.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see &lt;arXiv:1606.07887&gt; and &lt;arXiv:1706.07053&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;low&#39;</span><span class="p">:</span>
+        <span class="n">factor_a</span> <span class="o">=</span> <span class="mf">2.6</span>
+        <span class="n">factor_b</span> <span class="o">=</span> <span class="mf">3.2</span>
+        <span class="n">factor_c</span> <span class="o">=</span> <span class="mf">6.2</span>
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;high&#39;</span><span class="p">:</span>
+        <span class="n">factor_a</span> <span class="o">=</span> <span class="mf">2.7</span>
+        <span class="n">factor_b</span> <span class="o">=</span> <span class="mf">3.0</span>
+        <span class="n">factor_c</span> <span class="o">=</span> <span class="mf">5.35</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;mode&#39; must choose from &#39;high&#39; or &#39;low&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">rho_z</span> <span class="o">=</span> <span class="n">k_imf</span> <span class="o">*</span> <span class="mf">0.015</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">**</span><span class="n">factor_a</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">/</span><span class="n">factor_b</span><span class="p">)</span><span class="o">**</span><span class="n">factor_c</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rho_z</span></div>
+
+
+
+<div class="viewcode-block" id="diff_lookback_time">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.diff_lookback_time">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">diff_lookback_time</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; The derivative of lookback time t(z)</span>
+<span class="sd">         with respect to redshit z.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z : float</span>
+<span class="sd">         The redshift.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dt_dz : float</span>
+<span class="sd">            The value of dt/dz at the redshift z.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see Eq.(A3) in &lt;arXiv:2011.02717v3&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">sqrt</span>
+
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">H0</span> <span class="o">=</span> <span class="n">cosmology</span><span class="o">.</span><span class="n">H0</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> \
+        <span class="p">(</span><span class="mf">3.0856776E+19</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">24</span><span class="o">/</span><span class="mi">3600</span><span class="o">/</span><span class="mi">365</span><span class="o">*</span><span class="mf">1e-9</span><span class="p">)</span>  <span class="c1"># Gyr^-1</span>
+    <span class="n">dt_dz</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">H0</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">/</span><span class="n">sqrt</span><span class="p">((</span><span class="n">cosmology</span><span class="o">.</span><span class="n">Ode0</span><span class="o">+</span><span class="n">cosmology</span><span class="o">.</span><span class="n">Om0</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dt_dz</span></div>
+
+
+
+<div class="viewcode-block" id="p_tau">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.p_tau">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">p_tau</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="n">td_model</span><span class="o">=</span><span class="s2">&quot;inverse&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; The probability distribution of the time delay.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tau : float</span>
+<span class="sd">         The merger delay time from the</span>
+<span class="sd">         formation of the binary system and the orbital</span>
+<span class="sd">         decay timescale through gravitational wave radiation.</span>
+<span class="sd">    td_model : str</span>
+<span class="sd">         The time delay model.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p_t : float or ndarray or sympy.core.mul.Mul based on input</span>
+<span class="sd">          The probability at time delay tau.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see the Appendix in &lt;arXiv:2011.02717v3&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">exp</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">Piecewise</span>
+
+    <span class="k">if</span> <span class="n">td_model</span> <span class="o">==</span> <span class="s2">&quot;log_normal&quot;</span><span class="p">:</span>
+        <span class="n">t_ln</span> <span class="o">=</span> <span class="mf">2.9</span>  <span class="c1"># Gyr</span>
+        <span class="n">sigma_ln</span> <span class="o">=</span> <span class="mf">0.2</span>
+        <span class="n">p_t</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span><span class="o">-</span><span class="n">log</span><span class="p">(</span><span class="n">t_ln</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma_ln</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> \
+                 <span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="n">sigma_ln</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">td_model</span> <span class="o">==</span> <span class="s2">&quot;gaussian&quot;</span><span class="p">:</span>
+        <span class="n">t_g</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Gyr</span>
+        <span class="n">sigma_g</span> <span class="o">=</span> <span class="mf">0.3</span>
+        <span class="n">p_t</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">tau</span><span class="o">-</span><span class="n">t_g</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma_g</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="n">sigma_g</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">td_model</span> <span class="o">==</span> <span class="s2">&quot;power_law&quot;</span><span class="p">:</span>
+        <span class="n">alpha_t</span> <span class="o">=</span> <span class="mf">0.81</span>
+        <span class="n">p_t</span> <span class="o">=</span> <span class="n">tau</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">alpha_t</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">td_model</span> <span class="o">==</span> <span class="s2">&quot;inverse&quot;</span><span class="p">:</span>
+        <span class="c1"># make sure that there is a minimum and maximum time delay</span>
+        <span class="n">td_min</span> <span class="o">=</span> <span class="mf">0.02</span> <span class="c1"># Taken from Regimbau et al. https://journals.aps.org/prd/abstract/10.1103/PhysRevD.86.122001</span>
+        <span class="n">td_max</span> <span class="o">=</span> <span class="n">cosmological_quantity_from_redshift</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">)</span>
+        <span class="n">norm_const</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">td_max</span><span class="o">/</span><span class="n">td_min</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">p_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">tau</span> <span class="o">&lt;</span> <span class="n">td_min</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">tau</span> <span class="o">&gt;</span> <span class="n">td_max</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">norm_const</span> <span class="o">*</span> <span class="n">tau</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.999</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p_t</span> <span class="o">=</span> <span class="n">Piecewise</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">tau</span> <span class="o">&lt;</span> <span class="n">td_min</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tau</span> <span class="o">&gt;</span> <span class="n">td_max</span><span class="p">),</span> <span class="p">(</span><span class="n">norm_const</span> <span class="o">*</span> <span class="n">tau</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">0.999</span><span class="p">),</span> <span class="kc">True</span><span class="p">))</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;model&#39; must choose from </span><span class="se">\</span>
+<span class="s2">        [&#39;log_normal&#39;, &#39;gaussian&#39;, &#39;power_law&#39;, &#39;inverse&#39;].&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">p_t</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">convolution_trans</span><span class="p">(</span><span class="n">sfr</span><span class="p">,</span> <span class="n">diff_lookback_t</span><span class="p">,</span> <span class="n">model_td</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This function is used in a symbolic integral, which to calculate</span>
+<span class="sd">        the merger rate density of CBC sources. This function converts the</span>
+<span class="sd">        convolution of the star formation rate SFR(tau) and the time delay</span>
+<span class="sd">        probability P(tau) on the time delay &#39;tau&#39; into the convolution on</span>
+<span class="sd">        the redshift &#39;z&#39;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sfr : function</span>
+<span class="sd">            The star formation rate function used in the convolution.</span>
+<span class="sd">    diff_lookback_t : function</span>
+<span class="sd">            The derivative of lookback time t(z)</span>
+<span class="sd">            with respect to redshit z.</span>
+<span class="sd">    model_td : str</span>
+<span class="sd">            The name of time delay model.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    func : sympy.core.symbol.Symbol</span>
+<span class="sd">          The product of SFR(z), P(tau(z)) and dt(z)/dz.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see Eq.(A2) in &lt;arXiv:2011.02717v3&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">integrate</span><span class="p">,</span> <span class="n">symbols</span>
+
+    <span class="k">if</span> <span class="n">model_td</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;log_normal&#39;</span><span class="p">,</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="s1">&#39;power_law&#39;</span><span class="p">,</span> <span class="s1">&#39;inverse&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;model_td&#39; must choose from </span><span class="se">\</span>
+<span class="s2">        [&#39;log_normal&#39;, &#39;gaussian&#39;, &#39;power_law&#39;, &#39;inverse&#39;].&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Fix the cosmology, set &#39;z/z_0&#39; to be the only</span>
+    <span class="c1"># parameter in the symbolic integration.</span>
+    <span class="n">diff_lookback_time_z</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">diff_lookback_t</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">)</span>
+    <span class="n">z_0</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;z_0&#39;</span><span class="p">)</span>
+    <span class="n">tau</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">diff_lookback_time_z</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">z_0</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">sfr</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">*</span> <span class="n">p_tau</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="n">model_td</span><span class="p">)</span> <span class="o">*</span> <span class="n">diff_lookback_time_z</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span>
+
+
+<div class="viewcode-block" id="merger_rate_density">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.merger_rate_density">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">merger_rate_density</span><span class="p">(</span><span class="n">sfr_func</span><span class="p">,</span> <span class="n">td_model</span><span class="p">,</span> <span class="n">rho_local</span><span class="p">,</span> <span class="n">maxz</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                        <span class="n">npoints</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">z_array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This function uses the symbolic integral to calculate</span>
+<span class="sd">        the merger rate density of CBC sources. This function converts the</span>
+<span class="sd">        convolution of the star formation rate SFR(tau) and the time delay</span>
+<span class="sd">        probability P(tau) on the time delay &#39;tau&#39; into the convolution on</span>
+<span class="sd">        the redshift &#39;z&#39;. This function relies on `convolution_trans`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sfr_func : function</span>
+<span class="sd">            The star formation rate function used in the convolution.</span>
+<span class="sd">    td_model : str</span>
+<span class="sd">            The name of time delay model.</span>
+<span class="sd">    rho_local : float</span>
+<span class="sd">            The local merger rate of a certain type of CBC source.</span>
+<span class="sd">            In the unit of &quot;Mpc^-3yr^-1&quot;.</span>
+<span class="sd">    maxz : float</span>
+<span class="sd">            The max redshift. The default value is 10.</span>
+<span class="sd">    npoints : int</span>
+<span class="sd">            The number of points used in the interpolation. The default</span>
+<span class="sd">            value is 10000.</span>
+<span class="sd">    z_array : numpy.array</span>
+<span class="sd">            The array of redshift. The default value is None.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rho_z : scipy.interpolate.interp1d</span>
+<span class="sd">          The merger rate density.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see Eq.(A1), Eq.(A2) in &lt;arXiv:2011.02717v3&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="kn">import</span> <span class="n">symbols</span><span class="p">,</span> <span class="n">lambdify</span>
+
+    <span class="k">if</span> <span class="n">z_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">z_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxz</span><span class="p">,</span> <span class="n">npoints</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">td_model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;log_normal&#39;</span><span class="p">,</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="s1">&#39;power_law&#39;</span><span class="p">,</span> <span class="s1">&#39;inverse&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;td_model&#39; must choose from </span><span class="se">\</span>
+<span class="s2">        [&#39;log_normal&#39;, &#39;gaussian&#39;, &#39;power_law&#39;, &#39;inverse&#39;].&quot;</span><span class="p">)</span>
+
+    <span class="n">z</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">)</span>
+    <span class="n">z_0</span> <span class="o">=</span> <span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;z_0&#39;</span><span class="p">)</span>
+    <span class="n">f_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z_array</span><span class="p">))</span>
+
+    <span class="n">func_1</span> <span class="o">=</span> <span class="n">convolution_trans</span><span class="p">(</span>
+                <span class="n">sfr</span><span class="o">=</span><span class="n">sfr_func</span><span class="p">,</span> <span class="n">diff_lookback_t</span><span class="o">=</span><span class="n">diff_lookback_time</span><span class="p">,</span>
+                <span class="n">model_td</span><span class="o">=</span><span class="n">td_model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">z_array</span><span class="p">)):</span>
+        <span class="n">func_2</span> <span class="o">=</span> <span class="n">lambdify</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">func_1</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">z_0</span><span class="p">,</span> <span class="n">z_array</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="s1">&#39;scipy&#39;</span><span class="p">)</span>
+        <span class="n">f_z</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">scipy_integrate</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span>
+                    <span class="n">func_2</span><span class="p">,</span> <span class="n">z_array</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">epsabs</span><span class="o">=</span><span class="mf">1.49e-3</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">f_z</span> <span class="o">=</span> <span class="n">f_z</span><span class="o">/</span><span class="n">f_z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">rho_local</span>  <span class="c1"># Normalize &amp; Rescale</span>
+    <span class="n">rho_z</span> <span class="o">=</span> <span class="n">scipy_interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">z_array</span><span class="p">,</span> <span class="n">f_z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rho_z</span></div>
+
+
+
+<div class="viewcode-block" id="coalescence_rate">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.coalescence_rate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">coalescence_rate</span><span class="p">(</span><span class="n">rate_den</span><span class="p">,</span> <span class="n">maxz</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                     <span class="n">z_array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This function calculates the coalescence(merger) rate at the redshift z.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rate_den : function or scipy.interpolate.interp1d</span>
+<span class="sd">        The merger rate density as a function of redshift. In the unit of</span>
+<span class="sd">        &quot;Mpc^-3yr^-1&quot;. Use `merger_rate_density` function to calculate.</span>
+<span class="sd">    maxz : float</span>
+<span class="sd">            The max redshift. The default value is 10.</span>
+<span class="sd">    npoints : int</span>
+<span class="sd">            The number of points used in the interpolation. The default</span>
+<span class="sd">            value is 10000.</span>
+<span class="sd">    z_array : numpy.array or list</span>
+<span class="sd">            The redshift range. The default value is None.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coalescence_rate_interp : scipy.interpolate.interp1d</span>
+<span class="sd">          The coalescence rate.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         Pease see Eq.(1) in &lt;arXiv:2011.02717v3&gt; for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">z_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">z_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxz</span><span class="p">,</span> <span class="n">npoints</span><span class="p">)</span>
+
+    <span class="n">dr_dz</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">z_array</span><span class="p">:</span>
+        <span class="n">dr</span> <span class="o">=</span> <span class="n">cosmology</span><span class="o">.</span><span class="n">differential_comoving_volume</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">dr_dz</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">dr</span><span class="o">*</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">sr</span><span class="o">*</span><span class="n">rate_den</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">Mpc</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="n">coalescence_rate_interp</span> <span class="o">=</span> <span class="n">scipy_interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span>
+                <span class="n">z_array</span><span class="p">,</span> <span class="n">dr_dz</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">coalescence_rate_interp</span></div>
+
+
+
+<div class="viewcode-block" id="total_rate_upto_redshift">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.total_rate_upto_redshift">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">total_rate_upto_redshift</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">merger_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Total rate of occurrences out to some redshift.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z : int, float, tuple, numpy.ndarray or list</span>
+<span class="sd">            The redshift.</span>
+<span class="sd">    merger_rate : scipy.interpolate.interp1d or function</span>
+<span class="sd">        The merger or coalescence rate. Function should take the</span>
+<span class="sd">        redshift as a single argument. Provided by users or</span>
+<span class="sd">        calculated by the `coalescence_rate` function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rate: float or list</span>
+<span class="sd">        The total rate of occurrences out to some redshift. In the</span>
+<span class="sd">        unit of &quot;yr^-1&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+        <span class="n">total_rate</span> <span class="o">=</span> <span class="n">scipy_integrate</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span>
+                        <span class="n">merger_rate</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span>
+                        <span class="n">epsabs</span><span class="o">=</span><span class="mf">2.00e-4</span><span class="p">,</span> <span class="n">epsrel</span><span class="o">=</span><span class="mf">2.00e-4</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="n">total_rate</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">redshift</span> <span class="ow">in</span> <span class="n">z</span><span class="p">:</span>
+            <span class="n">total_rate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">scipy_integrate</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span>
+                    <span class="n">merger_rate</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">redshift</span><span class="p">,</span>
+                    <span class="n">epsabs</span><span class="o">=</span><span class="mf">2.00e-4</span><span class="p">,</span> <span class="n">epsrel</span><span class="o">=</span><span class="mf">2.00e-4</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;z&#39; must be &#39;int&#39;, &#39;float&#39;, &#39;tuple&#39;, </span><span class="se">\</span>
+<span class="s2">                            &#39;numpy.ndarray&#39; or &#39;list&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">total_rate</span></div>
+
+
+
+<div class="viewcode-block" id="average_time_between_signals">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.average_time_between_signals">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">average_time_between_signals</span><span class="p">(</span><span class="n">z_array</span><span class="p">,</span> <span class="n">merger_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This function calculates the average time interval</span>
+<span class="sd">        of a certain type of CBC source.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z_array : numpy.array</span>
+<span class="sd">            The array of redshift.</span>
+<span class="sd">    merger_rate : scipy.interpolate.interp1d or function</span>
+<span class="sd">            The coalescence rate. Provided by users or calculated by</span>
+<span class="sd">            the `coalescence_rate` function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    average_time : float</span>
+<span class="sd">            The average time interval (s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">total_rate</span> <span class="o">=</span> <span class="n">total_rate_upto_redshift</span><span class="p">(</span>
+            <span class="n">z_array</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">merger_rate</span><span class="p">)</span>  <span class="c1"># yr^-1</span>
+    <span class="n">average_time</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">total_rate</span> <span class="o">*</span> <span class="mi">365</span><span class="o">*</span><span class="mi">24</span><span class="o">*</span><span class="mi">3600</span>  <span class="c1"># s</span>
+    <span class="k">return</span> <span class="n">average_time</span></div>
+
+
+
+<div class="viewcode-block" id="norm_redshift_distribution">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.norm_redshift_distribution">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">norm_redshift_distribution</span><span class="p">(</span><span class="n">z_array</span><span class="p">,</span> <span class="n">merger_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This function calculates the normalized redshift distribution</span>
+<span class="sd">        of a certain type of CBC source.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z_array : numpy.array</span>
+<span class="sd">            The array of redshift.</span>
+<span class="sd">    merger_rate : scipy.interpolate.interp1d or function</span>
+<span class="sd">            The coalescence rate. Provided by users or calculated by</span>
+<span class="sd">            the `coalescence_rate` function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    norm_coalescence_rate : numpy.array</span>
+<span class="sd">            The normalized redshift distribution.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         The can be used as a population-informed prior for redshift</span>
+<span class="sd">         and luminosity distance of CBC sources.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lambd</span> <span class="o">=</span> <span class="n">average_time_between_signals</span><span class="p">(</span><span class="n">z_array</span><span class="p">,</span> <span class="n">merger_rate</span><span class="p">)</span>
+    <span class="n">norm_coalescence_rate</span> <span class="o">=</span> <span class="n">lambd</span><span class="o">/</span><span class="p">(</span><span class="mi">365</span><span class="o">*</span><span class="mi">24</span><span class="o">*</span><span class="mi">3600</span><span class="p">)</span> <span class="o">*</span> <span class="n">merger_rate</span><span class="p">(</span><span class="n">z_array</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">norm_coalescence_rate</span></div>
+
+
+
+<div class="viewcode-block" id="distance_from_rate">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.population_models.distance_from_rate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">distance_from_rate</span><span class="p">(</span>
+        <span class="n">total_rate</span><span class="p">,</span> <span class="n">merger_rate</span><span class="p">,</span> <span class="n">maxz</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">npoints</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the luminosity distance from the given total rate value.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    total_rate : float</span>
+<span class="sd">        The total rate.</span>
+<span class="sd">    merger_rate : scipy.interpolate.interp1d or function</span>
+<span class="sd">            The coalescence rate. Provided by users or calculated by</span>
+<span class="sd">            the `coalescence_rate` function.</span>
+<span class="sd">    maxz : float</span>
+<span class="sd">        The max redshift in the interpolation, the default value is 10.</span>
+<span class="sd">        Please use the same `maxz` as in `merger_rate`.</span>
+<span class="sd">    npoints : int</span>
+<span class="sd">        The number of points used in the interpolation, the default value</span>
+<span class="sd">        is 10000.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dl : float</span>
+<span class="sd">        The luminosity distance at the given total rate value.</span>
+<span class="sd">        In the unit of &quot;Mpc&quot;.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">         This can be used in a population-informed prior for redshift</span>
+<span class="sd">         and luminosity distance of CBC sources. When this used in</span>
+<span class="sd">         high redshift range, please first use the `total_rate_upto_redshift`</span>
+<span class="sd">         function to plot the curve and find the point where the curve</span>
+<span class="sd">         starts to stay almost horizontal, then set `maxz` to the</span>
+<span class="sd">         corresponding value and change `npoints` to a reasonable value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">merger_rate</span><span class="p">,</span> <span class="s1">&#39;dist_interp&#39;</span><span class="p">):</span>
+        <span class="n">merger_rate</span><span class="o">.</span><span class="n">dist_interp</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">merger_rate</span><span class="o">.</span><span class="n">dist_interp</span><span class="p">)</span> <span class="ow">or</span>
+       <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">merger_rate</span><span class="o">.</span><span class="n">dist_interp</span><span class="p">[</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="n">npoints</span><span class="p">)):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">rate_func</span><span class="p">(</span><span class="n">redshift</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">total_rate_upto_redshift</span><span class="p">(</span><span class="n">redshift</span><span class="p">,</span> <span class="n">merger_rate</span><span class="p">)</span>
+
+        <span class="n">z_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxz</span><span class="p">,</span> <span class="n">npoints</span><span class="p">)</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">cosmological_quantity_from_redshift</span><span class="p">(</span>
+                <span class="n">z_array</span><span class="p">,</span> <span class="s1">&#39;luminosity_distance&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">total_rates</span> <span class="o">=</span> <span class="n">rate_func</span><span class="p">(</span><span class="n">z_array</span><span class="p">)</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">scipy_interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">total_rates</span><span class="p">,</span> <span class="n">dists</span><span class="p">)</span>
+        <span class="n">merger_rate</span><span class="o">.</span><span class="n">dist_interp</span><span class="p">[</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">interp</span>
+
+    <span class="n">dl</span> <span class="o">=</span> <span class="n">merger_rate</span><span class="o">.</span><span class="n">dist_interp</span><span class="p">[</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span><span class="p">](</span><span class="n">total_rate</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">dl</span><span class="p">):</span>
+        <span class="n">dl</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dl</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dl</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sfr_grb_2008&#39;</span><span class="p">,</span> <span class="s1">&#39;sfr_madau_dickinson_2014&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;sfr_madau_fragos_2017&#39;</span><span class="p">,</span> <span class="s1">&#39;diff_lookback_time&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;p_tau&#39;</span><span class="p">,</span> <span class="s1">&#39;merger_rate_density&#39;</span><span class="p">,</span> <span class="s1">&#39;coalescence_rate&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;norm_redshift_distribution&#39;</span><span class="p">,</span> <span class="s1">&#39;total_rate_upto_redshift&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;distance_from_rate&#39;</span><span class="p">,</span> <span class="s1">&#39;average_time_between_signals&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

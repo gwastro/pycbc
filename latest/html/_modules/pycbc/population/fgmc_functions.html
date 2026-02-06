@@ -1,0 +1,940 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.fgmc_functions &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.fgmc_functions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.fgmc_functions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2021 Thomas Dent</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A set of helper functions for evaluating event rates, densities etc.</span>
+
+<span class="sd">See https://dcc.ligo.org/LIGO-T2100060/public for technical explanations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">basename</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bisect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span> <span class="k">as</span> <span class="n">it_chain</span><span class="p">,</span> <span class="n">combinations</span> <span class="k">as</span> <span class="n">it_comb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span> <span class="k">as</span> <span class="n">conv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">events</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events.coinc</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean_if_greater_than_zero</span> <span class="k">as</span> <span class="n">coinc_meanigz</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">triggers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+
+
+<div class="viewcode-block" id="filter_bin_lo_hi">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.filter_bin_lo_hi">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_bin_lo_hi</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">):</span>
+    <span class="n">in_bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">values</span> <span class="o">-</span> <span class="n">lo</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">hi</span> <span class="o">-</span> <span class="n">values</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">in_bin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Edge case! Bin edges&#39;</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span>
+                           <span class="s1">&#39;value(s)&#39;</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">in_bin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">in_bin</span> <span class="o">==</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="filter_tmplt_mchirp">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.filter_tmplt_mchirp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_tmplt_mchirp</span><span class="p">(</span><span class="n">bankf</span><span class="p">,</span> <span class="n">lo_mchirp</span><span class="p">,</span> <span class="n">hi_mchirp</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">bankf</span><span class="p">)</span> <span class="k">as</span> <span class="n">bank</span><span class="p">:</span>
+        <span class="n">mchirp</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:],</span> <span class="n">bank</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][:])</span>
+    <span class="c1"># Boolean over template id</span>
+    <span class="k">return</span> <span class="n">filter_bin_lo_hi</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">lo_mchirp</span><span class="p">,</span> <span class="n">hi_mchirp</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_full_data">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.read_full_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_full_data</span><span class="p">(</span><span class="n">fullf</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">,</span> <span class="n">tmplt_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the zero- and time-lagged triggers identified by a specific</span>
+<span class="sd">       set of templates.</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       fullf:</span>
+<span class="sd">              File that stores zerolag and slide triggers</span>
+<span class="sd">       bankf:</span>
+<span class="sd">              File with template mass/spin information</span>
+<span class="sd">       rhomin: float</span>
+<span class="sd">              Ranking statistic threshold</span>
+<span class="sd">       tmplt_filter: array of Booleans</span>
+<span class="sd">              Filter over the array of templates stored in bankf</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       dictionary</span>
+<span class="sd">              containing foreground triggers and background information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">fullf</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">full_data</span><span class="p">:</span>
+        <span class="c1"># apply template filter</span>
+        <span class="n">tid_bkg</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;background_exc/template_id&#39;</span><span class="p">][:]</span>
+        <span class="n">tid_fg</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;foreground/template_id&#39;</span><span class="p">][:]</span>
+        <span class="n">bkg_inbin</span> <span class="o">=</span> <span class="n">tmplt_filter</span><span class="p">[</span><span class="n">tid_bkg</span><span class="p">]</span>  <span class="c1"># Boolean over bg events</span>
+        <span class="n">fg_inbin</span> <span class="o">=</span> <span class="n">tmplt_filter</span><span class="p">[</span><span class="n">tid_fg</span><span class="p">]</span>  <span class="c1"># Boolean over fg events</span>
+        <span class="n">zerolagstat</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;foreground/stat&#39;</span><span class="p">][:][</span><span class="n">fg_inbin</span><span class="p">]</span>
+        <span class="n">zerolagifar</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;foreground/ifar&#39;</span><span class="p">][:][</span><span class="n">fg_inbin</span><span class="p">]</span>
+        <span class="c1"># arbitrarily choose time from one of the ifos</span>
+        <span class="n">zerolagtime</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;foreground/time1&#39;</span><span class="p">][:][</span><span class="n">fg_inbin</span><span class="p">]</span>
+
+        <span class="n">cstat_back_exc</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;background_exc/stat&#39;</span><span class="p">][:][</span><span class="n">bkg_inbin</span><span class="p">]</span>
+        <span class="n">dec_factors</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;background_exc/decimation_factor&#39;</span><span class="p">][:][</span><span class="n">bkg_inbin</span><span class="p">]</span>
+
+    <span class="c1"># filter on stat value</span>
+    <span class="n">above</span> <span class="o">=</span> <span class="n">zerolagstat</span> <span class="o">&gt;</span> <span class="n">rhomin</span>
+    <span class="n">back_above</span> <span class="o">=</span> <span class="n">cstat_back_exc</span> <span class="o">&gt;</span> <span class="n">rhomin</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;zerolagstat&#39;</span><span class="p">:</span> <span class="n">zerolagstat</span><span class="p">[</span><span class="n">above</span><span class="p">],</span>
+            <span class="s1">&#39;zerolagifar&#39;</span><span class="p">:</span> <span class="n">zerolagifar</span><span class="p">[</span><span class="n">above</span><span class="p">],</span>
+            <span class="s1">&#39;zerolagtime&#39;</span><span class="p">:</span> <span class="n">zerolagtime</span><span class="p">[</span><span class="n">above</span><span class="p">],</span>
+            <span class="s1">&#39;dec_factors&#39;</span><span class="p">:</span> <span class="n">dec_factors</span><span class="p">[</span><span class="n">back_above</span><span class="p">],</span>
+            <span class="s1">&#39;cstat_back_exc&#39;</span><span class="p">:</span> <span class="n">cstat_back_exc</span><span class="p">[</span><span class="n">back_above</span><span class="p">],</span>
+            <span class="s1">&#39;file_name&#39;</span><span class="p">:</span> <span class="n">fullf</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="read_full_data_mchirp">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.read_full_data_mchirp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_full_data_mchirp</span><span class="p">(</span><span class="n">fullf</span><span class="p">,</span> <span class="n">bankf</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">,</span> <span class="n">mc_lo</span><span class="p">,</span> <span class="n">mc_hi</span><span class="p">):</span>
+    <span class="n">tmp_filter</span> <span class="o">=</span> <span class="n">filter_tmplt_mchirp</span><span class="p">(</span><span class="n">bankf</span><span class="p">,</span> <span class="n">mc_lo</span><span class="p">,</span> <span class="n">mc_hi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">read_full_data</span><span class="p">(</span><span class="n">fullf</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">,</span> <span class="n">tmp_filter</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log_rho_bg">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.log_rho_bg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_rho_bg</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">bins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    trigs: zerolag event statistic values</span>
+<span class="sd">    counts: background histogram</span>
+<span class="sd">    bins: bin edges of the background histogram</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    log of background PDF at the zerolag statistic values,</span>
+<span class="sd">    fractional uncertainty due to Poisson count (set to 100% for empty bins)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trigs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># corner case</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">trigs</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">bins</span><span class="p">)),</span> <span class="s2">&quot;can&#39;t have triggers below bin lower limit&quot;</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+    <span class="n">log_rhos</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fracerr</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># If any zerolag triggers that are louder than the max bin, put one</span>
+    <span class="c1"># fictitious count in a bin that extends from the limits of the slide triggers</span>
+    <span class="c1"># out to the loudest trigger.</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">trigs</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bins</span><span class="p">)):</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">N</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bins</span><span class="p">):</span>
+            <span class="c1"># For a trigger louder than the max bin, put one fictitious count in</span>
+            <span class="c1"># a bin that extends from the limits of the slide triggers out to the</span>
+            <span class="c1"># loudest trigger.  Fractional error is 100%</span>
+            <span class="n">log_rhos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span> <span class="o">-</span> <span class="n">bins</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">fracerr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="c1"># If there are no counts for a foreground trigger put a fictitious</span>
+            <span class="c1"># count in the background bin</span>
+            <span class="k">if</span> <span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">log_rhos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                            <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+            <span class="n">fracerr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">log_rhos</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fracerr</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log_rho_fg_analytic">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.log_rho_fg_analytic">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_rho_fg_analytic</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">):</span>
+    <span class="c1"># PDF of a rho^-4 distribution defined above the threshold rhomin</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">3.</span><span class="p">)</span> <span class="o">+</span> <span class="mf">3.</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rhomin</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log_rho_fg">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.log_rho_fg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_rho_fg</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="n">injstats</span><span class="p">,</span> <span class="n">bins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    trigs: zerolag event statistic values</span>
+<span class="sd">    injstats: injection event statistic values</span>
+<span class="sd">    bins: histogram bins</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    log of signal PDF at the zerolag statistic values,</span>
+<span class="sd">    fractional uncertainty from Poisson count</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trigs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># corner case</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+    <span class="c1"># allow &#39;very loud&#39; triggers</span>
+    <span class="n">bmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">bmax</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Replacing stat values lying above highest bin&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">bmax</span><span class="p">))</span>
+        <span class="n">trigs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">trigs</span> <span class="o">&gt;=</span> <span class="n">bmax</span><span class="p">,</span> <span class="n">bmax</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">trigs</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>  <span class="c1"># check it worked</span>
+
+    <span class="n">counts</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">injstats</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+    <span class="n">dens</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="n">fracerr</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">**</span> <span class="o">-</span><span class="mf">0.5</span>
+
+    <span class="n">tinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">trigs</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dens</span><span class="p">[</span><span class="n">tinds</span><span class="p">]),</span> <span class="n">fracerr</span><span class="p">[</span><span class="n">tinds</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_start_dur">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.get_start_dur">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_start_dur</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>  <span class="c1"># remove directory path</span>
+    <span class="c1"># file name is IFOS-DESCRIPTION-START-DURATION.type</span>
+    <span class="n">pieces</span> <span class="o">=</span> <span class="n">fname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pieces</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">pieces</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="in_coinc_time_incl">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.in_coinc_time_incl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">in_coinc_time_incl</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">cstring</span><span class="p">,</span> <span class="n">test_times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; filter to all times where coincs of type given by cstring exist</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">in_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">test_times</span><span class="p">))</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;segments/</span><span class="si">%s</span><span class="s1">/start&#39;</span> <span class="o">%</span> <span class="n">cstring</span><span class="p">][:])</span>
+    <span class="n">ends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s1">&#39;segments/</span><span class="si">%s</span><span class="s1">/end&#39;</span> <span class="o">%</span> <span class="n">cstring</span><span class="p">][:])</span>
+    <span class="n">idx_within_segment</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">indices_within_times</span><span class="p">(</span><span class="n">test_times</span><span class="p">,</span> <span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">)</span>
+    <span class="n">in_time</span><span class="p">[</span><span class="n">idx_within_segment</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">idx_within_segment</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">in_time</span></div>
+
+
+
+<span class="c1"># what to change for more/fewer ifos</span>
+<span class="n">_ifoset</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">,</span> <span class="s1">&#39;V1&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># all combinations of ifos with length mincount or more</span>
+<span class="c1"># each returned as a tuple in same order as ifos</span>
+<div class="viewcode-block" id="alltimes">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.alltimes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">alltimes</span><span class="p">(</span><span class="n">ifos</span><span class="p">,</span> <span class="n">mincount</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">mincount</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ifos</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>  <span class="c1"># can&#39;t work with duplicates</span>
+    <span class="k">return</span> <span class="n">it_chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">it_comb</span><span class="p">(</span><span class="n">ifos</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span>
+                                  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mincount</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+
+<span class="n">_alltimes</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">alltimes</span><span class="p">(</span><span class="n">_ifoset</span><span class="p">,</span> <span class="n">mincount</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">_alltimestring</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_alltimes</span><span class="p">])</span>
+<span class="n">_allctimes</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">alltimes</span><span class="p">(</span><span class="n">_ifoset</span><span class="p">,</span> <span class="n">mincount</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="ifos_from_combo">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.ifos_from_combo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ifos_from_combo</span><span class="p">(</span><span class="n">ct</span><span class="p">):</span>
+    <span class="c1"># extract ifos in alphabetical order from a coinc time string</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">ct</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ct</span><span class="p">),</span> <span class="mi">2</span><span class="p">)])</span></div>
+
+
+
+<div class="viewcode-block" id="type_in_time">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.type_in_time">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">type_in_time</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">):</span>
+    <span class="c1"># returns True if the given coinc type can exist in the coinc time ct</span>
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="n">ct</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cty</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="EventRate">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EventRate</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_param</span><span class="o">=</span><span class="s1">&#39;mchirp&#39;</span><span class="p">,</span>
+                 <span class="n">bin_lo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        coinc_times: iterable of strings indicating combinations of ifos operating</span>
+<span class="sd">        coinc_types: list of strings indicating coinc event types to be considered</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># allow for single-ifo time although not supported in pipeline yet</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s1">&#39;min_ifos&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mincount</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">min_ifos</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mincount</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s1">&#39;network&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">network</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_ifoset</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ifos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">network</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ifos</span> <span class="o">=</span> <span class="n">_ifoset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allctimes</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">alltimes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">mincount</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mincount</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimes</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="n">coinc_times</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">ct</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctimes</span> <span class="o">=</span> <span class="n">coinc_times</span>
+
+        <span class="k">if</span> <span class="n">coinc_types</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># all types possible during given times</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># any coinc type must also be a time (?)</span>
+            <span class="k">for</span> <span class="n">ty</span> <span class="ow">in</span> <span class="n">coinc_types</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">ty</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">allctimes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">coinc_types</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Using&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">,</span> <span class="s1">&#39;coincs in&#39;</span><span class="p">,</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">,</span> <span class="s1">&#39;times&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">stat_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_param</span> <span class="o">=</span> <span class="n">bin_param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lo</span> <span class="o">=</span> <span class="n">bin_lo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hi</span> <span class="o">=</span> <span class="n">bin_hi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bank</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">massspins</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tpars</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tmplt_filter</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incl_livetimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">livetimes</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="EventRate.add_bank">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.add_bank">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_bank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bank</span> <span class="o">=</span> <span class="n">bank_file</span>
+        <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bank</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+            <span class="n">tids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:]))</span>
+            <span class="c1"># tuples of m1, m2, s1z, s2z in template id order</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">massspins</span> <span class="o">=</span> <span class="n">triggers</span><span class="o">.</span><span class="n">get_mass_spin</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">tids</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EventRate.filter_templates">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.filter_templates">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_templates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        calculate array of Booleans in template id order to filter events</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">massspins</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">lo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">hi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Cutting on </span><span class="si">%s</span><span class="s1"> between </span><span class="si">%f</span><span class="s1"> - </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span>
+                  <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_param</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hi</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tpars</span> <span class="o">=</span> <span class="n">triggers</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_param</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">massspins</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span> <span class="o">=</span> <span class="n">filter_bin_lo_hi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tpars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hi</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EventRate.make_bins">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.make_bins">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxval</span><span class="p">,</span> <span class="n">choice</span><span class="o">=</span><span class="s1">&#39;bg&#39;</span><span class="p">):</span>
+        <span class="c1"># allow options to be strings describing bin formulae as well as floats?</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">linbw</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">choice</span> <span class="o">+</span> <span class="s1">&#39;_bin_width&#39;</span><span class="p">)</span>
+            <span class="n">logbw</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">choice</span> <span class="o">+</span> <span class="s1">&#39;_log_bin_width&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">linbw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">maxval</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">linbw</span><span class="p">))</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thr</span> <span class="o">-</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="n">maxval</span><span class="p">,</span> <span class="n">n_bins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">logbw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">maxval</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">logbw</span><span class="p">))</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">maxval</span><span class="p">),</span>
+                               <span class="n">n_bins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t make bins without a </span><span class="si">%s</span><span class="s2"> bin width option!&quot;</span>
+                               <span class="o">%</span> <span class="n">choice</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n_bins</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">choice</span> <span class="o">+</span> <span class="s1">&#39; stat bins&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bins</span></div>
+
+
+<div class="viewcode-block" id="EventRate.get_ctypes">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.get_ctypes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ctypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tdict</span><span class="p">):</span>
+        <span class="c1"># tdict is a ifo -&gt; trigger time dictionary</span>
+        <span class="n">ifotimes</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">tdict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifos</span><span class="p">])</span>
+        <span class="n">cty</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">ifotimes</span><span class="p">:</span>
+            <span class="c1"># if an ifo doesn&#39;t participate, time is sentinel value -1</span>
+            <span class="n">cty</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="c1"># return is array of coinc types strings</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cty</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EventRate.moreifotimes">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.moreifotimes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moreifotimes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctstring</span><span class="p">):</span>
+        <span class="c1"># get list of coinc times with more ifos than ctstring</span>
+        <span class="n">allctime_moreifos</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span> <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span> <span class="k">if</span>
+                             <span class="nb">len</span><span class="p">(</span><span class="n">ct</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">ctstring</span><span class="p">)]</span>
+        <span class="c1"># only return those when at least the same ifos are operating</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ifos</span> <span class="o">=</span> <span class="n">ifos_from_combo</span><span class="p">(</span><span class="n">ctstring</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">allctime_moreifos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">i</span> <span class="ow">in</span> <span class="n">act</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">):</span>
+                <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="EventRate.in_coinc_time_excl">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.in_coinc_time_excl">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">in_coinc_time_excl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">cstring</span><span class="p">,</span> <span class="n">test_times</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; filter to all times where exactly the ifos in cstring are observing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cstring</span><span class="p">)</span> <span class="o">==</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">):</span>
+            <span class="c1"># ctime string already uniquely specifies time</span>
+            <span class="k">return</span> <span class="n">in_coinc_time_incl</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">cstring</span><span class="p">,</span> <span class="n">test_times</span><span class="p">)</span>
+        <span class="n">in_time</span> <span class="o">=</span> <span class="n">in_coinc_time_incl</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">cstring</span><span class="p">,</span> <span class="n">test_times</span><span class="p">)</span>
+        <span class="c1"># if &#39;more-ifo&#39; coinc times exist, exclude them</span>
+        <span class="k">for</span> <span class="n">combo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">moreifotimes</span><span class="p">(</span><span class="n">cstring</span><span class="p">):</span>
+            <span class="n">in_moreifo_time</span> <span class="o">=</span> <span class="n">in_coinc_time_incl</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">combo</span><span class="p">,</span> <span class="n">test_times</span><span class="p">)</span>
+            <span class="c1"># subtract one if in more-ifo time</span>
+            <span class="n">in_time</span> <span class="o">-=</span> <span class="n">in_moreifo_time</span>
+        <span class="c1"># if subtraction yields anything other than 1, set to 0</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="n">in_time</span><span class="p">,</span> <span class="n">in_time</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">in_time</span></div>
+
+
+<div class="viewcode-block" id="EventRate.get_livetimes">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.EventRate.get_livetimes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_livetimes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fi</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">fi</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctimes</span><span class="p">:</span>
+                <span class="c1"># &#39;inclusive&#39; time when at least the ifos specified by ct are on</span>
+                <span class="n">fgt</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">ct</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;foreground_time&#39;</span><span class="p">])</span>
+                <span class="c1"># index dict on chunk start time / coinc type</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">incl_livetimes</span><span class="p">[(</span><span class="n">get_start_dur</span><span class="p">(</span><span class="n">fi</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ct</span><span class="p">)]</span> <span class="o">=</span> <span class="n">fgt</span>
+                <span class="c1"># subtract times during which 1 more ifo was on,</span>
+                <span class="c1"># ie subtract H1L1* time from H1L1; subtract H1* time from H1; etc</span>
+                <span class="k">for</span> <span class="n">combo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">moreifotimes</span><span class="p">(</span><span class="n">ct</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">combo</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ct</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">fgt</span> <span class="o">-=</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">combo</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;foreground_time&#39;</span><span class="p">])</span>
+                <span class="c1"># index dict on chunk start time / coinc time</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">livetimes</span><span class="p">[(</span><span class="n">get_start_dur</span><span class="p">(</span><span class="n">fi</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ct</span><span class="p">)]</span> <span class="o">=</span> <span class="n">fgt</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ForegroundEvents">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.ForegroundEvents">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ForegroundEvents</span><span class="p">(</span><span class="n">EventRate</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_param</span><span class="o">=</span><span class="s1">&#39;mchirp&#39;</span><span class="p">,</span>
+                 <span class="n">bin_lo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">EventRate</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="n">coinc_types</span><span class="p">,</span>
+                           <span class="n">bin_param</span><span class="o">=</span><span class="n">bin_param</span><span class="p">,</span> <span class="n">bin_lo</span><span class="o">=</span><span class="n">bin_lo</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="n">bin_hi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">stat_threshold</span>
+        <span class="c1"># set of arrays in parallel containing zerolag event properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starttimes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">masspars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># allow unequal length strings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sg_pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+<div class="viewcode-block" id="ForegroundEvents.add_zerolag">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.ForegroundEvents.add_zerolag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_zerolag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_file</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">get_start_dur</span><span class="p">(</span><span class="n">full_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starttimes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">full_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># get stat values &amp; threshold</span>
+            <span class="n">_stats</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/stat&#39;</span><span class="p">][:]</span>
+            <span class="n">_keepstat</span> <span class="o">=</span> <span class="n">_stats</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thr</span>
+
+            <span class="c1"># get templates &amp; apply filter</span>
+            <span class="n">_tids</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/template_id&#39;</span><span class="p">][:]</span>
+            <span class="c1"># we need the template filter to have already been made</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">_keepstat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span><span class="p">[</span><span class="n">_tids</span><span class="p">])</span>
+            <span class="n">massp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tpars</span><span class="p">[</span><span class="n">_tids</span><span class="p">][</span><span class="n">_keep</span><span class="p">]</span>  <span class="c1"># filtered template params</span>
+
+            <span class="c1"># assign times and coinc types</span>
+            <span class="n">_times</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+                <span class="n">_times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/&#39;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s1">&#39;/time&#39;</span><span class="p">][:][</span><span class="n">_keep</span><span class="p">]</span>
+            <span class="c1"># if an ifo doesn&#39;t participate, time is sentinel value -1</span>
+            <span class="c1"># event time is mean of remaining positive GPS times</span>
+            <span class="n">meantimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coinc_meanigz</span><span class="p">(</span><span class="n">ts</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                                  <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">_times</span><span class="o">.</span><span class="n">values</span><span class="p">())])</span>
+            <span class="n">_ctype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ctypes</span><span class="p">(</span><span class="n">_times</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_ctype</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No events in &#39;</span> <span class="o">+</span> <span class="n">start</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="c1"># filter events</span>
+            <span class="n">in_ctypes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span> <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="n">_ctype</span><span class="p">])</span>
+            <span class="n">meantimes</span> <span class="o">=</span> <span class="n">meantimes</span><span class="p">[</span><span class="n">in_ctypes</span><span class="p">]</span>
+            <span class="c1"># get coinc time as strings</span>
+            <span class="c1"># (strings may have different lengths)</span>
+            <span class="n">_ctime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">meantimes</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">:</span>
+                <span class="n">intime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_coinc_time_excl</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">ct</span><span class="p">,</span> <span class="n">meantimes</span><span class="p">)</span>
+                <span class="n">_ctime</span><span class="p">[</span><span class="n">intime</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ct</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Got </span><span class="si">%i</span><span class="s1"> events in </span><span class="si">%s</span><span class="s1"> time&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_ctime</span><span class="p">[</span><span class="n">intime</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">ct</span><span class="p">))</span>
+            <span class="c1"># store</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span> <span class="n">_stats</span><span class="p">[</span><span class="n">_keep</span><span class="p">][</span><span class="n">in_ctypes</span><span class="p">])</span>
+            <span class="k">try</span><span class="p">:</span>  <span class="c1"># injection analyses only have &#39;ifar_exc&#39;, not &#39;ifar&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifar</span><span class="p">,</span>
+                                     <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/ifar&#39;</span><span class="p">][:][</span><span class="n">_keep</span><span class="p">][</span><span class="n">in_ctypes</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifar</span><span class="p">,</span>
+                                 <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/ifar_exc&#39;</span><span class="p">][:][</span><span class="n">_keep</span><span class="p">][</span><span class="n">in_ctypes</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gpst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpst</span><span class="p">,</span> <span class="n">meantimes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">masspars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">masspars</span><span class="p">,</span> <span class="n">massp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="o">*</span>
+                                   <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">meantimes</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctime</span><span class="p">,</span> <span class="n">_ctime</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctype</span><span class="p">,</span> <span class="n">_ctype</span><span class="p">[</span><span class="n">in_ctypes</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="ForegroundEvents.get_bg_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.ForegroundEvents.get_bg_pdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_bg_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bg_rate</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bg_rate</span><span class="p">,</span> <span class="n">BackgroundEventRate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>  <span class="c1"># initialize</span>
+
+        <span class="c1"># do the calculation by chunk / coinc time / coinc type</span>
+        <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starttimes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">type_in_time</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="n">_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">ctime</span> <span class="o">==</span> <span class="n">ct</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">))</span>
+                    <span class="n">_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">_idx</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">st</span><span class="p">)))</span>
+                    <span class="n">_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">_idx</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_vals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># evaluate bg pdf for specific chunk, coinc time &amp; type</span>
+                    <span class="n">_pdf</span> <span class="o">=</span> <span class="n">bg_rate</span><span class="o">.</span><span class="n">eval_pdf</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">,</span> <span class="n">_vals</span><span class="p">)</span>
+                    <span class="c1"># store</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bg_pdf</span><span class="p">[</span><span class="n">_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pdf</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Found bg PDFs for &#39;</span> <span class="o">+</span> <span class="n">cty</span> <span class="o">+</span> <span class="s1">&#39; coincs from &#39;</span> <span class="o">+</span> <span class="n">st</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ForegroundEvents.get_sg_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.ForegroundEvents.get_sg_pdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_sg_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sg_rate</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sg_rate</span><span class="p">,</span> <span class="n">SignalEventRate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sg_pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starttimes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">type_in_time</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="n">_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">ctime</span> <span class="o">==</span> <span class="n">ct</span><span class="p">),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">))</span>
+                    <span class="n">_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">_idx</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">st</span><span class="p">)))</span>
+                    <span class="n">_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">[</span><span class="n">_idx</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_vals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># norm of PDF is chunk-dependent so need the chunk start time</span>
+                    <span class="n">_pdf</span> <span class="o">=</span> <span class="n">sg_rate</span><span class="o">.</span><span class="n">eval_pdf</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">,</span> <span class="n">_vals</span><span class="p">)</span>
+                    <span class="c1"># store</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sg_pdf</span><span class="p">[</span><span class="n">_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">_pdf</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Found sg PDFs for </span><span class="si">%s</span><span class="s1"> coincs in </span><span class="si">%s</span><span class="s1"> time from </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                              <span class="p">(</span><span class="n">cty</span><span class="p">,</span> <span class="n">ct</span><span class="p">,</span> <span class="n">st</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BackgroundEventRate">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.BackgroundEventRate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BackgroundEventRate</span><span class="p">(</span><span class="n">EventRate</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_param</span><span class="o">=</span><span class="s1">&#39;mchirp&#39;</span><span class="p">,</span>
+                 <span class="n">bin_lo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">EventRate</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="n">coinc_types</span><span class="p">,</span>
+                           <span class="n">bin_param</span><span class="o">=</span><span class="n">bin_param</span><span class="p">,</span> <span class="n">bin_lo</span><span class="o">=</span><span class="n">bin_lo</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="n">bin_hi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">stat_threshold</span>
+        <span class="c1"># BG values in dict indexed on tuple (chunk start, coinc type)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_vals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_dec</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># BG livetimes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_livetimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># BG hist stored as bin heights / edges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_hist</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Expected counts of BG events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_bg</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Total expected BG count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="BackgroundEventRate.add_background">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.BackgroundEventRate.add_background">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_background</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_file</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">get_start_dur</span><span class="p">(</span><span class="n">full_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_livetimes</span><span class="p">(</span><span class="n">full_file</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">full_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ff</span><span class="p">:</span>
+            <span class="c1"># get stat values and threshold</span>
+            <span class="n">_bgstat</span> <span class="o">=</span> <span class="n">ff</span><span class="p">[</span><span class="s1">&#39;background_exc/stat&#39;</span><span class="p">][:]</span>
+            <span class="n">_keepstat</span> <span class="o">=</span> <span class="n">_bgstat</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thr</span>
+
+            <span class="c1"># get template ids and filter</span>
+            <span class="n">_bgtid</span> <span class="o">=</span> <span class="n">ff</span><span class="p">[</span><span class="s1">&#39;background_exc/template_id&#39;</span><span class="p">][:]</span>
+            <span class="c1"># need the template filter to have already been made</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">_keepstat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span><span class="p">[</span><span class="n">_bgtid</span><span class="p">])</span>
+            <span class="n">_bgstat</span> <span class="o">=</span> <span class="n">_bgstat</span><span class="p">[</span><span class="n">_keep</span><span class="p">]</span>
+            <span class="n">_bgdec</span> <span class="o">=</span> <span class="n">ff</span><span class="p">[</span><span class="s1">&#39;background_exc/decimation_factor&#39;</span><span class="p">][:][</span><span class="n">_keep</span><span class="p">]</span>
+
+            <span class="c1"># assign coinc types</span>
+            <span class="n">_times</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+                <span class="c1"># NB times are time-shifted between ifos</span>
+                <span class="n">_times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ff</span><span class="p">[</span><span class="s1">&#39;background_exc/&#39;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s1">&#39;/time&#39;</span><span class="p">][:][</span><span class="n">_keep</span><span class="p">]</span>
+            <span class="n">_ctype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ctypes</span><span class="p">(</span><span class="n">_times</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bg_vals</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> <span class="n">_bgstat</span><span class="p">[</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bg_dec</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> <span class="n">_bgdec</span><span class="p">[</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">]</span>
+                <span class="c1"># get bg livetime for noise rate estimate</span>
+                <span class="c1"># - convert to years</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bg_livetimes</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span>
+                                          <span class="n">ff</span><span class="p">[</span><span class="n">cty</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;background_time_exc&#39;</span><span class="p">])</span>
+
+                <span class="c1"># make histogram</span>
+                <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_bins</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_bgstat</span><span class="p">[</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">]),</span> <span class="s1">&#39;bg&#39;</span><span class="p">)</span>
+                <span class="c1"># hack to make larger bins for H1L1V1</span>
+                <span class="k">if</span> <span class="n">cty</span> <span class="o">==</span> <span class="s1">&#39;H1L1V1&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Halving bg bins for triple bg hist&#39;</span><span class="p">)</span>
+                    <span class="n">bins</span> <span class="o">=</span> <span class="n">bins</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># take every 2nd bin edge</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bg_hist</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> \
+                      <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">_bgstat</span><span class="p">[</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">],</span>
+                                   <span class="n">weights</span><span class="o">=</span><span class="n">_bgdec</span><span class="p">[</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
+                <span class="c1"># get expected number of bg events for this chunk and coinc type</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exp_bg</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> <span class="n">_bgdec</span><span class="p">[</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">*</span> \
+                      <span class="bp">self</span><span class="o">.</span><span class="n">incl_livetimes</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">/</span> \
+                      <span class="bp">self</span><span class="o">.</span><span class="n">bg_livetimes</span><span class="p">[(</span><span class="n">start</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="BackgroundEventRate.plot_bg">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.BackgroundEventRate.plot_bg">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_bg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+        <span class="k">for</span> <span class="n">chunk_type</span><span class="p">,</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_hist</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plotting&#39;</span><span class="p">,</span> <span class="n">chunk_type</span><span class="p">,</span> <span class="s1">&#39;background PDF ...&#39;</span><span class="p">)</span>
+            <span class="n">xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plot_max_stat</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+            <span class="n">heights</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">logpdf</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">log_rho_bg</span><span class="p">(</span><span class="n">xplot</span><span class="p">,</span> <span class="n">heights</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xplot</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logpdf</span><span class="p">))</span>
+            <span class="c1"># plot error bars at bin centres</span>
+            <span class="n">lpdf</span><span class="p">,</span> <span class="n">fracerr</span> <span class="o">=</span> <span class="n">log_rho_bg</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">heights</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lpdf</span><span class="p">),</span>
+                         <span class="n">yerr</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lpdf</span><span class="p">)</span> <span class="o">*</span> <span class="n">fracerr</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">semilogy</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xmax</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plot_max_stat</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="mf">0.7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logpdf</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Ranking statistic&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Background PDF&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plot_dir</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-bg_pdf-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="n">chunk_type</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">chunk_type</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BackgroundEventRate.get_norms">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.BackgroundEventRate.get_norms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_norms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_bg</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">+=</span> <span class="n">count</span></div>
+
+
+<div class="viewcode-block" id="BackgroundEventRate.eval_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.BackgroundEventRate.eval_pdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">ctime</span><span class="p">,</span> <span class="n">ctype</span><span class="p">,</span> <span class="n">statvals</span><span class="p">):</span>
+        <span class="c1"># given statistic values all in the same data chunk and coinc type,</span>
+        <span class="c1"># evaluate the background pdf normalized over all chunks &amp; types</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">chunk_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">ctype</span><span class="p">)</span>
+        <span class="c1"># fraction of expected noise events in given chunk &amp; coinc type</span>
+        <span class="n">frac_chunk_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_bg</span><span class="p">[</span><span class="n">chunk_type</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span>
+        <span class="c1"># fraction of inj in specified chunk, coinc type *and* time</span>
+        <span class="n">frac_in_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">livetimes</span><span class="p">[(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">ctime</span><span class="p">)]</span> <span class="o">/</span>\
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">incl_livetimes</span><span class="p">[</span><span class="n">chunk_type</span><span class="p">]</span>
+        <span class="c1"># unpack heights / bins from bg hist object</span>
+        <span class="n">local_pdfs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">log_rho_bg</span><span class="p">(</span><span class="n">statvals</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">bg_hist</span><span class="p">[</span><span class="n">chunk_type</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">local_pdfs</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">frac_chunk_type</span> <span class="o">*</span> <span class="n">frac_in_time</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SignalEventRate">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.SignalEventRate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SignalEventRate</span><span class="p">(</span><span class="n">EventRate</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_param</span><span class="o">=</span><span class="s1">&#39;mchirp&#39;</span><span class="p">,</span>
+                 <span class="n">bin_lo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">EventRate</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">coinc_types</span><span class="o">=</span><span class="n">coinc_types</span><span class="p">,</span>
+                           <span class="n">bin_param</span><span class="o">=</span><span class="n">bin_param</span><span class="p">,</span> <span class="n">bin_lo</span><span class="o">=</span><span class="n">bin_lo</span><span class="p">,</span> <span class="n">bin_hi</span><span class="o">=</span><span class="n">bin_hi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">stat_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># bookkeeping</span>
+        <span class="c1"># for the moment roll all inj chunks together</span>
+        <span class="c1"># but sort both by coinc time and coinc type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># dict indexed on tuple (coinc time, coinc type)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fg_bins</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="SignalEventRate.add_injections">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.SignalEventRate.add_injections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_injections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">fg_file</span><span class="p">):</span>
+        <span class="c1"># fg_file only needed for coinc time info :/</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">get_start_dur</span><span class="p">(</span><span class="n">inj_file</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_livetimes</span><span class="p">(</span><span class="n">inj_file</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">inj_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">jf</span><span class="p">:</span>
+            <span class="c1"># get stat values and threshold</span>
+            <span class="n">_injstat</span> <span class="o">=</span> <span class="n">jf</span><span class="p">[</span><span class="s1">&#39;found_after_vetoes/stat&#39;</span><span class="p">][:]</span>
+            <span class="n">_keepstat</span> <span class="o">=</span> <span class="n">_injstat</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thr</span>
+
+            <span class="c1"># get template ids and filter</span>
+            <span class="n">_injtid</span> <span class="o">=</span> <span class="n">jf</span><span class="p">[</span><span class="s1">&#39;found_after_vetoes/template_id&#39;</span><span class="p">][:]</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">_keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">_keepstat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_bin</span><span class="p">[</span><span class="n">_injtid</span><span class="p">])</span>
+            <span class="n">_injstat</span> <span class="o">=</span> <span class="n">_injstat</span><span class="p">[</span><span class="n">_keep</span><span class="p">]</span>
+
+            <span class="c1"># assign coinc types</span>
+            <span class="n">_times</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+                <span class="n">_times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">jf</span><span class="p">[</span><span class="s1">&#39;found_after_vetoes/&#39;</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="s1">&#39;/time&#39;</span><span class="p">][:][</span><span class="n">_keep</span><span class="p">]</span>
+            <span class="n">meantimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">coinc_meanigz</span><span class="p">(</span><span class="n">ts</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                                  <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">_times</span><span class="o">.</span><span class="n">values</span><span class="p">())])</span>
+            <span class="n">_ctype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ctypes</span><span class="p">(</span><span class="n">_times</span><span class="p">)</span>
+            <span class="c1"># get coinc time as strings</span>
+            <span class="c1"># (strings may have different lengths)</span>
+            <span class="n">_ctime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">meantimes</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">:</span>
+                <span class="c1"># get coinc time info from segments in fg file</span>
+                <span class="n">intime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_coinc_time_excl</span><span class="p">(</span>
+                                        <span class="n">HFile</span><span class="p">(</span><span class="n">fg_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">),</span> <span class="n">ct</span><span class="p">,</span> <span class="n">meantimes</span><span class="p">)</span>
+                <span class="n">_ctime</span><span class="p">[</span><span class="n">intime</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ct</span>  <span class="c1"># do we need this?</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Got </span><span class="si">%i</span><span class="s1"> &#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">intime</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;inj in </span><span class="si">%s</span><span class="s1"> time&#39;</span> <span class="o">%</span> <span class="n">ct</span><span class="p">)</span>
+                <span class="c1"># filter by coinc type and add to array</span>
+                <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">type_in_time</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="n">my_vals</span> <span class="o">=</span> <span class="n">_injstat</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">_ctype</span> <span class="o">==</span> <span class="n">cty</span><span class="p">,</span> <span class="n">intime</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%d</span><span class="s1"> &#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">my_vals</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;are </span><span class="si">%s</span><span class="s1"> coincs&#39;</span> <span class="o">%</span> <span class="n">cty</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">:</span>  <span class="c1"># initialize</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">my_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> \
+                                  <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)],</span> <span class="n">my_vals</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">intime</span><span class="p">,</span> <span class="n">my_vals</span></div>
+
+
+<div class="viewcode-block" id="SignalEventRate.make_all_bins">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.SignalEventRate.make_all_bins">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_all_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">type_in_time</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span>
+                <span class="c1"># get norm of fg histogram by taking bins out to max injection stat</span>
+                <span class="n">binmax</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.01</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fg_bins</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_bins</span><span class="p">(</span><span class="n">binmax</span><span class="p">,</span> <span class="s1">&#39;inj&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SignalEventRate.plot_inj">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.SignalEventRate.plot_inj">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_inj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+        <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allctimestring</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">cty</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coinc_types</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">type_in_time</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Plotting &#39;</span> <span class="o">+</span> <span class="n">cty</span> <span class="o">+</span> <span class="s1">&#39; signal PDF in &#39;</span> <span class="o">+</span> <span class="n">ct</span> <span class="o">+</span> <span class="s1">&#39; time ...&#39;</span><span class="p">)</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span>
+                <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fg_bins</span><span class="p">[(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)]</span>
+                <span class="n">xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="p">),</span>
+                                    <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span> <span class="mi">500</span><span class="p">)</span>
+                <span class="n">logpdf</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">log_rho_fg</span><span class="p">(</span><span class="n">xplot</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xplot</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logpdf</span><span class="p">))</span>
+                <span class="c1"># plot error bars at bin centres</span>
+                <span class="n">lpdf</span><span class="p">,</span> <span class="n">fracerr</span> <span class="o">=</span> <span class="n">log_rho_fg</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span>
+                                           <span class="n">samples</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lpdf</span><span class="p">),</span>
+                             <span class="n">yerr</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">lpdf</span><span class="p">)</span> <span class="o">*</span> <span class="n">fracerr</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">semilogy</span><span class="p">()</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># zoom in on the &#39;interesting&#39; range</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">thr</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mf">2.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plot_max_stat</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="mf">0.7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logpdf</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="si">%i</span><span class="s1"> injs plotted, \# of bins </span><span class="si">%i</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                                <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Ranking statistic&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Signal PDF&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plot_dir</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">-fg_pdf-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">cty</span><span class="p">)</span>
+                            <span class="o">+</span> <span class="s1">&#39;.png&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SignalEventRate.get_norms">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.SignalEventRate.get_norms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_norms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="c1"># injections don&#39;t have weights/decimation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SignalEventRate.eval_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_functions.SignalEventRate.eval_pdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">ctime</span><span class="p">,</span> <span class="n">ctype</span><span class="p">,</span> <span class="n">statvals</span><span class="p">):</span>
+        <span class="c1"># given statistic values in the same chunk, coinc time and coinc type,</span>
+        <span class="c1"># evaluate the signal pdf normalized over all chunks, times and types</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">time_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">ctime</span><span class="p">,</span> <span class="n">ctype</span><span class="p">)</span>
+        <span class="c1"># fraction of inj in specified coinc time and type</span>
+        <span class="n">frac_time_type</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[</span><span class="n">time_type</span><span class="p">]))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span>
+        <span class="c1"># total livetime for specified coinc time</span>
+        <span class="n">total_coinc_time</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">livetimes</span><span class="p">[(</span><span class="n">ch</span><span class="p">,</span> <span class="n">ctime</span><span class="p">)]</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">starts</span><span class="p">])</span>
+        <span class="c1"># fraction of inj in specified chunk *and* coinc time/type</span>
+        <span class="n">this_norm</span> <span class="o">=</span> <span class="n">frac_time_type</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">livetimes</span><span class="p">[(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">ctime</span><span class="p">)]</span> <span class="o">/</span> \
+                                   <span class="n">total_coinc_time</span>
+        <span class="n">local_pdfs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">log_rho_fg</span><span class="p">(</span><span class="n">statvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_vals</span><span class="p">[</span><span class="n">time_type</span><span class="p">],</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">fg_bins</span><span class="p">[</span><span class="n">time_type</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">local_pdfs</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">this_norm</span><span class="p">)</span></div>
+</div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;filter_bin_lo_hi&#39;</span><span class="p">,</span> <span class="s1">&#39;filter_tmplt_mchirp&#39;</span><span class="p">,</span> <span class="s1">&#39;read_full_data&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;read_full_data_mchirp&#39;</span><span class="p">,</span> <span class="s1">&#39;log_rho_bg&#39;</span><span class="p">,</span> <span class="s1">&#39;log_rho_fg_analytic&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;log_rho_fg&#39;</span><span class="p">,</span> <span class="s1">&#39;get_start_dur&#39;</span><span class="p">,</span> <span class="s1">&#39;in_coinc_time_incl&#39;</span><span class="p">,</span> <span class="s1">&#39;alltimes&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;ifos_from_combo&#39;</span><span class="p">,</span> <span class="s1">&#39;type_in_time&#39;</span><span class="p">,</span> <span class="s1">&#39;EventRate&#39;</span><span class="p">,</span> <span class="s1">&#39;ForegroundEvents&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;BackgroundEventRate&#39;</span><span class="p">,</span> <span class="s1">&#39;SignalEventRate&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

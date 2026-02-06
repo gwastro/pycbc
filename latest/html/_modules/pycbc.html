@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pycbc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz, Josh Willis</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;PyCBC contains a toolkit for CBC gravitational wave analysis</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">signal</span><span class="o">,</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="c1"># Filter annoying Cython warnings that serve no good purpose.</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;numpy.dtype size changed&quot;</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;numpy.ufunc size changed&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.util</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.machinery</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span> <span class="k">as</span> <span class="n">dt</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># This will fail when pycbc is imported during the build process,</span>
+    <span class="c1"># before version.py has been generated.</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">git_hash</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span> <span class="k">as</span> <span class="n">pycbc_version</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">PyCBCVersionAction</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">git_hash</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+    <span class="n">pycbc_version</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+    <span class="n">PyCBCVersionAction</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">__version__</span> <span class="o">=</span> <span class="n">pycbc_version</span>
+
+
+<div class="viewcode-block" id="LogFormatter">
+<a class="viewcode-back" href="../pycbc.html#pycbc.LogFormatter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Format the logging appropriately</span>
+<span class="sd">    This will return the log time in the ISO 6801 standard,</span>
+<span class="sd">    but with millisecond precision</span>
+<span class="sd">    https://en.wikipedia.org/wiki/ISO_8601</span>
+<span class="sd">    e.g. 2022-11-18T09:53:01.554+00:00</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">converter</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">fromtimestamp</span>
+
+<div class="viewcode-block" id="LogFormatter.formatTime">
+<a class="viewcode-back" href="../pycbc.html#pycbc.LogFormatter.formatTime">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">formatTime</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">ct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">converter</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">created</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">()</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S&quot;</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">msecs</span><span class="p">)</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">timezone</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%z&#39;</span><span class="p">)</span>
+        <span class="n">timezone_colon</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">timezone</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">timezone</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="n">timezone_colon</span>
+        <span class="k">return</span> <span class="n">s</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="add_common_pycbc_options">
+<a class="viewcode-back" href="../pycbc.html#pycbc.add_common_pycbc_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_common_pycbc_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Common utility to add standard options to each PyCBC executable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : argparse.ArgumentParser</span>
+<span class="sd">        The argument parser to which the options will be added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;PyCBC common options&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Common options for PyCBC executables.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;-v&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--verbose&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="p">(</span>
+            <span class="s1">&#39;Add verbosity to logging. Adding the option &#39;</span>
+            <span class="s1">&#39;multiple times makes logging progressively &#39;</span>
+            <span class="s1">&#39;more verbose, e.g. --verbose or -v provides &#39;</span>
+            <span class="s1">&#39;logging at the info level, but -vv or &#39;</span>
+            <span class="s1">&#39;--verbose --verbose provides debug logging.&#39;</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--version&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="n">PyCBCVersionAction</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="init_logging">
+<a class="viewcode-back" href="../pycbc.html#pycbc.init_logging">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">init_logging</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">default_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">to_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1"> : </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Common utility for setting up logging in PyCBC.</span>
+
+<span class="sd">    Installs a signal handler such that verbosity can be activated at</span>
+<span class="sd">    run-time by sending a SIGUSR1 to the process.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    verbose : bool or int, optional</span>
+<span class="sd">        What level to set the verbosity level to. Accepts either a boolean</span>
+<span class="sd">        or an integer representing the level to set. If True/False will set to</span>
+<span class="sd">        ``logging.INFO``/``logging.WARN``. For higher logging levels, pass</span>
+<span class="sd">        an integer representing the level to set. (1 = INFO, 2 = DEBUG).</span>
+<span class="sd">    default_level : int, optional</span>
+<span class="sd">        The default level, to be added to any verbose option if it is an</span>
+<span class="sd">        integer, or set to this value if it is None or False</span>
+<span class="sd">    to_file : filepath</span>
+<span class="sd">        Set up logging to a file instead of the stderr. File will be</span>
+<span class="sd">        overwritten if it already exists.</span>
+<span class="sd">    format : str, optional</span>
+<span class="sd">        The format to use for logging messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sig_handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+        <span class="n">log_level</span> <span class="o">=</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span>
+        <span class="k">if</span> <span class="n">log_level</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+            <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARN</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log_level</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Got signal </span><span class="si">%d</span><span class="s1">, setting log level to </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="n">signum</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">log_level</span><span class="p">)</span>
+
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span> <span class="n">sig_handler</span><span class="p">)</span>
+
+    <span class="c1"># See https://docs.python.org/3/library/logging.html#levels</span>
+    <span class="c1"># for log level definitions</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">verbose_int</span> <span class="o">=</span> <span class="n">default_level</span> <span class="k">if</span> <span class="n">verbose</span> <span class="ow">is</span> <span class="kc">None</span> \
+        <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span> <span class="o">+</span> <span class="n">default_level</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span> <span class="o">-</span> <span class="n">verbose_int</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># Initial setting</span>
+    <span class="k">if</span> <span class="n">to_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">to_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+    <span class="n">handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">LogFormatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="nb">format</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="makedir">
+<a class="viewcode-back" href="../pycbc.html#pycbc.makedir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">makedir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make the analysis directory path and any parent directories that don&#39;t</span>
+<span class="sd">    already exist. Will do nothing if path already exists.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># PyCBC-Specific Constants</span>
+
+<span class="c1"># Set the value we want any aligned memory calls to use</span>
+<span class="c1"># N.B.: *Not* all pycbc memory will be aligned to multiples</span>
+<span class="c1"># of this value</span>
+
+<span class="n">PYCBC_ALIGNMENT</span> <span class="o">=</span> <span class="mi">32</span>
+
+<span class="c1"># Dynamic range factor: a large constant for rescaling</span>
+<span class="c1"># GW strains.  This is 2**69 rounded to 17 sig.fig.</span>
+
+<span class="n">DYN_RANGE_FAC</span> <span class="o">=</span>  <span class="mf">5.9029581035870565e+20</span>
+
+<span class="c1"># String used to separate parameters in configuration file section headers.</span>
+<span class="c1"># This is used by the distributions and transforms modules</span>
+<span class="n">VARARGS_DELIM</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+
+<span class="c1"># Check for optional CUDA support of the PyCBC Package</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1">#check if pycuda is installed</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pycuda.driver</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_pycudadrv</span>
+    <span class="c1">#check how many CUDA device is installed</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_pycudadrv</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="n">device_count</span> <span class="o">=</span> <span class="n">_pycudadrv</span><span class="o">.</span><span class="n">Device</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">device_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1">#Set value to true if there is usable device</span>
+    <span class="n">HAVE_CUDA</span> <span class="o">=</span> <span class="p">(</span><span class="n">device_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">device_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;PyCUDA imported but no CUDA device found; disabling CUDA support&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAVE_CUDA</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Check for MKL capability</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.fft.mkl</span>
+    <span class="n">HAVE_MKL</span><span class="o">=</span><span class="kc">True</span>
+<span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">):</span>
+    <span class="n">HAVE_MKL</span><span class="o">=</span><span class="kc">False</span>
+
+<span class="c1"># Check for openmp suppport, currently we pressume it exists, unless on</span>
+<span class="c1"># platforms (mac) that are silly and don&#39;t use the standard gcc.</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;darwin&#39;</span><span class="p">:</span>
+    <span class="n">HAVE_OMP</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">HAVE_OMP</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># https://pynative.com/python-generate-random-string/</span>
+<div class="viewcode-block" id="random_string">
+<a class="viewcode-back" href="../pycbc.html#pycbc.random_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">random_string</span><span class="p">(</span><span class="n">stringLength</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a random string of fixed length &quot;&quot;&quot;</span>
+    <span class="n">letters</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span>
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">letters</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">stringLength</span><span class="p">))</span></div>
+
+
+
+<span class="c1"># This is needed as a backwards compatibility. The function was removed in</span>
+<span class="c1"># python 3.12.</span>
+<div class="viewcode-block" id="load_source">
+<a class="viewcode-back" href="../pycbc.html#pycbc.load_source">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_source</span><span class="p">(</span><span class="n">modname</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">machinery</span><span class="o">.</span><span class="n">SourceFileLoader</span><span class="p">(</span><span class="n">modname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="n">modname</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span>
+                                                  <span class="n">loader</span><span class="o">=</span><span class="n">loader</span><span class="p">)</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="c1"># The module is always executed and not cached in sys.modules.</span>
+    <span class="c1"># Uncomment the following line to cache the module.</span>
+    <span class="c1"># sys.modules[module.__name__] = module</span>
+    <span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">module</span></div>
+
+
+<span class="c1"># Expose some convenience functions at package level for backwards</span>
+<span class="c1"># compatibility and convenience: allow `pycbc.gps_now()` as well as</span>
+<span class="c1"># `pycbc.time.gps_now()`.</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.time</span><span class="w"> </span><span class="kn">import</span> <span class="n">gps_now</span>  <span class="c1"># noqa: F401</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="c1"># If pycbc imported during build this may fail; silently ignore.</span>
+    <span class="n">gps_now</span> <span class="o">=</span> <span class="kc">None</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

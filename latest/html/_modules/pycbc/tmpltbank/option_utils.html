@@ -1,0 +1,1396 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.option_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.option_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.option_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013 Ian W. Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">textwrap</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank.lambda_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ethinca_orders</span><span class="p">,</span> <span class="n">pycbcValidOrdersHelpDescriptions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">pnutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.neutron_stars</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ns_sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">positive_float</span><span class="p">,</span> <span class="n">nonnegative_float</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.option_utils&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="IndentedHelpFormatterWithNL">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.IndentedHelpFormatterWithNL">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IndentedHelpFormatterWithNL</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class taken from </span>
+<span class="sd">    https://groups.google.com/forum/#!topic/comp.lang.python/bfbmtUGhW8I</span>
+<span class="sd">    and is used to format the argparse help messages to deal with line breaking</span>
+<span class="sd">    nicer. Specfically the pn-order help is large and looks crappy without this.</span>
+<span class="sd">    This function is (C) Tim Chase</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="IndentedHelpFormatterWithNL.format_description">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.IndentedHelpFormatterWithNL.format_description">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        No documentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">description</span><span class="p">:</span> <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">desc_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_indent</span>
+        <span class="n">indent</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">current_indent</span>
+        <span class="c1"># the above is still the same</span>
+        <span class="n">bits</span> <span class="o">=</span> <span class="n">description</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">formatted_bits</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">bit</span><span class="p">,</span>
+                <span class="n">desc_width</span><span class="p">,</span>
+                <span class="n">initial_indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
+                <span class="n">subsequent_indent</span><span class="o">=</span><span class="n">indent</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">bit</span> <span class="ow">in</span> <span class="n">bits</span><span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">formatted_bits</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="IndentedHelpFormatterWithNL.format_option">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.IndentedHelpFormatterWithNL.format_option">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        No documentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The help for each option consists of two parts:</span>
+        <span class="c1">#   * the opt strings and metavars</span>
+        <span class="c1">#   eg. (&quot;-x&quot;, or &quot;-fFILENAME, --file=FILENAME&quot;)</span>
+        <span class="c1">#   * the user-supplied help string</span>
+        <span class="c1">#   eg. (&quot;turn on expert mode&quot;, &quot;read data from FILENAME&quot;)</span>
+        <span class="c1">#</span>
+        <span class="c1"># If possible, we write both of these on the same line:</span>
+        <span class="c1">#   -x    turn on expert mode</span>
+        <span class="c1">#</span>
+        <span class="c1"># But if the opt string list is too long, we put the help</span>
+        <span class="c1"># string on a second line, indented to the same column it would</span>
+        <span class="c1"># start in if it fit on the first line.</span>
+        <span class="c1">#   -fFILENAME, --file=FILENAME</span>
+        <span class="c1">#       read data from FILENAME</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">option_strings</span><span class="p">[</span><span class="n">option</span><span class="p">]</span>
+        <span class="n">opt_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">help_position</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_indent</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">opt_width</span><span class="p">:</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%*s%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_indent</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+            <span class="n">indent_first</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">help_position</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># start help on same line as opts</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%*s%-*s</span><span class="s2">  &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_indent</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">opt_width</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+            <span class="n">indent_first</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">help</span><span class="p">:</span>
+            <span class="n">help_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_default</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+            <span class="c1"># Everything is the same up through here</span>
+            <span class="n">help_lines</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">para</span> <span class="ow">in</span> <span class="n">help_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="n">help_lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">para</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">help_width</span><span class="p">))</span>
+            <span class="c1"># Everything is the same after here</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%*s%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">indent_first</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">help_lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">%*s%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">help_position</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">help_lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]])</span>
+        <span class="k">elif</span> <span class="n">opts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="get_options_from_group">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.get_options_from_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_options_from_group</span><span class="p">(</span><span class="n">option_group</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take an option group and return all the options that are defined in that</span>
+<span class="sd">    group.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">option_list</span> <span class="o">=</span> <span class="n">option_group</span><span class="o">.</span><span class="n">_group_actions</span>
+    <span class="n">command_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">option_list</span><span class="p">:</span>
+        <span class="n">option_strings</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">option_strings</span>
+        <span class="k">for</span> <span class="n">string</span> <span class="ow">in</span> <span class="n">option_strings</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">string</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="p">):</span>
+                <span class="n">command_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">command_lines</span></div>
+
+
+<div class="viewcode-block" id="insert_base_bank_options">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.insert_base_bank_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_base_bank_options</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">match_req</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds essential common options for template bank generation to an</span>
+<span class="sd">    ArgumentParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">match_type</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;must be a number between 0 and 1 excluded, not </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">s</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--min-match&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">match_type</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="n">match_req</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Generate bank with specified minimum match. Required.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s1">&#39;-O&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output file name. Required.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--f-low-column&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;NAME&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;If given, store the lower frequency cutoff into &#39;</span>
+                             <span class="s1">&#39;column NAME of the single-inspiral table. &#39;</span>
+                             <span class="s1">&#39;(Requires an output file ending in .xml)&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-f-final&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Include &#39;f_final&#39; in the output hdf file.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="insert_metric_calculation_options">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.insert_metric_calculation_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_metric_calculation_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to obtain a metric in the bank generation codes to an</span>
+<span class="sd">    argparser as an OptionGroup. This should be used if you want to use these</span>
+<span class="sd">    options in your code.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metricOpts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+                <span class="s2">&quot;Options related to calculating the parameter space metric&quot;</span><span class="p">)</span>
+    <span class="n">metricOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--pn-order&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Determines the PN order to use.  For a bank of &quot;</span>
+                     <span class="s2">&quot;non-spinning templates, spin-related terms in the &quot;</span>
+                     <span class="s2">&quot;metric will be zero.  REQUIRED. &quot;</span>
+                     <span class="s2">&quot;Choices: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">pycbcValidOrdersHelpDescriptions</span><span class="p">))</span>
+    <span class="n">metricOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--f0&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                <span class="n">default</span><span class="o">=</span><span class="mf">70.</span><span class="p">,</span>\
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;f0 is used as a dynamic scaling factor when &quot;</span>
+                     <span class="s2">&quot;calculating integrals used in metric construction.  &quot;</span>
+                     <span class="s2">&quot;I.e. instead of integrating F(f) we integrate F(f/f0) &quot;</span>
+                     <span class="s2">&quot;then rescale by powers of f0.  The default value 70Hz &quot;</span>
+                     <span class="s2">&quot;should be fine for most applications.  OPTIONAL. &quot;</span>
+                     <span class="s2">&quot;UNITS=Hz. **WARNING: If the ethinca metric is to be &quot;</span>
+                     <span class="s2">&quot;calculated, f0 must be set equal to f-low**&quot;</span><span class="p">)</span>
+    <span class="n">metricOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--f-low&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Lower frequency cutoff used in computing the &quot;</span>
+                     <span class="s2">&quot;parameter space metric.  REQUIRED. UNITS=Hz&quot;</span><span class="p">)</span>
+    <span class="n">metricOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--f-upper&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Upper frequency cutoff used in computing the &quot;</span>
+                     <span class="s2">&quot;parameter space metric.  REQUIRED. UNITS=Hz&quot;</span><span class="p">)</span>
+    <span class="n">metricOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--delta-f&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Frequency spacing used in computing the parameter &quot;</span>
+                     <span class="s2">&quot;space metric:  integrals of the form \int F(f) df &quot;</span>
+                     <span class="s2">&quot;are approximated as \sum F(f) delta_f.  REQUIRED. &quot;</span>
+                     <span class="s2">&quot;UNITS=Hz&quot;</span><span class="p">)</span>
+    <span class="n">metricOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--write-metric&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If given write the metric components &quot;</span>
+                     <span class="s2">&quot;to disk as they are calculated.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">metricOpts</span></div>
+
+
+<div class="viewcode-block" id="verify_metric_calculation_options">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.verify_metric_calculation_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_metric_calculation_options</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses the metric calculation options given and verifies that they are</span>
+<span class="sd">    correct.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : argparse.Values instance</span>
+<span class="sd">        Result of parsing the input options with OptionParser</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        The OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">pn_order</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Must supply --pn-order&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="metricParameters">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.metricParameters">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">metricParameters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class holds all of the options that are parsed in the function</span>
+<span class="sd">    insert_metric_calculation_options</span>
+<span class="sd">    and all products produced using these options. It can also be initialized</span>
+<span class="sd">    from the __init__ function, providing directly the options normally</span>
+<span class="sd">    provided on the command line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_psd</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_metric</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_evals</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_evecs</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_evecsCV</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pnOrder</span><span class="p">,</span> <span class="n">fLow</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span> <span class="n">deltaF</span><span class="p">,</span> <span class="n">f0</span><span class="o">=</span><span class="mi">70</span><span class="p">,</span>
+                 <span class="n">write_metric</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of the metricParameters by providing all</span>
+<span class="sd">        options directly. See the help message associated with any code</span>
+<span class="sd">        that uses the metric options for more details of how to set each of</span>
+<span class="sd">        these, e.g. pycbc_aligned_stoch_bank --help</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pnOrder</span><span class="o">=</span><span class="n">pnOrder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fLow</span><span class="o">=</span><span class="n">fLow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fUpper</span><span class="o">=</span><span class="n">fUpper</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">deltaF</span><span class="o">=</span><span class="n">deltaF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f0</span><span class="o">=</span><span class="n">f0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moments</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_metric</span><span class="o">=</span><span class="n">write_metric</span>
+
+<div class="viewcode-block" id="metricParameters.from_argparse">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.metricParameters.from_argparse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_argparse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of the metricParameters class from an</span>
+<span class="sd">        argparse.OptionParser instance. This assumes that</span>
+<span class="sd">        insert_metric_calculation_options</span>
+<span class="sd">        and</span>
+<span class="sd">        verify_metric_calculation_options</span>
+<span class="sd">        have already been called before initializing the class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">pn_order</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">f_low</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">f_upper</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span>\
+                   <span class="n">f0</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">write_metric</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">write_metric</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">psd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A pyCBC FrequencySeries holding the appropriate PSD.</span>
+<span class="sd">        Return the PSD used in the metric calculation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_psd</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;The PSD has not been set in the metricParameters &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;instance.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_psd</span>
+
+    <span class="nd">@psd</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">psd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inPsd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_psd</span> <span class="o">=</span> <span class="n">inPsd</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Moments structure</span>
+<span class="sd">        This contains the result of all the integrals used in computing the</span>
+<span class="sd">        metrics above. It can be used for the ethinca components calculation,</span>
+<span class="sd">        or other similar calculations. This is composed of two compound</span>
+<span class="sd">        dictionaries. The first entry indicates which moment is being</span>
+<span class="sd">        calculated and the second entry indicates the upper frequency cutoff</span>
+<span class="sd">        that was used.</span>
+
+<span class="sd">        In all cases x = f/f0.</span>
+
+<span class="sd">        For the first entries the options are:</span>
+
+<span class="sd">        moments[&#39;J%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of </span>
+<span class="sd">        x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;log%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of </span>
+<span class="sd">        (numpy.log(x**(1./3.))) x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;loglog%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of </span>
+<span class="sd">        (numpy.log(x**(1./3.)))**2 x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;loglog%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of </span>
+<span class="sd">        (numpy.log(x**(1./3.)))**3 x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;loglog%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of </span>
+<span class="sd">        (numpy.log(x**(1./3.)))**4 x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        The second entry stores the frequency cutoff that was used when</span>
+<span class="sd">        computing the integral.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_moments</span>
+
+    <span class="nd">@moments</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inMoments</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moments</span><span class="o">=</span><span class="n">inMoments</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The eigenvalues of the parameter space.</span>
+<span class="sd">        This is a Dictionary of numpy.array</span>
+<span class="sd">        Each entry in the dictionary corresponds to the different frequency</span>
+<span class="sd">        ranges described in vary_fmax. If vary_fmax = False, the only entry</span>
+<span class="sd">        will be f_upper, this corresponds to integrals in [f_low,f_upper). This</span>
+<span class="sd">        entry is always present. Each other entry will use floats as keys to</span>
+<span class="sd">        the dictionary. These floats give the upper frequency cutoff when it is</span>
+<span class="sd">        varying.</span>
+<span class="sd">        Each numpy.array contains the eigenvalues which, with the eigenvectors</span>
+<span class="sd">        in evecs, are needed to rotate the</span>
+<span class="sd">        coordinate system to one in which the metric is the identity matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;The metric eigenvalues have not been set in the &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;metricParameters instance.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evals</span>
+
+    <span class="nd">@evals</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inEvals</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_metric</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="n">inEvals</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s2">&quot;metric_evals_</span><span class="si">%d</span><span class="s2">.dat&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                              <span class="n">inEvals</span><span class="p">[</span><span class="n">frequency</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evals</span> <span class="o">=</span> <span class="n">inEvals</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evecs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The eigenvectors of the parameter space.</span>
+<span class="sd">        This is a Dictionary of numpy.matrix</span>
+<span class="sd">        Each entry in the dictionary is as described under evals.</span>
+<span class="sd">        Each numpy.matrix contains the eigenvectors which, with the eigenvalues</span>
+<span class="sd">        in evals, are needed to rotate the</span>
+<span class="sd">        coordinate system to one in which the metric is the identity matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evecs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;The metric eigenvectors have not been set in the &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;metricParameters instance.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evecs</span>
+
+    <span class="nd">@evecs</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evecs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inEvecs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_metric</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="n">inEvecs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s2">&quot;metric_evecs_</span><span class="si">%d</span><span class="s2">.dat&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                              <span class="n">inEvecs</span><span class="p">[</span><span class="n">frequency</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evecs</span> <span class="o">=</span> <span class="n">inEvecs</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The metric of the parameter space.</span>
+<span class="sd">        This is a Dictionary of numpy.matrix</span>
+<span class="sd">        Each entry in the dictionary is as described under evals.</span>
+<span class="sd">        Each numpy.matrix contains the metric of the parameter space in the</span>
+<span class="sd">        Lambda_i coordinate system.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;The metric eigenvectors have not been set in the &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;metricParameters instance.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span>
+
+    <span class="nd">@metric</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inMetric</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_metric</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="n">inMetric</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s2">&quot;metric_components_</span><span class="si">%d</span><span class="s2">.dat&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                              <span class="n">inMetric</span><span class="p">[</span><span class="n">frequency</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metric</span> <span class="o">=</span> <span class="n">inMetric</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_unprojected_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The metric of the parameter space with the time dimension unprojected.</span>
+<span class="sd">        This is a Dictionary of numpy.matrix</span>
+<span class="sd">        Each entry in the dictionary is as described under evals.</span>
+<span class="sd">        Each numpy.matrix contains the metric of the parameter space in the</span>
+<span class="sd">        Lambda_i, t coordinate system. The time components are always in the</span>
+<span class="sd">        last [-1] position in the matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_unprojected_metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The time unprojected metric has not been set in the &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;metricParameters instance.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time_unprojected_metric</span>
+
+    <span class="nd">@time_unprojected_metric</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_unprojected_metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inMetric</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_metric</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="n">inMetric</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s2">&quot;metric_timeunprojected_</span><span class="si">%d</span><span class="s2">.dat&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                              <span class="n">inMetric</span><span class="p">[</span><span class="n">frequency</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time_unprojected_metric</span> <span class="o">=</span> <span class="n">inMetric</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evecsCV</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The eigenvectors of the principal directions of the mu space.</span>
+<span class="sd">        This is a Dictionary of numpy.matrix</span>
+<span class="sd">        Each entry in the dictionary is as described under evals.</span>
+<span class="sd">        Each numpy.matrix contains the eigenvectors which, with the eigenvalues</span>
+<span class="sd">        in evals, are needed to rotate the</span>
+<span class="sd">        coordinate system to one in which the metric is the identity matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evecsCV</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;The covariance eigenvectors have not been set in the &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;metricParameters instance.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evecsCV</span>
+
+    <span class="nd">@evecsCV</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evecsCV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inEvecs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_metric</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="n">inEvecs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="s2">&quot;covariance_evecs_</span><span class="si">%d</span><span class="s2">.dat&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">frequency</span><span class="p">),</span>
+                              <span class="n">inEvecs</span><span class="p">[</span><span class="n">frequency</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evecsCV</span> <span class="o">=</span> <span class="n">inEvecs</span></div>
+
+
+
+<div class="viewcode-block" id="insert_mass_range_option_group">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.insert_mass_range_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_mass_range_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span><span class="n">nonSpin</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to specify mass ranges in the bank generation codes</span>
+<span class="sd">    to an argparser as an OptionGroup. This should be used if you</span>
+<span class="sd">    want to use these options in your code.</span>
+<span class="sd"> </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    nonSpin : boolean, optional (default=False)</span>
+<span class="sd">        If this is provided the spin-related options will not be added.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">massOpts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Options related to mass and spin &quot;</span>
+                  <span class="s2">&quot;limits for bank generation&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-mass1&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                  <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum mass1: must be &gt;= min-mass2. &quot;</span>
+                       <span class="s2">&quot;REQUIRED. UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-mass1&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                  <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum mass1: must be &gt;= max-mass2. &quot;</span>
+                       <span class="s2">&quot;REQUIRED. UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-mass2&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                  <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum mass2. REQUIRED. UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-mass2&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                  <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum mass2. REQUIRED. UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-total-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum total mass. OPTIONAL, if not provided &quot;</span>
+                          <span class="s2">&quot;the max total mass is determined by the component &quot;</span>
+                          <span class="s2">&quot;masses. UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-total-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum total mass. OPTIONAL, if not provided the &quot;</span>
+                       <span class="s2">&quot;min total mass is determined by the component masses.&quot;</span>
+                       <span class="s2">&quot; UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-chirp-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum chirp mass. OPTIONAL, if not provided the &quot;</span>
+                       <span class="s2">&quot;max chirp mass is determined by the component masses.&quot;</span>
+                       <span class="s2">&quot; UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-chirp-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum total mass. OPTIONAL, if not provided the &quot;</span>
+                       <span class="s2">&quot;min chirp mass is determined by the component masses.&quot;</span>
+                       <span class="s2">&quot; UNITS=Solar mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-eta&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                  <span class="n">default</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum symmetric mass ratio. OPTIONAL, no upper bound&quot;</span>
+                       <span class="s2">&quot; on eta will be imposed if not provided. &quot;</span>
+                       <span class="s2">&quot;UNITS=Solar mass.&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--min-eta&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">nonnegative_float</span><span class="p">,</span>
+                  <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum symmetric mass ratio. OPTIONAL, no lower bound&quot;</span>
+                       <span class="s2">&quot; on eta will be imposed if not provided. &quot;</span>
+                       <span class="s2">&quot;UNITS=Solar mass.&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ns-eos&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                  <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Select the EOS to be used for the NS when calculating &quot;</span>
+                       <span class="s2">&quot;the remnant disk mass. Only 2H is currently supported. &quot;</span>
+                       <span class="s2">&quot;OPTIONAL&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--remnant-mass-threshold&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">nonnegative_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Setting this filters EM dim NS-BH binaries: if the &quot;</span>
+                       <span class="s2">&quot;remnant disk mass does not exceed this value, the NS-BH &quot;</span>
+                       <span class="s2">&quot;binary is dropped from the target parameter space. &quot;</span>
+                       <span class="s2">&quot;When it is set to None (default value) the EM dim &quot;</span>
+                       <span class="s2">&quot;filter is not activated. OPTIONAL&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--use-eos-max-ns-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Cut the mass range of the smaller object to the maximum &quot;</span>
+                       <span class="s2">&quot;mass allowed by EOS. &quot;</span>
+                       <span class="s2">&quot;OPTIONAL&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--delta-bh-spin&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Grid spacing used for the BH spin z component when &quot;</span>
+                       <span class="s2">&quot;generating the surface of the minumum minimum symmetric &quot;</span>
+                       <span class="s2">&quot;mass ratio as a function of BH spin and NS mass required &quot;</span>
+                       <span class="s2">&quot;to produce a remnant disk mass that exceeds the threshold &quot;</span>
+                       <span class="s2">&quot;specificed in --remnant-mass-threshold. &quot;</span>
+                       <span class="s2">&quot;OPTIONAL (0.1 by default) &quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--delta-ns-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Grid spacing used for the NS mass when generating the &quot;</span>
+                       <span class="s2">&quot;surface of the minumum minimum symmetric mass ratio as &quot;</span>
+                       <span class="s2">&quot;a function of BH spin and NS mass required to produce &quot;</span>
+                       <span class="s2">&quot;a remnant disk mass that exceeds the thrsehold specified &quot;</span>
+                       <span class="s2">&quot;in --remnant-mass-threshold. &quot;</span>
+                       <span class="s2">&quot;OPTIONAL (0.1 by default) &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nonSpin</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">massOpts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">massOpts</span>
+
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-ns-spin-mag&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">nonnegative_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum neutron star spin magnitude.  Neutron stars &quot;</span>
+                       <span class="s2">&quot;are defined as components lighter than the NS-BH &quot;</span>
+                       <span class="s2">&quot;boundary (3 Msun by default). REQUIRED if min-mass2 &quot;</span>
+                       <span class="s2">&quot;&lt; ns-bh-boundary-mass&quot;</span><span class="p">)</span>
+    <span class="n">massOpts</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-bh-spin-mag&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                          <span class="nb">type</span><span class="o">=</span><span class="n">nonnegative_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum black hole spin magnitude.  Black holes are &quot;</span>
+                       <span class="s2">&quot;defined as components at or above the NS-BH boundary &quot;</span>
+                       <span class="s2">&quot;(3 Msun by default). REQUIRED if max-mass1 &gt;= &quot;</span>
+                       <span class="s2">&quot;ns-bh-boundary-mass&quot;</span><span class="p">)</span>
+    <span class="c1"># Mutually exclusive group prevents both options being set on command line</span>
+    <span class="c1"># If --nsbh-flag is True then spinning bank generation must ignore the</span>
+    <span class="c1"># default value of ns-bh-boundary-mass.</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="n">massOpts</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">action</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ns-bh-boundary-mass&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Mass boundary between neutron stars and black holes. &quot;</span>
+                       <span class="s2">&quot;Components below this mass are considered neutron &quot;</span>
+                       <span class="s2">&quot;stars and are subject to the neutron star spin limits. &quot;</span>
+                       <span class="s2">&quot;Components at/above are subject to the black hole spin &quot;</span>
+                       <span class="s2">&quot;limits.  OPTIONAL, default=</span><span class="si">%f</span><span class="s2">.  UNITS=Solar mass&quot;</span> \
+                       <span class="o">%</span> <span class="n">massRangeParameters</span><span class="o">.</span><span class="n">default_nsbh_boundary_mass</span><span class="p">)</span>
+    <span class="n">action</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--nsbh-flag&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set this flag if generating a bank that contains only &quot;</span>
+                       <span class="s2">&quot;systems with 1 black hole and 1 neutron star. With &quot;</span>
+                       <span class="s2">&quot;this flag set the heavier body will always be subject &quot;</span>
+                       <span class="s2">&quot;to the black hole spin restriction and the lighter &quot;</span>
+                       <span class="s2">&quot;to the neutron star spin restriction, regardless of &quot;</span>
+                       <span class="s2">&quot;mass.  OPTIONAL.  If set, the value of &quot;</span>
+                       <span class="s2">&quot;--ns-bh-boundary-mass will be ignored.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">massOpts</span></div>
+
+
+<div class="viewcode-block" id="verify_mass_range_options">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.verify_mass_range_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_mass_range_options</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">nonSpin</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses the metric calculation options given and verifies that they are</span>
+<span class="sd">    correct.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : argparse.Values instance</span>
+<span class="sd">        Result of parsing the input options with OptionParser</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        The OptionParser instance.</span>
+<span class="sd">    nonSpin : boolean, optional (default=False)</span>
+<span class="sd">        If this is provided the spin-related options will not be checked.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Mass1 must be the heavier!</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;min-mass1 cannot be less than min-mass2!&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;max-mass1 cannot be less than max-mass2!&quot;</span><span class="p">)</span>
+    <span class="c1"># If given are min/max total mass/chirp mass possible?</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> \
+            <span class="ow">and</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">+</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Supplied minimum total mass </span><span class="si">%f</span><span class="s2"> &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">,)</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;greater than the sum of the two max component masses &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot; </span><span class="si">%f</span><span class="s2"> and </span><span class="si">%f</span><span class="s2">.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">,</span><span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> \
+            <span class="ow">and</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="o">+</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Supplied maximum total mass </span><span class="si">%f</span><span class="s2"> &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">,)</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;smaller than the sum of the two min component masses &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot; </span><span class="si">%f</span><span class="s2"> and </span><span class="si">%f</span><span class="s2">.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">,</span><span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> \
+            <span class="ow">and</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Min total mass must be larger than max total mass.&quot;</span><span class="p">)</span>
+    <span class="c1"># Warn the user that his/her setup is such that EM dim NS-BH binaries</span>
+    <span class="c1"># will not be targeted by the template bank that is being built.  Also</span>
+    <span class="c1"># inform him/her about the caveats involved in this.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="s1">&#39;remnant_mass_threshold&#39;</span><span class="p">)</span> \
+            <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">remnant_mass_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;You have asked to exclude EM dim NS-BH systems from the</span>
+<span class="s2">                       target parameter space. The script will assume that m1</span>
+<span class="s2">                       is the BH and m2 is the NS: make sure that your settings</span>
+<span class="s2">                       respect this convention. The script will also treat the</span>
+<span class="s2">                       NS as non-spinning: use NS spins in the template bank</span>
+<span class="s2">                       at your own risk!&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">use_eos_max_ns_mass</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;You have asked to take into account the maximum NS</span>
+<span class="s2">                        mass value for the EOS in use.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="c1"># Find out if the EM constraint surface data already exists or not</span>
+        <span class="c1"># and inform user whether this will be read from file or generated.</span>
+        <span class="c1"># This is the minumum eta as a function of BH spin and NS mass</span>
+        <span class="c1"># required to produce an EM counterpart</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;constraint_em_bright.npz&#39;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;The constraint surface for EM bright binaries</span>
+<span class="s2">                        will be read in from constraint_em_bright.npz.&quot;&quot;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Assign min/max total mass from mass1, mass2 if not specified</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="p">((</span><span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="o">+</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">):</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="o">+</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">)</span> <span class="ow">or</span> \
+            <span class="p">((</span><span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">+</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">):</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">+</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span>
+
+    <span class="c1"># It is vital that min and max total mass be set correctly.</span>
+    <span class="c1"># This is becasue the heavily-used function get_random_mass will place</span>
+    <span class="c1"># points first in total mass (to some power), and then in eta. If the total</span>
+    <span class="c1"># mass limits are not well known ahead of time it will place unphysical</span>
+    <span class="c1"># points and fail.</span>
+    <span class="c1"># This test is a bit convoluted as we identify the maximum and minimum</span>
+    <span class="c1"># possible total mass from chirp mass and/or eta restrictions.</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Need to get the smallest possible min_tot_mass from this chirp mass</span>
+        <span class="c1"># There are 4 possibilities for where the min_tot_mass is found on the</span>
+        <span class="c1"># line of min_chirp_mass that interacts with the component mass limits.</span>
+        <span class="c1"># Either it is found at max_m2, or at min_m1, or it starts on the equal</span>
+        <span class="c1"># mass line within the parameter space, or it doesn&#39;t intersect</span>
+        <span class="c1"># at all.</span>
+        <span class="c1"># First let&#39;s get the masses at both of these possible points</span>
+        <span class="n">m1_at_max_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">,</span>
+                                                     <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m1_at_max_m2</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">:</span>
+            <span class="c1"># Unphysical, remove</span>
+            <span class="n">m1_at_max_m2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">m2_at_min_m1</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">,</span>
+                                                      <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m2_at_min_m1</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="c1"># Unphysical, remove</span>
+            <span class="n">m2_at_min_m1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="c1"># Get the values on the equal mass line</span>
+        <span class="n">m1_at_equal_mass</span><span class="p">,</span> <span class="n">m2_at_equal_mass</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_eta_to_mass1_mass2</span><span class="p">(</span>
+                                                     <span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">)</span>
+
+        <span class="c1"># Are any of these possible?</span>
+        <span class="k">if</span> <span class="n">m1_at_max_m2</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> <span class="n">m1_at_max_m2</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="o">+</span> <span class="n">m1_at_max_m2</span>
+        <span class="k">elif</span> <span class="n">m2_at_min_m1</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> <span class="n">m2_at_min_m1</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="o">+</span> <span class="n">m2_at_min_m1</span>
+        <span class="k">elif</span> <span class="n">m1_at_equal_mass</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> \
+                 <span class="n">m1_at_equal_mass</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="ow">and</span> \
+                 <span class="n">m2_at_equal_mass</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> \
+                 <span class="n">m2_at_equal_mass</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">m1_at_equal_mass</span> <span class="o">+</span> <span class="n">m2_at_equal_mass</span>
+        <span class="c1"># So either the restriction is low enough to be redundant, or is</span>
+        <span class="c1"># removing all the parameter space</span>
+        <span class="k">elif</span> <span class="n">m2_at_min_m1</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="c1"># This is the redundant case, ignore</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># And this is the bad case</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The minimum chirp mass provided is not possible given &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;restrictions on component masses.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Is there also an eta restriction?</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">:</span>
+            <span class="c1"># Get the value of m1,m2 at max_eta, min_chirp_mass</span>
+            <span class="n">max_eta_m1</span><span class="p">,</span> <span class="n">max_eta_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_eta_to_mass1_mass2</span><span class="p">(</span>
+                                         <span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">)</span>
+            <span class="n">max_eta_min_tot_mass</span> <span class="o">=</span> <span class="n">max_eta_m1</span> <span class="o">+</span> <span class="n">max_eta_m2</span>
+            <span class="k">if</span> <span class="n">max_eta_min_tot_mass</span> <span class="o">&gt;</span> <span class="n">min_tot_mass</span><span class="p">:</span>
+                <span class="c1"># Okay, eta does restrict this further. Still physical?</span>
+                <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">max_eta_min_tot_mass</span>
+                <span class="k">if</span> <span class="n">max_eta_m1</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The combination of component mass, chirp &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;mass, eta and (possibly) total mass limits &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;have precluded all systems.&quot;</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Update min_tot_mass if needed</span>
+        <span class="k">if</span> <span class="n">min_tot_mass</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_tot_mass</span><span class="p">)</span>
+
+    <span class="c1"># Then need to do max_chirp_mass and min_eta</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_chirp_mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Need to get the largest possible maxn_tot_mass from this chirp mass</span>
+        <span class="c1"># There are 3 possibilities for where the max_tot_mass is found on the</span>
+        <span class="c1"># line of max_chirp_mass that interacts with the component mass limits.</span>
+        <span class="c1"># Either it is found at min_m2, or at max_m1, or it doesn&#39;t intersect</span>
+        <span class="c1"># at all.</span>
+        <span class="c1"># First let&#39;s get the masses at both of these possible points</span>
+        <span class="n">m1_at_min_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">,</span>
+                                                     <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">)</span>
+        <span class="n">m2_at_max_m1</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">,</span>
+                                                      <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">)</span>
+        <span class="c1"># Are either of these possible?</span>
+        <span class="k">if</span> <span class="n">m1_at_min_m2</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> <span class="n">m1_at_min_m2</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span> <span class="o">+</span> <span class="n">m1_at_min_m2</span>
+        <span class="k">elif</span> <span class="n">m2_at_max_m1</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> <span class="n">m2_at_max_m1</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">+</span> <span class="n">m2_at_max_m1</span>
+        <span class="c1"># So either the restriction is low enough to be redundant, or is</span>
+        <span class="c1"># removing all the paramter space</span>
+        <span class="k">elif</span> <span class="n">m2_at_max_m1</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">:</span>
+            <span class="c1"># This is the redundant case, ignore</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># And this is the bad case</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The maximum chirp mass provided is not possible given &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;restrictions on component masses.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Is there also an eta restriction?</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">:</span>
+            <span class="c1"># Get the value of m1,m2 at max_eta, min_chirp_mass</span>
+            <span class="n">min_eta_m1</span><span class="p">,</span> <span class="n">min_eta_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">mchirp_eta_to_mass1_mass2</span><span class="p">(</span>
+                                         <span class="n">opts</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">)</span>
+            <span class="n">min_eta_max_tot_mass</span> <span class="o">=</span> <span class="n">min_eta_m1</span> <span class="o">+</span> <span class="n">min_eta_m2</span>
+            <span class="k">if</span> <span class="n">min_eta_max_tot_mass</span> <span class="o">&lt;</span> <span class="n">max_tot_mass</span><span class="p">:</span>
+                <span class="c1"># Okay, eta does restrict this further. Still physical?</span>
+                <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">min_eta_max_tot_mass</span>
+                <span class="k">if</span> <span class="n">min_eta_m1</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The combination of component mass, chirp &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;mass, eta and (possibly) total mass limits &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;have precluded all systems.&quot;</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Update min_tot_mass if needed</span>
+        <span class="k">if</span> <span class="n">max_tot_mass</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_tot_mass</span><span class="p">)</span>
+
+    <span class="c1"># Need to check max_eta alone for minimum and maximum mass</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">:</span>
+        <span class="c1"># Similar to above except this can affect both the minimum and maximum</span>
+        <span class="c1"># total mass. Need to identify where the line of max_eta intersects</span>
+        <span class="c1"># the parameter space, and if it affects mass restrictions.</span>
+        <span class="n">m1_at_min_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">,</span>
+                                                      <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">m2_at_min_m1</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">,</span>
+                                                     <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">m1_at_max_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">,</span>
+                                                      <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">m2_at_max_m1</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">,</span>
+                                                      <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Check for restrictions on the minimum total mass</span>
+        <span class="c1"># Are either of these possible?</span>
+        <span class="k">if</span> <span class="n">m1_at_min_m2</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> <span class="n">m1_at_min_m2</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span> <span class="o">+</span> <span class="n">m1_at_min_m2</span>
+        <span class="k">elif</span> <span class="n">m2_at_min_m1</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> <span class="n">m2_at_min_m1</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="c1"># This case doesn&#39;t change the minimal total mass</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span>
+        <span class="c1"># So either the restriction is low enough to be redundant, or is</span>
+        <span class="c1"># removing all the paramter space</span>
+        <span class="k">elif</span> <span class="n">m2_at_min_m1</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">:</span>
+            <span class="c1"># This is the redundant case, ignore</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span>
+        <span class="k">elif</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span> <span class="o">==</span> <span class="mf">0.25</span> <span class="ow">and</span> <span class="p">(</span><span class="n">m1_at_min_m2</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span> <span class="ow">or</span> \
+                                                <span class="n">m2_at_min_m1</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">):</span> 
+            <span class="c1"># This just catches potential roundoff issues in the case that</span>
+            <span class="c1"># max-eta is not used</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># And this is the bad case</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The maximum eta provided is not possible given &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;restrictions on component masses.&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">m1_at_min_m2</span><span class="p">,</span> <span class="n">m2_at_min_m1</span><span class="p">,</span> <span class="n">m1_at_max_m2</span><span class="p">,</span> <span class="n">m2_at_max_m1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Update min_tot_mass if needed</span>
+        <span class="k">if</span> <span class="n">min_tot_mass</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_tot_mass</span><span class="p">)</span>
+
+        <span class="c1"># Check for restrictions on the maximum total mass</span>
+        <span class="c1"># Are either of these possible?</span>
+        <span class="k">if</span> <span class="n">m2_at_max_m1</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> <span class="n">m2_at_max_m1</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">+</span> <span class="n">m2_at_max_m1</span>
+        <span class="k">elif</span> <span class="n">m1_at_max_m2</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> <span class="n">m1_at_max_m2</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="c1"># This case doesn&#39;t change the maximal total mass</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span>
+        <span class="c1"># So either the restriction is low enough to be redundant, or is</span>
+        <span class="c1"># removing all the paramter space, the latter case is already tested</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># This is the redundant case, ignore</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span>
+        <span class="k">if</span> <span class="n">max_tot_mass</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_tot_mass</span><span class="p">)</span>
+
+    <span class="c1"># Need to check min_eta alone for maximum and minimum total mass</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">:</span>
+        <span class="c1"># Same as max_eta.</span>
+        <span class="c1"># Need to identify where the line of max_eta intersects</span>
+        <span class="c1"># the parameter space, and if it affects mass restrictions.</span>
+        <span class="n">m1_at_min_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">,</span>
+                                                      <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">m2_at_min_m1</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">,</span>
+                                                     <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">m1_at_max_m2</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">,</span>
+                                                      <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">m2_at_max_m1</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">,</span>
+                                                      <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Check for restrictions on the maximum total mass</span>
+        <span class="c1"># Are either of these possible?</span>
+        <span class="k">if</span> <span class="n">m1_at_max_m2</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> <span class="n">m1_at_max_m2</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="o">+</span> <span class="n">m1_at_max_m2</span>
+
+        <span class="k">elif</span> <span class="n">m2_at_max_m1</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> <span class="n">m2_at_max_m1</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="c1"># This case doesn&#39;t affect the maximum total mass</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span>
+        <span class="c1"># So either the restriction is low enough to be redundant, or is</span>
+        <span class="c1"># removing all the paramter space</span>
+        <span class="k">elif</span> <span class="n">m2_at_max_m1</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="c1"># This is the redundant case, ignore</span>
+            <span class="n">max_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># And this is the bad case</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The minimum eta provided is not possible given &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;restrictions on component masses.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Update min_tot_mass if needed</span>
+        <span class="k">if</span> <span class="n">max_tot_mass</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_tot_mass</span><span class="p">)</span>
+
+        <span class="c1"># Check for restrictions on the minimum total mass</span>
+        <span class="c1"># Are either of these possible?</span>
+        <span class="k">if</span> <span class="n">m2_at_min_m1</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span> <span class="ow">and</span> <span class="n">m2_at_min_m1</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">:</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span> <span class="o">+</span> <span class="n">m2_at_min_m1</span>
+        <span class="k">elif</span> <span class="n">m1_at_min_m2</span> <span class="o">&lt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="ow">and</span> <span class="n">m1_at_min_m2</span> <span class="o">&gt;=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">:</span>
+            <span class="c1"># This case doesn&#39;t change the maximal total mass</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span>
+        <span class="c1"># So either the restriction is low enough to be redundant, or is</span>
+        <span class="c1"># removing all the paramter space, which is tested above</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># This is the redundant case, ignore</span>
+            <span class="n">min_tot_mass</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span>
+        <span class="k">if</span> <span class="n">min_tot_mass</span> <span class="o">&gt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_tot_mass</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;After including restrictions on chirp mass, component mass, &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;eta and total mass, no physical systems are possible.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span> <span class="ow">and</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span> <span class="o">&lt;</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;--max-eta must be larger than --min-eta.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nonSpin</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_ns_spin_mag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">nsbh_flag</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Must supply --max_ns_spin_mag with --nsbh-flag&quot;</span><span class="p">)</span>
+        <span class="c1"># Can ignore this if no NSs will be generated</span>
+        <span class="k">elif</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> <span class="ow">or</span>
+                <span class="n">massRangeParameters</span><span class="o">.</span><span class="n">default_nsbh_boundary_mass</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Must supply --max-ns-spin-mag for the chosen&quot;</span>
+                         <span class="s2">&quot; value of --min_mass2&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">max_ns_spin_mag</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_bh_spin_mag</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_bh_spin_mag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">nsbh_flag</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Must supply --max_bh_spin_mag with --nsbh-flag&quot;</span><span class="p">)</span>
+        <span class="c1"># Can ignore this if no BHs will be generated</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> <span class="ow">or</span>
+                <span class="n">massRangeParameters</span><span class="o">.</span><span class="n">default_nsbh_boundary_mass</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Must supply --max-bh-spin-mag for the chosen&quot;</span>
+                         <span class="s2">&quot; value of --max_mass1&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">max_bh_spin_mag</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_ns_spin_mag</span></div>
+
+
+<div class="viewcode-block" id="massRangeParameters">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.massRangeParameters">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">massRangeParameters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class holds all of the options that are parsed in the function</span>
+<span class="sd">    insert_mass_range_option_group</span>
+<span class="sd">    and all products produced using these options. It can also be initialized</span>
+<span class="sd">    from the __init__ function providing directly the options normally</span>
+<span class="sd">    provided on the command line</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_nsbh_boundary_mass</span> <span class="o">=</span> <span class="mf">3.</span>
+    <span class="n">default_ns_eos</span> <span class="o">=</span> <span class="s1">&#39;2H&#39;</span>
+    <span class="n">default_delta_bh_spin</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">default_delta_ns_mass</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minMass1</span><span class="p">,</span> <span class="n">maxMass1</span><span class="p">,</span> <span class="n">minMass2</span><span class="p">,</span> <span class="n">maxMass2</span><span class="p">,</span>
+                 <span class="n">maxNSSpinMag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxBHSpinMag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxTotMass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">minTotMass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxEta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minEta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
+                 <span class="n">max_chirp_mass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_chirp_mass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">ns_bh_boundary_mass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nsbhFlag</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">remnant_mass_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ns_eos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_eos_max_ns_mass</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">delta_bh_spin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delta_ns_mass</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of the massRangeParameters by providing all</span>
+<span class="sd">        options directly. See the help message associated with any code</span>
+<span class="sd">        that uses the metric options for more details of how to set each of</span>
+<span class="sd">        these. For e.g. pycbc_aligned_stoch_bank --help</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minMass1</span><span class="o">=</span><span class="n">minMass1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxMass1</span><span class="o">=</span><span class="n">maxMass1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minMass2</span><span class="o">=</span><span class="n">minMass2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxMass2</span><span class="o">=</span><span class="n">maxMass2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="o">=</span><span class="n">maxNSSpinMag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="o">=</span><span class="n">maxBHSpinMag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minTotMass</span> <span class="o">=</span> <span class="n">minMass1</span> <span class="o">+</span> <span class="n">minMass2</span>
+        <span class="k">if</span> <span class="n">minTotMass</span> <span class="ow">and</span> <span class="p">(</span><span class="n">minTotMass</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minTotMass</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">minTotMass</span> <span class="o">=</span> <span class="n">minTotMass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxTotMass</span> <span class="o">=</span> <span class="n">maxMass1</span> <span class="o">+</span> <span class="n">maxMass2</span>
+        <span class="k">if</span> <span class="n">maxTotMass</span> <span class="ow">and</span> <span class="p">(</span><span class="n">maxTotMass</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxTotMass</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxTotMass</span> <span class="o">=</span> <span class="n">maxTotMass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxTotMass</span><span class="o">=</span><span class="n">maxTotMass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minTotMass</span><span class="o">=</span><span class="n">minTotMass</span>
+        <span class="k">if</span> <span class="n">maxEta</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxEta</span><span class="o">=</span><span class="n">maxEta</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">maxEta</span><span class="o">=</span><span class="mf">0.25</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_chirp_mass</span> <span class="o">=</span> <span class="n">max_chirp_mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_chirp_mass</span> <span class="o">=</span> <span class="n">min_chirp_mass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minEta</span><span class="o">=</span><span class="n">minEta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ns_bh_boundary_mass</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_nsbh_boundary_mass</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsbhFlag</span><span class="o">=</span><span class="n">nsbhFlag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remnant_mass_threshold</span> <span class="o">=</span> <span class="n">remnant_mass_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ns_eos</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ns_eos</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_ns_eos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_bh_spin</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">delta_bh_spin</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_delta_bh_spin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_ns_mass</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">delta_ns_mass</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_delta_ns_mass</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_eos_max_ns_mass</span> <span class="o">=</span> <span class="n">use_eos_max_ns_mass</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">remnant_mass_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns_eos</span> <span class="o">!=</span> <span class="s1">&#39;2H&#39;</span><span class="p">:</span>
+                <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                         By setting a value for --remnant-mass-threshold</span>
+<span class="s2">                         you have asked to filter out EM dim NS-BH templates.</span>
+<span class="s2">                         The EOS you chose is not supported currently: please</span>
+<span class="s2">                         remove the --ns-eos option from your command line or</span>
+<span class="s2">                         set it to &#39;2H&#39;.</span>
+<span class="s2">                         &quot;&quot;&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_eos_max_ns_mass</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">max_ns_g_mass</span> <span class="o">=</span> <span class="n">load_ns_sequence</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ns_eos</span><span class="p">)</span>
+                <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxMass2</span> <span class="o">&gt;</span> <span class="n">max_ns_g_mass</span><span class="p">):</span>
+                    <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                             The maximum NS mass supported by this EOS is</span>
+<span class="s2">                             </span><span class="si">{0}</span><span class="s2">. Please set --max-mass2 to this value or run</span>
+<span class="s2">                             without the --use-eos-max-ns-mass flag.</span>
+<span class="s2">                             &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">max_ns_g_mass</span><span class="o">-</span><span class="mf">0.0000000001</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delta_bh_spin</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">delta_bh_spin</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_delta_bh_spin</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delta_ns_mass</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">delta_ns_mass</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_delta_ns_mass</span><span class="p">)</span>
+
+        <span class="c1"># FIXME: This may be inaccurate if Eta limits are given</span>
+        <span class="c1"># This will not cause any problems, but maybe could be fixed.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minCompMass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minMass2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxCompMass</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxMass1</span>
+
+        <span class="c1"># WARNING: We expect mass1 &gt; mass2 ALWAYS</span>
+        <span class="c1"># Check input:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">minMass2</span> <span class="o">&gt;</span> <span class="n">minMass1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">maxMass2</span> <span class="o">&gt;</span> <span class="n">maxMass1</span><span class="p">):</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Mass1 must be larger than mass2. Check input options.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">minMass2</span> <span class="o">&gt;</span> <span class="n">maxMass2</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">minMass1</span> <span class="o">&gt;</span> <span class="n">maxMass1</span><span class="p">):</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Minimum masses cannot be larger than maximum masses.&quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;Check input options.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="massRangeParameters.from_argparse">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.massRangeParameters.from_argparse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_argparse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">nonSpin</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of the massRangeParameters class from an</span>
+<span class="sd">        argparse.OptionParser instance. This assumes that</span>
+<span class="sd">        insert_mass_range_option_group</span>
+<span class="sd">        and</span>
+<span class="sd">        verify_mass_range_options</span>
+<span class="sd">        have already been called before initializing the class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">nonSpin</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">,</span>
+                       <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">,</span> <span class="n">maxTotMass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">,</span>
+                       <span class="n">minTotMass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">,</span> <span class="n">maxEta</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">,</span>
+                       <span class="n">minEta</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">,</span> <span class="n">max_chirp_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">,</span>
+                       <span class="n">min_chirp_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">,</span>
+                       <span class="n">remnant_mass_threshold</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">remnant_mass_threshold</span><span class="p">,</span>
+                       <span class="n">ns_eos</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">ns_eos</span><span class="p">,</span> <span class="n">use_eos_max_ns_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">use_eos_max_ns_mass</span><span class="p">,</span>
+                       <span class="n">delta_bh_spin</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">delta_bh_spin</span><span class="p">,</span> <span class="n">delta_ns_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">delta_ns_mass</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">min_mass1</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">max_mass1</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">min_mass2</span><span class="p">,</span>
+                       <span class="n">opts</span><span class="o">.</span><span class="n">max_mass2</span><span class="p">,</span> <span class="n">maxTotMass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_total_mass</span><span class="p">,</span>
+                       <span class="n">minTotMass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">min_total_mass</span><span class="p">,</span> <span class="n">maxEta</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_eta</span><span class="p">,</span>
+                       <span class="n">minEta</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">min_eta</span><span class="p">,</span> <span class="n">maxNSSpinMag</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_ns_spin_mag</span><span class="p">,</span>
+                       <span class="n">maxBHSpinMag</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_bh_spin_mag</span><span class="p">,</span>
+                       <span class="n">nsbhFlag</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">nsbh_flag</span><span class="p">,</span>
+                       <span class="n">max_chirp_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">,</span>
+                       <span class="n">min_chirp_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">,</span>
+                       <span class="n">ns_bh_boundary_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span><span class="p">,</span>
+                       <span class="n">remnant_mass_threshold</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">remnant_mass_threshold</span><span class="p">,</span>
+                       <span class="n">ns_eos</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">ns_eos</span><span class="p">,</span> <span class="n">use_eos_max_ns_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">use_eos_max_ns_mass</span><span class="p">,</span>
+                       <span class="n">delta_bh_spin</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">delta_bh_spin</span><span class="p">,</span> <span class="n">delta_ns_mass</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">delta_ns_mass</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="massRangeParameters.is_outside_range">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.massRangeParameters.is_outside_range">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_outside_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Test if a given location in mass1, mass2, spin1z, spin2z is within the</span>
+<span class="sd">        range of parameters allowed by the massParams object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Mass1 test</span>
+        <span class="k">if</span> <span class="n">mass1</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minMass1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">mass1</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxMass1</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="c1"># Mass2 test</span>
+        <span class="k">if</span> <span class="n">mass2</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minMass2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">mass2</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxMass2</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="c1"># Spin1 test</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsbhFlag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">spin1z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxBHSpinMag</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">):</span>
+                <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spin1zM</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">spin1z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span><span class="p">(</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> \
+                     <span class="ow">and</span> <span class="n">spin1zM</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxBHSpinMag</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">)</span> \
+                 <span class="ow">or</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> <span class="o">*</span> <span class="mf">1.001</span> \
+                     <span class="ow">and</span> <span class="n">spin1zM</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxNSSpinMag</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="mi">1</span>
+        <span class="c1"># Spin2 test</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsbhFlag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">spin2z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxNSSpinMag</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">):</span>
+                <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spin2zM</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">spin2z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span><span class="p">(</span> <span class="p">(</span><span class="n">mass2</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> \
+                     <span class="ow">and</span> <span class="n">spin2zM</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxBHSpinMag</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">)</span> \
+                 <span class="ow">or</span> <span class="p">(</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="ow">and</span> \
+                     <span class="n">spin2zM</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxNSSpinMag</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="mi">1</span>
+        <span class="c1"># Total mass test</span>
+        <span class="n">mTot</span> <span class="o">=</span> <span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span>
+        <span class="k">if</span> <span class="n">mTot</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxTotMass</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">mTot</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minTotMass</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="c1"># Eta test</span>
+        <span class="n">eta</span> <span class="o">=</span> <span class="n">mass1</span> <span class="o">*</span> <span class="n">mass2</span> <span class="o">/</span> <span class="p">(</span><span class="n">mTot</span> <span class="o">*</span> <span class="n">mTot</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">eta</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxEta</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">eta</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minEta</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="c1"># Chirp mass test</span>
+        <span class="n">chirp_mass</span> <span class="o">=</span> <span class="n">mTot</span> <span class="o">*</span> <span class="n">eta</span><span class="o">**</span><span class="p">(</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_chirp_mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                <span class="ow">and</span> <span class="n">chirp_mass</span> <span class="o">*</span> <span class="mf">1.001</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_chirp_mass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                <span class="ow">and</span> <span class="n">chirp_mass</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_chirp_mass</span> <span class="o">*</span> <span class="mf">1.001</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="mi">0</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ethincaParameters">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.ethincaParameters">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ethincaParameters</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class holds all of the options that are parsed in the function</span>
+<span class="sd">    insert_ethinca_metric_options</span>
+<span class="sd">    and all products produced using these options. It can also be initialized</span>
+<span class="sd">    from the __init__ function, providing directly the options normally</span>
+<span class="sd">    provided on the command line</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pnOrder</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">freqStep</span><span class="p">,</span> <span class="n">fLow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">full_ethinca</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">time_ethinca</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of ethincaParameters by providing all</span>
+<span class="sd">        options directly.  See the insert_ethinca_metric_options() function</span>
+<span class="sd">        for explanation or e.g. run pycbc_geom_nonspinbank --help</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_ethinca</span><span class="o">=</span><span class="n">full_ethinca</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_ethinca</span><span class="o">=</span><span class="n">time_ethinca</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doEthinca</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_ethinca</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_ethinca</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pnOrder</span><span class="o">=</span><span class="n">pnOrder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqStep</span><span class="o">=</span><span class="n">freqStep</span>
+        <span class="c1"># independent fLow for ethinca metric is currently not used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fLow</span><span class="o">=</span><span class="n">fLow</span>
+        <span class="c1"># check that ethinca options make sense</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_ethinca</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_ethinca</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;It does not make sense to ask me to do the time &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;restricted ethinca and also the full ethinca.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">doEthinca</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="n">cutoff</span> <span class="ow">in</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Need a valid cutoff formula to calculate &quot;</span>
+                             <span class="s2">&quot;ethinca! Possible values are &quot;</span><span class="o">+</span>
+                             <span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">doEthinca</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">freqStep</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Need to specify a cutoff frequency step to &quot;</span>
+                             <span class="s2">&quot;calculate ethinca! (ethincaFreqStep)&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ethincaParameters.from_argparse">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.ethincaParameters.from_argparse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_argparse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an instance of the ethincaParameters class from an</span>
+<span class="sd">        argparse.OptionParser instance. This assumes that</span>
+<span class="sd">        insert_ethinca_metric_options</span>
+<span class="sd">        and</span>
+<span class="sd">        verify_ethinca_metric_options</span>
+<span class="sd">        have already been called before initializing the class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">ethinca_pn_order</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">filter_cutoff</span><span class="p">,</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">ethinca_frequency_step</span><span class="p">,</span> <span class="n">fLow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">full_ethinca</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">calculate_ethinca_metric</span><span class="p">,</span>
+            <span class="n">time_ethinca</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">calculate_time_metric_components</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="insert_ethinca_metric_options">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.insert_ethinca_metric_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_ethinca_metric_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to calculate the ethinca metric, if required.</span>
+<span class="sd"> </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ethincaGroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Ethinca metric options&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Options used in the calculation of Gamma metric &quot;</span>
+                    <span class="s2">&quot;components for the ethinca coincidence test and for &quot;</span>
+                    <span class="s2">&quot;assigning high-frequency cutoffs to templates.&quot;</span><span class="p">)</span>
+    <span class="n">ethinca_methods</span> <span class="o">=</span> <span class="n">ethincaGroup</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">()</span>
+    <span class="n">ethinca_methods</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--calculate-time-metric-components&quot;</span><span class="p">,</span>
+                    <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If given, the ethinca metric will be calculated &quot;</span>
+                    <span class="s2">&quot;for only the time component, and stored in the Gamma0 &quot;</span>
+                    <span class="s2">&quot;entry of the sngl_inspiral table. OPTIONAL, default=False&quot;</span><span class="p">)</span>
+    <span class="n">ethinca_methods</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--calculate-ethinca-metric&quot;</span><span class="p">,</span>
+                    <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If given, the ethinca metric will be calculated &quot;</span>
+                    <span class="s2">&quot;and stored in the Gamma entries of the sngl_inspiral &quot;</span>
+                    <span class="s2">&quot;table. OPTIONAL, default=False&quot;</span><span class="p">)</span>
+    <span class="n">ethincaGroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ethinca-pn-order&quot;</span><span class="p">,</span>
+                    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">get_ethinca_orders</span><span class="p">(),</span> 
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify a PN order to be used in calculating the &quot;</span>
+                    <span class="s2">&quot;ethinca metric. OPTIONAL: if not specified, the same &quot;</span>
+                    <span class="s2">&quot;order will be used as for the bank metric.&quot;</span><span class="p">)</span>
+    <span class="n">ethincaGroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--filter-cutoff&quot;</span><span class="p">,</span>
+                    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                    <span class="n">choices</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Specify an upper frequency cutoff formula for the &quot;</span>
+                    <span class="s2">&quot;ethinca metric calculation, and for the values of f_final&quot;</span>
+                    <span class="s2">&quot; assigned to the templates.  REQUIRED if the &quot;</span>
+                    <span class="s2">&quot;calculate-ethinca-metric option is given.&quot;</span><span class="p">)</span>
+    <span class="n">ethincaGroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ethinca-frequency-step&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                    <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Control the precision of the upper frequency cutoff.&quot;</span>
+                    <span class="s2">&quot; For speed, the metric is calculated only for discrete &quot;</span>
+                    <span class="s2">&quot;f_max values with a spacing given by this option. Each &quot;</span>
+                    <span class="s2">&quot;template is assigned the metric for the f_max closest to &quot;</span>
+                    <span class="s2">&quot;its analytical cutoff formula. OPTIONAL, default=10. &quot;</span>
+                    <span class="s2">&quot;UNITS=Hz&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ethincaGroup</span></div>
+
+
+<div class="viewcode-block" id="verify_ethinca_metric_options">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.verify_ethinca_metric_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_ethinca_metric_options</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks that the necessary options are given for the ethinca metric</span>
+<span class="sd">    calculation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : argparse.Values instance</span>
+<span class="sd">        Result of parsing the input options with OptionParser</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        The OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">filter_cutoff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">filter_cutoff</span> <span class="ow">in</span>
+              <span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Need a valid cutoff formula to calculate ethinca or &quot;</span>
+                     <span class="s2">&quot;assign filter f_final values! Possible values are &quot;</span>
+                     <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">calculate_ethinca_metric</span> <span class="ow">or</span> <span class="n">opts</span><span class="o">.</span><span class="n">calculate_time_metric_components</span><span class="p">)</span>\
+                                           <span class="ow">and</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">ethinca_frequency_step</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Need to specify a cutoff frequency step to calculate &quot;</span>
+                     <span class="s2">&quot;ethinca!&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">calculate_ethinca_metric</span> <span class="ow">or</span>\
+              <span class="n">opts</span><span class="o">.</span><span class="n">calculate_time_metric_components</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">ethinca_pn_order</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Can&#39;t specify an ethinca PN order if not &quot;</span>
+                     <span class="s2">&quot;calculating ethinca metric!&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="check_ethinca_against_bank_params">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.check_ethinca_against_bank_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_ethinca_against_bank_params</span><span class="p">(</span><span class="n">ethincaParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cross-check the ethinca and bank layout metric calculation parameters</span>
+<span class="sd">    and set the ethinca metric PN order equal to the bank PN order if not</span>
+<span class="sd">    previously set.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ethincaParams: instance of ethincaParameters</span>
+<span class="sd">    metricParams: instance of metricParameters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ethincaParams</span><span class="o">.</span><span class="n">doEthinca</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span> <span class="o">!=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If calculating ethinca metric, f0 and f-low &quot;</span>
+                             <span class="s2">&quot;must be equal!&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ethincaParams</span><span class="o">.</span><span class="n">fLow</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">ethincaParams</span><span class="o">.</span><span class="n">fLow</span> <span class="o">!=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Ethinca metric calculation does not currently &quot;</span>
+                             <span class="s2">&quot;support a f-low value different from the bank &quot;</span>
+                             <span class="s2">&quot;metric!&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ethincaParams</span><span class="o">.</span><span class="n">pnOrder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ethincaParams</span><span class="o">.</span><span class="n">pnOrder</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">pnOrder</span>
+    <span class="k">else</span><span class="p">:</span> <span class="k">pass</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

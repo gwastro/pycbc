@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.live.significance_fits &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.live.significance_fits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.live.significance_fits</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions for defining the live significance fits</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.live.single_fits&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="add_live_significance_trigger_pruning_options">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.significance_fits.add_live_significance_trigger_pruning_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_live_significance_trigger_pruning_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add options used for pruning in live singles significance fits</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pruning_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Trigger pruning&quot;</span><span class="p">)</span>
+    <span class="n">pruning_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--prune-loudest&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum number of loudest trigger clusters to &quot;</span>
+             <span class="s2">&quot;remove from each bin.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">pruning_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--prune-window&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Window (seconds) either side of the --prune-loudest &quot;</span>
+             <span class="s2">&quot;loudest triggers in each duration bin to remove.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">pruning_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--prune-stat-threshold&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum statistic value to consider a &quot;</span>
+             <span class="s2">&quot;trigger for pruning.&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="verify_live_significance_trigger_pruning_options">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.significance_fits.verify_live_significance_trigger_pruning_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_live_significance_trigger_pruning_options</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verify options used for pruning in live singles significance fits</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Pruning options are mutually required or not needed</span>
+    <span class="n">prune_options</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">prune_loudest</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">prune_window</span><span class="p">,</span>
+                     <span class="n">args</span><span class="o">.</span><span class="n">prune_stat_threshold</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">prune_options</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">prune_options</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Require all or none of --prune-loudest, &quot;</span>
+                     <span class="s2">&quot;--prune-window and --prune-stat-threshold&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_live_significance_duration_bin_options">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.significance_fits.add_live_significance_duration_bin_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_live_significance_duration_bin_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add options used to calculate duration bin edges in live</span>
+<span class="sd">    singles significance fits</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">durbin_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Duration Bins&#39;</span><span class="p">)</span>
+    <span class="n">durbin_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--duration-bin-edges&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Durations to use for bin edges. &quot;</span>
+             <span class="s2">&quot;Use if specifying exact bin edges, &quot;</span>
+             <span class="s2">&quot;Not compatible with --duration-bin-start, &quot;</span>
+             <span class="s2">&quot;--duration-bin-end and --num-duration-bins&quot;</span>
+    <span class="p">)</span>
+    <span class="n">durbin_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--duration-bin-start&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Shortest duration to use for duration bins.&quot;</span>
+             <span class="s2">&quot;Not compatible with --duration-bins, requires &quot;</span>
+             <span class="s2">&quot;--duration-bin-end and --num-duration-bins.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">durbin_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--duration-bin-end&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Longest duration to use for duration bins.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">durbin_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--duration-from-bank&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the template bank file to get max/min &quot;</span>
+             <span class="s2">&quot;durations from.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">durbin_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--num-duration-bins&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;How many template duration bins to split the bank &quot;</span>
+             <span class="s2">&quot;into before fitting.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">durbin_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--duration-bin-spacing&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;How to set spacing for bank split &quot;</span>
+             <span class="s2">&quot;if using --num-duration-bins and &quot;</span>
+             <span class="s2">&quot;--duration-bin-start + --duration-bin-end &quot;</span>
+             <span class="s2">&quot;or --duration-from-bank.&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="verify_live_significance_duration_bin_options">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.significance_fits.verify_live_significance_duration_bin_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_live_significance_duration_bin_options</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verify options used to calculate duration bin edges in live</span>
+<span class="sd">    singles significance fits</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check the bin options</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_edges</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">duration_bin_start</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_end</span> <span class="ow">or</span>
+                <span class="n">args</span><span class="o">.</span><span class="n">duration_from_bank</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">num_duration_bins</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Cannot use --duration-bin-edges with &quot;</span>
+                         <span class="s2">&quot;--duration-bin-start, --duration-bin-end, &quot;</span>
+                         <span class="s2">&quot;--duration-from-bank or --num-duration-bins.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">num_duration_bins</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;--num-duration-bins must be set if not using &quot;</span>
+                         <span class="s2">&quot;--duration-bin-edges.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">args</span><span class="o">.</span><span class="n">duration_bin_start</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_end</span><span class="p">)</span> <span class="ow">or</span>
+                <span class="n">args</span><span class="o">.</span><span class="n">duration_from_bank</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;--duration-bin-start &amp; --duration-bin-end or &quot;</span>
+                         <span class="s2">&quot;--duration-from-bank must be set if not using &quot;</span>
+                         <span class="s2">&quot;--duration-bin-edges.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_end</span> <span class="ow">and</span> \
+            <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_end</span> <span class="o">&lt;=</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_start</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;--duration-bin-end must be greater than &quot;</span>
+                     <span class="s2">&quot;--duration-bin-start, got &quot;</span>
+                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">duration_bin_end</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">duration_bin_start</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="duration_bins_from_cli">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.significance_fits.duration_bins_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">duration_bins_from_cli</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the duration bins from CLI options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_edges</span><span class="p">:</span>
+        <span class="c1"># direct bin specification</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">duration_bin_edges</span><span class="p">)</span>
+    <span class="c1"># calculate bins from min/max and number</span>
+    <span class="n">min_dur</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_start</span>
+    <span class="n">max_dur</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_end</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_from_bank</span><span class="p">:</span>
+        <span class="c1"># read min/max duration directly from the bank itself</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">duration_from_bank</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bank_file</span><span class="p">:</span>
+            <span class="n">temp_durs</span> <span class="o">=</span> <span class="n">bank_file</span><span class="p">[</span><span class="s1">&#39;template_duration&#39;</span><span class="p">][:]</span>
+        <span class="n">min_dur</span><span class="p">,</span> <span class="n">max_dur</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">temp_durs</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">temp_durs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_spacing</span> <span class="o">==</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">min_dur</span><span class="p">),</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">max_dur</span><span class="p">),</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">num_duration_bins</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">duration_bin_spacing</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="n">min_dur</span><span class="p">,</span>
+            <span class="n">max_dur</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">num_duration_bins</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Invalid duration bin specification&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;add_live_significance_trigger_pruning_options&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;verify_live_significance_trigger_pruning_options&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;add_live_significance_duration_bin_options&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;verify_live_significance_duration_bin_options&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;duration_bins_from_cli&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

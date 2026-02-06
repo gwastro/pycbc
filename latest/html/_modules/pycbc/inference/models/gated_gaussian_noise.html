@@ -1,0 +1,1163 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.gated_gaussian_noise &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.gated_gaussian_noise</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.gated_gaussian_noise</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2020  Collin Capano and Shilpa Kastha</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This module provides model classes that assume the noise is Gaussian and</span>
+<span class="sd">introduces a gate to remove given times from the data, using the inpainting</span>
+<span class="sd">method to fill the removed part such that it does not enter the likelihood.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pnutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">hybrid_meco_frequency</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">time_from_frequencyseries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">generator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">highpass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseGaussianNoise</span><span class="p">,</span> <span class="n">create_waveform_generator</span><span class="p">,</span>
+                             <span class="n">catch_waveform_error</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.data_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fd_data_from_strain_dict</span>
+
+
+<div class="viewcode-block" id="BaseGatedGaussian">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseGatedGaussian</span><span class="p">(</span><span class="n">BaseGaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base model for gated gaussian.</span>
+
+<span class="sd">    Provides additional routines for applying a time-domain gate to data.</span>
+<span class="sd">    See :py:class:`GatedGaussianNoise` for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">highpass_waveforms</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># we&#39;ll want the time-domain data, so store that</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_td_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># cache the overwhitened data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_overwhitened_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># cache the current gated data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gated_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># cache terms related to normalization and gating </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_invasds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Rss</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gatetimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_det_lognls</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># cache samples and linear regression for determinant extrapolation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cov_samples</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cov_regressions</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># highpass waveforms with the given frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span> <span class="o">=</span> <span class="n">highpass_waveforms</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Will highpass waveforms at </span><span class="si">%f</span><span class="s2"> Hz&quot;</span><span class="p">,</span>
+                         <span class="n">highpass_waveforms</span><span class="p">)</span>
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="n">static_params</span><span class="o">=</span><span class="n">static_params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">data_section</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds addiotional keyword arguments based on config file.</span>
+<span class="sd">        </span>
+<span class="sd">        Additional keyword arguments are:</span>
+
+<span class="sd">           * ``highpass_waveforms`` : waveforms will be highpassed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">data_section</span><span class="p">,</span> <span class="s1">&#39;strain-high-pass&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+            <span class="s1">&#39;highpass_waveforms&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;highpass_waveforms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">data_section</span><span class="p">,</span>
+                                                        <span class="s1">&#39;strain-high-pass&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">data_section</span><span class="o">=</span><span class="n">data_section</span><span class="p">,</span>
+                                   <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+                                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@BaseDataModel</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store a copy of the FD and TD data.&quot;&quot;&quot;</span>
+        <span class="n">BaseDataModel</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="c1"># store the td version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_td_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span> <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">td_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The data in the time domain.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_td_data</span>
+
+    <span class="nd">@BaseGaussianNoise</span><span class="o">.</span><span class="n">psds</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">psds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">psds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the psds, and calculates the weight and norm from them.</span>
+<span class="sd">        The data and the low and high frequency cutoffs must be set first.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check that the data has been set</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No data set&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;low frequency cutoff not set&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_upper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;high frequency cutoff not set&quot;</span><span class="p">)</span>
+        <span class="c1"># make sure the relevant caches are cleared</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_psds</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_invasds</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gated_data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="c1"># store the psds</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">psds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># No psd means assume white PSD</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_N</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span>
+                                    <span class="n">delta_f</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># copy for storage</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">psds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_psds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="c1"># we&#39;ll store the weight to apply to the inner product</span>
+            <span class="n">invp</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">p</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">invp</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_invasds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">invp</span><span class="o">**</span><span class="mf">0.5</span>
+            <span class="c1"># store the autocorrelation function and covariance matrix for</span>
+            <span class="c1"># each detector</span>
+            <span class="n">Rss</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">p</span><span class="p">))</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_Rss</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">Rss</span>
+            <span class="c1"># calculate and store the linear regressions to extrapolate</span>
+            <span class="c1"># determinant values</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_covfit</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_overwhitened_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+ 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_covfit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the fit function for estimating the covariance determinant.</span>
+<span class="sd">        </span>
+<span class="sd">        This must be called after the PSDs have been set, otherwise a</span>
+<span class="sd">        ValueError will be raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">psds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No psd set for detector </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">det</span><span class="p">)</span>
+        <span class="n">Rss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Rss</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">toeplitz</span><span class="p">(</span><span class="n">Rss</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># full covariance matrix</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logdet_fit</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cov_samples</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cov_regressions</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">fit</span>
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.logdet_fit">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.logdet_fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logdet_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct a linear regression from a sample of truncated covariance</span>
+<span class="sd">        matrices.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns the sample points used for linear fit generation as well as the</span>
+<span class="sd">        linear fit parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># initialize lists for matrix sizes and determinants</span>
+        <span class="n">sample_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sample_dets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># set sizes of sample matrices; ensure exact calculations are only on</span>
+        <span class="c1"># small matrices</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">cov</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">max_size</span> <span class="o">=</span> <span class="mi">8192</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="n">max_size</span><span class="p">:</span>
+            <span class="n">sample_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">max_size</span><span class="p">,</span> <span class="n">max_size</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_size</span><span class="o">//</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sample_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">s</span><span class="o">//</span><span class="mi">4</span><span class="p">,</span> <span class="n">s</span><span class="o">//</span><span class="mi">8</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sample_sizes</span><span class="p">:</span>
+            <span class="c1"># calculate logdet of the full matrix using circulant eigenvalue</span>
+            <span class="c1"># approximation</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">s</span><span class="p">:</span>
+                <span class="n">ld</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">p</span><span class="o">.</span><span class="n">delta_t</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">sample_dets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ld</span><span class="p">)</span>
+            <span class="c1"># generate three more sample matrices using exact calculations</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gate_size</span> <span class="o">=</span> <span class="n">s</span> <span class="o">-</span> <span class="n">i</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">gate_size</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">gate_size</span>
+                <span class="n">tc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">),</span> <span class="mi">0</span><span class="p">),</span>
+                                  <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">ld</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">slogdet</span><span class="p">(</span><span class="n">tc</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">sample_dets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ld</span><span class="p">)</span>
+        <span class="c1"># generate a linear regression using the four points (size, logdet)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">sample_sizes</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_sizes</span><span class="p">))])</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sample_dets</span><span class="p">,</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">sample_sizes</span><span class="p">,</span> <span class="n">sample_dets</span><span class="p">),</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span></div>
+
+            
+    <span class="nd">@BaseGaussianNoise</span><span class="o">.</span><span class="n">normalize</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears the current stats if the normalization state is changed.</span>
+
+<span class="sd">        If normalize is set to True, the fit to the covariance determinant</span>
+<span class="sd">        will be calculated if it hasn&#39;t yet and PSDs are set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># call the parent setter to clear the current stats and set normalize</span>
+        <span class="n">BaseGaussianNoise</span><span class="o">.</span><span class="n">normalize</span><span class="o">.</span><span class="n">fset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normalize</span><span class="p">)</span>
+        <span class="c1"># now set the covariance determinant fit if needed</span>
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_psds</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cov_regressions</span><span class="p">:</span>
+                    <span class="c1"># set the covariance determinant fit</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_set_covfit</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.gate_indices">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.gate_indices">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gate_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the indices corresponding to start and end of gate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get time series start and delta_t</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">td_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+        <span class="c1"># get gate start and length from get_gate_times</span>
+        <span class="n">gate_start</span><span class="p">,</span> <span class="n">gate_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times</span><span class="p">()[</span><span class="n">det</span><span class="p">]</span>
+        <span class="c1"># the gate code takes central time and width</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">gate_length</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">gt</span> <span class="o">=</span> <span class="n">gate_start</span> <span class="o">+</span> <span class="n">window</span>
+        <span class="n">lindex</span><span class="p">,</span> <span class="n">rindex</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">get_gate_indices</span><span class="p">(</span><span class="n">gt</span><span class="p">,</span> <span class="n">window</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lindex</span><span class="p">,</span> <span class="n">rindex</span></div>
+
+    
+<div class="viewcode-block" id="BaseGatedGaussian.det_lognorm">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.det_lognorm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">det_lognorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the normalization term from the truncated covariance</span>
+<span class="sd">        matrix.</span>
+<span class="sd">        </span>
+<span class="sd">        Determinant is estimated using a linear fit to logdet vs truncated</span>
+<span class="sd">        matrix size.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># check if the key already exists; if so, return its value</span>
+            <span class="n">lognorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span><span class="p">[(</span><span class="n">det</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># get the size of the matrix</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_Rss</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="n">trunc_size</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="p">(</span><span class="n">end_index</span> <span class="o">-</span> <span class="n">start_index</span><span class="p">)</span>
+            <span class="c1"># call the linear regression</span>
+            <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cov_regressions</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># extrapolate from linear fit</span>
+            <span class="n">ld</span> <span class="o">=</span> <span class="n">m</span><span class="o">*</span><span class="n">trunc_size</span> <span class="o">+</span> <span class="n">b</span>
+            <span class="c1"># full normalization term:</span>
+            <span class="n">lognorm</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="n">trunc_size</span> <span class="o">+</span> <span class="n">ld</span><span class="p">)</span>
+            <span class="c1"># cache the result</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span><span class="p">[(</span><span class="n">det</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)]</span> <span class="o">=</span> <span class="n">lognorm</span>
+        <span class="k">return</span> <span class="n">lognorm</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to set logl values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio evaluated at the given point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loglikelihood</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lognl</span><span class="p">()</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.whiten">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.whiten">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">whiten</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">whiten</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whitens the given data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : dict</span>
+<span class="sd">            Dictionary of detector names -&gt; FrequencySeries.</span>
+<span class="sd">        whiten : {0, 1, 2}</span>
+<span class="sd">            Integer indicating what level of whitening to apply. Levels are:</span>
+<span class="sd">            0: no whitening; 1: whiten; 2: overwhiten.</span>
+<span class="sd">        inplace : bool, optional</span>
+<span class="sd">            If True, modify the data in place. Otherwise, a copy will be</span>
+<span class="sd">            created for whitening.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of FrequencySeries after the requested whitening has</span>
+<span class="sd">            been applied.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">if</span> <span class="n">whiten</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">dtilde</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">whiten</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">dtilde</span> <span class="o">*=</span> <span class="n">invpsd</span><span class="o">**</span><span class="mf">0.5</span>
+                <span class="k">elif</span> <span class="n">whiten</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">dtilde</span> <span class="o">*=</span> <span class="n">invpsd</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;whiten must be either 0, 1, or 2&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="BaseGatedGaussian.get_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.get_waveforms">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The waveforms generated using the current parameters.</span>
+
+<span class="sd">        If the waveforms haven&#39;t been generated yet, they will be generated,</span>
+<span class="sd">        resized to the same length as the data, and cached. If the</span>
+<span class="sd">        ``highpass_waveforms`` attribute is set, a highpass filter will</span>
+<span class="sd">        also be applied to the waveforms.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; waveforms</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseGatedGaussian.get_gated_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.get_gated_waveforms">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gated_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates and gates waveforms using the current parameters.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; FrequencySeries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseGatedGaussian.get_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.get_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a copy of the data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; FrequencySeries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+<div class="viewcode-block" id="BaseGatedGaussian.get_gated_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.get_gated_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gated_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a copy of the gated data.</span>
+
+<span class="sd">        The gated data will be cached for faster retrieval.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; FrequencySeries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gate_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times</span><span class="p">()</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">td_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># make sure the cache at least has the detectors in it</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gated_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gated_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span> <span class="o">=</span> <span class="n">gate_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dtilde</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="c1"># doesn&#39;t exist yet, or the gate times changed</span>
+                <span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">gate</span><span class="p">(</span><span class="n">gatestartdelay</span> <span class="o">+</span> <span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                           <span class="n">window</span><span class="o">=</span><span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                           <span class="n">invpsd</span><span class="o">=</span><span class="n">invpsd</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;paint&#39;</span><span class="p">)</span>
+                <span class="n">dtilde</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+                <span class="c1"># save for next time</span>
+                <span class="n">cache</span><span class="p">[</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtilde</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">dtilde</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="BaseGatedGaussian.get_gate_times">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.get_gate_times">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gate_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the time to apply a gate based on the current sky position.</span>
+
+<span class="sd">        If the parameter ``gatefunc`` is set to ``&#39;hmeco&#39;``, the gate times</span>
+<span class="sd">        will be calculated based on the hybrid MECO of the given set of</span>
+<span class="sd">        parameters; see ``get_gate_times_hmeco`` for details. Otherwise, the</span>
+<span class="sd">        gate times will just be retrieved from the ``t_gate_start`` and</span>
+<span class="sd">        ``t_gate_end`` parameters.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; (gate start, gate width)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gatefunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;gatefunc&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">gatefunc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">gatefunc</span> <span class="o">==</span> <span class="s1">&#39;hmeco&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times_hmeco</span><span class="p">()</span>
+        <span class="n">gatestart</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;t_gate_start&#39;</span><span class="p">]</span>
+        <span class="n">gateend</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;t_gate_end&#39;</span><span class="p">]</span>
+        <span class="c1"># we&#39;ll need the sky location for determining time shifts</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+        <span class="c1"># try to get from cache</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gatetimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gatetimes</span><span class="p">[</span><span class="n">gatestart</span><span class="p">,</span> <span class="n">gateend</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># doesn&#39;t exist, or parameters have changed, recalculate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gatetimes</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="n">gatetimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_gate_times</span><span class="p">(</span><span class="n">gatestart</span><span class="p">,</span> <span class="n">gateend</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gatetimes</span><span class="p">[</span><span class="n">gatestart</span><span class="p">,</span> <span class="n">gateend</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">]</span> <span class="o">=</span> <span class="n">gatetimes</span>
+        <span class="k">return</span> <span class="n">gatetimes</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_gate_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gatestart</span><span class="p">,</span> <span class="n">gateend</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the gate times in each detector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        gatestart : float</span>
+<span class="sd">            Geocentric start time of the gate.</span>
+<span class="sd">        gateend : float</span>
+<span class="sd">            Geocentric end time of the gate.</span>
+<span class="sd">        ra : float</span>
+<span class="sd">            Right ascension of the signal.</span>
+<span class="sd">        dec : float</span>
+<span class="sd">            Declination of the signal.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; (gate start, gate width)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gatetimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">:</span>
+            <span class="n">thisdet</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="c1"># account for the time delay between the waveforms of the</span>
+            <span class="c1"># different detectors</span>
+            <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="n">gatestart</span> <span class="o">+</span> <span class="n">thisdet</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span>
+                <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">gatestart</span><span class="p">)</span>
+            <span class="n">gateenddelay</span> <span class="o">=</span> <span class="n">gateend</span> <span class="o">+</span> <span class="n">thisdet</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span>
+                <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">gateend</span><span class="p">)</span>
+            <span class="n">dgatedelay</span> <span class="o">=</span> <span class="n">gateenddelay</span> <span class="o">-</span> <span class="n">gatestartdelay</span>
+            <span class="n">gatetimes</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gatetimes</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.get_gate_times_hmeco">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.get_gate_times_hmeco">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gate_times_hmeco</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the time to apply a gate based on the current sky position.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; (gate start, gate width)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># generate the template waveform</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+        <span class="c1"># get waveform parameters</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="n">spin1</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">]</span>
+        <span class="n">spin2</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+        <span class="c1"># gate input for ringdown analysis which consideres a start time</span>
+        <span class="c1"># and an end time</span>
+        <span class="n">dgate</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;gate_window&#39;</span><span class="p">]</span>
+        <span class="n">meco_f</span> <span class="o">=</span> <span class="n">hybrid_meco_frequency</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span> <span class="n">spin1</span><span class="p">,</span>
+                                       <span class="n">spin2</span><span class="p">)</span>
+        <span class="c1"># figure out the gate times</span>
+        <span class="n">gatetimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">invpsd</span><span class="p">))</span>
+            <span class="n">ht</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+            <span class="n">f_low</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_lower</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">h</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+            <span class="n">sample_freqs</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">[</span><span class="n">f_low</span><span class="p">:]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">f_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sample_freqs</span> <span class="o">&lt;=</span> <span class="n">meco_f</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># find time corresponding to meco frequency</span>
+            <span class="n">t_from_freq</span> <span class="o">=</span> <span class="n">time_from_frequencyseries</span><span class="p">(</span>
+                <span class="n">h</span><span class="p">[</span><span class="n">f_low</span><span class="p">:],</span> <span class="n">sample_frequencies</span><span class="o">=</span><span class="n">sample_freqs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">t_from_freq</span><span class="p">[</span><span class="n">f_idx</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="n">t_from_freq</span><span class="p">[</span><span class="n">f_idx</span><span class="p">]</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">t_from_freq</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="n">t_from_freq</span><span class="p">[</span><span class="n">f_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">ht</span><span class="o">.</span><span class="n">sample_times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;t_gate_start&#39;</span><span class="p">])</span>
+            <span class="n">gatetimes</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gatetimes</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_lognl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the log of the noise likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># clear variables</span>
+        <span class="n">lognl</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_det_lognls</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="c1"># get the times of the gates</span>
+        <span class="n">gate_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">invpsd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate_indices</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="c1"># linear estimation</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det_lognorm</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+            <span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span> <span class="o">=</span> <span class="n">gate_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># we always filter the entire segment starting from kmin, since the</span>
+            <span class="c1"># gated series may have high frequency components</span>
+            <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="c1"># gate the data</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">td_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">gated_dt</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">gate</span><span class="p">(</span><span class="n">gatestartdelay</span> <span class="o">+</span> <span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                                 <span class="n">window</span><span class="o">=</span><span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="n">invpsd</span><span class="o">=</span><span class="n">invpsd</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;paint&#39;</span><span class="p">)</span>
+            <span class="c1"># convert to the frequency series</span>
+            <span class="n">gated_d</span> <span class="o">=</span> <span class="n">gated_dt</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+            <span class="c1"># overwhiten</span>
+            <span class="n">gated_d</span> <span class="o">*=</span> <span class="n">invpsd</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># inner product</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">invpsd</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">*</span> <span class="n">d</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_d</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;d, d&gt;</span>
+            <span class="n">dd</span> <span class="o">=</span> <span class="n">norm</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">ip</span>
+            <span class="c1"># store</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_det_lognls</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">dd</span>
+            <span class="n">lognl</span> <span class="o">+=</span> <span class="n">dd</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">lognl</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.det_lognl">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.det_lognl">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">det_lognl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+        <span class="c1"># make sure lognl has been called</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trytoget</span><span class="p">(</span><span class="s1">&#39;lognl&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lognl</span><span class="p">)</span>
+        <span class="c1"># the det_lognls dict should have been updated, so can call it now</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_det_lognls</span><span class="p">[</span><span class="n">det</span><span class="p">]</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fd_data_from_strain_dict</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">strain_dict</span><span class="p">,</span> <span class="n">psd_strain_dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`.</span>
+
+<span class="sd">        Ensures that if the PSD is estimated from data, the inverse spectrum</span>
+<span class="sd">        truncation uses a Hann window, and that the low frequency cutoff is</span>
+<span class="sd">        zero.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_inverse_length</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">invpsd_trunc_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># make sure invpsd truncation is set to hanning</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using Hann window to truncate inverse PSD&quot;</span><span class="p">)</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">invpsd_trunc_method</span> <span class="o">=</span> <span class="s1">&#39;hann&#39;</span>
+        <span class="n">lfs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_estimation</span><span class="p">:</span>
+            <span class="c1"># make sure low frequency cutoff is zero</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting low frequency cutoff of PSD to 0&quot;</span><span class="p">)</span>
+            <span class="n">lfs</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span> <span class="o">=</span> <span class="p">{</span><span class="n">d</span><span class="p">:</span> <span class="mf">0.</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">lfs</span><span class="p">}</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">fd_data_from_strain_dict</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">strain_dict</span><span class="p">,</span> <span class="n">psd_strain_dict</span><span class="p">)</span>
+        <span class="c1"># set back</span>
+        <span class="k">if</span> <span class="n">lfs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span> <span class="o">=</span> <span class="n">lfs</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="BaseGatedGaussian.write_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.BaseGatedGaussian.write_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds writing the psds, and analyzed detectors.</span>
+
+<span class="sd">        The analyzed detectors, their analysis segments, and the segments</span>
+<span class="sd">        used for psd estimation are written as</span>
+<span class="sd">        ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and</span>
+<span class="sd">        ``{{detector}}_psd_segment``, respectively. These are either written</span>
+<span class="sd">        to the specified ``group``&#39;s attrs, or to the top level attrs if</span>
+<span class="sd">        ``group`` is None.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.BaseInferenceFile instance</span>
+<span class="sd">            The inference file to write to.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            If provided, the metadata will be written to the attrs specified</span>
+<span class="sd">            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is</span>
+<span class="sd">            written to the top-level attrs (``fp.attrs``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BaseDataModel</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">getattrs</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="c1"># write the analyzed detectors and times</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;analyzed_detectors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span>
+        <span class="c1"># store fitting values here</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_analysis_segment&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">start_time</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">end_time</span><span class="p">)]</span>
+            <span class="c1"># store covariance determinant extrapolation info (checkpoint)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_cov_sample&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cov_samples</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_cov_regression&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)]</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cov_regressions</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_psds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_save_data</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_psd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_psds</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="c1"># write the times used for psd estimation (if they were provided)</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd_segments</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_psd_segment&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">psd_segments</span><span class="p">[</span><span class="n">det</span><span class="p">]))</span>
+        <span class="c1"># save the frequency cutoffs</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">:</span>
+            <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_likelihood_low_freq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_lower</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f_upper</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_likelihood_high_freq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)]</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_f_upper</span><span class="p">[</span><span class="n">det</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GatedGaussianNoise">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GatedGaussianNoise</span><span class="p">(</span><span class="n">BaseGatedGaussian</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Model that applies a time domain gate, assuming stationary Gaussian</span>
+<span class="sd">    noise.</span>
+
+<span class="sd">    The gate start and end times are set by providing ``t_gate_start`` and</span>
+<span class="sd">    ``t_gate_end`` parameters, respectively. This will cause the gated times</span>
+<span class="sd">    to be excised from the analysis. For more details on the likelihood</span>
+<span class="sd">    function and its derivation, see</span>
+<span class="sd">    `arXiv:2105.05238 &lt;https://arxiv.org/abs/2105.05238&gt;`_.</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        The normalization of the likelihood depends on the gate times. However,</span>
+<span class="sd">        at the moment, the normalization is not calculated, as it depends on</span>
+<span class="sd">        the determinant of the truncated covariance matrix (see Eq. 4 of</span>
+<span class="sd">        arXiv:2105.05238). For this reason it is recommended that you only</span>
+<span class="sd">        use this model for fixed gate times.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;gated_gaussian_noise&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="n">static_params</span><span class="o">=</span><span class="n">static_params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># create the waveform generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+            <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+            <span class="n">gates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;No extra stats are stored.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood after removing the power within the</span>
+<span class="sd">        given time window,</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \log p(d|\Theta) = -\frac{1}{2} \sum_i</span>
+<span class="sd">             \left&lt; d_i - h_i(\Theta) | d_i - h_i(\Theta) \right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># generate the template waveform</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+        <span class="c1"># get the times of the gates</span>
+        <span class="n">gate_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times</span><span class="p">()</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate_indices</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det_lognorm</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+            <span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span> <span class="o">=</span> <span class="n">gate_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># we always filter the entire segment starting from kmin, since the</span>
+            <span class="c1"># gated series may have high frequency components</span>
+            <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="c1"># calculate the residual</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">td_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">ht</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">data</span> <span class="o">-</span> <span class="n">ht</span>
+            <span class="n">rtilde</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+            <span class="n">gated_res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">gate</span><span class="p">(</span><span class="n">gatestartdelay</span> <span class="o">+</span> <span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                                 <span class="n">window</span><span class="o">=</span><span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="n">invpsd</span><span class="o">=</span><span class="n">invpsd</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;paint&#39;</span><span class="p">)</span>
+            <span class="n">gated_rtilde</span> <span class="o">=</span> <span class="n">gated_res</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+            <span class="c1"># overwhiten</span>
+            <span class="n">gated_rtilde</span> <span class="o">*=</span> <span class="n">invpsd</span>
+            <span class="n">rr</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">invpsd</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">*</span> <span class="n">rtilde</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_rtilde</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+            <span class="n">logl</span> <span class="o">+=</span> <span class="n">norm</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">rr</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">logl</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_signal_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; The list of classes that this model supports in a multi-signal</span>
+<span class="sd">        likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
+    
+<div class="viewcode-block" id="GatedGaussianNoise.multi_loglikelihood">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise.multi_loglikelihood">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate a multi-model (signal) likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Generate the waveforms for each submodel</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">models</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="p">]:</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+            <span class="n">wfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+
+        <span class="c1"># combine into a single waveform</span>
+        <span class="n">combine</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="c1"># get max waveform length</span>
+            <span class="n">mlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">])</span>
+            <span class="n">wfs_resize</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">mlen</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">]</span>
+            <span class="n">combine</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs_resize</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span> <span class="o">=</span> <span class="n">combine</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loglikelihood</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="GatedGaussianNoise.get_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise.get_waveforms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># make the same length as the data</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]))</span>
+                <span class="c1"># apply high pass</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span><span class="p">:</span>
+                    <span class="n">h</span> <span class="o">=</span> <span class="n">highpass</span><span class="p">(</span>
+                        <span class="n">h</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">(),</span>
+                        <span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span><span class="p">)</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+                <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span> <span class="o">=</span> <span class="n">wfs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span></div>
+
+
+<div class="viewcode-block" id="GatedGaussianNoise.get_gated_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise.get_gated_waveforms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gated_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># apply the gate</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">ht</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">gate_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times</span><span class="p">()</span>
+            <span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span> <span class="o">=</span> <span class="n">gate_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">ht</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">gate</span><span class="p">(</span><span class="n">gatestartdelay</span> <span class="o">+</span> <span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                            <span class="n">window</span><span class="o">=</span><span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">invpsd</span><span class="o">=</span><span class="n">invpsd</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;paint&#39;</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GatedGaussianMargPol">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GatedGaussianMargPol</span><span class="p">(</span><span class="n">BaseGatedGaussian</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Gated gaussian model with numerical marginalization over polarization.</span>
+
+<span class="sd">    This implements the GatedGaussian likelihood with an explicit numerical</span>
+<span class="sd">    marginalization over polarization angle. This is accomplished using</span>
+<span class="sd">    a fixed set of integration points distribution uniformation between</span>
+<span class="sd">    0 and 2pi. By default, 1000 integration points are used.</span>
+<span class="sd">    The &#39;polarization_samples&#39; argument can be passed to set an alternate</span>
+<span class="sd">    number of integration points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;gated_gaussian_margpol&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">polarization_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="n">static_params</span><span class="o">=</span><span class="n">static_params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># the polarization parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">polarization_samples</span> <span class="o">=</span> <span class="n">polarization_samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pol</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">polarization_samples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dets</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># create the waveform generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+            <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+            <span class="n">generator_class</span><span class="o">=</span><span class="n">generator</span><span class="o">.</span><span class="n">FDomainDetFrameTwoPolGenerator</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GatedGaussianMargPol.get_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol.get_waveforms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># make the same length as the data</span>
+            <span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]))</span>
+            <span class="n">hc</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]))</span>
+            <span class="c1"># apply high pass</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span><span class="p">:</span>
+                <span class="n">hp</span> <span class="o">=</span> <span class="n">highpass</span><span class="p">(</span>
+                    <span class="n">hp</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">(),</span>
+                    <span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span><span class="p">)</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+                <span class="n">hc</span> <span class="o">=</span> <span class="n">highpass</span><span class="p">(</span>
+                    <span class="n">hc</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">(),</span>
+                    <span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">highpass_waveforms</span><span class="p">)</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+            <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span> <span class="o">=</span> <span class="n">wfs</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span></div>
+
+
+<div class="viewcode-block" id="GatedGaussianMargPol.get_gated_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol.get_gated_waveforms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gated_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+        <span class="n">gate_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gate_times</span><span class="p">()</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">:</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgatedelay</span> <span class="o">=</span> <span class="n">gate_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># the waveforms are a dictionary of (hp, hc)</span>
+            <span class="n">pols</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span>
+                <span class="n">ht</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span> 
+                <span class="n">ht</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">gate</span><span class="p">(</span><span class="n">gatestartdelay</span> <span class="o">+</span> <span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                            <span class="n">window</span><span class="o">=</span><span class="n">dgatedelay</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">invpsd</span><span class="o">=</span><span class="n">invpsd</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;paint&#39;</span><span class="p">)</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+                <span class="n">pols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">pols</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+    
+<div class="viewcode-block" id="GatedGaussianMargPol.get_gate_times_hmeco">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol.get_gate_times_hmeco">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gate_times_hmeco</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the time to apply a gate based on the current sky position.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector names -&gt; (gate start, gate width)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># generate the template waveform</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+        <span class="c1"># get waveform parameters</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="n">spin1</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">]</span>
+        <span class="n">spin2</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+        <span class="c1"># gate input for ringdown analysis which consideres a start time</span>
+        <span class="c1"># and an end time</span>
+        <span class="n">dgate</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;gate_window&#39;</span><span class="p">]</span>
+        <span class="n">meco_f</span> <span class="o">=</span> <span class="n">hybrid_meco_frequency</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span> <span class="n">spin1</span><span class="p">,</span>
+                                       <span class="n">spin2</span><span class="p">)</span>
+        <span class="c1"># figure out the gate times</span>
+        <span class="n">gatetimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># for now only calculating time from plus polarization; should be all</span>
+        <span class="c1"># that&#39;s necessary</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">invpsd</span><span class="p">))</span>
+            <span class="n">ht</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+            <span class="n">f_low</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_lower</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">hp</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+            <span class="n">sample_freqs</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">[</span><span class="n">f_low</span><span class="p">:]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">f_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sample_freqs</span> <span class="o">&lt;=</span> <span class="n">meco_f</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># find time corresponding to meco frequency</span>
+            <span class="n">t_from_freq</span> <span class="o">=</span> <span class="n">time_from_frequencyseries</span><span class="p">(</span>
+                <span class="n">hp</span><span class="p">[</span><span class="n">f_low</span><span class="p">:],</span> <span class="n">sample_frequencies</span><span class="o">=</span><span class="n">sample_freqs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">t_from_freq</span><span class="p">[</span><span class="n">f_idx</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="n">t_from_freq</span><span class="p">[</span><span class="n">f_idx</span><span class="p">]</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">t_from_freq</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="n">t_from_freq</span><span class="p">[</span><span class="n">f_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">ht</span><span class="o">.</span><span class="n">sample_times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">gatestartdelay</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;t_gate_start&#39;</span><span class="p">])</span>
+            <span class="n">gatetimes</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">gatestartdelay</span><span class="p">,</span> <span class="n">dgate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gatetimes</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds the maxL polarization and corresponding likelihood.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="s1">&#39;maxl_logl&#39;</span><span class="p">]</span>
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood after removing the power within the</span>
+<span class="sd">        given time window,</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \log p(d|\Theta) = -\frac{1}{2} \sum_i</span>
+<span class="sd">             \left&lt; d_i - h_i(\Theta) | d_i - h_i(\Theta) \right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># generate the template waveform</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+        <span class="c1"># get the gated waveforms and data</span>
+        <span class="n">gated_wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gated_waveforms</span><span class="p">()</span>
+        <span class="n">gated_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gated_data</span><span class="p">()</span>
+        <span class="c1"># cycle over</span>
+        <span class="n">loglr</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">lognl</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">refframe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+        <span class="n">ref_tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># get the antenna patterns</span>
+            <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="c1"># calculate tc in frame</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+            <span class="c1"># evaluate antenna pattern</span>
+            <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pol</span><span class="p">,</span> <span class="n">tc</span><span class="p">)</span>
+            <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate_indices</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det_lognorm</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">)</span>
+            <span class="c1"># we always filter the entire segment starting from kmin, since the</span>
+            <span class="c1"># gated series may have high frequency components</span>
+            <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="c1"># get the gated values</span>
+            <span class="n">gated_hp</span><span class="p">,</span> <span class="n">gated_hc</span> <span class="o">=</span> <span class="n">gated_wfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">gated_d</span> <span class="o">=</span> <span class="n">gated_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># we&#39;ll overwhiten the ungated data and waveforms for computing</span>
+            <span class="c1"># inner products</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overwhitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="c1"># overwhiten the hp and hc</span>
+            <span class="n">invpsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invpsds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">*</span><span class="n">invpsd</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">*</span><span class="n">invpsd</span>
+            <span class="c1"># get the various gated inner products</span>
+            <span class="n">hpd</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_d</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hp, d&gt;</span>
+            <span class="n">hcd</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_d</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hc, d&gt;</span>
+            <span class="n">dhp</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_hp</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;d, hp&gt;</span>
+            <span class="n">dhc</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;d, hc&gt;</span>
+            <span class="n">hphp</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_hp</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hp, hp&gt;</span>
+            <span class="n">hchc</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hc, hc&gt;</span>
+            <span class="n">hphc</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hp, hc&gt;</span>
+            <span class="n">hchp</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_hp</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hc, hp&gt;</span>
+            <span class="n">dd</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">gated_d</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;d, d&gt;</span>
+            <span class="c1"># since the antenna patterns are real,</span>
+            <span class="c1"># &lt;h, d&gt;/2 + &lt;d, h&gt;/2 = fp*(&lt;hp, d&gt;/2 + &lt;d, hp&gt;/2)</span>
+            <span class="c1">#                     + fc*(&lt;hc, d&gt;/2 + &lt;d, hc&gt;/2)</span>
+            <span class="n">hd</span> <span class="o">=</span> <span class="n">fp</span><span class="o">*</span><span class="p">(</span><span class="n">hpd</span> <span class="o">+</span> <span class="n">dhp</span><span class="p">)</span> <span class="o">+</span> <span class="n">fc</span><span class="o">*</span><span class="p">(</span><span class="n">hcd</span> <span class="o">+</span> <span class="n">dhc</span><span class="p">)</span>
+            <span class="c1"># &lt;h, h&gt;/2 = &lt;fp*hp + fc*hc, fp*hp + fc*hc&gt;/2</span>
+            <span class="c1">#          = fp*fp*&lt;hp, hp&gt;/2 + fc*fc*&lt;hc, hc&gt;/2</span>
+            <span class="c1">#            + fp*fc*&lt;hp, hc&gt;/2 + fc*fp*&lt;hc, hp&gt;/2</span>
+            <span class="n">hh</span> <span class="o">=</span> <span class="n">fp</span><span class="o">*</span><span class="n">fp</span><span class="o">*</span><span class="n">hphp</span> <span class="o">+</span> <span class="n">fc</span><span class="o">*</span><span class="n">fc</span><span class="o">*</span><span class="n">hchc</span> <span class="o">+</span> <span class="n">fp</span><span class="o">*</span><span class="n">fc</span><span class="o">*</span><span class="p">(</span><span class="n">hphc</span> <span class="o">+</span> <span class="n">hchp</span><span class="p">)</span>
+            <span class="c1"># sum up; note that the factor is 2df instead of 4df to account</span>
+            <span class="c1"># for the factor of 1/2</span>
+            <span class="n">loglr</span> <span class="o">+=</span> <span class="n">norm</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">invpsd</span><span class="o">.</span><span class="n">delta_f</span><span class="o">*</span><span class="p">(</span><span class="n">hd</span> <span class="o">-</span> <span class="n">hh</span><span class="p">)</span>
+            <span class="n">lognl</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">invpsd</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">*</span> <span class="n">dd</span>
+        <span class="c1"># store the maxl polarization</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">loglr</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pol</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_logl&#39;</span><span class="p">,</span> <span class="n">loglr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">lognl</span><span class="p">)</span>
+        <span class="c1"># compute the marginalized log likelihood</span>
+        <span class="n">marglogl</span> <span class="o">=</span> <span class="n">special</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">loglr</span><span class="p">)</span> <span class="o">+</span> <span class="n">lognl</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pol</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">marglogl</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_signal_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; The list of classes that this model supports in a multi-signal</span>
+<span class="sd">        likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
+    
+<div class="viewcode-block" id="GatedGaussianMargPol.multi_loglikelihood">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol.multi_loglikelihood">[docs]</a>
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate a multi-model (signal) likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Generate the waveforms for each submodel</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">models</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="p">]:</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">()</span>
+            <span class="n">wfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+
+        <span class="c1"># combine into a single waveform</span>
+        <span class="n">combine</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="c1"># get max waveform length</span>
+            <span class="n">mlenp</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">])</span>
+            <span class="n">mlenc</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">])</span>
+            <span class="n">mlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">mlenp</span><span class="p">,</span> <span class="n">mlenc</span><span class="p">])</span>
+            <span class="c1"># resize plus and cross</span>
+            <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">mlen</span><span class="p">)</span>
+            <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">mlen</span><span class="p">)</span>
+            <span class="c1"># combine waveforms</span>
+            <span class="n">combine</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">]),</span> <span class="nb">sum</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+                                 <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_wfs</span> <span class="o">=</span> <span class="n">combine</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loglikelihood</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

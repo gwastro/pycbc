@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setting up virtualenv &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installing lalsuite for PyCBC" href="install_lalsuite.html" />
+    <link rel="prev" title="Instructions to add CUDA support (optional)" href="install_cuda.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="install.html">Installing PyCBC</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html#simple-installation">Simple Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-virtualenv-for-development-and-production">Full Virtualenv for Development and Production</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="install.html#other-scenarios">Other scenarios</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="install.html#docker">Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#building-the-documentation">Building the Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#use-of-intel-mkl-optimized-fft-libraries">Use of Intel MKL Optimized FFT libraries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#graphics-processing-unit-support-with-cuda">Graphics Processing Unit support with CUDA</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="install.html#related-help">Related Help</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Setting up virtualenv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install_lalsuite.html">Installing lalsuite for PyCBC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="install.html">Installing PyCBC</a></li>
+      <li class="breadcrumb-item active">Setting up virtualenv</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/install_virtualenv.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="setting-up-virtualenv">
+<h1>Setting up virtualenv<a class="headerlink" href="#setting-up-virtualenv" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>LIGO Data Grid users on Scientic Linux 6 systems will need to perform a one-time setup of pip and virtualenv, as the versions installed on Scientic Linux 6 are too old for use with PyCBC. Note that once this part of the installation has been performed, you should not need to do it again.</p>
+</div>
+<p>You need at least version 7.1.0 of pip to manage the installation process for virtualenv. Run the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>--version
+</pre></div>
+</div>
+<p>to determine the version of pip that you have installed. If you have version 7.1.0 or greater, you can continue to the section <a class="reference internal" href="#install-virtualenv">Install virtualenv</a> without installing pip. If this command returns <code class="docutils literal notranslate"><span class="pre">pip:</span> <span class="pre">command</span> <span class="pre">not</span> <span class="pre">found</span></code> or a version of pip less than 7.1.0, then follow the instruction in the section to <a class="reference internal" href="#install-pip">Install pip</a></p>
+<section id="install-pip">
+<h2>Install pip<a class="headerlink" href="#install-pip" title="Link to this heading"></a></h2>
+<p>First install pip in your home directory. In this example, we install in the directory <code class="docutils literal notranslate"><span class="pre">${HOME}/local/</span></code>. Run the commands</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">VERSION</span><span class="o">=</span><span class="sb">`</span>python<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;import sys; print &quot;%d.%d&quot; % (sys.version_info[0], sys.version_info[1])&#39;</span><span class="sb">`</span>
+mkdir<span class="w"> </span>-p<span class="w"> </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/local/pip-7.1.0/lib/python<span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span>/site-packages
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/local/pip-7.1.0/lib/python<span class="si">${</span><span class="nv">VERSION</span><span class="si">}</span>/site-packages
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/local/pip-7.1.0/bin:<span class="si">${</span><span class="nv">PATH</span><span class="si">}</span>
+</pre></div>
+</div>
+<p>to set up your environment to install pip. Note that when setting <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> we have excluded all other directories from the path. This is to prevent the install process from picking up any existing libraries that may be in your <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code>. When setting <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, the pip install directory is placed at the start of the <code class="docutils literal notranslate"><span class="pre">PATH</span></code> so that it is found first by the shell.</p>
+<p>Now use the system version of easy_install to install pip 7.1.0 in this directory with the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>easy_install<span class="w"> </span>--prefix<span class="o">=</span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/local/pip-7.1.0<span class="w"> </span>https://pypi.python.org/packages/source/p/pip/pip-7.1.0.tar.gz#md5<span class="o">=</span>d935ee9146074b1d3f26c5f0acfd120e
+</pre></div>
+</div>
+<p>Next check that you are using the correct version of pip by running the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>--version
+</pre></div>
+</div>
+<p>This should report pip 7.1.0. If it returns an older version, check that you set your <code class="docutils literal notranslate"><span class="pre">PATH</span></code> and <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> correctly.</p>
+</section>
+<section id="install-virtualenv">
+<h2>Install virtualenv<a class="headerlink" href="#install-virtualenv" title="Link to this heading"></a></h2>
+<p>Install virtual env using the version of pip that you just inst</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>virtualenv<span class="w"> </span>--upgrade<span class="w"> </span>--user
+</pre></div>
+</div>
+<p>This installs virtualenv into your <code class="docutils literal notranslate"><span class="pre">${HOME}/.local</span></code> directory where pip installs user packages. (Note the period at the start of <code class="docutils literal notranslate"><span class="pre">.local</span></code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If this command returns <code class="docutils literal notranslate"><span class="pre">Can</span> <span class="pre">not</span> <span class="pre">perform</span> <span class="pre">a</span> <span class="pre">'--user'</span> <span class="pre">install.</span> <span class="pre">User</span> <span class="pre">site-packages</span> <span class="pre">are</span> <span class="pre">not</span> <span class="pre">visible</span> <span class="pre">in</span> <span class="pre">this</span> <span class="pre">virtualenv.</span></code> then you are already in a Python virtual environment. You will need to deactivate this environment or contact your system administrator to install virtualenv for you in this environment.</p>
+</div>
+<p>Add virtualenv to your path by running the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.local/bin:<span class="si">${</span><span class="nv">PATH</span><span class="si">}</span>
+</pre></div>
+</div>
+<p>You may want to add this command to your <code class="docutils literal notranslate"><span class="pre">.bash_profile</span></code> so that virtualenv is available when you log in by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export PATH=${HOME}/.local/bin:${PATH}&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/.bash_profile
+</pre></div>
+</div>
+<p>You can now continue installing PyCBC.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install_cuda.html" class="btn btn-neutral float-left" title="Instructions to add CUDA support (optional)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="install_lalsuite.html" class="btn btn-neutral float-right" title="Installing lalsuite for PyCBC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

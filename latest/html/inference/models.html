@@ -1,0 +1,396 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Details of common Models in PyCBC Inference &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Example: Generating calibration configuration file for GW150914 and GW170817" href="examples/generate_calibration_config.html" />
+    <link rel="prev" title="Trying out different samplers" href="examples/sampler_platter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="examples/analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="examples/sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Details of common Models in PyCBC Inference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#standard-models-with-full-waveform-generation">Standard models with full waveform generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#heterodyne-relative-models">Heterodyne / Relative Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#extrinsic-parameter-only-models">Extrinsic Parameter Only Models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#composite-models">Composite Models</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="examples/generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Details of common Models in PyCBC Inference</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/models.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="details-of-common-models-in-pycbc-inference">
+<span id="models-detailed"></span><h1>Details of common Models in PyCBC Inference<a class="headerlink" href="#details-of-common-models-in-pycbc-inference" title="Link to this heading"></a></h1>
+<p>Commonly used likelihood models are compared below. PyCBC Inference
+also has the capability to interface with external models. See the
+<a class="reference external" href="https://colab.research.google.com/github/gwastro/pycbc-tutorials/blob/master/tutorial/inference_9_AddingCustomModels.ipynb">interactive tutorial</a> if you’d like to learn how to add you own
+model for handling a new problem such as GRBs, Kilonova or whatever you can
+imagine.</p>
+<section id="standard-models-with-full-waveform-generation">
+<h2>Standard models with full waveform generation<a class="headerlink" href="#standard-models-with-full-waveform-generation" title="Link to this heading"></a></h2>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Gaussian Noise</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'gaussian_noise'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gaussian_noise.GaussianNoise</span></code></a></p>
+<p class="sd-card-text">The <cite>gaussian_noise</cite> model is one of the most generic models in
+PyCBC Inference. It is designed for gravitational-wave data that is
+assumed to be Gaussian and stationary. Otherwise, there are no
+restricts on the types of waveform models that may be used.
+Waveform models supported by either <cite>get_fd_waveform</cite> or
+<cite>get_td_waveform</cite> can be used as waveform models. Use this model only if
+none other fits and is more optimized for your specific problem. Because
+this waveform model is generic is often slower than the other more
+specialized models.</p>
+<p class="sd-card-text">Supported Marginalizations: None</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:✅
+<a class="reference internal" href="examples/bbh.html#inference-example-bbh"><span class="std std-ref">Example</span></a></p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Marginalized Phase</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_phase'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise</span></code></a></p>
+<p class="sd-card-text">The <cite>marginalized_phase</cite> model is a straightforward extension to
+the <cite>gaussian_noise</cite> model that marginalizes the signal over an overall
+phase. This can account for the orbital phase of a gravitational-wave
+signal which is usually a nuissance parameter. However, this
+implementation is only correct for signals that only include the
+dominant gravitational-wave mode (or 22 mode). This is because each
+mode has a different functional dependence on the orbital phase.</p>
+<p class="sd-card-text">Supported Marginalizations: coa_phase (automatic, dominant-mode)</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:❌</p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Marginalized Polarization</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_polarization'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization</span></code></a></p>
+<p class="sd-card-text">The <cite>marginalized_polarization</cite> model is a straightforward extension to
+the <cite>gaussian_noise</cite> model that marginalizes the signal over
+the polarization angle of the gravitational-wave signal. This is
+done by filtering both the plus and cross polarizations separately
+and then numerically integrating the resulting inner products over
+a grid of polarization angle values. The density of the grid
+is selectable. Additional marginalizations can also be optionally enabled.
+This model is often used in perference to the <cite>marginalized_phase</cite> model
+because it can support waveform models with higher order modes.</p>
+<p class="sd-card-text">Supported Marginalizations: polarization (automatic), coa_phase (dominant-mode), distance</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:✅</p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Marginalized Time</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_time'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime</span></code></a></p>
+<p class="sd-card-text">The <cite>marginalized_time</cite> model calculates a time series of inner products
+between the signal model and data so that the likelihood can be
+numerically marginalized over. The marginalization uses a weighted
+monte-carlo which samples the most likely regions of the time series
+more densly. The time series is also sub-sample interpolated. Higher
+mode waveforms are also permitted as both the plus and cross polarizations
+are explicitly handled separately. The time marginalization can also be
+done in concert with sky and various intrinsic marginalizations.</p>
+<p class="sd-card-text">Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:✅
+<a class="reference internal" href="examples/margtime.html#marginalized-time-example"><span class="std std-ref">Example</span></a></p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Marginalized Higher Mode Phase</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_hmpolphase'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase</span></code></a></p>
+<p class="sd-card-text">The <cite>marginalized_hmpolphase</cite> model numerically marginalizes the likelihood
+over a grid of both polarization values and orbital phase values. It
+explicitly handles this for higher-order-mode waveforms by calculating
+all inner products between the data and signal on a mode-by-mode basis.
+The likelihoods are then assembled for each polarization and phase value
+and numerically integrated over. This model can only be used for
+waveform approximants which support the PyCBC higher mode interface
+as we need to be able to calculate the each mode separately.</p>
+<p class="sd-card-text">Supported Marginalizations: polarization (automatic), coa_phase (automatic)</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:✅</p>
+</div>
+</div>
+</section>
+<section id="heterodyne-relative-models">
+<h2>Heterodyne / Relative Models<a class="headerlink" href="#heterodyne-relative-models" title="Link to this heading"></a></h2>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Relative Model</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'relative'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.Relative</span></code></a></p>
+<p class="sd-card-text">The <cite>relative</cite> model uses a reference signal provided in its
+configuration to expand the likelihood in terms of differences between
+the reference signal and a target signal. If the reference is close to the
+peak in the likelihood, the reasonable portions of parameter space to
+explore will only have small phase deviations from the reference signal
+(i.e. several cycles). This allows us to represent the ration between
+target signal and our referencee using a piece-wise linear approximation.
+The target signal only needs to calculated at edges of this approximation.
+This model thus only supports waveforms which can efficiently generate
+a signal only at a given set of frequency values. Higher order modes
+are not recommended due their possible violation of the approximation
+that the ration between target and reference signals is a slowly varying
+smooth function. In this case use the <cite>multi_signal</cite> model and treat
+use a <cite>relative</cite> model for each mode. Where the model approximations hold,
+use this in preference
+to the models that need to generate a full waveform for every likelihood
+as these will usually be much faster.</p>
+<p class="sd-card-text">There is also support in this model for use with <a class="reference internal" href="examples/lisa_smbhb_ldc_pe.html#inference-example-lisa-smbhb-ldc"><span class="std std-ref">LISA Sangria data analysis</span></a> and <a class="reference internal" href="examples/lisa_smbhb_inj_pe.html#inference-example-lisa-smbhb-inj"><span class="std std-ref">LISA injection data analysis</span></a>.</p>
+<p class="sd-card-text">Supported Marginalizations: distance, coa_phase (dominant mode), polarization</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:✅ LISA:✅ Higher Modes:❌
+<a class="reference internal" href="examples/relative.html#relative-example"><span class="std std-ref">Example</span></a></p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Relative Time</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'relative_time'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTime" title="pycbc.inference.models.relbin.RelativeTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.RelativeTime</span></code></a></p>
+<p class="sd-card-text">The <cite>relative_time</cite> model extends the <cite>relative model</cite> by using calculating
+the likelihood for a grid of possible merger times. A weighted monte-carlo
+is performed to integrate over the merger time. Sub-sample interpolation
+of the time series is performed. Sky location marginalization among others
+can be done in concert.</p>
+<p class="sd-card-text">Supported Marginalizations: distance, coa_phase (dominant mode), polarization, ra dec</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:❌</p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Relative Time Dominant-mode Only</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'relative_time'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTime" title="pycbc.inference.models.relbin.RelativeTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.RelativeTime</span></code></a></p>
+<p class="sd-card-text">The <cite>relative_time_dom</cite> model further specializes the model to completely
+preclude use with higher order mode signals. For this restriction, it
+gains the ability to marginalize over inclination</p>
+<p class="sd-card-text">Supported Marginalizations: distance, coa_phase (dominant mode), polarization, inclination, ra dec</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:❌</p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Brute force LISA sky modes</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'brute_lisa_sky_modes_marginalize'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.Relative</span></code></a></p>
+<p class="sd-card-text">The models does a brute force marginalization over the LISA sky mode
+degeneracies. It is built upon the <cite>relative</cite> model</p>
+<p class="sd-card-text">Supported Marginalizations: distance, coa_phase (dominant mode)</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:✅ Higher Modes:❌</p>
+</div>
+</div>
+</section>
+<section id="extrinsic-parameter-only-models">
+<h2>Extrinsic Parameter Only Models<a class="headerlink" href="#extrinsic-parameter-only-models" title="Link to this heading"></a></h2>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Single Template</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'single_template'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate" title="pycbc.inference.models.single_template.SingleTemplate"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.single_template.SingleTemplate</span></code></a></p>
+<p class="sd-card-text">The <cite>single_template</cite> model is only for extrinsic parameter estimation e.g.
+sky location, distance, inclination, etc. It speeds up parameter estimation
+by completely avoiding waveform generation while calculating likelihoods.
+A single reference signal is generated with fixed intrinsic (masses, spins, etc)
+parameters. The likelihoods can then be precalculated up to constant factors
+which vary with the extrinsic parameters. Only dominant-mode signals are supported
+as the plus and cross polarizations are assumed to be different only by
+a phase. With this model all supported parameters may be marginalized over
+or any subset.</p>
+<p class="sd-card-text">Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Earth Rotation:❌ LISA:❌ Higher Modes:❌
+<a class="reference internal" href="examples/single.html#single-template-examples"><span class="std std-ref">Example</span></a></p>
+</div>
+</div>
+</section>
+<section id="composite-models">
+<h2>Composite Models<a class="headerlink" href="#composite-models" title="Link to this heading"></a></h2>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Hierarchical</div>
+<p class="sd-card-text"><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel" title="pycbc.inference.models.hierarchical.HierarchicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.HierarchicalModel</span></code></a></p>
+<p class="sd-card-text">The hierachical model is a container for submodels. Each submodel
+makes an indepedent contribution to an overall likelihood function.</p>
+<p class="sd-card-text">See <a class="reference internal" href="examples/hierarchical.html#hierachical-model"><span class="std std-ref">the full page on the hierarchical model</span></a>.</p>
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Multiple Signal</div>
+<p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'multi_signal'</span></code> <a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.hierarchical.MultiSignalModel" title="pycbc.inference.models.hierarchical.MultiSignalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.MultiSignalModel</span></code></a></p>
+<p class="sd-card-text">This is a container for submodels where each model shares use of the same
+data and hence there may be cross terms between the several signals.
+This model requires support from the submodel to handle cross-term
+calculations. Some supported models include the <cite>gaussian_noise</cite>, <cite>relative</cite>
+and <cite>single_template</cite>.</p>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples/sampler_platter.html" class="btn btn-neutral float-left" title="Trying out different samplers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples/generate_calibration_config.html" class="btn btn-neutral float-right" title="Example: Generating calibration configuration file for GW150914 and GW170817" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

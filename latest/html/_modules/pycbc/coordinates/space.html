@@ -1,0 +1,1130 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.coordinates.space &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.coordinates.space</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.coordinates.space</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023  Shichao Wu, Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides coordinate transformations related to space-borne</span>
+<span class="sd">detectors, such as coordinate transformations between space-borne detectors</span>
+<span class="sd">and ground-based detectors. Note that current LISA orbit used in this module</span>
+<span class="sd">is a circular orbit, need to be replaced by a more realistic and general orbit</span>
+<span class="sd">model in the near future.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">Rotation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">fsolve</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.time</span><span class="w"> </span><span class="kn">import</span> <span class="n">Time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.coordinates</span><span class="w"> </span><span class="kn">import</span> <span class="n">BarycentricMeanEcliptic</span><span class="p">,</span> <span class="n">PrecessedGeocentric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.coordinates</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_body_barycentric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.coordinates</span><span class="w"> </span><span class="kn">import</span> <span class="n">SkyCoord</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.coordinates.builtin_frames</span><span class="w"> </span><span class="kn">import</span> <span class="n">ecliptic_transforms</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.coordinates.space&#39;</span><span class="p">)</span>
+
+<span class="c1"># This constant makes sure LISA is behind the Earth by 19-23 degrees.</span>
+<span class="c1"># Making this a stand-alone constant will also make it callable by</span>
+<span class="c1"># the waveform plugin and PE config file. In the unit of &#39;s&#39;.</span>
+<span class="n">TIME_OFFSET_20_DEGREES</span> <span class="o">=</span> <span class="mf">7365189.431698299</span>
+
+<span class="c1"># &quot;rotation_matrix_ssb_to_lisa&quot; and &quot;lisa_position_ssb&quot; should be</span>
+<span class="c1"># more general for other detectors in the near future.</span>
+
+
+<div class="viewcode-block" id="rotation_matrix_ssb_to_lisa">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.rotation_matrix_ssb_to_lisa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotation_matrix_ssb_to_lisa</span><span class="p">(</span><span class="n">alpha</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; The rotation matrix (of frame basis) from SSB frame to LISA frame.</span>
+<span class="sd">    This function assumes the angle between LISA plane and the ecliptic</span>
+<span class="sd">    is 60 degrees, and the period of LISA&#39;s self-rotation and orbital</span>
+<span class="sd">    revolution is both one year.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The angular displacement of LISA in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r_total : numpy.array</span>
+<span class="sd">        A 3x3 rotation matrix from SSB frame to LISA frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_rotvec</span><span class="p">([</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">alpha</span><span class="p">]</span>
+    <span class="p">])</span><span class="o">.</span><span class="n">as_matrix</span><span class="p">()</span>
+    <span class="n">r_total</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">r_total</span></div>
+
+
+
+<div class="viewcode-block" id="lisa_position_ssb">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.lisa_position_ssb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lisa_position_ssb</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculating the position vector and angular displacement of LISA</span>
+<span class="sd">    in the SSB frame, at a given time. This function assumes LISA&#39;s barycenter</span>
+<span class="sd">    is orbiting around a circular orbit within the ecliptic behind the Earth.</span>
+<span class="sd">    The period of it is one year.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_lisa : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame,</span>
+<span class="sd">        or any other time you want.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (p, alpha) : tuple</span>
+<span class="sd">    p : numpy.array</span>
+<span class="sd">        The position vector of LISA in the SSB frame. In the unit of &#39;m&#39;.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The angular displacement of LISA in the SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">OMEGA_0</span> <span class="o">=</span> <span class="mf">1.99098659277e-7</span>
+    <span class="n">R_ORBIT</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">OMEGA_0</span> <span class="o">*</span> <span class="p">(</span><span class="n">t_lisa</span> <span class="o">+</span> <span class="n">t0</span><span class="p">),</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">R_ORBIT</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)],</span>
+                  <span class="p">[</span><span class="n">R_ORBIT</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)],</span>
+                  <span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="localization_to_propagation_vector">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.localization_to_propagation_vector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">localization_to_propagation_vector</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span>
+                                       <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the sky localization to the corresponding</span>
+<span class="sd">    propagation unit vector of a GW signal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    longitude : float</span>
+<span class="sd">        The longitude, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude : float</span>
+<span class="sd">        The latitude, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+<span class="sd">    frame : astropy.coordinates</span>
+<span class="sd">        The frame from astropy.coordinates if use_astropy is True,</span>
+<span class="sd">        the default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    [[x], [y], [z]] : numpy.array</span>
+<span class="sd">        The propagation unit vector of that GW signal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">use_astropy</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="n">frame</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="n">frame</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="o">-</span><span class="n">frame</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">latitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">longitude</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">latitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">longitude</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">latitude</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">y</span><span class="p">],</span> <span class="p">[</span><span class="n">z</span><span class="p">]])</span>
+
+    <span class="k">return</span> <span class="n">v</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="propagation_vector_to_localization">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.propagation_vector_to_localization">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">propagation_vector_to_localization</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the propagation unit vector to the corresponding</span>
+<span class="sd">    sky localization of a GW signal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : numpy.array</span>
+<span class="sd">        The propagation unit vector of a GW signal.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+<span class="sd">    frame : astropy.coordinates</span>
+<span class="sd">        The frame from astropy.coordinates if use_astropy is True,</span>
+<span class="sd">        the default is None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (longitude, latitude) : tuple</span>
+<span class="sd">        The sky localization of that GW signal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">use_astropy</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">longitude</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">latitude</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">rad</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">longitude</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">latitude</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">rad</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># latitude already within [-pi/2, pi/2]</span>
+        <span class="n">latitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">longitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">latitude</span><span class="p">),</span>
+                               <span class="o">-</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">latitude</span><span class="p">)))</span>
+        <span class="c1"># longitude should within [0, 2*pi)</span>
+        <span class="n">longitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="polarization_newframe">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.polarization_newframe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">polarization_newframe</span><span class="p">(</span><span class="n">polarization</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rotation_matrix</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">old_frame</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_frame</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting a polarization angle from a frame to a new frame</span>
+<span class="sd">    by using rotation matrix method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    polarization : float</span>
+<span class="sd">        The polarization angle in the old frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    k : numpy.array</span>
+<span class="sd">        The propagation unit vector of a GW signal in the old frame.</span>
+<span class="sd">    rotation_matrix : numpy.array</span>
+<span class="sd">        The rotation matrix (of frame basis) from the old frame to</span>
+<span class="sd">        the new frame.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+<span class="sd">    old_frame : astropy.coordinates</span>
+<span class="sd">        The frame from astropy.coordinates if use_astropy is True,</span>
+<span class="sd">        the default is None.</span>
+<span class="sd">    new_frame : astropy.coordinates</span>
+<span class="sd">        The frame from astropy.coordinates if use_astropy is True,</span>
+<span class="sd">        the default is None. The new frame for the new polarization</span>
+<span class="sd">        angle.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    polarization_new_frame : float</span>
+<span class="sd">        The polarization angle in the new frame of that GW signal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">longitude</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">propagation_vector_to_localization</span><span class="p">(</span>
+                        <span class="n">k</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">old_frame</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">longitude</span><span class="p">)],</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">longitude</span><span class="p">)],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+    <span class="n">rotation_vector</span> <span class="o">=</span> <span class="n">polarization</span> <span class="o">*</span> <span class="n">k</span>
+    <span class="n">rotation_polarization</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_rotvec</span><span class="p">(</span><span class="n">rotation_vector</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">rotation_polarization</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">p_newframe</span> <span class="o">=</span> <span class="n">rotation_matrix</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">p</span>
+    <span class="n">k_newframe</span> <span class="o">=</span> <span class="n">rotation_matrix</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">k</span>
+    <span class="n">longitude_newframe</span><span class="p">,</span> <span class="n">latitude_newframe</span> <span class="o">=</span> \
+        <span class="n">propagation_vector_to_localization</span><span class="p">(</span><span class="n">k_newframe</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">new_frame</span><span class="p">)</span>
+    <span class="n">u_newframe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">longitude_newframe</span><span class="p">)],</span>
+                           <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">longitude_newframe</span><span class="p">)],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+    <span class="n">v_newframe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                    <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">latitude_newframe</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">longitude_newframe</span><span class="p">)],</span>
+                    <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">latitude_newframe</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">longitude_newframe</span><span class="p">)],</span>
+                    <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">latitude_newframe</span><span class="p">)]])</span>
+    <span class="n">p_dot_u_newframe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">p_newframe</span><span class="p">,</span> <span class="n">u_newframe</span><span class="p">)</span>
+    <span class="n">p_dot_v_newframe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">p_newframe</span><span class="p">,</span> <span class="n">v_newframe</span><span class="p">)</span>
+    <span class="n">polarization_new_frame</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">p_dot_v_newframe</span><span class="p">,</span> <span class="n">p_dot_u_newframe</span><span class="p">)</span>
+    <span class="n">polarization_new_frame</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">polarization_new_frame</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="c1"># avoid the round error</span>
+    <span class="k">if</span> <span class="n">polarization_new_frame</span> <span class="o">==</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+        <span class="n">polarization_new_frame</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">polarization_new_frame</span></div>
+
+
+
+<div class="viewcode-block" id="t_lisa_from_ssb">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.t_lisa_from_ssb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t_lisa_from_ssb</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span>
+                    <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculating the time when a GW signal arrives at the barycenter</span>
+<span class="sd">    of LISA, by using the time and sky localization in SSB frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_ssb : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_lisa : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+            <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">equation</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">):</span>
+        <span class="c1"># LISA is moving, when GW arrives at LISA center,</span>
+        <span class="c1"># time is t_lisa, not t_ssb.</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">lisa_position_ssb</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">t0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">t_lisa</span> <span class="o">-</span> <span class="n">t_ssb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="n">t_ssb</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="t_ssb_from_t_lisa">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.t_ssb_from_t_lisa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t_ssb_from_t_lisa</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span>
+                      <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculating the time when a GW signal arrives at the barycenter</span>
+<span class="sd">    of SSB, by using the time in LISA frame and sky localization in SSB frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_lisa : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_ssb : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+            <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># LISA is moving, when GW arrives at LISA center,</span>
+    <span class="c1"># time is t_lisa, not t_ssb.</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">lisa_position_ssb</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">t0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">equation</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">t_lisa</span> <span class="o">-</span> <span class="n">t_ssb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="n">t_lisa</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="ssb_to_lisa">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.ssb_to_lisa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ssb_to_lisa</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span><span class="p">,</span>
+                <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the arrive time, the sky localization, and the polarization</span>
+<span class="sd">    from the SSB frame to the LISA frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_ssb : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_ssb : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa) : tuple</span>
+<span class="sd">    t_lisa : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_lisa : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_lisa : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_lisa : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in LISA frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">t_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t_ssb</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">longitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">longitude_ssb</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">latitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">latitude_ssb</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">polarization_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">polarization_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">polarization_ssb</span><span class="p">])</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">)</span>
+    <span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+    <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Longitude should within [0, 2*pi).&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Latitude should within [-pi/2, pi/2].&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Polarization angle should within [0, 2*pi).&quot;</span><span class="p">)</span>
+        <span class="n">t_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_lisa_from_ssb</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                    <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">t0</span><span class="p">)</span>
+        <span class="n">k_ssb</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                    <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Although t_lisa calculated above using the corrected LISA position</span>
+        <span class="c1"># vector by adding t0, it corresponds to the true t_ssb, not t_ssb+t0,</span>
+        <span class="c1"># we need to include t0 again to correct LISA position.</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">lisa_position_ssb</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">t0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">rotation_matrix_lisa</span> <span class="o">=</span> <span class="n">rotation_matrix_ssb_to_lisa</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">k_lisa</span> <span class="o">=</span> <span class="n">rotation_matrix_lisa</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">k_ssb</span>
+        <span class="n">longitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">propagation_vector_to_localization</span><span class="p">(</span><span class="n">k_lisa</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">polarization_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">polarization_newframe</span><span class="p">(</span>
+            <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">k_ssb</span><span class="p">,</span> <span class="n">rotation_matrix_lisa</span><span class="p">,</span>
+            <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">params_lisa</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_lisa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">longitude_lisa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                       <span class="n">latitude_lisa</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">polarization_lisa</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params_lisa</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span><span class="p">,</span>
+                       <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">params_lisa</span></div>
+
+
+
+<div class="viewcode-block" id="lisa_to_ssb">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.lisa_to_ssb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lisa_to_ssb</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span><span class="p">,</span> <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span><span class="p">,</span>
+                <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the arrive time, the sky localization, and the polarization</span>
+<span class="sd">    from the LISA frame to the SSB frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_lisa : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_lisa : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_lisa : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_lisa : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in LISA frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb) : tuple</span>
+<span class="sd">    t_ssb : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_ssb : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">t_lisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t_lisa</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">longitude_lisa</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">longitude_lisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">longitude_lisa</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">latitude_lisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">latitude_lisa</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">polarization_lisa</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">polarization_lisa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">polarization_lisa</span><span class="p">])</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">)</span>
+    <span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+    <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">longitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">longitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Longitude should within [0, 2*pi).&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">latitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Latitude should within [-pi/2, pi/2].&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">polarization_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">polarization_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Polarization angle should within [0, 2*pi).&quot;</span><span class="p">)</span>
+        <span class="n">k_lisa</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                    <span class="n">longitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">lisa_position_ssb</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">t0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">rotation_matrix_lisa</span> <span class="o">=</span> <span class="n">rotation_matrix_ssb_to_lisa</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">k_ssb</span> <span class="o">=</span> <span class="n">rotation_matrix_lisa</span> <span class="o">@</span> <span class="n">k_lisa</span>
+        <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">propagation_vector_to_localization</span><span class="p">(</span><span class="n">k_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">t_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_ssb_from_t_lisa</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                     <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">t0</span><span class="p">)</span>
+        <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">polarization_newframe</span><span class="p">(</span>
+            <span class="n">polarization_lisa</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">k_lisa</span><span class="p">,</span> <span class="n">rotation_matrix_lisa</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">use_astropy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">params_ssb</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                      <span class="n">latitude_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">polarization_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params_ssb</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span>
+                      <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">params_ssb</span></div>
+
+
+
+<div class="viewcode-block" id="rotation_matrix_ssb_to_geo">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.rotation_matrix_ssb_to_geo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotation_matrix_ssb_to_geo</span><span class="p">(</span><span class="n">epsilon</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">23.439281</span><span class="p">)):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; The rotation matrix (of frame basis) from SSB frame to</span>
+<span class="sd">    geocentric frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    epsilon : float</span>
+<span class="sd">        The Earth&#39;s axial tilt (obliquity), in the unit of &#39;radian&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r : numpy.array</span>
+<span class="sd">        A 3x3 rotation matrix from SSB frame to geocentric frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_rotvec</span><span class="p">([</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">epsilon</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="p">])</span><span class="o">.</span><span class="n">as_matrix</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="earth_position_ssb">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.earth_position_ssb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">earth_position_ssb</span><span class="p">(</span><span class="n">t_geo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculating the position vector and angular displacement of the Earth</span>
+<span class="sd">    in the SSB frame, at a given time. By using Astropy.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_geo : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame,</span>
+<span class="sd">        or any other time you want.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (p, alpha) : tuple</span>
+<span class="sd">    p : numpy.array</span>
+<span class="sd">        The position vector of the Earth in the SSB frame. In the unit of &#39;m&#39;.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The angular displacement of the Earth in the SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;gps&#39;</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">get_body_barycentric</span><span class="p">(</span><span class="s1">&#39;earth&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+    <span class="c1"># BarycentricMeanEcliptic doesn&#39;t have obstime attribute,</span>
+    <span class="c1"># it&#39;s a good inertial frame, but ICRS is not.</span>
+    <span class="n">icrs_coord</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s1">&#39;icrs&#39;</span><span class="p">,</span> <span class="n">obstime</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">bme_coord</span> <span class="o">=</span> <span class="n">icrs_coord</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span>
+                    <span class="n">BarycentricMeanEcliptic</span><span class="p">(</span><span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">bme_coord</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">bme_coord</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">bme_coord</span><span class="o">.</span><span class="n">cartesian</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">y</span><span class="p">],</span> <span class="p">[</span><span class="n">z</span><span class="p">]])</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">bme_coord</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">rad</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="t_geo_from_ssb">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.t_geo_from_ssb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t_geo_from_ssb</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span>
+                   <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculating the time when a GW signal arrives at the barycenter</span>
+<span class="sd">    of the Earth, by using the time and sky localization in SSB frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_ssb : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_geo : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+            <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">frame</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">equation</span><span class="p">(</span><span class="n">t_geo</span><span class="p">):</span>
+        <span class="c1"># Earth is moving, when GW arrives at Earth center,</span>
+        <span class="c1"># time is t_geo, not t_ssb.</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">earth_position_ssb</span><span class="p">(</span><span class="n">t_geo</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">t_geo</span> <span class="o">-</span> <span class="n">t_ssb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="n">t_ssb</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="t_ssb_from_t_geo">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.t_ssb_from_t_geo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t_ssb_from_t_geo</span><span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span>
+                     <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculating the time when a GW signal arrives at the barycenter</span>
+<span class="sd">    of SSB, by using the time in geocentric frame and sky localization</span>
+<span class="sd">    in SSB frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_geo : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_ssb : float</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+            <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">frame</span><span class="p">)</span>
+    <span class="c1"># Earth is moving, when GW arrives at Earth center,</span>
+    <span class="c1"># time is t_geo, not t_ssb.</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">earth_position_ssb</span><span class="p">(</span><span class="n">t_geo</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">equation</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">t_geo</span> <span class="o">-</span> <span class="n">t_ssb</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="n">t_geo</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="ssb_to_geo">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.ssb_to_geo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ssb_to_geo</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span><span class="p">,</span>
+               <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the arrive time, the sky localization, and the polarization</span>
+<span class="sd">    from the SSB frame to the geocentric frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_ssb : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_ssb : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (t_geo, longitude_geo, latitude_geo, polarization_geo) : tuple</span>
+<span class="sd">    t_geo : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_geo : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_geo : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_geo : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">t_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t_ssb</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">longitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">longitude_ssb</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">latitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">latitude_ssb</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">polarization_ssb</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">polarization_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">polarization_ssb</span><span class="p">])</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">)</span>
+    <span class="n">t_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">longitude_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">latitude_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">polarization_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Longitude should within [0, 2*pi).&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Latitude should within [-pi/2, pi/2].&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Polarization angle should within [0, 2*pi).&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_astropy</span><span class="p">:</span>
+            <span class="c1"># BarycentricMeanEcliptic doesn&#39;t have obstime attribute,</span>
+            <span class="c1"># it&#39;s a good inertial frame, but PrecessedGeocentric is not.</span>
+            <span class="n">bme_coord</span> <span class="o">=</span> <span class="n">BarycentricMeanEcliptic</span><span class="p">(</span>
+                            <span class="n">lon</span><span class="o">=</span><span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">radian</span><span class="p">,</span>
+                            <span class="n">lat</span><span class="o">=</span><span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">radian</span><span class="p">,</span>
+                            <span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">)</span>
+            <span class="n">t_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_geo_from_ssb</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                      <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">bme_coord</span><span class="p">)</span>
+            <span class="n">geo_sky</span> <span class="o">=</span> <span class="n">bme_coord</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">PrecessedGeocentric</span><span class="p">(</span>
+                <span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">,</span> <span class="n">obstime</span><span class="o">=</span><span class="n">Time</span><span class="p">(</span><span class="n">t_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;gps&#39;</span><span class="p">)))</span>
+            <span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">geo_sky</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">geo_sky</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">k_geo</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                        <span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">use_astropy</span><span class="p">,</span> <span class="n">geo_sky</span><span class="p">)</span>
+            <span class="n">k_ssb</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                        <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">bme_coord</span><span class="p">)</span>
+            <span class="n">rotation_matrix_geo</span> <span class="o">=</span> \
+                <span class="n">ecliptic_transforms</span><span class="o">.</span><span class="n">icrs_to_baryecliptic</span><span class="p">(</span>
+                    <span class="n">from_coo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">to_frame</span><span class="o">=</span><span class="n">BarycentricMeanEcliptic</span><span class="p">(</span><span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">))</span>
+            <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">polarization_newframe</span><span class="p">(</span>
+                                    <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">k_ssb</span><span class="p">,</span>
+                                    <span class="n">rotation_matrix_geo</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span>
+                                    <span class="n">old_frame</span><span class="o">=</span><span class="n">bme_coord</span><span class="p">,</span>
+                                    <span class="n">new_frame</span><span class="o">=</span><span class="n">geo_sky</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">t_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_geo_from_ssb</span><span class="p">(</span><span class="n">t_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                      <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="p">)</span>
+            <span class="n">rotation_matrix_geo</span> <span class="o">=</span> <span class="n">rotation_matrix_ssb_to_geo</span><span class="p">()</span>
+            <span class="n">k_ssb</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                        <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">use_astropy</span><span class="p">)</span>
+            <span class="n">k_geo</span> <span class="o">=</span> <span class="n">rotation_matrix_geo</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">k_ssb</span>
+            <span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">propagation_vector_to_localization</span><span class="p">(</span><span class="n">k_geo</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">)</span>
+            <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">polarization_newframe</span><span class="p">(</span>
+                                    <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">k_ssb</span><span class="p">,</span>
+                                    <span class="n">rotation_matrix_geo</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">)</span>
+
+        <span class="c1"># As mentioned in LDC manual, the p,q vectors are opposite between</span>
+        <span class="c1"># LDC and LAL conventions, see Sec 4.1.5 in &lt;LISA-LCST-SGS-MAN-001&gt;.</span>
+        <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">params_geo</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_geo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">longitude_geo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                      <span class="n">latitude_geo</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">polarization_geo</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params_geo</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_geo</span><span class="p">,</span>
+                      <span class="n">latitude_geo</span><span class="p">,</span> <span class="n">polarization_geo</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">params_geo</span></div>
+
+
+
+<div class="viewcode-block" id="geo_to_ssb">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.geo_to_ssb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">geo_to_ssb</span><span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_geo</span><span class="p">,</span> <span class="n">latitude_geo</span><span class="p">,</span> <span class="n">polarization_geo</span><span class="p">,</span>
+               <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the arrive time, the sky localization, and the polarization</span>
+<span class="sd">    from the geocentric frame to the SSB frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_geo : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_geo : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_geo : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_geo : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (t_ssb, longitude_ssb, latitude_ssb, polarization_ssb) : tuple</span>
+<span class="sd">    t_ssb : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of SSB frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic longitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_ssb : float or numpy.array</span>
+<span class="sd">        The ecliptic latitude of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_ssb : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in SSB frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">t_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t_geo</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">longitude_geo</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">longitude_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">longitude_geo</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">latitude_geo</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">latitude_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">latitude_geo</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">polarization_geo</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">polarization_geo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">polarization_geo</span><span class="p">])</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_geo</span><span class="p">)</span>
+    <span class="n">t_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">longitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">latitude_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="n">polarization_ssb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Longitude should within [0, 2*pi).&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Latitude should within [-pi/2, pi/2].&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Polarization angle should within [0, 2*pi).&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_astropy</span><span class="p">:</span>
+            <span class="c1"># BarycentricMeanEcliptic doesn&#39;t have obstime attribute,</span>
+            <span class="c1"># it&#39;s a good inertial frame, but PrecessedGeocentric is not.</span>
+            <span class="n">geo_coord</span> <span class="o">=</span> <span class="n">PrecessedGeocentric</span><span class="p">(</span>
+                            <span class="n">ra</span><span class="o">=</span><span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">radian</span><span class="p">,</span>
+                            <span class="n">dec</span><span class="o">=</span><span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">radian</span><span class="p">,</span>
+                            <span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">,</span>
+                            <span class="n">obstime</span><span class="o">=</span><span class="n">Time</span><span class="p">(</span><span class="n">t_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;gps&#39;</span><span class="p">))</span>
+            <span class="n">ssb_sky</span> <span class="o">=</span> <span class="n">geo_coord</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span>
+                        <span class="n">BarycentricMeanEcliptic</span><span class="p">(</span><span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">))</span>
+            <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ssb_sky</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ssb_sky</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">rad</span>
+            <span class="n">k_ssb</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                        <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">use_astropy</span><span class="p">,</span> <span class="n">ssb_sky</span><span class="p">)</span>
+            <span class="n">k_geo</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">,</span> <span class="n">geo_coord</span><span class="p">)</span>
+            <span class="n">rotation_matrix_geo</span> <span class="o">=</span> \
+                <span class="n">ecliptic_transforms</span><span class="o">.</span><span class="n">icrs_to_baryecliptic</span><span class="p">(</span>
+                    <span class="n">from_coo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">to_frame</span><span class="o">=</span><span class="n">BarycentricMeanEcliptic</span><span class="p">(</span><span class="n">equinox</span><span class="o">=</span><span class="s1">&#39;J2000&#39;</span><span class="p">))</span>
+            <span class="n">t_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_ssb_from_t_geo</span><span class="p">(</span><span class="n">t_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                        <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="p">,</span>
+                                        <span class="n">ssb_sky</span><span class="p">)</span>
+            <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">polarization_newframe</span><span class="p">(</span>
+                                    <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">k_geo</span><span class="p">,</span>
+                                    <span class="n">rotation_matrix_geo</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                    <span class="n">use_astropy</span><span class="p">,</span>
+                                    <span class="n">old_frame</span><span class="o">=</span><span class="n">geo_coord</span><span class="p">,</span>
+                                    <span class="n">new_frame</span><span class="o">=</span><span class="n">ssb_sky</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rotation_matrix_geo</span> <span class="o">=</span> <span class="n">rotation_matrix_ssb_to_geo</span><span class="p">()</span>
+            <span class="n">k_geo</span> <span class="o">=</span> <span class="n">localization_to_propagation_vector</span><span class="p">(</span>
+                        <span class="n">longitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="p">)</span>
+            <span class="n">k_ssb</span> <span class="o">=</span> <span class="n">rotation_matrix_geo</span> <span class="o">@</span> <span class="n">k_geo</span>
+            <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">propagation_vector_to_localization</span><span class="p">(</span><span class="n">k_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">)</span>
+            <span class="n">t_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t_ssb_from_t_geo</span><span class="p">(</span><span class="n">t_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                        <span class="n">latitude_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">use_astropy</span><span class="p">)</span>
+            <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">polarization_newframe</span><span class="p">(</span>
+                                    <span class="n">polarization_geo</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">k_geo</span><span class="p">,</span>
+                                    <span class="n">rotation_matrix_geo</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">)</span>
+
+        <span class="c1"># As mentioned in LDC manual, the p,q vectors are opposite between</span>
+        <span class="c1"># LDC and LAL conventions, see Sec 4.1.5 in &lt;LISA-LCST-SGS-MAN-001&gt;.</span>
+        <span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">polarization_ssb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">params_ssb</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">longitude_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                      <span class="n">latitude_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">polarization_ssb</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">params_ssb</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span>
+                      <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">params_ssb</span></div>
+
+
+
+<div class="viewcode-block" id="lisa_to_geo">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.lisa_to_geo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lisa_to_geo</span><span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span><span class="p">,</span> <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span><span class="p">,</span>
+                <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the arrive time, the sky localization, and the polarization</span>
+<span class="sd">    from the LISA frame to the geocentric frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_lisa : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_lisa : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_lisa : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_lisa : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in LISA frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (t_geo, longitude_geo, latitude_geo, polarization_geo) : tuple</span>
+<span class="sd">    t_geo : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_geo : float or numpy.array</span>
+<span class="sd">        The ecliptic longitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_geo : float or numpy.array</span>
+<span class="sd">        The ecliptic latitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_geo : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span> <span class="o">=</span> <span class="n">lisa_to_ssb</span><span class="p">(</span>
+        <span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span><span class="p">,</span> <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
+    <span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_geo</span><span class="p">,</span> <span class="n">latitude_geo</span><span class="p">,</span> <span class="n">polarization_geo</span> <span class="o">=</span> <span class="n">ssb_to_geo</span><span class="p">(</span>
+        <span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_geo</span><span class="p">,</span> <span class="n">latitude_geo</span><span class="p">,</span> <span class="n">polarization_geo</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="geo_to_lisa">
+<a class="viewcode-back" href="../../../pycbc.coordinates.html#pycbc.coordinates.space.geo_to_lisa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">geo_to_lisa</span><span class="p">(</span><span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_geo</span><span class="p">,</span> <span class="n">latitude_geo</span><span class="p">,</span> <span class="n">polarization_geo</span><span class="p">,</span>
+                <span class="n">t0</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">,</span> <span class="n">use_astropy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Converting the arrive time, the sky localization, and the polarization</span>
+<span class="sd">    from the geocentric frame to the LISA frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t_geo : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of geocentric frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_geo : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_geo : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_geo : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in geocentric frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    t0 : float</span>
+<span class="sd">        The initial time offset of LISA, in the unit of &#39;s&#39;,</span>
+<span class="sd">        default is 7365189.431698299. This makes sure LISA is behind</span>
+<span class="sd">        the Earth by 19-23 degrees.</span>
+<span class="sd">    use_astropy : bool</span>
+<span class="sd">        Using Astropy to calculate the sky localization or not.</span>
+<span class="sd">        Default is True.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa) : tuple</span>
+<span class="sd">    t_lisa : float or numpy.array</span>
+<span class="sd">        The time when a GW signal arrives at the origin of LISA frame.</span>
+<span class="sd">        In the unit of &#39;s&#39;.</span>
+<span class="sd">    longitude_lisa : float or numpy.array</span>
+<span class="sd">        The longitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    latitude_lisa : float or numpy.array</span>
+<span class="sd">        The latitude of a GW signal in LISA frame, in the unit of &#39;radian&#39;.</span>
+<span class="sd">    polarization_geo : float or numpy.array</span>
+<span class="sd">        The polarization angle of a GW signal in LISA frame.</span>
+<span class="sd">        In the unit of &#39;radian&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span> <span class="o">=</span> <span class="n">geo_to_ssb</span><span class="p">(</span>
+        <span class="n">t_geo</span><span class="p">,</span> <span class="n">longitude_geo</span><span class="p">,</span> <span class="n">latitude_geo</span><span class="p">,</span> <span class="n">polarization_geo</span><span class="p">,</span> <span class="n">use_astropy</span><span class="p">)</span>
+    <span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span><span class="p">,</span> <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span> <span class="o">=</span> <span class="n">ssb_to_lisa</span><span class="p">(</span>
+        <span class="n">t_ssb</span><span class="p">,</span> <span class="n">longitude_ssb</span><span class="p">,</span> <span class="n">latitude_ssb</span><span class="p">,</span> <span class="n">polarization_ssb</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">t_lisa</span><span class="p">,</span> <span class="n">longitude_lisa</span><span class="p">,</span> <span class="n">latitude_lisa</span><span class="p">,</span> <span class="n">polarization_lisa</span><span class="p">)</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TIME_OFFSET_20_DEGREES&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;localization_to_propagation_vector&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;propagation_vector_to_localization&#39;</span><span class="p">,</span> <span class="s1">&#39;polarization_newframe&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;t_lisa_from_ssb&#39;</span><span class="p">,</span> <span class="s1">&#39;t_ssb_from_t_lisa&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;ssb_to_lisa&#39;</span><span class="p">,</span> <span class="s1">&#39;lisa_to_ssb&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;rotation_matrix_ssb_to_lisa&#39;</span><span class="p">,</span> <span class="s1">&#39;rotation_matrix_ssb_to_geo&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;lisa_position_ssb&#39;</span><span class="p">,</span> <span class="s1">&#39;earth_position_ssb&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;t_geo_from_ssb&#39;</span><span class="p">,</span> <span class="s1">&#39;t_ssb_from_t_geo&#39;</span><span class="p">,</span> <span class="s1">&#39;ssb_to_geo&#39;</span><span class="p">,</span> <span class="s1">&#39;geo_to_ssb&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;lisa_to_geo&#39;</span><span class="p">,</span> <span class="s1">&#39;geo_to_lisa&#39;</span><span class="p">,</span>
+           <span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

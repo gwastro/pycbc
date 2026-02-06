@@ -1,0 +1,453 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.live_pastro &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.live_pastro</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.live_pastro</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank</span><span class="w"> </span><span class="kn">import</span> <span class="n">bank_conversions</span> <span class="k">as</span> <span class="n">bankconv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">triggers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span> <span class="k">as</span> <span class="n">conv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">fgmc_functions</span> <span class="k">as</span> <span class="n">fgmcfun</span>
+
+<span class="n">_s_per_yr</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.population.live_pastro&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="check_template_param_bin_data">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.check_template_param_bin_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_template_param_bin_data</span><span class="p">(</span><span class="n">spec_json</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spec_json: JSON dictionary-like object</span>
+<span class="sd">        Result of parsing json file containing static data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spec_json: dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check the necessary data are present</span>
+    <span class="k">assert</span> <span class="s1">&#39;param&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>
+    <span class="k">assert</span> <span class="s1">&#39;bin_edges&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>  <span class="c1"># should be a list of floats</span>
+    <span class="k">assert</span> <span class="s1">&#39;sig_per_yr_binned&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>  <span class="c1"># signal rate per bin (per year)</span>
+    <span class="c1"># Do the lengths of bin arrays match?</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec_json</span><span class="p">[</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">])</span> <span class="o">==</span> \
+           <span class="nb">len</span><span class="p">(</span><span class="n">spec_json</span><span class="p">[</span><span class="s1">&#39;sig_per_yr_binned&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="s1">&#39;ref_bns_horizon&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>  <span class="c1"># float</span>
+    <span class="k">assert</span> <span class="s1">&#39;netsnr_thresh&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>  <span class="c1"># float</span>
+
+    <span class="k">return</span> <span class="n">spec_json</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_template_param_bin_farlim_data</span><span class="p">(</span><span class="n">spec_json</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spec_json: JSON dictionary-like object</span>
+<span class="sd">        Result of parsing json file containing static data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spec_json: dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Standard template param bin checks</span>
+    <span class="n">check_template_param_bin_data</span><span class="p">(</span><span class="n">spec_json</span><span class="p">)</span>
+
+    <span class="c1"># In addition, need limiting FAR and SNR values</span>
+    <span class="k">assert</span> <span class="s1">&#39;limit_far&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>
+    <span class="k">assert</span> <span class="s1">&#39;limit_snr&#39;</span> <span class="ow">in</span> <span class="n">spec_json</span>
+
+    <span class="k">return</span> <span class="n">spec_json</span>
+
+
+<div class="viewcode-block" id="read_template_bank_param">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.read_template_bank_param">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_template_bank_param</span><span class="p">(</span><span class="n">spec_d</span><span class="p">,</span> <span class="n">bankf</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spec_d: dictionary</span>
+<span class="sd">        Prerequisite data for p astro calc</span>
+<span class="sd">    bankf: string</span>
+<span class="sd">        Path to HDF5 template bank file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bank_data: dictionary</span>
+<span class="sd">        Template counts binned over specified param</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">bankf</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bank</span><span class="p">:</span>
+        <span class="c1"># All the templates</span>
+        <span class="n">tids</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]))</span>
+        <span class="c1"># Get param vals</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Getting </span><span class="si">%s</span><span class="s1"> values from bank&#39;</span><span class="p">,</span> <span class="n">spec_d</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">])</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">bankconv</span><span class="o">.</span><span class="n">get_bank_property</span><span class="p">(</span><span class="n">spec_d</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">],</span> <span class="n">bank</span><span class="p">,</span> <span class="n">tids</span><span class="p">)</span>
+    <span class="n">counts</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">parvals</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">spec_d</span><span class="p">[</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">])</span>
+    <span class="n">bank_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">:</span> <span class="n">edges</span><span class="p">,</span> <span class="s1">&#39;tcounts&#39;</span><span class="p">:</span> <span class="n">counts</span><span class="p">,</span> <span class="s1">&#39;num_t&#39;</span><span class="p">:</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()}</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Binned template counts: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">counts</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">bank_data</span></div>
+
+
+
+<div class="viewcode-block" id="noise_density_from_far">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.noise_density_from_far">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">noise_density_from_far</span><span class="p">(</span><span class="n">far</span><span class="p">,</span> <span class="n">exp_fac</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exponential model of noise rate density per time per (reweighted) SNR</span>
+<span class="sd">    b(rho) ~ k exp(-alpha * rho),</span>
+<span class="sd">    where alpha is the &#39;index&#39;, yields the relation</span>
+<span class="sd">    b(rho) = alpha * FAR(rho),</span>
+<span class="sd">    where FAR is the integral of b(rho) from rho to infinity.</span>
+<span class="sd">    E.g. fits to single-ifo noise typically yield alpha ~ 6</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">exp_fac</span> <span class="o">*</span> <span class="n">far</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">trials_type</span><span class="p">(</span><span class="n">ntriggered</span><span class="p">,</span> <span class="n">nactive</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The trials factor previously applied to an individual event type FAR</span>
+<span class="sd">    For single triggers, the factor is the number of active ifos</span>
+<span class="sd">    For coincs, the factor is either 1 (in double time) or 6 (in triple time)</span>
+<span class="sd">    6 accounts for both the trials over coinc type and pvalue (non-)followup</span>
+<span class="sd">    %%% NOTE - ONLY VALID FOR 2- OR 3-IFO SEARCH %%%</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ntriggered</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nactive</span>
+    <span class="k">if</span> <span class="n">ntriggered</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">nactive</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">ntriggered</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">nactive</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">6</span>
+    <span class="c1"># All valid inputs are exhausted, throw an error</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;I don&#39;t know what to do with </span><span class="si">{</span><span class="n">ntriggered</span><span class="si">}</span><span class="s2"> triggered and&quot;</span>
+                     <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">nactive</span><span class="si">}</span><span class="s2"> active ifos!&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="signal_pdf_from_snr">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.signal_pdf_from_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">signal_pdf_from_snr</span><span class="p">(</span><span class="n">netsnr</span><span class="p">,</span> <span class="n">thresh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; FGMC approximate signal distribution ~ SNR ** -4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">fgmcfun</span><span class="o">.</span><span class="n">log_rho_fg_analytic</span><span class="p">(</span><span class="n">netsnr</span><span class="p">,</span> <span class="n">thresh</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="signal_rate_rescale">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.signal_rate_rescale">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">signal_rate_rescale</span><span class="p">(</span><span class="n">horizons</span><span class="p">,</span> <span class="n">ref_dhor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a factor proportional to the rate of signals with given network SNR</span>
+<span class="sd">    to account for network sensitivity variation relative to a reference state</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Combine sensitivities over ifos in a way analogous to network SNR</span>
+    <span class="n">net_horizon</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hor</span> <span class="o">**</span> <span class="mf">2.</span> <span class="k">for</span> <span class="n">hor</span> <span class="ow">in</span> <span class="n">horizons</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="c1"># signal rate is proportional to horizon distance cubed</span>
+    <span class="k">return</span> <span class="n">net_horizon</span> <span class="o">**</span> <span class="mf">3.</span> <span class="o">/</span> <span class="n">ref_dhor</span> <span class="o">**</span> <span class="mf">3.</span></div>
+
+
+
+<div class="viewcode-block" id="signal_rate_trig_type">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.signal_rate_trig_type">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">signal_rate_trig_type</span><span class="p">(</span><span class="n">horizons</span><span class="p">,</span> <span class="n">sens_ifos</span><span class="p">,</span> <span class="n">trig_ifos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a factor accounting for the fraction of signals seen as a given</span>
+<span class="sd">    trigger type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Single-ifo time</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sens_ifos</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">trig_ifos</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="mf">1.</span>
+    <span class="c1"># Single trigger in multi-ifo time</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trig_ifos</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># Sensitive volume scales with horizon^3</span>
+        <span class="c1"># Suppress horizon by sqrt(2) wrt coincs</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">horizons</span><span class="p">[</span><span class="n">trig_ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">**</span> <span class="mf">3.</span> <span class="o">/</span>\
+            <span class="nb">sum</span><span class="p">([</span><span class="n">horizons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mf">3.</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sens_ifos</span><span class="p">])</span>
+    <span class="c1"># Double coinc : volume determined by less sensitive ifo</span>
+    <span class="c1"># Compare to 2nd most sensitive ifo over the observing network</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">horizons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">trig_ifos</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mf">3.</span> <span class="o">/</span>\
+        <span class="nb">sorted</span><span class="p">([</span><span class="n">horizons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sens_ifos</span><span class="p">])[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">**</span> <span class="mf">3.</span></div>
+
+
+
+<div class="viewcode-block" id="template_param_bin_pa">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.template_param_bin_pa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">template_param_bin_pa</span><span class="p">(</span><span class="n">padata</span><span class="p">,</span> <span class="n">trdata</span><span class="p">,</span> <span class="n">horizons</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    padata: PAstroData instance</span>
+<span class="sd">        Static information on p astro calculation</span>
+<span class="sd">    trdata: dictionary</span>
+<span class="sd">        Trigger properties</span>
+<span class="sd">    horizons: dictionary</span>
+<span class="sd">        BNS horizon distances keyed on ifo</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p_astro, p_terr: tuple of floats</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">massspin</span> <span class="o">=</span> <span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span>
+                <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">])</span>
+    <span class="n">trig_param</span> <span class="o">=</span> <span class="n">triggers</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">massspin</span><span class="p">)</span>
+    <span class="c1"># NB digitize gives &#39;1&#39; for first bin, &#39;2&#39; for second etc.</span>
+    <span class="n">bind</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span><span class="n">trig_param</span><span class="p">,</span> <span class="n">padata</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Trigger </span><span class="si">%s</span><span class="s1"> is in bin </span><span class="si">%i</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">],</span> <span class="n">bind</span><span class="p">)</span>
+
+    <span class="c1"># Get noise rate density</span>
+    <span class="k">if</span> <span class="s1">&#39;bg_fac&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span>
+        <span class="n">expfac</span> <span class="o">=</span> <span class="mf">6.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">expfac</span> <span class="o">=</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;bg_fac&#39;</span><span class="p">]</span>
+
+    <span class="c1"># FAR is in Hz, therefore convert to rate per year (per SNR)</span>
+    <span class="n">dnoise</span> <span class="o">=</span> <span class="n">noise_density_from_far</span><span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">],</span> <span class="n">expfac</span><span class="p">)</span> <span class="o">*</span> <span class="n">_s_per_yr</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;FAR </span><span class="si">%.3g</span><span class="s1">, noise density per yr per SNR </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span>
+                 <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">],</span> <span class="n">dnoise</span><span class="p">)</span>
+    <span class="c1"># Scale by fraction of templates in bin</span>
+    <span class="n">dnoise</span> <span class="o">*=</span> <span class="n">padata</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;tcounts&#39;</span><span class="p">][</span><span class="n">bind</span><span class="p">]</span> <span class="o">/</span> <span class="n">padata</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;num_t&#39;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Noise density in bin </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dnoise</span><span class="p">)</span>
+
+    <span class="c1"># Get signal rate density per year at given SNR</span>
+    <span class="n">dsig</span> <span class="o">=</span> <span class="n">signal_pdf_from_snr</span><span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">],</span>
+                               <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;netsnr_thresh&#39;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;SNR </span><span class="si">%.3g</span><span class="s1">, signal pdf </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">],</span> <span class="n">dsig</span><span class="p">)</span>
+    <span class="n">dsig</span> <span class="o">*=</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;sig_per_yr_binned&#39;</span><span class="p">][</span><span class="n">bind</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Signal density per yr per SNR in bin </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dsig</span><span class="p">)</span>
+    <span class="c1"># Scale by network sensitivity accounting for BNS horizon distances</span>
+    <span class="n">dsig</span> <span class="o">*=</span> <span class="n">signal_rate_rescale</span><span class="p">(</span><span class="n">horizons</span><span class="p">,</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;ref_bns_horizon&#39;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;After horizon rescaling </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dsig</span><span class="p">)</span>
+
+    <span class="n">p_astro</span> <span class="o">=</span> <span class="n">dsig</span> <span class="o">/</span> <span class="p">(</span><span class="n">dsig</span> <span class="o">+</span> <span class="n">dnoise</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;p_astro </span><span class="si">%.4g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">p_astro</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p_astro</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">p_astro</span></div>
+
+
+
+<div class="viewcode-block" id="template_param_bin_types_pa">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.template_param_bin_types_pa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">template_param_bin_types_pa</span><span class="p">(</span><span class="n">padata</span><span class="p">,</span> <span class="n">trdata</span><span class="p">,</span> <span class="n">horizons</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    padata: PAstroData instance</span>
+<span class="sd">        Static information on p astro calculation</span>
+<span class="sd">    trdata: dictionary</span>
+<span class="sd">        Trigger properties</span>
+<span class="sd">    horizons: dictionary</span>
+<span class="sd">        BNS horizon distances keyed on ifo</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p_astro, p_terr: tuple of floats</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">massspin</span> <span class="o">=</span> <span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span>
+                <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">])</span>
+    <span class="n">trig_param</span> <span class="o">=</span> <span class="n">triggers</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">massspin</span><span class="p">)</span>
+    <span class="c1"># NB digitize gives &#39;1&#39; for first bin, &#39;2&#39; for second etc.</span>
+    <span class="n">bind</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">digitize</span><span class="p">(</span><span class="n">trig_param</span><span class="p">,</span> <span class="n">padata</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;bin_edges&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Trigger </span><span class="si">%s</span><span class="s1"> is in bin </span><span class="si">%i</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">],</span> <span class="n">bind</span><span class="p">)</span>
+
+    <span class="c1"># Get noise rate density</span>
+    <span class="k">if</span> <span class="s1">&#39;bg_fac&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">:</span>
+        <span class="n">expfac</span> <span class="o">=</span> <span class="mf">6.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">expfac</span> <span class="o">=</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;bg_fac&#39;</span><span class="p">]</span>
+
+    <span class="c1"># List of ifos over trigger threshold</span>
+    <span class="n">tr_ifos</span> <span class="o">=</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;triggered&#39;</span><span class="p">]</span>
+
+    <span class="c1"># FAR is in Hz, therefore convert to rate per year (per SNR)</span>
+    <span class="n">dnoise</span> <span class="o">=</span> <span class="n">noise_density_from_far</span><span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">],</span> <span class="n">expfac</span><span class="p">)</span> <span class="o">*</span> <span class="n">_s_per_yr</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;FAR </span><span class="si">%.3g</span><span class="s1">, noise density per yr per SNR </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span>
+                 <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">],</span> <span class="n">dnoise</span><span class="p">)</span>
+    <span class="c1"># Scale by fraction of templates in bin</span>
+    <span class="n">dnoise</span> <span class="o">*=</span> <span class="n">padata</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;tcounts&#39;</span><span class="p">][</span><span class="n">bind</span><span class="p">]</span> <span class="o">/</span> <span class="n">padata</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;num_t&#39;</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Noise density in bin </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dnoise</span><span class="p">)</span>
+    <span class="c1"># Back out trials factor to give noise density for triggered event type</span>
+    <span class="n">dnoise</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="n">trials_type</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tr_ifos</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;sensitive&#39;</span><span class="p">])))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Divide by previously applied trials factor: </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dnoise</span><span class="p">)</span>
+
+    <span class="c1"># Get signal rate density per year at given SNR</span>
+    <span class="n">dsig</span> <span class="o">=</span> <span class="n">signal_pdf_from_snr</span><span class="p">(</span><span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">],</span>
+                               <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;netsnr_thresh&#39;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;SNR </span><span class="si">%.3g</span><span class="s1">, signal pdf </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">],</span> <span class="n">dsig</span><span class="p">)</span>
+    <span class="n">dsig</span> <span class="o">*=</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;sig_per_yr_binned&#39;</span><span class="p">][</span><span class="n">bind</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Total signal density per yr per SNR in bin </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dsig</span><span class="p">)</span>
+    <span class="c1"># Scale by network sensitivity accounting for BNS horizons</span>
+    <span class="n">dsig</span> <span class="o">*=</span> <span class="n">signal_rate_rescale</span><span class="p">(</span><span class="n">horizons</span><span class="p">,</span> <span class="n">padata</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;ref_bns_horizon&#39;</span><span class="p">])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;After network horizon rescaling </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dsig</span><span class="p">)</span>
+    <span class="c1"># Scale by relative signal rate in triggered ifos</span>
+    <span class="n">dsig</span> <span class="o">*=</span> <span class="n">signal_rate_trig_type</span><span class="p">(</span><span class="n">horizons</span><span class="p">,</span> <span class="n">trdata</span><span class="p">[</span><span class="s1">&#39;sensitive&#39;</span><span class="p">],</span> <span class="n">tr_ifos</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;After triggered ifo rate rescaling </span><span class="si">%.3g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dsig</span><span class="p">)</span>
+
+    <span class="n">p_astro</span> <span class="o">=</span> <span class="n">dsig</span> <span class="o">/</span> <span class="p">(</span><span class="n">dsig</span> <span class="o">+</span> <span class="n">dnoise</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;p_astro </span><span class="si">%.4g</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">p_astro</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p_astro</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">p_astro</span></div>
+
+
+
+<div class="viewcode-block" id="template_param_bin_types_farlim_pa">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro.template_param_bin_types_farlim_pa">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">template_param_bin_types_farlim_pa</span><span class="p">(</span><span class="n">padata</span><span class="p">,</span> <span class="n">trdata</span><span class="p">,</span> <span class="n">horizons</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    padata: PAstroData instance</span>
+<span class="sd">        Static information on p astro calculation</span>
+<span class="sd">    trdata: dictionary</span>
+<span class="sd">        Trigger properties</span>
+<span class="sd">    horizons: dictionary</span>
+<span class="sd">        BNS horizon distances keyed on ifo</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p_astro, p_terr: tuple of floats</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If the network SNR and FAR indicate saturation of the FAR estimate,</span>
+    <span class="c1"># set them to specified fixed values</span>
+    <span class="n">trdata</span> <span class="o">=</span> <span class="n">padata</span><span class="o">.</span><span class="n">apply_significance_limits</span><span class="p">(</span><span class="n">trdata</span><span class="p">)</span>
+
+    <span class="c1"># Now perform standard calculation with event types</span>
+    <span class="k">return</span> <span class="n">template_param_bin_types_pa</span><span class="p">(</span><span class="n">padata</span><span class="p">,</span> <span class="n">trdata</span><span class="p">,</span> <span class="n">horizons</span><span class="p">)</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;check_template_param_bin_data&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;read_template_bank_param&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;noise_density_from_far&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signal_pdf_from_snr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signal_rate_rescale&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;signal_rate_trig_type&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;template_param_bin_pa&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;template_param_bin_types_pa&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;template_param_bin_types_farlim_pa&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

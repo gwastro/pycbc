@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.pygrb_plotting_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.pygrb_plotting_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.pygrb_plotting_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019 Francesco Pannarale, Gino Contestabile, Cameron Mills</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Preamble</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module to generate PyGRB figures: scatter plots and timeseries.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">segments</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.results</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_fig_with_metadata</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Used locally: plot contours in a scatter plot with SNR as horizontal axis</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="contour_plotter">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.contour_plotter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">contour_plotter</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">snr_vals</span><span class="p">,</span> <span class="n">contours</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">vert_spike</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot contours in a scatter plot where SNR is on the horizontal axis&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">contours</span><span class="p">):</span>
+        <span class="n">plot_vals_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">plot_vals_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">vert_spike</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">):</span>
+                <span class="c1"># Workaround to ensure vertical spike is shown on veto plots</span>
+                <span class="k">if</span> <span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1E-15</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">plot_vals_x</span><span class="p">:</span>
+                    <span class="n">plot_vals_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="n">plot_vals_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1E-15</span> <span class="ow">and</span> <span class="n">plot_vals_x</span><span class="p">:</span>
+                    <span class="n">plot_vals_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="n">plot_vals_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_vals_x</span> <span class="o">=</span> <span class="n">snr_vals</span>
+            <span class="n">plot_vals_y</span> <span class="o">=</span> <span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">axis</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_vals_x</span><span class="p">,</span> <span class="n">plot_vals_y</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># Functions used in executables</span>
+<span class="c1">#</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Plot trigger time and offsource extent over segments</span>
+<span class="c1"># Courtesy of Alex Dietz</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="make_grb_segments_plot">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.make_grb_segments_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_grb_segments_plot</span><span class="p">(</span><span class="n">wkflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">trigger_time</span><span class="p">,</span> <span class="n">trigger_name</span><span class="p">,</span>
+                           <span class="n">out_dir</span><span class="p">,</span> <span class="n">coherent_seg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fail_criterion</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot trigger time and offsource extent over segments&quot;&quot;&quot;</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.patches</span><span class="w"> </span><span class="kn">import</span> <span class="n">Rectangle</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.lines</span><span class="w"> </span><span class="kn">import</span> <span class="n">Line2D</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.results.color</span><span class="w"> </span><span class="kn">import</span> <span class="n">ifo_color</span>
+
+    <span class="n">ifos</span> <span class="o">=</span> <span class="n">wkflow</span><span class="o">.</span><span class="n">ifos</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">science_segs</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="p">[]))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">extent</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">wkflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workflow&quot;</span><span class="p">,</span> <span class="s2">&quot;start-time&quot;</span><span class="p">)),</span>
+                                  <span class="nb">int</span><span class="p">(</span><span class="n">wkflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workflow&quot;</span><span class="p">,</span> <span class="s2">&quot;end-time&quot;</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pltpad</span> <span class="o">=</span> <span class="p">[</span><span class="n">science_segs</span><span class="o">.</span><span class="n">extent_all</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">trigger_time</span><span class="p">,</span>
+                  <span class="n">trigger_time</span> <span class="o">-</span> <span class="n">science_segs</span><span class="o">.</span><span class="n">extent_all</span><span class="p">()[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">extent</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">science_segs</span><span class="o">.</span><span class="n">extent_all</span><span class="p">(),</span>
+                                       <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">trigger_time</span>
+                                                        <span class="o">-</span> <span class="n">pltpad</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                        <span class="n">trigger_time</span>
+                                                        <span class="o">+</span> <span class="n">pltpad</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span><span class="o">.</span><span class="n">extent</span><span class="p">()</span>
+
+    <span class="n">ifo_colors</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">ifo_colors</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">ifo_color</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">science_segs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([])</span>
+
+    <span class="c1"># Make plot</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">subs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">subs</span> <span class="o">=</span> <span class="p">[</span><span class="n">subs</span><span class="p">]</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">sub</span><span class="p">,</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">subs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">seg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">0.1</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">seg</span><span class="p">),</span> <span class="mf">0.8</span><span class="p">,</span>
+                                    <span class="n">facecolor</span><span class="o">=</span><span class="n">ifo_colors</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                    <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">coherent_seg</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> \
+                    <span class="n">coherent_seg</span> <span class="ow">in</span> <span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">trigger_time</span><span class="p">,</span> <span class="n">trigger_time</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span>
+                         <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+                <span class="n">sub</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">coherent_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span>
+                                        <span class="nb">abs</span><span class="p">(</span><span class="n">coherent_seg</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                                        <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">trigger_time</span><span class="p">,</span> <span class="n">trigger_time</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span>
+                         <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+                <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">coherent_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coherent_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                         <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+                <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">coherent_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">coherent_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                         <span class="n">c</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">trigger_time</span><span class="p">,</span> <span class="n">trigger_time</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;:k&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fail_criterion</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">style_str</span> <span class="o">=</span> <span class="s1">&#39;--&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">style_str</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">fail_criterion</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fail_criterion</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">style_str</span><span class="p">,</span>
+                     <span class="n">c</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">fail_criterion</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">fail_criterion</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">style_str</span><span class="p">,</span>
+                     <span class="n">c</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="n">sub</span><span class="o">.</span><span class="n">set_frame_on</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">45</span><span class="p">)</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">extent</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">extent</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">get_major_formatter</span><span class="p">()</span><span class="o">.</span><span class="n">set_useOffset</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">get_major_formatter</span><span class="p">()</span><span class="o">.</span><span class="n">set_scientific</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">sub</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">tick_bottom</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sub</span> <span class="ow">is</span> <span class="n">subs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">([])</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">get_view_interval</span><span class="p">()</span>
+    <span class="n">ymin</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_yaxis</span><span class="p">()</span><span class="o">.</span><span class="n">get_view_interval</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">Line2D</span><span class="p">((</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">),</span> <span class="p">(</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span>
+                                   <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;GPS Time&#39;</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Science Segments for GRB</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">trigger_name</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">hspace</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">plot_name</span> <span class="o">=</span> <span class="s1">&#39;GRB</span><span class="si">%s</span><span class="s1">_segments.png&#39;</span> <span class="o">%</span> <span class="n">trigger_name</span>
+    <span class="n">plot_url</span> <span class="o">=</span> <span class="s1">&#39;file://localhost</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">plot_name</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">plot_name</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">ifos</span><span class="p">,</span> <span class="n">plot_name</span><span class="p">,</span> <span class="n">extent</span><span class="p">,</span> <span class="n">plot_url</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Given the trigger and injection values of a quantity, determine the maximum</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="axis_max_value">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.axis_max_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">axis_max_value</span><span class="p">(</span><span class="n">trig_values</span><span class="p">,</span> <span class="n">inj_values</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deterime the maximum of a quantity in the trigger and injection data&quot;&quot;&quot;</span>
+
+    <span class="n">axis_max</span> <span class="o">=</span> <span class="n">trig_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">inj_file</span> <span class="ow">and</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">axis_max</span><span class="p">:</span>
+        <span class="n">axis_max</span> <span class="o">=</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">axis_max</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Given the trigger and injection values of a quantity, determine the minimum</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="axis_min_value">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.axis_min_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">axis_min_value</span><span class="p">(</span><span class="n">trig_values</span><span class="p">,</span> <span class="n">inj_values</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deterime the minimum of a quantity in the trigger and injection data&quot;&quot;&quot;</span>
+
+    <span class="n">axis_min</span> <span class="o">=</span> <span class="n">trig_values</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">inj_file</span> <span class="ow">and</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">axis_min</span><span class="p">:</span>
+        <span class="n">axis_min</span> <span class="o">=</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">axis_min</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Master plotting function: fits all plotting needs in for PyGRB results</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="pygrb_plotter">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.pygrb_plotter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_plotter</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="n">injs</span><span class="p">,</span> <span class="n">xlabel</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span>
+                  <span class="n">snr_vals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shade_cont_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">colors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vert_spike</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Master function to plot PyGRB results&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+    <span class="c1"># Set up plot</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">cax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="c1"># Plot trigger-related and (if present) injection-related quantities</span>
+    <span class="n">cax_plotter</span> <span class="o">=</span> <span class="n">cax</span><span class="o">.</span><span class="n">loglog</span> <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">use_logs</span> <span class="k">else</span> <span class="n">cax</span><span class="o">.</span><span class="n">plot</span>
+    <span class="n">cax_plotter</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">trigs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;bx&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">injs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">injs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">cax_plotter</span><span class="p">(</span><span class="n">injs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">injs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;r+&#39;</span><span class="p">)</span>
+    <span class="n">cax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="c1"># Plot contours</span>
+    <span class="k">if</span> <span class="n">conts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">contour_plotter</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">snr_vals</span><span class="p">,</span> <span class="n">conts</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">vert_spike</span><span class="o">=</span><span class="n">vert_spike</span><span class="p">)</span>
+    <span class="c1"># Add shading above a specific contour (typically used for vetoed area)</span>
+    <span class="k">if</span> <span class="n">shade_cont_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">limy</span> <span class="o">=</span> <span class="n">cax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">polyx</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)</span>
+        <span class="n">polyy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">conts</span><span class="p">[</span><span class="n">shade_cont_value</span><span class="p">])</span>
+        <span class="n">polyx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polyx</span><span class="p">,</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)])</span>
+        <span class="n">polyy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polyy</span><span class="p">,</span> <span class="p">[</span><span class="n">limy</span><span class="p">,</span> <span class="n">limy</span><span class="p">])</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">polyx</span><span class="p">,</span> <span class="n">polyy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#dddddd&#39;</span><span class="p">)</span>
+    <span class="c1"># Axes: labels and limits</span>
+    <span class="n">cax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+    <span class="n">cax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">x_lims</span><span class="p">:</span>
+        <span class="n">x_lims</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">x_lims</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">x_lims</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">y_lims</span><span class="p">:</span>
+        <span class="n">y_lims</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">y_lims</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_lims</span><span class="p">)</span>
+    <span class="c1"># Wrap up</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">save_fig_with_metadata</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">output_file</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">,</span>
+                           <span class="n">title</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">plot_title</span><span class="p">,</span>
+                           <span class="n">caption</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">plot_caption</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

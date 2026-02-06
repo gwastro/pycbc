@@ -1,0 +1,279 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Making new waveform approximants available to PyCBC &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Documentation for Developers" href="devs.html" />
+    <link rel="prev" title="Extending PyCBC with external plugins" href="extend.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Making new waveform approximants available to PyCBC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#adding-a-custom-waveform-model-within-a-script">Adding a custom waveform model within a script</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-plugin-for-pycbc">Creating a plugin for PyCBC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="extend.html">Extending PyCBC with external plugins</a></li>
+      <li class="breadcrumb-item active">Making new waveform approximants available to PyCBC</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/waveform_plugin.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="making-new-waveform-approximants-available-to-pycbc">
+<span id="waveform-plugin"></span><h1>Making new waveform approximants available to PyCBC<a class="headerlink" href="#making-new-waveform-approximants-available-to-pycbc" title="Link to this heading"></a></h1>
+<section id="adding-a-custom-waveform-model-within-a-script">
+<h2>Adding a custom waveform model within a script<a class="headerlink" href="#adding-a-custom-waveform-model-within-a-script" title="Link to this heading"></a></h2>
+<p>By example, the following script shows how to write a waveform model
+in the form required for PyCBC. We can also make this new waveform directly
+accessible by using the <a class="reference internal" href="pycbc.waveform.html#pycbc.waveform.plugin.add_custom_waveform" title="pycbc.waveform.plugin.add_custom_waveform"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_custom_waveform()</span></code></a> function.
+If you are developing in a notebook or self-contained script, this may be
+what you want to do. However, if you want to make your waveform available
+to pycbc-based executables such as PyCBC Inference, also read the next
+section.</p>
+<p>There are two kinds of models you can make. In the example below, we
+make a time-domain model. You can also make a freuqency-domain model. The only
+difference is that your function should return an instance of <a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrequencySeries</span></code></a> and
+the required sample step option is <cite>delta_f</cite> instead of <cite>delta_t</cite>.</p>
+<p>Each waveform generation function must take only keyword arguments, and
+should be able to take an arbitrary number of them. You may add new parameters
+as you like. These will be automatically useable by PyCBC Inference and
+other pycbc codes.</p>
+<p>Each waveform model must have an associate <cite>approximant</cite> name, which identifies
+the model and distinguishes it from any other. If the name has already been
+used, you should select a different name. By default, an error will be raised
+unless overridden.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_waveform</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">flow</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">]</span> <span class="c1"># Required parameter</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">]</span>   <span class="c1"># Required parameter</span>
+    <span class="n">fpeak</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;fpeak&#39;</span><span class="p">]</span>  <span class="c1"># A new parameter for my model</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">t</span><span class="o">/</span><span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="n">fpeak</span> <span class="o">-</span> <span class="n">flow</span><span class="p">)</span> <span class="o">+</span> <span class="n">flow</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span>
+
+    <span class="c1"># Return product should be a pycbc time series in this case for</span>
+    <span class="c1"># each GW polarization</span>
+    <span class="c1">#</span>
+    <span class="c1">#</span>
+    <span class="c1"># Note that by convention, the time at 0 is a fiducial reference.</span>
+    <span class="c1"># For CBC waveforms, this would be set to where the merger occurs</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wf</span><span class="o">.</span><span class="n">real</span><span class="p">(),</span> <span class="n">wf</span><span class="o">.</span><span class="n">imag</span><span class="p">()</span>
+
+
+<span class="c1"># This tells pycbc about our new waveform so we can call it from standard</span>
+<span class="c1"># pycbc functions. If this were a frequency-domain model, select &#39;frequency&#39;</span>
+<span class="c1"># instead of &#39;time&#39; to this function call.</span>
+<span class="n">pycbc</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">add_custom_waveform</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">test_waveform</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Let&#39;s plot what our new waveform looks like</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span>
+                                        <span class="n">f_lower</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">fpeak</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                                        <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">hp</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">hf</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hf</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">hf</span><span class="o">.</span><span class="n">real</span><span class="p">())</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/c80593d8e985069830e2d7b113c0c9b2/add_waveform.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>)</p>
+<figure class="align-default" id="id1">
+<img alt="_images/add_waveform_00.png" class="plot-directive" src="_images/add_waveform_00.png" />
+<figcaption>
+<p><span class="caption-text">(<a class="reference download internal" download="" href="_downloads/ea8b62d728fdb3bb0fe6d478a9a254b7/add_waveform_00.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/92505b33321d111bbd97283e6b3d31d1/add_waveform_00.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/85838b72b4fb049f7accd4b3a2cf3c35/add_waveform_00.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id2">
+<img alt="_images/add_waveform_01.png" class="plot-directive" src="_images/add_waveform_01.png" />
+<figcaption>
+<p><span class="caption-text">(<a class="reference download internal" download="" href="_downloads/79afe3bbaf5ada4e3ae6fdd90673b7cc/add_waveform_01.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/f2923c4f5e653f716f9a3d1d2efa38b6/add_waveform_01.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/c56e0fd2fba714b66390581568758862/add_waveform_01.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="creating-a-plugin-for-pycbc">
+<h2>Creating a plugin for PyCBC<a class="headerlink" href="#creating-a-plugin-for-pycbc" title="Link to this heading"></a></h2>
+<p>To make a waveform model universally available to PyCBC so it can be called
+from PyCBC Inference, or the pycbc-based searched codes, you can create
+a plugin package which advertises your model. PyCBC will automatically
+detect your package and make your waveform model available for use.</p>
+<p>The steps are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Create a waveform model just like as in the above example</p></li>
+<li><p>Create a python package for your module</p></li>
+<li><p>In your packages setup.py advertise that it contains a PyCBC compatible
+waveform model in it’s <cite>entry_points</cite> option.</p></li>
+</ul>
+</div></blockquote>
+<p>Your <cite>setup.py</cite> should look like the following, the key addition being the <cite>entry_points</cite>
+parameter passed to setup.py.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">setup</span> <span class="p">(</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;pycbc-revchirp&#39;</span><span class="p">,</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">VERSION</span><span class="p">,</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;An example waveform plugin for PyCBC&#39;</span><span class="p">,</span>
+    <span class="n">long_description</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;descr.rst&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="s1">&#39;The PyCBC team&#39;</span><span class="p">,</span>
+    <span class="n">author_email</span> <span class="o">=</span> <span class="s1">&#39;alex.nitz@gmail.org&#39;</span><span class="p">,</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://www.pycbc.org/&#39;</span><span class="p">,</span>
+    <span class="n">download_url</span> <span class="o">=</span> <span class="s1">&#39;https://github.com/gwastro/revchirp/tarball/v</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">VERSION</span><span class="p">,</span>
+    <span class="n">keywords</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pycbc&#39;</span><span class="p">,</span> <span class="s1">&#39;signal processing&#39;</span><span class="p">,</span> <span class="s1">&#39;gravitational waves&#39;</span><span class="p">],</span>
+    <span class="n">install_requires</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pycbc&#39;</span><span class="p">],</span>
+    <span class="n">py_modules</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;revchirp&#39;</span><span class="p">],</span>
+    <span class="n">entry_points</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pycbc.waveform.td&quot;</span><span class="p">:</span><span class="s2">&quot;revchirp = revchirp:reverse_chirp_td&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;pycbc.waveform.fd&quot;</span><span class="p">:</span><span class="s2">&quot;revchirp = revchirp:reverse_chirp_fd&quot;</span><span class="p">},</span>
+    <span class="n">classifiers</span><span class="o">=</span><span class="p">[</span>
+        <span class="s1">&#39;Programming Language :: Python&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Programming Language :: Python :: 2.7&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Programming Language :: Python :: 3.6&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Intended Audience :: Science/Research&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Natural Language :: English&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Topic :: Scientific/Engineering&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Topic :: Scientific/Engineering :: Astronomy&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Topic :: Scientific/Engineering :: Physics&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;License :: OSI Approved :: GNU General Public License v3 (GPLv3)&#39;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The format for the <cite>entry_points</cite> is <cite>“capability”:”approximant_name = module_path:function_name”</cite>.
+The module path may include dots if the module is within a package or sub-package. The
+valid <cite>capbility</cite> is <cite>pycbc.waveform.td</cite> and <cite>pycbc.waveform.fd</cite> for time and frequency
+domain waveform models,  respectively.</p>
+<p>For a complete working minimal example of a PyCBC waveform plugin, see the
+example package on github to
+<a class="reference external" href="https://github.com/gwastro/example-waveform-plugin">make a reversed-chirp waveform</a> .</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="extend.html" class="btn btn-neutral float-left" title="Extending PyCBC with external plugins" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="devs.html" class="btn btn-neutral float-right" title="Documentation for Developers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

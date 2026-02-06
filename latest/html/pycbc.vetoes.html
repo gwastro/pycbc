@@ -1,0 +1,807 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.vetoes package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.waveform package" href="pycbc.waveform.html" />
+    <link rel="prev" title="pycbc.types package" href="pycbc.types.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.vetoes package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.vetoes.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-vetoes-package">
+<h1>pycbc.vetoes package<a class="headerlink" href="#pycbc-vetoes-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.vetoes.autochisq">
+<span id="pycbc-vetoes-autochisq-module"></span><h2>pycbc.vetoes.autochisq module<a class="headerlink" href="#module-pycbc.vetoes.autochisq" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.autochisq.SingleDetAutoChisq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.autochisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetAutoChisq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stride</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">onesided</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">twophase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse_template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">take_maximum_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximal_value_dof</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/autochisq.html#SingleDetAutoChisq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.autochisq.SingleDetAutoChisq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class that handles precomputation and memory management for efficiently
+running the auto chisq in a single detector inspiral analysis.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.autochisq.SingleDetAutoChisq.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stilde</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/autochisq.html#SingleDetAutoChisq.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.autochisq.SingleDetAutoChisq.values" title="Link to this definition"></a></dt>
+<dd><p>Calculate the auto-chisq at the specified indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sn</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>]</em>) – SNR time series of the template for which auto-chisq is being
+computed. Provided unnormalized.</p></li>
+<li><p><strong>indices</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – List of points at which to calculate auto-chisq</p></li>
+<li><p><strong>template</strong> (<em>Pycbc template object</em>) – The template for which we are calculating auto-chisq</p></li>
+<li><p><strong>psd</strong> (<em>Pycbc psd object</em>) – The PSD of the data being analysed</p></li>
+<li><p><strong>norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor to apply to sn</p></li>
+<li><p><strong>stilde</strong> (<em>Pycbc data object</em><em>, </em><em>needed if using reverse-template</em>) – The data being analysed. Only needed if using reverse-template,
+otherwise ignored</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The lower frequency to consider in matched-filters</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The upper frequency to consider in matched-filters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>achi_list</strong> (<em>TimeSeries of auto veto values - if indices</em>)</p></li>
+<li><p><em>is None then evaluated at all time samples, if not then only at</em></p></li>
+<li><p><em>requested sample indices</em></p></li>
+<li><p><strong>dof</strong> (<em>int, approx number of statistical degrees of freedom</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.autochisq.SingleDetSkyMaxAutoChisq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.autochisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetSkyMaxAutoChisq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/autochisq.html#SingleDetSkyMaxAutoChisq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.autochisq.SingleDetSkyMaxAutoChisq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.vetoes.autochisq.SingleDetAutoChisq" title="pycbc.vetoes.autochisq.SingleDetAutoChisq"><code class="xref py py-class docutils literal notranslate"><span class="pre">SingleDetAutoChisq</span></code></a></p>
+<p>Stub for precessing auto chisq if anyone ever wants to code it up.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.autochisq.SingleDetSkyMaxAutoChisq.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/autochisq.html#SingleDetSkyMaxAutoChisq.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.autochisq.SingleDetSkyMaxAutoChisq.values" title="Link to this definition"></a></dt>
+<dd><p>Calculate the auto-chisq at the specified indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sn</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>]</em>) – SNR time series of the template for which auto-chisq is being
+computed. Provided unnormalized.</p></li>
+<li><p><strong>indices</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – List of points at which to calculate auto-chisq</p></li>
+<li><p><strong>template</strong> (<em>Pycbc template object</em>) – The template for which we are calculating auto-chisq</p></li>
+<li><p><strong>psd</strong> (<em>Pycbc psd object</em>) – The PSD of the data being analysed</p></li>
+<li><p><strong>norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor to apply to sn</p></li>
+<li><p><strong>stilde</strong> (<em>Pycbc data object</em><em>, </em><em>needed if using reverse-template</em>) – The data being analysed. Only needed if using reverse-template,
+otherwise ignored</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The lower frequency to consider in matched-filters</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The upper frequency to consider in matched-filters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>achi_list</strong> (<em>TimeSeries of auto veto values - if indices</em>)</p></li>
+<li><p><em>is None then evaluated at all time samples, if not then only at</em></p></li>
+<li><p><em>requested sample indices</em></p></li>
+<li><p><strong>dof</strong> (<em>int, approx number of statistical degrees of freedom</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.autochisq.autochisq_from_precomputed">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.autochisq.</span></span><span class="sig-name descname"><span class="pre">autochisq_from_precomputed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_sn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hautocorr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oneside</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">twophase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxvalued</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/autochisq.html#autochisq_from_precomputed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.autochisq.autochisq_from_precomputed" title="Link to this definition"></a></dt>
+<dd><p>Compute correlation (two sided) between template and data
+and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sn</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>]</em>) – normalized (!) array of complex snr for the template that produced the
+trigger(s) being tested</p></li>
+<li><p><strong>corr_sn</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>]</em>) – normalized (!) array of complex snr for the template that you want to
+produce a correlation chisq test for. In the [common] case that sn and
+corr_sn are the same, you are computing auto-correlation chisq.</p></li>
+<li><p><strong>hautocorr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>]</em>) – time domain autocorrelation for the template</p></li>
+<li><p><strong>indices</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – compute correlation chisquare at the points specified in this array,</p></li>
+<li><p><strong>num_points</strong> (<em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional; default=None</em><em>]</em>) – Number of points used for autochisq on each side, if None all points
+are used.</p></li>
+<li><p><strong>stride</strong> (<em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional; default = 1</em><em>]</em>) – stride for points selection for autochisq
+total length &lt;= 2*num_points*stride</p></li>
+<li><p><strong>oneside</strong> (<em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional; default=None</em><em>]</em>) – whether to use one or two sided autochisquare. If None (or not
+provided) twosided chi-squared will be used. If given, options are
+‘left’ or ‘right’, to do one-sided chi-squared on the left or right.</p></li>
+<li><p><strong>twophase</strong> (<em>Boolean</em><em>, </em><em>optional; default=True</em>) – If True calculate the auto-chisq using both phases of the filter.
+If False only use the phase of the obtained trigger(s).</p></li>
+<li><p><strong>maxvalued</strong> (<em>Boolean</em><em>, </em><em>optional; default=False</em>) – Return the largest auto-chisq at any of the points tested if True.
+If False, return the sum of auto-chisq at all points tested.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>dof</strong> (<em>int</em>) – number of degrees of freedom</p></li>
+<li><p><strong>autochisq</strong> (<em>Array[float]</em>) – autochisq values corresponding to the time instances defined by indices</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.vetoes.bank_chisq">
+<span id="pycbc-vetoes-bank-chisq-module"></span><h2>pycbc.vetoes.bank_chisq module<a class="headerlink" href="#module-pycbc.vetoes.bank_chisq" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.SingleDetBankVeto">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.bank_chisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetBankVeto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bank_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_low</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approximant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#SingleDetBankVeto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.SingleDetBankVeto" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This class reads in a template bank file for a bank veto, handles the
+memory management of its filters internally, and calculates the bank
+veto TimeSeries.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.SingleDetBankVeto.cache_overlaps">
+<span class="sig-name descname"><span class="pre">cache_overlaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#SingleDetBankVeto.cache_overlaps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.SingleDetBankVeto.cache_overlaps" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.SingleDetBankVeto.cache_segment_snrs">
+<span class="sig-name descname"><span class="pre">cache_segment_snrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#SingleDetBankVeto.cache_segment_snrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.SingleDetBankVeto.cache_segment_snrs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.SingleDetBankVeto.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snrv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#SingleDetBankVeto.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.SingleDetBankVeto.values" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>bank_chisq_from_filters</strong> (<em>TimeSeries of bank veto values - if indices</em>)</p></li>
+<li><p><em>is None then evaluated at all time samples, if not then only at</em></p></li>
+<li><p><em>requested sample indices</em></p></li>
+<li><p><strong>bank_chisq_dof</strong> (<em>int, approx number of statistical degrees of freedom</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.SingleDetSkyMaxBankVeto">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.bank_chisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetSkyMaxBankVeto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#SingleDetSkyMaxBankVeto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.SingleDetSkyMaxBankVeto" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.vetoes.bank_chisq.SingleDetBankVeto" title="pycbc.vetoes.bank_chisq.SingleDetBankVeto"><code class="xref py py-class docutils literal notranslate"><span class="pre">SingleDetBankVeto</span></code></a></p>
+<p>Stub for precessing bank veto if anyone ever wants to code it up.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.SingleDetSkyMaxBankVeto.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#SingleDetSkyMaxBankVeto.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.SingleDetSkyMaxBankVeto.values" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>bank_chisq_from_filters</strong> (<em>TimeSeries of bank veto values - if indices</em>)</p></li>
+<li><p><em>is None then evaluated at all time samples, if not then only at</em></p></li>
+<li><p><em>requested sample indices</em></p></li>
+<li><p><strong>bank_chisq_dof</strong> (<em>int, approx number of statistical degrees of freedom</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.bank_chisq_from_filters">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.bank_chisq.</span></span><span class="sig-name descname"><span class="pre">bank_chisq_from_filters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tmplt_snr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmplt_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank_snrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank_norms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmplt_bank_matches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#bank_chisq_from_filters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.bank_chisq_from_filters" title="Link to this definition"></a></dt>
+<dd><p>This function calculates and returns a TimeSeries object containing the
+bank veto calculated over a segment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tmplt_snr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The SNR time series from filtering the segment against the current
+search template</p></li>
+<li><p><strong>tmplt_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor for the search template</p></li>
+<li><p><strong>bank_snrs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The precomputed list of SNR time series between each of the bank veto
+templates and the segment</p></li>
+<li><p><strong>bank_norms</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>floats</em>) – The normalization factors for the list of bank veto templates
+(usually this will be the same for all bank veto templates)</p></li>
+<li><p><strong>tmplt_bank_matches</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>floats</em>) – The complex overlap between the search template and each
+of the bank templates</p></li>
+<li><p><strong>indices</strong> (<em>{None</em><em>, </em><em>Array}</em><em>, </em><em>optional</em>) – Array of indices into the snr time series. If given, the bank chisq
+will only be calculated at these values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>bank_chisq</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a> of the bank vetos</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.segment_snrs">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.bank_chisq.</span></span><span class="sig-name descname"><span class="pre">segment_snrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#segment_snrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.segment_snrs" title="Link to this definition"></a></dt>
+<dd><p>This functions calculates the snr of each bank veto template against
+the segment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The list of bank veto templates filters.</p></li>
+<li><p><strong>stilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The current segment of data.</p></li>
+<li><p><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>)</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr (list)</strong> (<em>List of snr time series.</em>)</p></li>
+<li><p><strong>norm (list)</strong> (<em>List of normalizations factors for the snr time series.</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.bank_chisq.template_overlaps">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.bank_chisq.</span></span><span class="sig-name descname"><span class="pre">template_overlaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bank_filters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/bank_chisq.html#template_overlaps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.bank_chisq.template_overlaps" title="Link to this definition"></a></dt>
+<dd><p>This functions calculates the overlaps between the template and the
+bank veto templates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bank_filters</strong> (<em>List</em><em> of </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>)</p></li>
+<li><p><strong>template</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>)</p></li>
+<li><p><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>)</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>overlaps</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of complex overlap values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.vetoes.chisq">
+<span id="pycbc-vetoes-chisq-module"></span><h2>pycbc.vetoes.chisq module<a class="headerlink" href="#module-pycbc.vetoes.chisq" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetPowerChisq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetPowerChisq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetPowerChisq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetPowerChisq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class that handles precomputation and memory management for efficiently
+running the power chisq in a single detector inspiral analysis.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetPowerChisq.cached_chisq_bins">
+<span class="sig-name descname"><span class="pre">cached_chisq_bins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetPowerChisq.cached_chisq_bins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetPowerChisq.cached_chisq_bins" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetPowerChisq.parse_option">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parse_option</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetPowerChisq.parse_option"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetPowerChisq.parse_option" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetPowerChisq.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snrv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetPowerChisq.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetPowerChisq.values" title="Link to this definition"></a></dt>
+<dd><p>Calculate the chisq at points given by indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>chisq</strong> (<em>Array</em>) – Chisq values, one for each sample index, or zero for points below
+the specified SNR threshold</p></li>
+<li><p><strong>chisq_dof</strong> (<em>Array</em>) – Number of statistical degrees of freedom for the chisq test
+in the given template, equal to 2 * num_bins - 2</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetSkyMaxPowerChisq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetSkyMaxPowerChisq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.vetoes.chisq.SingleDetPowerChisq" title="pycbc.vetoes.chisq.SingleDetPowerChisq"><code class="xref py py-class docutils literal notranslate"><span class="pre">SingleDetPowerChisq</span></code></a></p>
+<p>Class that handles precomputation and memory management for efficiently
+running the power chisq in a single detector inspiral analysis when
+maximizing analytically over sky location.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq.calculate_chisq_bins">
+<span class="sig-name descname"><span class="pre">calculate_chisq_bins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetSkyMaxPowerChisq.calculate_chisq_bins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq.calculate_chisq_bins" title="Link to this definition"></a></dt>
+<dd><p>Obtain the chisq bins for this template and PSD.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corr_plus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_cross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snrv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_plus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_cross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hplus_cross_corr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpnorm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcnorm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#SingleDetSkyMaxPowerChisq.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq.values" title="Link to this definition"></a></dt>
+<dd><p>Calculate the chisq at points given by indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>chisq</strong> (<em>Array</em>) – Chisq values, one for each sample index</p></li>
+<li><p><strong>chisq_dof</strong> (<em>Array</em>) – Number of statistical degrees of freedom for the chisq test
+in the given template</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.chisq_accum_bin">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">chisq_accum_bin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#chisq_accum_bin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.chisq_accum_bin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.fastest_power_chisq_at_points">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">fastest_power_chisq_at_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snrv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#fastest_power_chisq_at_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.fastest_power_chisq_at_points" title="Link to this definition"></a></dt>
+<dd><p>Calculate the chisq values for only selected points.</p>
+<p>This function looks at the number of points to be evaluated and selects
+the fastest method (FFT, or direct time shift and sum). In either case,
+only the selected points are returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The product of the template and data in the frequency domain.</p></li>
+<li><p><strong>snr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a>) – The unnormalized snr</p></li>
+<li><p><strong>snr_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The snr normalization factor  — EXPLAINME</p></li>
+<li><p><strong>bins</strong> (<em>List</em><em> of </em><em>integers</em>) – The edges of the equal power bins</p></li>
+<li><p><strong>indices</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a>) – The indices where we will calculate the chisq. These must be relative
+to the given <cite>snr</cite> series.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>chisq</strong> – An array containing only the chisq at the selected points.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array">Array</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.power_chisq">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">power_chisq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#power_chisq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.power_chisq" title="Link to this definition"></a></dt>
+<dd><p>Calculate the chisq timeseries</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – A time or frequency series that contains the filter template.</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – A time or frequency series that contains the data to filter. The length
+must be commensurate with the template.
+(EXPLAINME - does this mean ‘the same as’ or something else?)</p></li>
+<li><p><strong>num_bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of frequency bins used for chisq. The number of statistical
+degrees of freedom (‘dof’) is 2*num_bins-2.</p></li>
+<li><p><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The psd of the data.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The low frequency cutoff for the filter</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The high frequency cutoff for the filter</p></li>
+<li><p><strong>return_bins</strong> (<em>{boolean</em><em>, </em><em>False}</em><em>, </em><em>optional</em>) – Return a list of the individual chisq bins</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>chisq</strong> – TimeSeries containing the chisq values for all times.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.power_chisq_at_points_from_precomputed">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">power_chisq_at_points_from_precomputed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#power_chisq_at_points_from_precomputed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.power_chisq_at_points_from_precomputed" title="Link to this definition"></a></dt>
+<dd><p>Calculate the chisq timeseries from precomputed values for only select points.</p>
+<p>This function calculates the chisq at each point by explicitly time shifting
+and summing each bin. No FFT is involved.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The product of the template and data in the frequency domain.</p></li>
+<li><p><strong>snr</strong> (<em>numpy.ndarray</em>) – The unnormalized array of snr values at only the selected points in <cite>indices</cite>.</p></li>
+<li><p><strong>snr_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization of the snr (EXPLAINME : refer to Findchirp paper?)</p></li>
+<li><p><strong>bins</strong> (<em>List</em><em> of </em><em>integers</em>) – The edges of the equal power bins</p></li>
+<li><p><strong>indices</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a>) – The indices where we will calculate the chisq. These must be relative
+to the given <cite>corr</cite> series.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>chisq</strong> – An array containing only the chisq at the selected points.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array">Array</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.power_chisq_bins">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">power_chisq_bins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#power_chisq_bins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.power_chisq_bins" title="Link to this definition"></a></dt>
+<dd><p>Returns bins of equal power for use with the chisq functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>htilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – A frequency series containing the template waveform</p></li>
+<li><p><strong>num_bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of chisq bins to calculate.</p></li>
+<li><p><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – A frequency series containing the psd. Its length must be commensurate
+with the template waveform.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The low frequency cutoff to apply</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The high frequency cutoff to apply</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>bins</strong> – A list of the edges of the chisq bins is returned.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of ints</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.power_chisq_bins_from_sigmasq_series">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">power_chisq_bins_from_sigmasq_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigmasq_series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#power_chisq_bins_from_sigmasq_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.power_chisq_bins_from_sigmasq_series" title="Link to this definition"></a></dt>
+<dd><p>Returns bins of equal power for use with the chisq functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sigmasq_series</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – A frequency series containing the cumulative power of a filter template
+preweighted by a psd.</p></li>
+<li><p><strong>num_bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of chisq bins to calculate.</p></li>
+<li><p><strong>kmin</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – DOCUMENTME</p></li>
+<li><p><strong>kmax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – DOCUMENTME</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>bins</strong> – A list of the edges of the chisq bins is returned.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of ints</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.power_chisq_from_precomputed">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">power_chisq_from_precomputed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#power_chisq_from_precomputed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.power_chisq_from_precomputed" title="Link to this definition"></a></dt>
+<dd><p>Calculate the chisq timeseries from precomputed values.</p>
+<p>This function calculates the chisq at all times by performing an
+inverse FFT of each bin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The produce of the template and data in the frequency domain.</p></li>
+<li><p><strong>snr</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The unnormalized snr time series.</p></li>
+<li><p><strong>snr_norm</strong> – The snr normalization factor (true snr = snr * snr_norm) EXPLAINME - define ‘true snr’?</p></li>
+<li><p><strong>bins</strong> (<em>List</em><em> of </em><em>integers</em>) – The edges of the chisq bins.</p></li>
+<li><p><strong>indices</strong> (<em>{Array</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – Index values into snr that indicate where to calculate
+chisq values. If none, calculate chisq for all possible indices.</p></li>
+<li><p><strong>return_bins</strong> (<em>{boolean</em><em>, </em><em>False}</em><em>, </em><em>optional</em>) – Return a list of the SNRs for each chisq bin.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>chisq</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq.shift_sum">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq.</span></span><span class="sig-name descname"><span class="pre">shift_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq.html#shift_sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq.shift_sum" title="Link to this definition"></a></dt>
+<dd><p>Calculate the time shifted sum of the FrequencySeries</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.vetoes.chisq_cpu">
+<span id="pycbc-vetoes-chisq-cpu-module"></span><h2>pycbc.vetoes.chisq_cpu module<a class="headerlink" href="#module-pycbc.vetoes.chisq_cpu" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cpu.chisq_accum_bin">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cpu.</span></span><span class="sig-name descname"><span class="pre">chisq_accum_bin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.vetoes.chisq_cpu.chisq_accum_bin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cpu.chisq_accum_bin_cython">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cpu.</span></span><span class="sig-name descname"><span class="pre">chisq_accum_bin_cython</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.vetoes.chisq_cpu.chisq_accum_bin_cython" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cpu.chisq_accum_bin_numpy">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cpu.</span></span><span class="sig-name descname"><span class="pre">chisq_accum_bin_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.vetoes.chisq_cpu.chisq_accum_bin_numpy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cpu.point_chisq_code">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cpu.</span></span><span class="sig-name descname"><span class="pre">point_chisq_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blen</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.vetoes.chisq_cpu.point_chisq_code" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cpu.shift_sum">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cpu.</span></span><span class="sig-name descname"><span class="pre">shift_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shifts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.vetoes.chisq_cpu.shift_sum" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.vetoes.chisq_cupy">
+<span id="pycbc-vetoes-chisq-cupy-module"></span><h2>pycbc.vetoes.chisq_cupy module<a class="headerlink" href="#module-pycbc.vetoes.chisq_cupy" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.chisq_accum_bin">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">chisq_accum_bin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#chisq_accum_bin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.chisq_accum_bin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.get_cached_bin_layout">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">get_cached_bin_layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#get_cached_bin_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.get_cached_bin_layout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.get_cached_pow2">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">get_cached_pow2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#get_cached_pow2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.get_cached_pow2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.get_pchisq_fn">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">get_pchisq_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fuse_correlate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#get_pchisq_fn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.get_pchisq_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.get_pchisq_fn_pow2">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">get_pchisq_fn_pow2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">np</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fuse_correlate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#get_pchisq_fn_pow2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.get_pchisq_fn_pow2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.shift_sum">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">shift_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#shift_sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.shift_sum" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.shift_sum_points">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">shift_sum_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_tuple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#shift_sum_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.shift_sum_points" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.vetoes.chisq_cupy.shift_sum_points_pow2">
+<span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.chisq_cupy.</span></span><span class="sig-name descname"><span class="pre">shift_sum_points_pow2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_tuple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/chisq_cupy.html#shift_sum_points_pow2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.chisq_cupy.shift_sum_points_pow2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.vetoes.sgchisq">
+<span id="pycbc-vetoes-sgchisq-module"></span><h2>pycbc.vetoes.sgchisq module<a class="headerlink" href="#module-pycbc.vetoes.sgchisq" title="Link to this heading"></a></h2>
+<p>Chisq based on sine-gaussian tiles.
+See <a class="reference external" href="https://arxiv.org/abs/1709.08974">https://arxiv.org/abs/1709.08974</a> for a discussion.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.vetoes.sgchisq.SingleDetSGChisq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.vetoes.sgchisq.</span></span><span class="sig-name descname"><span class="pre">SingleDetSGChisq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bank</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chisq_locations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/sgchisq.html#SingleDetSGChisq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.sgchisq.SingleDetSGChisq" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.vetoes.chisq.SingleDetPowerChisq" title="pycbc.vetoes.chisq.SingleDetPowerChisq"><code class="xref py py-class docutils literal notranslate"><span class="pre">SingleDetPowerChisq</span></code></a></p>
+<p>Class that handles precomputation and memory management for efficiently
+running the sine-Gaussian chisq</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.sgchisq.SingleDetSGChisq.from_cli">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chisq_bins</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/sgchisq.html#SingleDetSGChisq.from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.sgchisq.SingleDetSGChisq.from_cli" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.sgchisq.SingleDetSGChisq.insert_option_group">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">insert_option_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/sgchisq.html#SingleDetSGChisq.insert_option_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.sgchisq.SingleDetSGChisq.insert_option_group" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.vetoes.sgchisq.SingleDetSGChisq.returns">
+<span class="sig-name descname"><span class="pre">returns</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'sg_chisq':</span> <span class="pre">&lt;class</span> <span class="pre">'numpy.float32'&gt;}</span></em><a class="headerlink" href="#pycbc.vetoes.sgchisq.SingleDetSGChisq.returns" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.vetoes.sgchisq.SingleDetSGChisq.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snrv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bchisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bchisq_dof</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/vetoes/sgchisq.html#SingleDetSGChisq.values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.vetoes.sgchisq.SingleDetSGChisq.values" title="Link to this definition"></a></dt>
+<dd><p>Calculate sine-Gaussian chisq</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stilde</strong> (<em>pycbc.types.Frequencyseries</em>) – The overwhitened strain</p></li>
+<li><p><strong>template</strong> (<em>pycbc.types.Frequencyseries</em>) – The waveform template being analyzed</p></li>
+<li><p><strong>psd</strong> (<em>pycbc.types.Frequencyseries</em>) – The power spectral density of the data</p></li>
+<li><p><strong>snrv</strong> (<em>numpy.ndarray</em>) – The peak unnormalized complex SNR values</p></li>
+<li><p><strong>snr_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor for the snr</p></li>
+<li><p><strong>bchisq</strong> (<em>numpy.ndarray</em>) – The Bruce Allen power chisq values for these triggers</p></li>
+<li><p><strong>bchisq_dof</strong> (<em>numpy.ndarray</em>) – The degrees of freedom of the Bruce chisq</p></li>
+<li><p><strong>indics</strong> (<em>numpy.ndarray</em>) – The indices of the snr peaks.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>chisq</strong> – Chisq values, one for each sample index</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array">Array</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.vetoes">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.vetoes" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.types.html" class="btn btn-neutral float-left" title="pycbc.types package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.waveform.html" class="btn btn-neutral float-right" title="pycbc.waveform package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

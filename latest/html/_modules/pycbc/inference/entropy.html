@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.entropy &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.entropy</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.entropy</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; The module contains functions for calculating the</span>
+<span class="sd">Kullback-Leibler divergence.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+
+
+<div class="viewcode-block" id="check_hist_params">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.entropy.check_hist_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_hist_params</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">hist_min</span><span class="p">,</span> <span class="n">hist_max</span><span class="p">,</span> <span class="n">hist_bins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Checks that the bound values given for the histogram are consistent,</span>
+<span class="sd">    returning the range if they are or raising an error if they are not.</span>
+<span class="sd">    Also checks that if hist_bins is a str, it corresponds to a method</span>
+<span class="sd">    available in numpy.histogram</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples : numpy.array</span>
+<span class="sd">        Set of samples to get the min/max if only one of the bounds is given.</span>
+<span class="sd">    hist_min : numpy.float64</span>
+<span class="sd">        Minimum value for the histogram.</span>
+<span class="sd">    hist_max : numpy.float64</span>
+<span class="sd">        Maximum value for the histogram.</span>
+<span class="sd">    hist_bins: int or str</span>
+<span class="sd">        If int, number of equal-width bins to use in numpy.histogram. If str,</span>
+<span class="sd">        it should be one of the methods to calculate the optimal bin width</span>
+<span class="sd">        available in numpy.histogram: [&#39;auto&#39;, &#39;fd&#39;, &#39;doane&#39;, &#39;scott&#39;, &#39;stone&#39;,</span>
+<span class="sd">        &#39;rice&#39;, &#39;sturges&#39;, &#39;sqrt&#39;]. Default is &#39;fd&#39; (Freedman Diaconis</span>
+<span class="sd">        Estimator). This option will be ignored if `kde=True`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hist_range : tuple or None</span>
+<span class="sd">        The bounds (hist_min, hist_max) or None.</span>
+<span class="sd">    hist_bins : int or str</span>
+<span class="sd">        Number of bins or method for optimal width bin calculation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">hist_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="s1">&#39;fd&#39;</span><span class="p">,</span> <span class="s1">&#39;doane&#39;</span><span class="p">,</span> <span class="s1">&#39;scott&#39;</span><span class="p">,</span> <span class="s1">&#39;stone&#39;</span><span class="p">,</span> <span class="s1">&#39;rice&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;sturges&#39;</span><span class="p">,</span> <span class="s1">&#39;sqrt&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">hist_bins</span><span class="p">:</span>
+        <span class="n">hist_bins</span> <span class="o">=</span> <span class="s1">&#39;fd&#39;</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hist_bins</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">hist_bins</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hist_methods</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Method for calculating bins width must be one of&#39;</span>
+                         <span class="s1">&#39; </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hist_methods</span><span class="p">))</span>
+
+    <span class="c1"># No bounds given, return None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">hist_min</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hist_max</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hist_bins</span>
+
+    <span class="c1"># One of the bounds is missing</span>
+    <span class="k">if</span> <span class="n">hist_min</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hist_max</span><span class="p">:</span>
+        <span class="n">hist_max</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">hist_max</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hist_min</span><span class="p">:</span>
+        <span class="n">hist_min</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="c1"># Both bounds given</span>
+    <span class="k">elif</span> <span class="n">hist_min</span> <span class="ow">and</span> <span class="n">hist_max</span> <span class="ow">and</span> <span class="n">hist_min</span> <span class="o">&gt;=</span> <span class="n">hist_max</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;hist_min must be lower than hist_max.&#39;</span><span class="p">)</span>
+
+    <span class="n">hist_range</span> <span class="o">=</span> <span class="p">(</span><span class="n">hist_min</span><span class="p">,</span> <span class="n">hist_max</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">hist_range</span><span class="p">,</span> <span class="n">hist_bins</span></div>
+
+
+
+<div class="viewcode-block" id="compute_pdf">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.entropy.compute_pdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_pdf</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">hist_min</span><span class="p">,</span> <span class="n">hist_max</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Computes the probability density function for a set of samples.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples : numpy.array</span>
+<span class="sd">        Set of samples to calculate the pdf.</span>
+<span class="sd">    method : str</span>
+<span class="sd">        Method to calculate the pdf. Options are &#39;kde&#39; for the Kernel Density</span>
+<span class="sd">        Estimator, and &#39;hist&#39; to use numpy.histogram</span>
+<span class="sd">    bins : str or int, optional</span>
+<span class="sd">        This option will be ignored if method is `kde`.</span>
+<span class="sd">        If int, number of equal-width bins to use when calculating probability</span>
+<span class="sd">        density function from a set of samples of the distribution. If str, it</span>
+<span class="sd">        should be one of the methods to calculate the optimal bin width</span>
+<span class="sd">        available in numpy.histogram: [&#39;auto&#39;, &#39;fd&#39;, &#39;doane&#39;, &#39;scott&#39;, &#39;stone&#39;,</span>
+<span class="sd">        &#39;rice&#39;, &#39;sturges&#39;, &#39;sqrt&#39;]. Default is &#39;fd&#39; (Freedman Diaconis</span>
+<span class="sd">        Estimator).</span>
+<span class="sd">    hist_min : numpy.float64, optional</span>
+<span class="sd">        Minimum of the distributions&#39; values to use. This will be ignored if</span>
+<span class="sd">        `kde=True`.</span>
+<span class="sd">    hist_max : numpy.float64, optional</span>
+<span class="sd">        Maximum of the distributions&#39; values to use. This will be ignored if</span>
+<span class="sd">        `kde=True`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pdf : numpy.array</span>
+<span class="sd">        Discrete probability distribution calculated from samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;kde&#39;</span><span class="p">:</span>
+        <span class="n">samples_kde</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+        <span class="n">npts</span> <span class="o">=</span> <span class="mi">10000</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">10000</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="n">samples_kde</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">npts</span><span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">samples_kde</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">draw</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;hist&#39;</span><span class="p">:</span>
+        <span class="n">hist_range</span><span class="p">,</span> <span class="n">hist_bins</span> <span class="o">=</span> <span class="n">check_hist_params</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">hist_min</span><span class="p">,</span>
+                                                  <span class="n">hist_max</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">hist_bins</span><span class="p">,</span>
+                                 <span class="nb">range</span><span class="o">=</span><span class="n">hist_range</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Method not recognized.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pdf</span></div>
+
+
+
+<div class="viewcode-block" id="entropy">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.entropy.entropy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">entropy</span><span class="p">(</span><span class="n">pdf1</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">e</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Computes the information entropy for a single parameter</span>
+<span class="sd">    from one probability density function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf1 : numpy.array</span>
+<span class="sd">        Probability density function.</span>
+<span class="sd">    base : {numpy.e, numpy.float64}, optional</span>
+<span class="sd">        The logarithmic base to use (choose base 2 for information measured</span>
+<span class="sd">        in bits, default is nats).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.float64</span>
+<span class="sd">        The information entropy value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">entropy</span><span class="p">(</span><span class="n">pdf1</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="kl">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.entropy.kl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">kl</span><span class="p">(</span><span class="n">samples1</span><span class="p">,</span> <span class="n">samples2</span><span class="p">,</span> <span class="n">pdf1</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">pdf2</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">kde</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+       <span class="n">bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hist_min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hist_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">e</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Computes the Kullback-Leibler divergence for a single parameter</span>
+<span class="sd">    from two distributions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples1 : numpy.array</span>
+<span class="sd">        Samples or probability density function (for the latter must also set</span>
+<span class="sd">        `pdf1=True`).</span>
+<span class="sd">    samples2 : numpy.array</span>
+<span class="sd">        Samples or probability density function (for the latter must also set</span>
+<span class="sd">        `pdf2=True`).</span>
+<span class="sd">    pdf1 : bool</span>
+<span class="sd">        Set to `True` if `samples1` is a probability density funtion already.</span>
+<span class="sd">    pdf2 : bool</span>
+<span class="sd">        Set to `True` if `samples2` is a probability density funtion already.</span>
+<span class="sd">    kde : bool</span>
+<span class="sd">        Set to `True` if at least one of `pdf1` or `pdf2` is `False` to</span>
+<span class="sd">        estimate the probability density function using kernel density</span>
+<span class="sd">        estimation (KDE).</span>
+<span class="sd">    bins : int or str, optional</span>
+<span class="sd">        If int, number of equal-width bins to use when calculating probability</span>
+<span class="sd">        density function from a set of samples of the distribution. If str, it</span>
+<span class="sd">        should be one of the methods to calculate the optimal bin width</span>
+<span class="sd">        available in numpy.histogram: [&#39;auto&#39;, &#39;fd&#39;, &#39;doane&#39;, &#39;scott&#39;, &#39;stone&#39;,</span>
+<span class="sd">        &#39;rice&#39;, &#39;sturges&#39;, &#39;sqrt&#39;]. Default is &#39;fd&#39; (Freedman Diaconis</span>
+<span class="sd">        Estimator). This option will be ignored if `kde=True`.</span>
+<span class="sd">    hist_min : numpy.float64</span>
+<span class="sd">        Minimum of the distributions&#39; values to use. This will be ignored if</span>
+<span class="sd">        `kde=True`.</span>
+<span class="sd">    hist_max : numpy.float64</span>
+<span class="sd">        Maximum of the distributions&#39; values to use. This will be ignored if</span>
+<span class="sd">        `kde=True`.</span>
+<span class="sd">    base : numpy.float64</span>
+<span class="sd">        The logarithmic base to use (choose base 2 for information measured</span>
+<span class="sd">        in bits, default is nats).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.float64</span>
+<span class="sd">        The Kullback-Leibler divergence value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pdf1</span> <span class="ow">and</span> <span class="n">pdf2</span> <span class="ow">and</span> <span class="n">kde</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;KDE can only be used when at least one of pdf1 or &#39;</span>
+                         <span class="s1">&#39;pdf2 is False.&#39;</span><span class="p">)</span>
+
+    <span class="n">sample_groups</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;P&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">samples1</span><span class="p">,</span> <span class="n">pdf1</span><span class="p">),</span> <span class="s1">&#39;Q&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">samples2</span><span class="p">,</span> <span class="n">pdf2</span><span class="p">)}</span>
+    <span class="n">pdfs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sample_groups</span><span class="p">:</span>
+        <span class="n">samples</span><span class="p">,</span> <span class="n">pdf</span> <span class="o">=</span> <span class="n">sample_groups</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">pdf</span><span class="p">:</span>
+            <span class="n">pdfs</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;kde&#39;</span> <span class="k">if</span> <span class="n">kde</span> <span class="k">else</span> <span class="s1">&#39;hist&#39;</span>
+            <span class="n">pdfs</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_pdf</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">hist_min</span><span class="p">,</span> <span class="n">hist_max</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">entropy</span><span class="p">(</span><span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;P&#39;</span><span class="p">],</span> <span class="n">qk</span><span class="o">=</span><span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">],</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="js">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.entropy.js">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">js</span><span class="p">(</span><span class="n">samples1</span><span class="p">,</span> <span class="n">samples2</span><span class="p">,</span> <span class="n">kde</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hist_min</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hist_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+       <span class="n">base</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">e</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Computes the Jensen-Shannon divergence for a single parameter</span>
+<span class="sd">    from two distributions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples1 : numpy.array</span>
+<span class="sd">        Samples.</span>
+<span class="sd">    samples2 : numpy.array</span>
+<span class="sd">        Samples.</span>
+<span class="sd">    kde : bool</span>
+<span class="sd">        Set to `True` to estimate the probability density function using</span>
+<span class="sd">        kernel density estimation (KDE).</span>
+<span class="sd">    bins : int or str, optional</span>
+<span class="sd">        If int, number of equal-width bins to use when calculating probability</span>
+<span class="sd">        density function from a set of samples of the distribution. If str, it</span>
+<span class="sd">        should be one of the methods to calculate the optimal bin width</span>
+<span class="sd">        available in numpy.histogram: [&#39;auto&#39;, &#39;fd&#39;, &#39;doane&#39;, &#39;scott&#39;, &#39;stone&#39;,</span>
+<span class="sd">        &#39;rice&#39;, &#39;sturges&#39;, &#39;sqrt&#39;]. Default is &#39;fd&#39; (Freedman Diaconis</span>
+<span class="sd">        Estimator). This option will be ignored if `kde=True`.</span>
+<span class="sd">    hist_min : numpy.float64</span>
+<span class="sd">        Minimum of the distributions&#39; values to use. This will be ignored if</span>
+<span class="sd">        `kde=True`.</span>
+<span class="sd">    hist_max : numpy.float64</span>
+<span class="sd">        Maximum of the distributions&#39; values to use. This will be ignored if</span>
+<span class="sd">        `kde=True`.</span>
+<span class="sd">    base : numpy.float64</span>
+<span class="sd">        The logarithmic base to use (choose base 2 for information measured</span>
+<span class="sd">        in bits, default is nats).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.float64</span>
+<span class="sd">        The Jensen-Shannon divergence value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sample_groups</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;P&#39;</span><span class="p">:</span> <span class="n">samples1</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">:</span> <span class="n">samples2</span><span class="p">}</span>
+    <span class="n">pdfs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">sample_groups</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">sample_groups</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;kde&#39;</span> <span class="k">if</span> <span class="n">kde</span> <span class="k">else</span> <span class="s1">&#39;hist&#39;</span>
+        <span class="n">pdfs</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_pdf</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">hist_min</span><span class="p">,</span> <span class="n">hist_max</span><span class="p">)</span>
+
+    <span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;P&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">])</span>
+
+    <span class="n">js_div</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">pdf</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;P&#39;</span><span class="p">],</span> <span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;Q&#39;</span><span class="p">]):</span>
+        <span class="n">js_div</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">kl</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">pdfs</span><span class="p">[</span><span class="s1">&#39;M&#39;</span><span class="p">],</span> <span class="n">pdf1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pdf2</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">js_div</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

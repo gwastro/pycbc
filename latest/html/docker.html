@@ -1,0 +1,172 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Running PyCBC under Docker &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Instructions to add CUDA support (optional)" href="install_cuda.html" />
+    <link rel="prev" title="Installing PyCBC" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="install.html">Installing PyCBC</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html#simple-installation">Simple Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-virtualenv-for-development-and-production">Full Virtualenv for Development and Production</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="install.html#other-scenarios">Other scenarios</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="install.html#docker">Docker</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Running PyCBC under Docker</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#building-the-documentation">Building the Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#use-of-intel-mkl-optimized-fft-libraries">Use of Intel MKL Optimized FFT libraries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#graphics-processing-unit-support-with-cuda">Graphics Processing Unit support with CUDA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#related-help">Related Help</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="install.html">Installing PyCBC</a></li>
+      <li class="breadcrumb-item active">Running PyCBC under Docker</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/docker.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="running-pycbc-under-docker">
+<h1>Running PyCBC under Docker<a class="headerlink" href="#running-pycbc-under-docker" title="Link to this heading"></a></h1>
+<p>The easiest way to start using PyCBC is to install one of our <a class="reference external" href="https://hub.docker.com/u/pycbc/">Docker containers</a>. First, install the <a class="reference external" href="https://www.docker.com/community-edition">Docker Community Edition</a> for your <a class="reference external" href="https://store.docker.com/editions/community/docker-ce-desktop-mac?tab=description">Mac</a> or <a class="reference external" href="https://store.docker.com/editions/community/docker-ce-desktop-windows?tab=description">Windows</a> desktop. Docker CE installations for <a class="reference external" href="https://www.docker.com/community-edition#/download">Linux platforms</a> are also available.</p>
+<p>To start a Docker container with no graphics, type the commands:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">pull</span> <span class="n">pycbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">el8</span><span class="p">:</span><span class="n">latest</span>
+<span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">it</span> <span class="n">pycbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">el8</span><span class="p">:</span><span class="n">latest</span>
+</pre></div>
+</div>
+<p>This example downloads current version of the code from the <a class="reference external" href="https://github.com/gwastro/pycbc">GitHub master branch.</a> Replace the string <code class="docutils literal notranslate"><span class="pre">latest</span></code> with one of the <a class="reference external" href="https://github.com/gwastro/pycbc/releases">PyCBC release tags</a> (e.g. <code class="docutils literal notranslate"><span class="pre">v1.7.0</span></code>) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite installed into the root filesystem. The command above starts a login shell as the pycbc user. To override this and log in as root, run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">it</span> <span class="n">pycbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">el8</span><span class="p">:</span><span class="n">latest</span> <span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">bash</span> <span class="o">-</span><span class="n">l</span>
+</pre></div>
+</div>
+<section id="using-jupyter-notebook-within-docker">
+<h2>Using jupyter notebook within docker<a class="headerlink" href="#using-jupyter-notebook-within-docker" title="Link to this heading"></a></h2>
+<p>One can start a jupyter notebook within docker and then port forward to your
+computer’s environment.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">it</span> <span class="o">-</span><span class="n">p</span> <span class="mi">8888</span><span class="p">:</span><span class="mi">8888</span> <span class="o">--</span><span class="n">name</span> <span class="n">pycbc_test</span> <span class="n">pycbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">el8</span><span class="p">:</span><span class="n">latest</span> <span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">su</span> <span class="o">-</span><span class="n">l</span> <span class="n">pycbc</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;jupyter notebook --no-browser --ip 0.0.0.0&quot;</span>
+</pre></div>
+</div>
+<p>Once the image is running, you can connect from your computer’s web browser to the address printed to the screen by jupyter. This is typically the local host adddress, e.g. <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code></p>
+</section>
+<section id="sharing-user-files-and-ssh-keys">
+<h2>Sharing user files and SSH keys<a class="headerlink" href="#sharing-user-files-and-ssh-keys" title="Link to this heading"></a></h2>
+<p>It can be useful to share your SSH public/private key with the Docker container, for example to allow you to git push and pull from your repository on GitHub. To do this, add the argument <code class="docutils literal notranslate"><span class="pre">-v</span> <span class="pre">${HOME}/.ssh:/opt/pycbc/.ssh</span></code> to the <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span></code> commands.  You can also create e.g. a <code class="docutils literal notranslate"><span class="pre">scratch</span></code> directory and use the <code class="docutils literal notranslate"><span class="pre">-v</span></code> option to mount it in the container. This directory can be used to transfer files between the container and the host computer. See the <a class="reference external" href="https://docs.docker.com/storage/volumes/">Docker volumes documentation</a> for a detailed explaination of mounting directories inside a docker container.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Installing PyCBC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="install_cuda.html" class="btn btn-neutral float-right" title="Instructions to add CUDA support (optional)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

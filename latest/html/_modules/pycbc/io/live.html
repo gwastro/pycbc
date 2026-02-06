@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.io.live &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">pycbc.io</a></li>
+      <li class="breadcrumb-item active">pycbc.io.live</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.io.live</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.time</span><span class="w"> </span><span class="kn">import</span> <span class="n">gps_to_utc_datetime</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.io.live&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">maximum_string</span><span class="p">(</span><span class="n">numbers</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the maximum possible length string to match</span>
+<span class="sd">    all values between two numbers</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    numbers : list of integers</span>
+<span class="sd">        A list of integers from which to determine the longest</span>
+<span class="sd">        common string prefix. E.g. &#39;12345&#39;, &#39;12346&#39;, &#39;12356&#39;</span>
+<span class="sd">        returns &#39;123&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># The max length of the number will be the integer above log10</span>
+    <span class="c1"># of the biggest number</span>
+    <span class="n">maxlen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">numbers</span><span class="p">))))</span>
+    <span class="c1"># Convert the numbers to (possibly leading zero-padded) strings</span>
+    <span class="n">strings</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{</span><span class="s2">n:0</span><span class="si">{</span><span class="n">maxlen</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">d</span><span class="se">}}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">numbers</span><span class="p">]</span>
+    <span class="c1"># Count how many digits are the same:</span>
+    <span class="n">n_digits</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">str_digit</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">strings</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">str_digit</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># This digit is the same for all numbers</span>
+            <span class="n">n_digits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">strings</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="n">n_digits</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Indicate whether the filename indicates that the file is within the</span>
+<span class="sd">    start and end times</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : string</span>
+<span class="sd">        Filename which matches the format</span>
+<span class="sd">        {id_string}-{start_time}-{duration}.hdf</span>
+<span class="sd">    start_time : float</span>
+<span class="sd">        Start of search window, i.e. GPS time of when the</span>
+<span class="sd">        file cannot end before</span>
+<span class="sd">    end_time : float</span>
+<span class="sd">        End of search window, i.e. GPS time of when the</span>
+<span class="sd">        file cannot start after</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    boolean</span>
+<span class="sd">        Does any of the file lie within the start/end times</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># FIX ME eventually - this uses the gps time and duration from the filename</span>
+    <span class="c1"># Is there a better way? (i.e. trigger gps times in the file or</span>
+    <span class="c1"># add an attribute)</span>
+    <span class="n">fend</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">file_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fend</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fend</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="p">((</span><span class="n">file_start</span> <span class="o">+</span> <span class="n">duration</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">start_time</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">file_start</span> <span class="o">&lt;=</span> <span class="n">end_time</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="add_live_trigger_selection_options">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.live.add_live_trigger_selection_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_live_trigger_selection_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add options required for obtaining the right set of PyCBC live triggers</span>
+<span class="sd">    into an argument parser</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">finding_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Trigger Finding&#39;</span><span class="p">)</span>
+    <span class="n">finding_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--trigger-directory&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;PATH&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory containing trigger files, directory &quot;</span>
+             <span class="s2">&quot;can contain subdirectories. Required.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">finding_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--gps-start-time&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Start time of the analysis. Integer, required&quot;</span>
+    <span class="p">)</span>
+    <span class="n">finding_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--gps-end-time&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;End time of the analysis. Integer, required&quot;</span>
+    <span class="p">)</span>
+    <span class="n">finding_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--date-directories&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Indicate if the trigger files are stored in &quot;</span>
+             <span class="s2">&quot;directories by date.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">default_dd_format</span> <span class="o">=</span> <span class="s2">&quot;%Y_%m_</span><span class="si">%d</span><span class="s2">&quot;</span>
+    <span class="n">finding_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--date-directory-format&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">default_dd_format</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Format of date, see datetime strftime &quot;</span>
+             <span class="s2">&quot;documentation for details. Default: &quot;</span>
+             <span class="s2">&quot;</span><span class="si">%%</span><span class="s2">Y_</span><span class="si">%%</span><span class="s2">m_</span><span class="si">%%</span><span class="s2">d&quot;</span>
+    <span class="p">)</span>
+    <span class="n">finding_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--file-identifier&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;H1L1V1-Live&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;String required in filename to be considered for &quot;</span>
+             <span class="s2">&quot;analysis. Default: &#39;H1L1V1-Live&#39;.&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_trigger_files">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.live.find_trigger_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_trigger_files</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">gps_start_time</span><span class="p">,</span> <span class="n">gps_end_time</span><span class="p">,</span>
+                       <span class="n">id_string</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">date_directories</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">date_directory_format</span><span class="o">=</span><span class="s2">&quot;%Y_%m_</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find a list of PyCBC live trigger files which are between the gps</span>
+<span class="sd">    start and end times given</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Find the string at the start of the gps time which will match all</span>
+    <span class="c1"># files in this range - this helps to cut which ones we need to</span>
+    <span class="c1"># compare later</span>
+    <span class="n">num_match</span> <span class="o">=</span> <span class="n">maximum_string</span><span class="p">([</span><span class="n">gps_start_time</span><span class="p">,</span> <span class="n">gps_end_time</span><span class="p">])</span>
+
+    <span class="c1"># ** means recursive, so for large directories, this is expensive.</span>
+    <span class="c1"># It is not too bad if date_directories is set, as we don&#39;t waste time</span>
+    <span class="c1"># in directories where there cant be any files.</span>
+    <span class="n">glob_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;**/*</span><span class="si">{</span><span class="n">id_string</span><span class="si">}</span><span class="s1">*</span><span class="si">{</span><span class="n">num_match</span><span class="si">}</span><span class="s1">*.hdf&#39;</span>
+    <span class="k">if</span> <span class="n">date_directories</span><span class="p">:</span>
+        <span class="c1"># convert the GPS times into dates, and only use the directories</span>
+        <span class="c1"># of those dates to search</span>
+        <span class="c1"># Add a day on either side to ensure we get files which straddle</span>
+        <span class="c1"># the boundary</span>
+        <span class="n">one_day</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">date_check</span> <span class="o">=</span> <span class="n">gps_to_utc_datetime</span><span class="p">(</span><span class="n">gps_start_time</span><span class="p">)</span> <span class="o">-</span> <span class="n">one_day</span>
+        <span class="n">date_end</span> <span class="o">=</span> <span class="n">gps_to_utc_datetime</span><span class="p">(</span><span class="n">gps_end_time</span><span class="p">)</span> <span class="o">+</span> <span class="n">one_day</span>
+        <span class="n">matching_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">date_check</span> <span class="o">&lt;</span> <span class="n">date_end</span><span class="p">:</span>
+            <span class="n">date_dir</span> <span class="o">=</span> <span class="n">date_check</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">date_directory_format</span><span class="p">)</span>
+            <span class="n">subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">date_dir</span><span class="p">)</span>
+            <span class="n">matching_files_gen</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">subdir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">glob_string</span><span class="p">)</span>
+            <span class="n">matching_files</span> <span class="o">+=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">matching_files_gen</span><span class="p">]</span>
+            <span class="n">date_check</span> <span class="o">+=</span> <span class="n">one_day</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Grab all hdf files in the directory</span>
+        <span class="n">matching_files_gen</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">glob_string</span><span class="p">)</span>
+        <span class="n">matching_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">matching_files_gen</span><span class="p">]</span>
+
+    <span class="c1"># Is the file in the time window?</span>
+    <span class="n">matching_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">matching_files</span>
+                      <span class="k">if</span> <span class="n">filter_file</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">gps_start_time</span><span class="p">,</span> <span class="n">gps_end_time</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">matching_files</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_trigger_files_from_cli">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.live.find_trigger_files_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_trigger_files_from_cli</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around the find_trigger_files function to use when called using</span>
+<span class="sd">    options from the add_live_trigger_selection_options function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">find_trigger_files</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">trigger_directory</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">gps_start_time</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">gps_end_time</span><span class="p">,</span>
+        <span class="n">id_string</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">file_identifier</span><span class="p">,</span>
+        <span class="n">date_directories</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">date_directories</span><span class="p">,</span>
+        <span class="n">date_directory_format</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">date_directory_format</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;add_live_trigger_selection_options&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;find_trigger_files&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;find_trigger_files_from_cli&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

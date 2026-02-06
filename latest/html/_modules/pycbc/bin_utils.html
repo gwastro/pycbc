@@ -1,0 +1,965 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.bin_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.bin_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.bin_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">bisect</span><span class="w"> </span><span class="kn">import</span> <span class="n">bisect_right</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">fpconst</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosInf</span><span class="p">,</span> <span class="n">NegInf</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># fpconst is not part of the standard library and might not be available</span>
+    <span class="n">PosInf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;+inf&quot;</span><span class="p">)</span>
+    <span class="n">NegInf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;-inf&quot;</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.bin_utils&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Bins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.Bins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Bins</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parent class for 1-dimensional binnings.</span>
+
+<span class="sd">    Not intended to be used directly, but to be subclassed for use in real</span>
+<span class="sd">    bins classes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a Bins instance.  The three arguments are the</span>
+<span class="sd">        minimum and maximum of the values spanned by the bins, and</span>
+<span class="sd">        the number of bins to place between them.  Subclasses may</span>
+<span class="sd">        require additional arguments, or different arguments</span>
+<span class="sd">        altogether.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># convenience code to do some common initialization and</span>
+        <span class="c1"># input checking</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">maxv</span> <span class="o">&lt;=</span> <span class="n">minv</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span><span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">=</span> <span class="n">minv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span> <span class="o">=</span> <span class="n">maxv</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a co-ordinate to a bin index.  The co-ordinate can</span>
+<span class="sd">        be a single value, or a Python slice instance describing a</span>
+<span class="sd">        range of values.  If a single value is given, it is mapped</span>
+<span class="sd">        to the bin index corresponding to that value.  If a slice</span>
+<span class="sd">        is given, it is converted to a slice whose lower bound is</span>
+<span class="sd">        the index of the bin in which the slice&#39;s lower bound</span>
+<span class="sd">        falls, and whose upper bound is 1 greater than the index of</span>
+<span class="sd">        the bin in which the slice&#39;s upper bound falls.  Steps are</span>
+<span class="sd">        not supported in slices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;step not supported: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+            <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                         <span class="k">else</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">stop</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                         <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If __iter__ does not exist, Python uses __getitem__ with</span>
+<span class="sd">        range(0) as input to define iteration. This is nonsensical</span>
+<span class="sd">        for bin objects, so explicitly unsupport iteration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Bins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.Bins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array containing the locations of the lower</span>
+<span class="sd">        boundaries of the bins.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Bins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.Bins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array containing the locations of the bin</span>
+<span class="sd">        centres.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Bins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.Bins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array containing the locations of the upper</span>
+<span class="sd">        boundaries of the bins.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="IrregularBins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.IrregularBins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IrregularBins</span><span class="p">(</span><span class="n">Bins</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Bins with arbitrary, irregular spacing.  We only require strict</span>
+<span class="sd">    monotonicity of the bin boundaries.  N boundaries define N-1 bins.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; x = IrregularBins([0.0, 11.0, 15.0, numpy.inf])</span>
+<span class="sd">    &gt;&gt;&gt; len(x)</span>
+<span class="sd">    3</span>
+<span class="sd">    &gt;&gt;&gt; x[1]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[1.5]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[13]</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; x[25]</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; x[4:17]</span>
+<span class="sd">    slice(0, 3, None)</span>
+<span class="sd">    &gt;&gt;&gt; IrregularBins([0.0, 15.0, 11.0])</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    ValueError: non-monotonic boundaries provided</span>
+<span class="sd">    &gt;&gt;&gt; y = IrregularBins([0.0, 11.0, 15.0, numpy.inf])</span>
+<span class="sd">    &gt;&gt;&gt; x == y</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">boundaries</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize a set of custom bins with the bin boundaries.</span>
+<span class="sd">        This includes all left edges plus the right edge.  The</span>
+<span class="sd">        boundaries must be monotonic and there must be at least two</span>
+<span class="sd">        elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check pre-conditions</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;less than two boundaries provided&quot;</span><span class="p">)</span>
+        <span class="n">boundaries</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">:])):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;non-monotonic boundaries provided&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">boundaries</span> <span class="o">=</span> <span class="n">boundaries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span> <span class="o">=</span> <span class="n">boundaries</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">IrregularBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">bisect_right</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="c1"># special measure-zero edge case</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IrregularBins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.IrregularBins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="IrregularBins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.IrregularBins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boundaries</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span></div>
+
+
+<div class="viewcode-block" id="IrregularBins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.IrregularBins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span> <span class="o">/</span> <span class="mf">2.0</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LinearBins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearBins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinearBins</span><span class="p">(</span><span class="n">Bins</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Linearly-spaced bins.  There are n bins of equal size, the first</span>
+<span class="sd">    bin starts on the lower bound and the last bin ends on the upper</span>
+<span class="sd">    bound inclusively.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; x = LinearBins(1.0, 25.0, 3)</span>
+<span class="sd">    &gt;&gt;&gt; x.lower()</span>
+<span class="sd">    array([  1.,   9.,  17.])</span>
+<span class="sd">    &gt;&gt;&gt; x.upper()</span>
+<span class="sd">    array([  9.,  17.,  25.])</span>
+<span class="sd">    &gt;&gt;&gt; x.centres()</span>
+<span class="sd">    array([  5.,  13.,  21.])</span>
+<span class="sd">    &gt;&gt;&gt; x[1]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[1.5]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[10]</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; x[25]</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; x[0:27]</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    IndexError: 0</span>
+<span class="sd">    &gt;&gt;&gt; x[1:25]</span>
+<span class="sd">    slice(0, 3, None)</span>
+<span class="sd">    &gt;&gt;&gt; x[:25]</span>
+<span class="sd">    slice(0, 3, None)</span>
+<span class="sd">    &gt;&gt;&gt; x[10:16.9]</span>
+<span class="sd">    slice(1, 2, None)</span>
+<span class="sd">    &gt;&gt;&gt; x[10:17]</span>
+<span class="sd">    slice(1, 3, None)</span>
+<span class="sd">    &gt;&gt;&gt; x[10:]</span>
+<span class="sd">    slice(1, 3, None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LinearBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxv</span> <span class="o">-</span> <span class="n">minv</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LinearBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="c1"># special &quot;measure zero&quot; corner case</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LinearBins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearBins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LinearBins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearBins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LinearBins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearBins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LinearPlusOverflowBins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinearPlusOverflowBins</span><span class="p">(</span><span class="n">Bins</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Linearly-spaced bins with overflow at the edges.</span>
+
+<span class="sd">    There are n-2 bins of equal size.  The bin 1 starts on the lower bound and</span>
+<span class="sd">    bin n-2 ends on the upper bound.  Bins 0 and n-1 are overflow going from</span>
+<span class="sd">    -infinity to the lower bound and from the upper bound to +infinity</span>
+<span class="sd">    respectively.  Must have n &gt;= 3.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; x = LinearPlusOverflowBins(1.0, 25.0, 5)</span>
+<span class="sd">    &gt;&gt;&gt; x.centres()</span>
+<span class="sd">    array([-inf,   5.,  13.,  21.,  inf])</span>
+<span class="sd">    &gt;&gt;&gt; x.lower()</span>
+<span class="sd">    array([-inf,   1.,   9.,  17.,  25.])</span>
+<span class="sd">    &gt;&gt;&gt; x.upper()</span>
+<span class="sd">    array([  1.,   9.,  17.,  25.,  inf])</span>
+<span class="sd">    &gt;&gt;&gt; x[float(&quot;-inf&quot;)]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[0]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[1]</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; x[10]</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; x[24.99999999]</span>
+<span class="sd">    3</span>
+<span class="sd">    &gt;&gt;&gt; x[25]</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; x[100]</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; x[float(&quot;+inf&quot;)]</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; x[float(&quot;-inf&quot;):9]</span>
+<span class="sd">    slice(0, 3, None)</span>
+<span class="sd">    &gt;&gt;&gt; x[9:float(&quot;+inf&quot;)]</span>
+<span class="sd">    slice(2, 5, None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n must be &gt;= 3&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LinearPlusOverflowBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxv</span> <span class="o">-</span> <span class="n">minv</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LinearPlusOverflowBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="c1"># +infinity overflow bin</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">:</span>
+            <span class="c1"># -infinity overflow bin</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LinearPlusOverflowBins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">NegInf</span><span class="p">]),</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">]))</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LinearPlusOverflowBins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">NegInf</span><span class="p">]),</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">PosInf</span><span class="p">]))</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LinearPlusOverflowBins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">]),</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">PosInf</span><span class="p">]))</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LogarithmicBins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicBins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogarithmicBins</span><span class="p">(</span><span class="n">Bins</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Logarithmically-spaced bins.</span>
+
+<span class="sd">    There are n bins, each of whose upper and lower bounds differ by the same</span>
+<span class="sd">    factor.  The first bin starts on the lower bound, and the last bin ends on</span>
+<span class="sd">    the upper bound inclusively.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; x = LogarithmicBins(1.0, 25.0, 3)</span>
+<span class="sd">    &gt;&gt;&gt; x[1]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[5]</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; x[25]</span>
+<span class="sd">    2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LogarithmicBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">maxv</span><span class="p">)</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">minv</span><span class="p">))</span> <span class="o">/</span> <span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LogarithmicBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">))</span> <span class="o">/</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="c1"># special &quot;measure zero&quot; corner case</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LogarithmicBins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicBins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">)</span> <span class="o">-</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogarithmicBins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicBins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">)</span> <span class="o">-</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogarithmicBins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicBins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span>
+                           <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LogarithmicPlusOverflowBins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogarithmicPlusOverflowBins</span><span class="p">(</span><span class="n">Bins</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Logarithmically-spaced bins plus one bin at each end that goes to</span>
+<span class="sd">    zero and positive infinity respectively.  There are n-2 bins each</span>
+<span class="sd">    of whose upper and lower bounds differ by the same factor.  Bin 1</span>
+<span class="sd">    starts on the lower bound, and bin n-2 ends on the upper bound</span>
+<span class="sd">    inclusively.  Bins 0 and n-1 are overflow bins extending from 0 to</span>
+<span class="sd">    the lower bound and from the upper bound to +infinity respectively.</span>
+<span class="sd">    Must have n &gt;= 3.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; x = LogarithmicPlusOverflowBins(1.0, 25.0, 5)</span>
+<span class="sd">    &gt;&gt;&gt; x[0]</span>
+<span class="sd">    0</span>
+<span class="sd">    &gt;&gt;&gt; x[1]</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; x[5]</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; x[24.999]</span>
+<span class="sd">    3</span>
+<span class="sd">    &gt;&gt;&gt; x[25]</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; x[100]</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; x.lower()</span>
+<span class="sd">    array([ 0.   ,  1.        ,  2.92401774,  8.54987973, 25.      ])</span>
+<span class="sd">    &gt;&gt;&gt; x.upper()</span>
+<span class="sd">    array([ 1.   ,  2.92401774,  8.54987973, 25.        ,       inf])</span>
+<span class="sd">    &gt;&gt;&gt; x.centres()</span>
+<span class="sd">    array([ 0.   ,  1.70997595,  5.        , 14.62008869,       inf])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n must be &gt;= 3&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LogarithmicPlusOverflowBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">minv</span><span class="p">,</span> <span class="n">maxv</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">maxv</span><span class="p">)</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">minv</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LogarithmicPlusOverflowBins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">))</span> <span class="o">/</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">:</span>
+            <span class="c1"># infinity overflow bin</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">:</span>
+            <span class="c1"># zero overflow bin</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LogarithmicPlusOverflowBins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">]),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">),</span>
+                                      <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+             <span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogarithmicPlusOverflowBins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">]),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">)</span> <span class="o">-</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">PosInf</span><span class="p">])</span>
+             <span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LogarithmicPlusOverflowBins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">minv</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">maxv</span><span class="p">),</span>
+                       <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)),</span>
+             <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">PosInf</span><span class="p">])</span>
+             <span class="p">)</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NDBins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.NDBins">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NDBins</span><span class="p">(</span><span class="nb">tuple</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multi-dimensional co-ordinate binning.  An instance of this object</span>
+<span class="sd">    is used to convert a tuple of co-ordinates into a tuple of bin</span>
+<span class="sd">    indices.  This can be used to allow the contents of an array object</span>
+<span class="sd">    to be accessed with real-valued coordinates.</span>
+
+<span class="sd">    NDBins is a subclass of the tuple builtin, and is initialized with</span>
+<span class="sd">    an iterable of instances of subclasses of Bins.  Each Bins subclass</span>
+<span class="sd">    instance describes the binning to apply in the corresponding</span>
+<span class="sd">    co-ordinate direction, and the number of them sets the dimensions</span>
+<span class="sd">    of the binning.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    &gt;&gt;&gt; x = NDBins((LinearBins(1, 25, 3), LogarithmicBins(1, 25, 3)))</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 1]</span>
+<span class="sd">    (0, 0)</span>
+<span class="sd">    &gt;&gt;&gt; x[1.5, 1]</span>
+<span class="sd">    (0, 0)</span>
+<span class="sd">    &gt;&gt;&gt; x[10, 1]</span>
+<span class="sd">    (1, 0)</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 5]</span>
+<span class="sd">    (0, 1)</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 1:5]</span>
+<span class="sd">    (0, slice(0, 2, None))</span>
+<span class="sd">    &gt;&gt;&gt; x.centres()</span>
+<span class="sd">    (array([ 5., 13., 21.]), array([ 1.70997595,  5.        , 14.62008869]))</span>
+
+<span class="sd">    Note that the co-ordinates to be converted must be a tuple, even if</span>
+<span class="sd">    it is only a 1-dimensional co-ordinate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="nb">tuple</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">minv</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">minv</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">new</span><span class="p">)</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">maxv</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">maxv</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">new</span><span class="p">)</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">new</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        When coords is a tuple, it is interpreted as an</span>
+<span class="sd">        N-dimensional co-ordinate which is converted to an N-tuple</span>
+<span class="sd">        of bin indices by the Bins instances in this object.</span>
+<span class="sd">        Otherwise coords is interpeted as an index into the tuple,</span>
+<span class="sd">        and the corresponding Bins instance is returned.</span>
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; x = NDBins((LinearBins(1, 25, 3), LogarithmicBins(1, 25, 3)))</span>
+<span class="sd">        &gt;&gt;&gt; x[1, 1]</span>
+<span class="sd">        (0, 0)</span>
+<span class="sd">        &gt;&gt;&gt; type(x[1])</span>
+<span class="sd">        &lt;class &#39;pylal.rate.LogarithmicBins&#39;&gt;</span>
+
+<span class="sd">        When used to convert co-ordinates to bin indices, each</span>
+<span class="sd">        co-ordinate can be anything the corresponding Bins instance</span>
+<span class="sd">        will accept.  Note that the co-ordinates to be converted</span>
+<span class="sd">        must be a tuple, even if it is only a 1-dimensional</span>
+<span class="sd">        co-ordinate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dimension mismatch&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="n">b</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NDBins.lower">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.NDBins.lower">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lower</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of arrays, where each array contains the</span>
+<span class="sd">        locations of the lower boundaries of the bins in the</span>
+<span class="sd">        corresponding dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NDBins.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.NDBins.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of arrays, where each array contains the</span>
+<span class="sd">        locations of the bin centres for the corresponding</span>
+<span class="sd">        dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">centres</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NDBins.upper">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.NDBins.upper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of arrays, where each array contains the</span>
+<span class="sd">        locations of the upper boundaries of the bins in the</span>
+<span class="sd">        corresponding dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BinnedArray">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedArray">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BinnedArray</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A convenience wrapper, using the NDBins class to provide access to</span>
+<span class="sd">    the elements of an array object.  Technical reasons preclude</span>
+<span class="sd">    providing a subclass of the array object, so the array data is made</span>
+<span class="sd">    available as the &quot;array&quot; attribute of this class.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">    Note that even for 1 dimensional arrays the index must be a tuple.</span>
+
+<span class="sd">    &gt;&gt;&gt; x = BinnedArray(NDBins((LinearBins(0, 10, 5),)))</span>
+<span class="sd">    &gt;&gt;&gt; x.array</span>
+<span class="sd">    array([ 0.,  0.,  0.,  0.,  0.])</span>
+<span class="sd">    &gt;&gt;&gt; x[0,] += 1</span>
+<span class="sd">    &gt;&gt;&gt; x[0.5,] += 1</span>
+<span class="sd">    &gt;&gt;&gt; x.array</span>
+<span class="sd">    array([ 2.,  0.,  0.,  0.,  0.])</span>
+<span class="sd">    &gt;&gt;&gt; x.argmax()</span>
+<span class="sd">    (1.0,)</span>
+
+<span class="sd">    Note the relationship between the binning limits, the bin centres,</span>
+<span class="sd">    and the co-ordinates of the BinnedArray</span>
+
+<span class="sd">    &gt;&gt;&gt; x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), \</span>
+<span class="sd">    LinearBins(-0.5, 1.5, 2))))</span>
+<span class="sd">    &gt;&gt;&gt; x.bins.centres()</span>
+<span class="sd">    (array([ 0.,  1.]), array([ 0.,  1.]))</span>
+<span class="sd">    &gt;&gt;&gt; x[0, 0] = 0</span>
+<span class="sd">    &gt;&gt;&gt; x[0, 1] = 1</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 0] = 2</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 1] = 4</span>
+<span class="sd">    &gt;&gt;&gt; x.array</span>
+<span class="sd">    array([[ 0.,  1.],</span>
+<span class="sd">           [ 2.,  4.]])</span>
+<span class="sd">    &gt;&gt;&gt; x[0, 0]</span>
+<span class="sd">    0.0</span>
+<span class="sd">    &gt;&gt;&gt; x[0, 1]</span>
+<span class="sd">    1.0</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 0]</span>
+<span class="sd">    2.0</span>
+<span class="sd">    &gt;&gt;&gt; x[1, 1]</span>
+<span class="sd">    4.0</span>
+<span class="sd">    &gt;&gt;&gt; x.argmin()</span>
+<span class="sd">    (0.0, 0.0)</span>
+<span class="sd">    &gt;&gt;&gt; x.argmax()</span>
+<span class="sd">    (1.0, 1.0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">=</span> <span class="n">bins</span>
+        <span class="k">if</span> <span class="n">array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">bins</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">bins</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;input array and input bins must have the &quot;</span>
+                                 <span class="s2">&quot;same shape&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">array</span> <span class="o">=</span> <span class="n">array</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">[</span><span class="n">coords</span><span class="p">]]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">[</span><span class="n">coords</span><span class="p">]]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BinnedArray.copy">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedArray.copy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a copy of the BinnedArray.  The .bins attribute is</span>
+<span class="sd">        shared with the original.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="BinnedArray.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedArray.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of arrays containing the bin centres for</span>
+<span class="sd">        each dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="o">.</span><span class="n">centres</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BinnedArray.argmin">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedArray.argmin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">argmin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the co-ordinates of the bin centre containing the</span>
+<span class="sd">        minimum value.  Same as numpy.argmin(), converting the</span>
+<span class="sd">        indexes to bin co-ordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">centres</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">centres</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span>
+                     <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centres</span><span class="p">(),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">argmin</span><span class="p">(),</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="BinnedArray.argmax">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedArray.argmax">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">argmax</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the co-ordinates of the bin centre containing the</span>
+<span class="sd">        maximum value.  Same as numpy.argmax(), converting the</span>
+<span class="sd">        indexes to bin co-ordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">centres</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">centres</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span>
+                     <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">centres</span><span class="p">(),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">argmax</span><span class="p">(),</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="BinnedArray.logregularize">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedArray.logregularize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logregularize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mi">2</span><span class="o">**-</span><span class="mi">1074</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find bins &lt;= 0, and set them to epsilon, This has the</span>
+<span class="sd">        effect of allowing the logarithm of the array to be</span>
+<span class="sd">        evaluated without error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BinnedRatios">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BinnedRatios</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Like BinnedArray, but provides a numerator array and a denominator</span>
+<span class="sd">    array.  The incnumerator() method increments a bin in the numerator</span>
+<span class="sd">    by the given weight, and the incdenominator() method increments a</span>
+<span class="sd">    bin in the denominator by the given weight.  There are no methods</span>
+<span class="sd">    provided for setting or decrementing either, but the they are</span>
+<span class="sd">    accessible as the numerator and denominator attributes, which are</span>
+<span class="sd">    both BinnedArray objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span> <span class="o">=</span> <span class="n">BinnedArray</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span> <span class="o">=</span> <span class="n">BinnedArray</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span><span class="p">[</span><span class="n">coords</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="p">[</span><span class="n">coords</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BinnedRatios.bins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.bins">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span><span class="o">.</span><span class="n">bins</span></div>
+
+
+<div class="viewcode-block" id="BinnedRatios.incnumerator">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.incnumerator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">incnumerator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add weight to the numerator bin at coords.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span><span class="p">[</span><span class="n">coords</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span></div>
+
+
+<div class="viewcode-block" id="BinnedRatios.incdenominator">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.incdenominator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">incdenominator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add weight to the denominator bin at coords.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="p">[</span><span class="n">coords</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span></div>
+
+
+<div class="viewcode-block" id="BinnedRatios.ratio">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.ratio">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute and return the array of ratios.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span><span class="o">.</span><span class="n">array</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="o">.</span><span class="n">array</span></div>
+
+
+<div class="viewcode-block" id="BinnedRatios.regularize">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.regularize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">regularize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find bins in the denominator that are 0, and set them to 1.</span>
+<span class="sd">        Presumably the corresponding bin in the numerator is also</span>
+<span class="sd">        0, so this has the effect of allowing the ratio array to be</span>
+<span class="sd">        evaluated without error, returning zeros in those bins that</span>
+<span class="sd">        have had no weight added to them.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="o">.</span><span class="n">array</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="BinnedRatios.logregularize">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.logregularize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logregularize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mi">2</span><span class="o">**-</span><span class="mi">1074</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find bins in the denominator that are 0, and set them to 1,</span>
+<span class="sd">        while setting the corresponding bin in the numerator to</span>
+<span class="sd">        float epsilon.  This has the effect of allowing the</span>
+<span class="sd">        logarithm of the ratio array to be evaluated without error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="o">.</span><span class="n">array</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">denominator</span><span class="o">.</span><span class="n">array</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="BinnedRatios.centres">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.bin_utils.BinnedRatios.centres">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">centres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of arrays containing the bin centres for</span>
+<span class="sd">        each dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numerator</span><span class="o">.</span><span class="n">bins</span><span class="o">.</span><span class="n">centres</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

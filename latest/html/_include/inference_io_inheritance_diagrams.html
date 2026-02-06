@@ -1,0 +1,261 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/_include/inference_io_inheritance_diagrams.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <ul class="simple" id="inheritance-io-cpnest-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">cpnest_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-a84ff498e884301e72320ab52ba9b4720c0eb3df.png" alt="Inheritance diagram of pycbc.inference.io.cpnest.CPNestFile" usemap="#inheritance62422d073e" class="inheritance graphviz" /></div>
+<map id="inheritance62422d073e" name="inheritance62422d073e">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="67,5,283,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="54,79,295,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_nested_sampler.BaseNestedSamplerFile" target="_top" title="Class to handle file IO for the nested samplers cpnest and dynesty." alt="" coords="5,152,344,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-dynesty-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">dynesty_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-f381ddcd26e21142bb4ab078486879a1522fbcd7.png" alt="Inheritance diagram of pycbc.inference.io.dynesty.DynestyFile" usemap="#inheritance8ab1bd4ddd" class="inheritance graphviz" /></div>
+<map id="inheritance8ab1bd4ddd" name="inheritance8ab1bd4ddd">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="67,5,283,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="54,79,295,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_nested_sampler.BaseNestedSamplerFile" target="_top" title="Class to handle file IO for the nested samplers cpnest and dynesty." alt="" coords="5,152,344,177"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.dynesty.DynestyFile" target="_top" title="Class to handle file IO for the ``dynesty`` sampler." alt="" coords="255,225,425,251"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO" target="_top" title="Provides functions for reading/writing dynesty metadata to file." alt="" coords="369,152,642,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-emcee-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">emcee_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-35c3ce1c26527d3150a094dca0a606ce9e45e76e.png" alt="Inheritance diagram of pycbc.inference.io.emcee.EmceeFile" usemap="#inheritance3b4a8626f3" class="inheritance graphviz" /></div>
+<map id="inheritance3b4a8626f3" name="inheritance3b4a8626f3">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="15,5,200,26"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="5,67,210,89"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO" target="_top" title="Provides functions for reading/writing MCMC metadata to file." alt="" coords="231,67,485,89"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.emcee.EmceeFile" target="_top" title="Class to handle file IO for the ``emcee`` sampler." alt="" coords="292,130,423,151"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.EnsembleMCMCMetadataIO" target="_top" title="Provides functions for reading/writing metadata to file for ensemble" alt="" coords="505,67,763,89"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-emcee-pt-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">emcee_pt_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-b908626d1c769862e42661303d8091f5d10d9efd.png" alt="Inheritance diagram of pycbc.inference.io.emcee_pt.EmceePTFile" usemap="#inheritance6a38ac3ab2" class="inheritance graphviz" /></div>
+<map id="inheritance6a38ac3ab2" name="inheritance6a38ac3ab2">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="14,4,181,24"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="4,61,190,80"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO" target="_top" title="Provides functions for reading/writing MCMC metadata to file." alt="" coords="498,4,727,24"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.base_multitemper.CommonMultiTemperedMetadataIO" target="_top" title="Adds support for reading/writing multi&#45;tempered metadata to" alt="" coords="461,61,764,80"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.EnsembleMCMCMetadataIO" target="_top" title="Provides functions for reading/writing metadata to file for ensemble" alt="" coords="209,61,442,80"/>
+<area shape="rect" id="node6" href="../pycbc.inference.io.html#pycbc.inference.io.emcee_pt.EmceePTFile" target="_top" title="Class to handle file IO for the ``emcee`` sampler." alt="" coords="253,117,399,137"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-epsie-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">epsie_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-43f4b6a2bc6e7389b171ecf5cef3c86e2f6ce959.png" alt="Inheritance diagram of pycbc.inference.io.epsie.EpsieFile" usemap="#inheritancefdd5703eb5" class="inheritance graphviz" /></div>
+<map id="inheritancefdd5703eb5" name="inheritancefdd5703eb5">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="15,4,193,25"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="4,65,203,86"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO" target="_top" title="Provides functions for reading/writing MCMC metadata to file." alt="" coords="479,4,725,25"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.base_multitemper.CommonMultiTemperedMetadataIO" target="_top" title="Adds support for reading/writing multi&#45;tempered metadata to" alt="" coords="440,65,764,86"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.MCMCMetadataIO" target="_top" title="Provides functions for reading/writing metadata to file for MCMCs in" alt="" coords="223,65,420,86"/>
+<area shape="rect" id="node6" href="../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile" target="_top" title="Class to handle IO for Epsie&#39;s parallel&#45;tempered sampler." alt="" coords="266,125,377,146"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-multinest-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">multinest_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-49bf9d266524be009859206f5dfcb5cb0ed9cdfa.png" alt="Inheritance diagram of pycbc.inference.io.multinest.MultinestFile" usemap="#inheritancefd3d78355c" class="inheritance graphviz" /></div>
+<map id="inheritancefd3d78355c" name="inheritancefd3d78355c">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="18,5,234,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="5,79,247,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.multinest.MultinestFile" target="_top" title="Class to handle file IO for the ``multinest`` sampler." alt="" coords="32,152,220,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-nessai-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">nessai_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-b68e0a9c17d78f5f2ee20392e60422d624410547.png" alt="Inheritance diagram of pycbc.inference.io.nessai.NessaiFile" usemap="#inheritance34357ee302" class="inheritance graphviz" /></div>
+<map id="inheritance34357ee302" name="inheritance34357ee302">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="67,5,283,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="54,79,295,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_nested_sampler.BaseNestedSamplerFile" target="_top" title="Class to handle file IO for the nested samplers cpnest and dynesty." alt="" coords="5,152,344,177"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.nessai.NessaiFile" target="_top" title="Class to handle file IO for the ``nessai`` sampler." alt="" coords="265,225,415,251"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO" target="_top" title="Provides functions for reading/writing dynesty metadata to file." alt="" coords="369,152,642,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-posterior-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">posterior_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-99282dff716eebff9e975291ab8cacf7a57da3f2.png" alt="Inheritance diagram of pycbc.inference.io.posterior.PosteriorFile" usemap="#inheritance91719698da" class="inheritance graphviz" /></div>
+<map id="inheritance91719698da" name="inheritance91719698da">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="5,5,221,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.posterior.PosteriorFile" target="_top" title="Class to handle file IO for the simplified Posterior file." alt="" coords="23,79,203,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-ptemcee-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">ptemcee_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-63302b4969d4d61c46d7555583d98ae7d696b4b7.png" alt="Inheritance diagram of pycbc.inference.io.ptemcee.PTEmceeFile" usemap="#inheritance065e2e1370" class="inheritance graphviz" /></div>
+<map id="inheritance065e2e1370" name="inheritance065e2e1370">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="14,4,181,24"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="4,61,190,80"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO" target="_top" title="Provides functions for reading/writing MCMC metadata to file." alt="" coords="498,4,727,24"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.base_multitemper.CommonMultiTemperedMetadataIO" target="_top" title="Adds support for reading/writing multi&#45;tempered metadata to" alt="" coords="461,61,764,80"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.EnsembleMCMCMetadataIO" target="_top" title="Provides functions for reading/writing metadata to file for ensemble" alt="" coords="209,61,442,80"/>
+<area shape="rect" id="node6" href="../pycbc.inference.io.html#pycbc.inference.io.ptemcee.PTEmceeFile" target="_top" title="Class to handle file IO for the ``ptemcee`` sampler." alt="" coords="255,117,396,137"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-snowline-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">snowline_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-94e55b939af5288e9179bf63f02bd6bf41fbd6c4.png" alt="Inheritance diagram of pycbc.inference.io.snowline.SnowlineFile" usemap="#inheritancefc9aa1565d" class="inheritance graphviz" /></div>
+<map id="inheritancefc9aa1565d" name="inheritancefc9aa1565d">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="5,5,221,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.posterior.PosteriorFile" target="_top" title="Class to handle file IO for the simplified Posterior file." alt="" coords="23,79,203,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.snowline.SnowlineFile" target="_top" title="Class to handle file IO for the ``snowline`` sampler." alt="" coords="22,152,205,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-io-ultranest-file">
+<li><p><code class="docutils literal notranslate"><span class="pre">ultranest_file</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-47e9a8870a3789f8706f5c886a423d5d9cd15af7.png" alt="Inheritance diagram of pycbc.inference.io.ultranest.UltranestFile" usemap="#inheritance4db37bd585" class="inheritance graphviz" /></div>
+<map id="inheritance4db37bd585" name="inheritance4db37bd585">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="67,5,283,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="54,79,295,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_nested_sampler.BaseNestedSamplerFile" target="_top" title="Class to handle file IO for the nested samplers cpnest and dynesty." alt="" coords="5,152,344,177"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.ultranest.UltranestFile" target="_top" title="Class to handle file IO for the ``ultranest`` sampler." alt="" coords="83,225,266,251"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,185 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uploading triggers to gracedb &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc_condition_strain: operations with strain data files" href="pycbc_condition_strain.html" />
+    <link rel="prev" title="Dag Generator for Doing Faithfulness Comparisons" href="faithsim.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_offline_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Uploading triggers to gracedb</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#finding-input-files">Finding input files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-command">Running the command</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mock_data_generation.html"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active">Uploading triggers to gracedb</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/upload_to_gracedb.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="uploading-triggers-to-gracedb">
+<h1>Uploading triggers to gracedb<a class="headerlink" href="#uploading-triggers-to-gracedb" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This page describes how to upload your results to gracedb via the code pycbc_upload_xml_to_gracedb.</p>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<p>To be able to run this code in production you should use the pre-packaged binaries. These will come with all necessary dependancies.</p>
+<p>To run without the pre-packaged binaries you need:</p>
+<ul class="simple">
+<li><p>A version of PyCBC installed</p></li>
+<li><p>A version of ligo.gracedb client installed (pip install ligo-gracedb)</p></li>
+</ul>
+<p>You also need to be authorized on the gracedb end to do the upload. The initial list of authorized people was given from the list of people on the front page of the PyCBC documentation under “PyCBC Contributors”. If you are not on this list, or only recently added, please contact Branson Stephens in advance of box opening, to ensure that you are authorized.</p>
+</section>
+<section id="finding-input-files">
+<h2>Finding input files<a class="headerlink" href="#finding-input-files" title="Link to this heading"></a></h2>
+<p>To run this code requires some input files from your run. These can be found as follows where RUN_DIR is your run directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>TRIG_FILE=${RUN_DIR}/results/7._result/H1L1-PAGE_FOREGROUND_XMLLOUDEST-1130754617-1019335.xml
+
+PSD_FILES=${RUN_DIR}/psds/*MERGE_PSDS*hdf
+</pre></div>
+</div>
+</section>
+<section id="running-the-command">
+<h2>Running the command<a class="headerlink" href="#running-the-command" title="Link to this heading"></a></h2>
+<p>To run the upload command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pycbc_upload_xml_to_gracedb --input-file ${TRIG_FILE} --psd-files ${PSD_FILES}
+</pre></div>
+</div>
+<p>Adding the –testing flag will upload events to the TEST group of gracedb, and can be used for testing purposes.</p>
+<p><strong>WARNING</strong>, if running with config files from before November 15 2015, the TRIG_FILE will have <em>many</em> triggers in it. Uploading hundreds of triggers to gracedb will be slow and a bad idea so the process has been to edit the TRIG_FILE by hand to restrict to the first 20 events in the coinc_inspiral and coinc_event tables and then uploading.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="faithsim.html" class="btn btn-neutral float-left" title="Dag Generator for Doing Faithfulness Comparisons" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc_condition_strain.html" class="btn btn-neutral float-right" title="pycbc_condition_strain: operations with strain data files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

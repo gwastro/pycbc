@@ -1,0 +1,594 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.filter.resample &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.filter.resample</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.filter.resample</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lal</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.signal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">real_same_precision_as</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">complex_same_precision_as</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">ifft</span><span class="p">,</span> <span class="n">fft</span>
+
+<span class="n">_resample_func</span> <span class="o">=</span> <span class="p">{</span><span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">):</span> <span class="n">lal</span><span class="o">.</span><span class="n">ResampleREAL4TimeSeries</span><span class="p">,</span>
+                 <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">):</span> <span class="n">lal</span><span class="o">.</span><span class="n">ResampleREAL8TimeSeries</span><span class="p">}</span>
+
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cached_firwin</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cache the FIR filter coefficients.</span>
+<span class="sd">    This is mostly done for PyCBC Live, which rapidly and repeatedly resamples data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">firwin</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="c1"># Change to True in front-end if you want this function to use caching</span>
+<span class="c1"># This is a mostly-hidden optimization option that most users will not want</span>
+<span class="c1"># to use. It is used in PyCBC Live</span>
+<span class="n">USE_CACHING_FOR_LFILTER</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="c1"># If using caching we want output to be unique if called at different places</span>
+<span class="c1"># (and if called from different modules/functions), these unique IDs acheive</span>
+<span class="c1"># that. The numbers are not significant, only that they are unique.</span>
+<span class="n">LFILTER_UNIQUE_ID_1</span> <span class="o">=</span> <span class="mi">651273657</span>
+<span class="n">LFILTER_UNIQUE_ID_2</span> <span class="o">=</span> <span class="mi">154687641</span>
+<span class="n">LFILTER_UNIQUE_ID_3</span> <span class="o">=</span> <span class="mi">548946442</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">lfilter</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Apply filter coefficients to a time series</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coefficients: numpy.ndarray</span>
+<span class="sd">        Filter coefficients to apply</span>
+<span class="sd">    timeseries: numpy.ndarray</span>
+<span class="sd">        Time series to be filtered.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tseries: numpy.ndarray</span>
+<span class="sd">        filtered array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">correlate</span>
+    <span class="n">fillen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coefficients</span><span class="p">)</span>
+
+    <span class="c1"># If there aren&#39;t many points just use the default scipy method</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">7</span><span class="p">:</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">series</span><span class="p">,</span>
+                          <span class="n">epoch</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                          <span class="n">delta_t</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">fillen</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">18</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.strain.strain</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_memory_and_engine_for_class_based_fft</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.strain.strain</span><span class="w"> </span><span class="kn">import</span> <span class="n">execute_cached_fft</span>
+
+        <span class="n">cseries</span> <span class="o">=</span> <span class="p">(</span><span class="n">Array</span><span class="p">(</span><span class="n">coefficients</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">cseries</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">))</span>
+        <span class="n">cseries</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span> <span class="o">-</span> <span class="n">fillen</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">flen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cseries</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">ftype</span> <span class="o">=</span> <span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">USE_CACHING_FOR_LFILTER</span><span class="p">:</span>
+            <span class="n">cfreq</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ftype</span><span class="p">)</span>
+            <span class="n">tfreq</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ftype</span><span class="p">)</span>
+            <span class="n">fft</span><span class="p">(</span><span class="n">Array</span><span class="p">(</span><span class="n">cseries</span><span class="p">),</span> <span class="n">cfreq</span><span class="p">)</span>
+            <span class="n">fft</span><span class="p">(</span><span class="n">Array</span><span class="p">(</span><span class="n">timeseries</span><span class="p">),</span> <span class="n">tfreq</span><span class="p">)</span>
+            <span class="n">cout</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">ftype</span><span class="p">)</span>
+            <span class="n">correlate</span><span class="p">(</span><span class="n">cfreq</span><span class="p">,</span> <span class="n">tfreq</span><span class="p">,</span> <span class="n">cout</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">timeseries</span><span class="p">)</span>
+            <span class="n">ifft</span><span class="p">(</span><span class="n">cout</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">npoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cseries</span><span class="p">)</span>
+            <span class="c1"># NOTE: This function is cached!</span>
+            <span class="n">ifftouts</span> <span class="o">=</span> <span class="n">create_memory_and_engine_for_class_based_fft</span><span class="p">(</span>
+                <span class="n">npoints</span><span class="p">,</span>
+                <span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                <span class="n">ifft</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">uid</span><span class="o">=</span><span class="n">LFILTER_UNIQUE_ID_1</span>
+            <span class="p">)</span>
+
+            <span class="c1"># FFT contents of cseries into cfreq</span>
+            <span class="n">cfreq</span> <span class="o">=</span> <span class="n">execute_cached_fft</span><span class="p">(</span><span class="n">cseries</span><span class="p">,</span> <span class="n">uid</span><span class="o">=</span><span class="n">LFILTER_UNIQUE_ID_2</span><span class="p">,</span>
+                                       <span class="n">copy_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                       <span class="n">normalize_by_rate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># FFT contents of timeseries into tfreq</span>
+            <span class="n">tfreq</span> <span class="o">=</span> <span class="n">execute_cached_fft</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">uid</span><span class="o">=</span><span class="n">LFILTER_UNIQUE_ID_3</span><span class="p">,</span>
+                                       <span class="n">copy_output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                       <span class="n">normalize_by_rate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">cout</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">fft_class</span> <span class="o">=</span> <span class="n">ifftouts</span>
+
+            <span class="c1"># Correlate cfreq and tfreq</span>
+            <span class="n">correlate</span><span class="p">(</span><span class="n">cfreq</span><span class="p">,</span> <span class="n">tfreq</span><span class="p">,</span> <span class="n">cout</span><span class="p">)</span>
+            <span class="c1"># IFFT correlation output into out</span>
+            <span class="n">fft_class</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>  <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">),</span> <span class="n">epoch</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                          <span class="n">delta_t</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># recursively perform which saves a bit on memory usage</span>
+        <span class="c1"># but must keep within recursion limit</span>
+        <span class="n">chunksize</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">fillen</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">part1</span> <span class="o">=</span> <span class="n">lfilter</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">chunksize</span><span class="p">])</span>
+        <span class="n">part2</span> <span class="o">=</span> <span class="n">lfilter</span><span class="p">(</span><span class="n">coefficients</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">[</span><span class="n">chunksize</span> <span class="o">-</span> <span class="n">fillen</span><span class="p">:])</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">part1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">part1</span>
+        <span class="n">out</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">part1</span><span class="p">):]</span> <span class="o">=</span> <span class="n">part2</span><span class="p">[</span><span class="n">fillen</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="fir_zero_filter">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.fir_zero_filter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fir_zero_filter</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter the timeseries with a set of FIR coefficients</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coeff: numpy.ndarray</span>
+<span class="sd">        FIR coefficients. Should be and odd length and symmetric.</span>
+<span class="sd">    timeseries: pycbc.types.TimeSeries</span>
+<span class="sd">        Time series to be filtered.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filtered_series: pycbc.types.TimeSeries</span>
+<span class="sd">        Return the filtered timeseries, which has been properly shifted to account</span>
+<span class="sd">    for the FIR filter delay and the corrupted regions zeroed out.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># apply the filter</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">lfilter</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">)</span>
+
+    <span class="c1"># reverse the time shift caused by the filter,</span>
+    <span class="c1"># corruption regions contain zeros</span>
+    <span class="c1"># If the number of filter coefficients is odd, the central point *should*</span>
+    <span class="c1"># be included in the output so we only zero out a region of len(coeff) - 1</span>
+    <span class="n">series</span><span class="p">[:(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">series</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">series</span></div>
+
+
+<div class="viewcode-block" id="resample_to_delta_t">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.resample_to_delta_t">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resample_to_delta_t</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;butterworth&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resmple the time_series to delta_t</span>
+
+<span class="sd">    Resamples the TimeSeries instance time_series to the given time step,</span>
+<span class="sd">    delta_t. Only powers of two and real valued time series are supported</span>
+<span class="sd">    at this time. Additional restrictions may apply to particular filter</span>
+<span class="sd">    methods.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_series: TimeSeries</span>
+<span class="sd">        The time series to be resampled</span>
+<span class="sd">    delta_t: float</span>
+<span class="sd">        The desired time step</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        A TimeSeries that has been resampled to delta_t.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError:</span>
+<span class="sd">        time_series is not an instance of TimeSeries.</span>
+<span class="sd">    TypeError:</span>
+<span class="sd">        time_series is not real valued</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    &gt;&gt;&gt; h_plus_sampled = resample_to_delta_t(h_plus, 1.0/2048)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span><span class="n">TimeSeries</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Can only resample time series&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Time series must be real&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">sample_rate_close</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">delta_t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">timeseries</span> <span class="o">*</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;butterworth&#39;</span><span class="p">:</span>
+        <span class="n">lal_data</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+        <span class="n">_resample_func</span><span class="p">[</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">](</span><span class="n">lal_data</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">lal_data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;ldas&#39;</span><span class="p">:</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">delta_t</span> <span class="o">/</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">))</span>
+        <span class="n">numtaps</span> <span class="o">=</span> <span class="n">factor</span> <span class="o">*</span> <span class="mi">20</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c1"># The kaiser window has been testing using the LDAS implementation</span>
+        <span class="c1"># and is in the same configuration as used in the original lalinspiral</span>
+        <span class="n">filter_coefficients</span> <span class="o">=</span> <span class="n">cached_firwin</span><span class="p">(</span><span class="n">numtaps</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span>
+                                            <span class="n">window</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;kaiser&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+        <span class="c1"># apply the filter and decimate</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">fir_zero_filter</span><span class="p">(</span><span class="n">filter_coefficients</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">)[::</span><span class="n">factor</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid resampling method: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">method</span><span class="p">)</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span> <span class="o">=</span> <span class="n">delta_t</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                      <span class="n">epoch</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span>
+
+    <span class="c1"># From the construction of the LDAS FIR filter there will be 10 corrupted samples</span>
+    <span class="c1"># explanation here https://lscsoft.docs.ligo.org/lalsuite/lal/group___resample_time_series__c.html</span>
+    <span class="n">ts</span><span class="o">.</span><span class="n">corrupted_samples</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+
+<span class="n">_highpass_func</span> <span class="o">=</span> <span class="p">{</span><span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">):</span> <span class="n">lal</span><span class="o">.</span><span class="n">HighPassREAL4TimeSeries</span><span class="p">,</span>
+                 <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">):</span> <span class="n">lal</span><span class="o">.</span><span class="n">HighPassREAL8TimeSeries</span><span class="p">}</span>
+<span class="n">_lowpass_func</span> <span class="o">=</span> <span class="p">{</span><span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">):</span> <span class="n">lal</span><span class="o">.</span><span class="n">LowPassREAL4TimeSeries</span><span class="p">,</span>
+                 <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">):</span> <span class="n">lal</span><span class="o">.</span><span class="n">LowPassREAL8TimeSeries</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="notch_fir">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.notch_fir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">notch_fir</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">f1</span><span class="p">,</span> <span class="n">f2</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; notch filter the time series using an FIR filtered generated from</span>
+<span class="sd">    the ideal response passed through a time-domain kaiser window (beta = 5.0)</span>
+
+<span class="sd">    The suppression of the notch filter is related to the bandwidth and</span>
+<span class="sd">    the number of samples in the filter length. For a few Hz bandwidth,</span>
+<span class="sd">    a length corresponding to a few seconds is typically</span>
+<span class="sd">    required to create significant suppression in the notched band.</span>
+<span class="sd">    To achieve frequency resolution df at sampling frequency fs,</span>
+<span class="sd">    order should be at least fs/df.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        The time series to be notched.</span>
+<span class="sd">    f1: float</span>
+<span class="sd">        The start of the frequency suppression.</span>
+<span class="sd">    f2: float</span>
+<span class="sd">        The end of the frequency suppression.</span>
+<span class="sd">    order: int</span>
+<span class="sd">        Number of corrupted samples on each side of the time series</span>
+<span class="sd">        (Extent of the filter on either side of zero)</span>
+<span class="sd">    beta: float</span>
+<span class="sd">        Beta parameter of the kaiser window that sets the side lobe attenuation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k1</span> <span class="o">=</span> <span class="n">f1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">k2</span> <span class="o">=</span> <span class="n">f2</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">coeff</span> <span class="o">=</span> <span class="n">cached_firwin</span><span class="p">(</span><span class="n">order</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;kaiser&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">fir_zero_filter</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lowpass_fir">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.lowpass_fir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lowpass_fir</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Lowpass filter the time series using an FIR filtered generated from</span>
+<span class="sd">    the ideal response passed through a kaiser window (beta = 5.0)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        The time series to be low-passed.</span>
+<span class="sd">    frequency: float</span>
+<span class="sd">        The frequency below which is suppressed.</span>
+<span class="sd">    order: int</span>
+<span class="sd">        Number of corrupted samples on each side of the time series</span>
+<span class="sd">    beta: float</span>
+<span class="sd">        Beta parameter of the kaiser window that sets the side lobe attenuation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">frequency</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">coeff</span> <span class="o">=</span> <span class="n">cached_firwin</span><span class="p">(</span><span class="n">order</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;kaiser&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">fir_zero_filter</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="highpass_fir">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.highpass_fir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">highpass_fir</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Highpass filter the time series using an FIR filtered generated from</span>
+<span class="sd">    the ideal response passed through a kaiser window (beta = 5.0)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        The time series to be high-passed.</span>
+<span class="sd">    frequency: float</span>
+<span class="sd">        The frequency below which is suppressed.</span>
+<span class="sd">    order: int</span>
+<span class="sd">        Number of corrupted samples on each side of the time series</span>
+<span class="sd">    beta: float</span>
+<span class="sd">        Beta parameter of the kaiser window that sets the side lobe attenuation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">frequency</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">coeff</span> <span class="o">=</span> <span class="n">cached_firwin</span><span class="p">(</span><span class="n">order</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;kaiser&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="p">),</span> <span class="n">pass_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fir_zero_filter</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="highpass">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.highpass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">highpass</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">filter_order</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">attenuation</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a new timeseries that is highpassed.</span>
+
+<span class="sd">    Return a new time series that is highpassed above the `frequency`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        The time series to be high-passed.</span>
+<span class="sd">    frequency: float</span>
+<span class="sd">        The frequency below which is suppressed.</span>
+<span class="sd">    filter_order: {8, int}, optional</span>
+<span class="sd">        The order of the filter to use when high-passing the time series.</span>
+<span class="sd">    attenuation: {0.1, float}, optional</span>
+<span class="sd">        The attenuation of the filter.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        A  new TimeSeries that has been high-passed.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError:</span>
+<span class="sd">        time_series is not an instance of TimeSeries.</span>
+<span class="sd">    TypeError:</span>
+<span class="sd">        time_series is not real valued</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Can only resample time series&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Time series must be real&quot;</span><span class="p">)</span>
+
+    <span class="n">lal_data</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+    <span class="n">_highpass_func</span><span class="p">[</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">](</span><span class="n">lal_data</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span>
+                                     <span class="mi">1</span><span class="o">-</span><span class="n">attenuation</span><span class="p">,</span> <span class="n">filter_order</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">lal_data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span> <span class="o">=</span> <span class="n">lal_data</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lowpass">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.lowpass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lowpass</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span> <span class="n">filter_order</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">attenuation</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a new timeseries that is lowpassed.</span>
+
+<span class="sd">    Return a new time series that is lowpassed below the `frequency`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        The time series to be low-passed.</span>
+<span class="sd">    frequency: float</span>
+<span class="sd">        The frequency above which is suppressed.</span>
+<span class="sd">    filter_order: {8, int}, optional</span>
+<span class="sd">        The order of the filter to use when low-passing the time series.</span>
+<span class="sd">    attenuation: {0.1, float}, optional</span>
+<span class="sd">        The attenuation of the filter.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Time Series: TimeSeries</span>
+<span class="sd">        A  new TimeSeries that has been low-passed.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError:</span>
+<span class="sd">        time_series is not an instance of TimeSeries.</span>
+<span class="sd">    TypeError:</span>
+<span class="sd">        time_series is not real valued</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">timeseries</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Can only resample time series&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Time series must be real&quot;</span><span class="p">)</span>
+
+    <span class="n">lal_data</span> <span class="o">=</span> <span class="n">timeseries</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+    <span class="n">_lowpass_func</span><span class="p">[</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">](</span><span class="n">lal_data</span><span class="p">,</span> <span class="n">frequency</span><span class="p">,</span>
+                                    <span class="mi">1</span><span class="o">-</span><span class="n">attenuation</span><span class="p">,</span> <span class="n">filter_order</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">lal_data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span> <span class="o">=</span> <span class="n">lal_data</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">timeseries</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="interpolate_complex_frequency">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.resample.interpolate_complex_frequency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpolate_complex_frequency</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">zeros_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolate complex frequency series to desired delta_f.</span>
+
+<span class="sd">    Return a new complex frequency series that has been interpolated to the</span>
+<span class="sd">    desired delta_f.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    series : FrequencySeries</span>
+<span class="sd">        Frequency series to be interpolated.</span>
+<span class="sd">    delta_f : float</span>
+<span class="sd">        The desired delta_f of the output</span>
+<span class="sd">    zeros_offset : optional, {0, int}</span>
+<span class="sd">        Number of sample to delay the start of the zero padding</span>
+<span class="sd">    side : optional, {&#39;right&#39;, str}</span>
+<span class="sd">        The side of the vector to zero pad</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    interpolated series : FrequencySeries</span>
+<span class="sd">        A new FrequencySeries that has been interpolated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">series</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">/</span> <span class="n">delta_f</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">old_N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">)</span>
+    <span class="n">new_N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span><span class="n">new_n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="p">)</span>
+    <span class="n">time_series</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">old_N</span><span class="p">),</span> <span class="n">delta_t</span> <span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">delta_f</span><span class="o">*</span><span class="n">old_N</span><span class="p">),</span>
+                             <span class="n">dtype</span><span class="o">=</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">series</span><span class="p">))</span>
+
+    <span class="n">ifft</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">time_series</span><span class="p">)</span>
+
+    <span class="n">time_series</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="n">zeros_offset</span><span class="p">)</span>
+    <span class="n">time_series</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">new_N</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+        <span class="n">time_series</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">zeros_offset</span> <span class="o">+</span> <span class="n">new_N</span> <span class="o">-</span> <span class="n">old_N</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+        <span class="n">time_series</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">zeros_offset</span><span class="p">)</span>
+
+    <span class="n">out_series</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">new_n</span><span class="p">),</span> <span class="n">epoch</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
+                           <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">fft</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">out_series</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out_series</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;resample_to_delta_t&#39;</span><span class="p">,</span> <span class="s1">&#39;highpass&#39;</span><span class="p">,</span> <span class="s1">&#39;lowpass&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;interpolate_complex_frequency&#39;</span><span class="p">,</span> <span class="s1">&#39;highpass_fir&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;lowpass_fir&#39;</span><span class="p">,</span> <span class="s1">&#39;notch_fir&#39;</span><span class="p">,</span> <span class="s1">&#39;fir_zero_filter&#39;</span><span class="p">]</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1058 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.grb_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.grb_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.grb_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2015  Andrew Williamson, Francesco Pannarale</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This library code contains functions and classes that are used in the</span>
+<span class="sd">generation of pygrb workflows. For details about pycbc.workflow see here:</span>
+<span class="sd">http://pycbc.org/pycbc/latest/html/workflow.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">rayleigh</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gwdatafind.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">filename_metadata</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">makedir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">File</span><span class="p">,</span> <span class="n">FileList</span><span class="p">,</span> <span class="n">resolve_url_to_file</span><span class="p">,</span> \
+    <span class="n">Executable</span><span class="p">,</span> <span class="n">Node</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.jobsetup</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_generic_executable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.pegasus_workflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubWorkflow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlotExecutable</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.grb_utils&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_select_grb_pp_class</span><span class="p">(</span><span class="n">wflow</span><span class="p">,</span> <span class="n">curr_exe</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function returns the class for PyGRB post-processing scripts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    curr_exe : string</span>
+<span class="sd">        The name of the executable</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    exe_class : Sub-class of pycbc.workflow.core.Executable that holds utility</span>
+<span class="sd">        functions appropriate for the given executable.  Instances of the class</span>
+<span class="sd">        (&#39;jobs&#39;) **must** have methods</span>
+<span class="sd">        * job.create_node()</span>
+<span class="sd">        and</span>
+<span class="sd">        * job.get_valid_times(ifo, )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exe_path</span> <span class="o">=</span> <span class="n">wflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;executables&#39;</span><span class="p">,</span> <span class="n">curr_exe</span><span class="p">)</span>
+    <span class="n">exe_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">exe_path</span><span class="p">)</span>
+    <span class="n">exe_to_class_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;pycbc_grb_trig_combiner&#39;</span><span class="p">:</span> <span class="n">PycbcGrbTrigCombinerExecutable</span><span class="p">,</span>
+        <span class="s1">&#39;pycbc_grb_trig_cluster&#39;</span><span class="p">:</span> <span class="n">PycbcGrbTrigClusterExecutable</span><span class="p">,</span>
+        <span class="s1">&#39;pycbc_grb_inj_finder&#39;</span><span class="p">:</span> <span class="n">PycbcGrbInjFinderExecutable</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">exe_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exe_to_class_map</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No job class exists for executable </span><span class="si">{</span><span class="n">curr_exe</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exe_to_class_map</span><span class="p">[</span><span class="n">exe_name</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="set_grb_start_end">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.set_grb_start_end">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_grb_start_end</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to update analysis boundaries as workflow is generated</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : pycbc.workflow.configuration.WorkflowConfigParser object</span>
+<span class="sd">    The parsed configuration options of a pycbc.workflow.core.Workflow.</span>
+
+<span class="sd">    start : int</span>
+<span class="sd">    The start of the workflow analysis time.</span>
+
+<span class="sd">    end : int</span>
+<span class="sd">    The end of the workflow analysis time.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    cp : pycbc.workflow.configuration.WorkflowConfigParser object</span>
+<span class="sd">    The modified WorkflowConfigParser object.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;workflow&quot;</span><span class="p">,</span> <span class="s2">&quot;start-time&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">))</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;workflow&quot;</span><span class="p">,</span> <span class="s2">&quot;end-time&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">end</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">cp</span></div>
+
+
+
+<div class="viewcode-block" id="make_gating_node">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.make_gating_node">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_gating_node</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">datafind_files</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Generate jobs for autogating the data for PyGRB runs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    datafind_files : pycbc.workflow.core.FileList</span>
+<span class="sd">        A FileList containing the frame files to be gated.</span>
+<span class="sd">    outdir : string</span>
+<span class="sd">        Path of the output directory</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    condition_strain_nodes : list</span>
+<span class="sd">        List containing the pycbc.workflow.core.Node objects representing the</span>
+<span class="sd">        autogating jobs.</span>
+<span class="sd">    condition_strain_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        FileList containing the pycbc.workflow.core.File objects representing</span>
+<span class="sd">        the gated frame files.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">condition_strain_class</span> <span class="o">=</span> <span class="n">select_generic_executable</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span>
+                                                       <span class="s2">&quot;condition_strain&quot;</span><span class="p">)</span>
+    <span class="n">condition_strain_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">condition_strain_outs</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+        <span class="n">input_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([</span><span class="n">datafind_file</span> <span class="k">for</span> <span class="n">datafind_file</span> <span class="ow">in</span>
+                                <span class="n">datafind_files</span> <span class="k">if</span> <span class="n">datafind_file</span><span class="o">.</span><span class="n">ifo</span> <span class="o">==</span> <span class="n">ifo</span><span class="p">])</span>
+        <span class="n">condition_strain_jobs</span> <span class="o">=</span> <span class="n">condition_strain_class</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="s2">&quot;condition_strain&quot;</span><span class="p">,</span>
+                                                       <span class="n">ifos</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span>
+                                                       <span class="n">out_dir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span>
+                                                       <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">condition_strain_node</span><span class="p">,</span> <span class="n">condition_strain_out</span> <span class="o">=</span> \
+            <span class="n">condition_strain_jobs</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">input_files</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">condition_strain_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">condition_strain_node</span><span class="p">)</span>
+        <span class="n">condition_strain_outs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">FileList</span><span class="p">([</span><span class="n">condition_strain_out</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">condition_strain_nodes</span><span class="p">,</span> <span class="n">condition_strain_outs</span></div>
+
+
+
+<div class="viewcode-block" id="fermi_core_tail_model">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.fermi_core_tail_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fermi_core_tail_model</span><span class="p">(</span>
+        <span class="n">sky_err</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">core_frac</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">core_sigma</span><span class="o">=</span><span class="mf">3.6</span><span class="p">,</span> <span class="n">tail_sigma</span><span class="o">=</span><span class="mf">29.6</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fermi systematic error model following</span>
+<span class="sd">    https://arxiv.org/abs/1909.03006, with default values valid</span>
+<span class="sd">    before 11 September 2019.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    core_frac : float</span>
+<span class="sd">        Fraction of the systematic uncertainty contained within the core</span>
+<span class="sd">        component.</span>
+<span class="sd">    core_sigma : float</span>
+<span class="sd">        Size of the GBM systematic core component.</span>
+<span class="sd">    tail_sigma : float</span>
+<span class="sd">        Size of the GBM systematic tail component.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    _______</span>
+<span class="sd">    tuple</span>
+<span class="sd">        Tuple containing the core and tail probability distributions</span>
+<span class="sd">        as a function of radius.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scaledsq</span> <span class="o">=</span> <span class="n">sky_err</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="o">-</span><span class="mi">2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">frac</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">rad</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scaledsq</span> <span class="o">+</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">frac</span><span class="p">,</span> <span class="n">sigma</span>
+        <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="n">core_frac</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">core_frac</span><span class="p">],</span> <span class="p">[</span><span class="n">core_sigma</span><span class="p">,</span> <span class="n">tail_sigma</span><span class="p">]))</span></div>
+
+
+
+<div class="viewcode-block" id="get_sky_grid_scale">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.get_sky_grid_scale">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sky_grid_scale</span><span class="p">(</span>
+        <span class="n">sky_error</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">containment</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">upscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fermi_sys</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the angular radius corresponding to a desired</span>
+<span class="sd">    localization uncertainty level. This is used to generate the search</span>
+<span class="sd">    grid and involves scaling up the standard 1-sigma value provided to</span>
+<span class="sd">    the workflow, assuming a normal probability profile. Fermi</span>
+<span class="sd">    systematic errors can be included, following</span>
+<span class="sd">    https://arxiv.org/abs/1909.03006, with default values valid before</span>
+<span class="sd">    11 September 2019. The default probability coverage is 90%.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sky_error : float</span>
+<span class="sd">        The reported statistical 1-sigma sky error of the trigger.</span>
+<span class="sd">    containment : float</span>
+<span class="sd">        The desired localization probability to be covered by the sky</span>
+<span class="sd">        grid.</span>
+<span class="sd">    upscale : bool, optional</span>
+<span class="sd">        Whether to apply rescale to convert from 1 sigma -&gt; containment</span>
+<span class="sd">        for non-Fermi triggers. Default = True as Swift reports 90%</span>
+<span class="sd">        radius directly.</span>
+<span class="sd">    fermi_sys : bool, optional</span>
+<span class="sd">        Whether to apply Fermi-GBM systematics via</span>
+<span class="sd">        ``fermi_core_tail_model``. Default = False.</span>
+<span class="sd">    precision : float, optional</span>
+<span class="sd">        Precision (in degrees) for calculating the error radius via</span>
+<span class="sd">        Fermi-GBM model.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional keyword arguments passed to `fermi_core_tail_model`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    _______</span>
+
+<span class="sd">    float</span>
+<span class="sd">        Sky error radius in degrees.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fermi_sys</span><span class="p">:</span>
+        <span class="n">lims</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sky_error</span><span class="p">,</span> <span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sky_error</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">((</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">sky_error</span> <span class="o">/</span> <span class="n">precision</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">core</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">fermi_core_tail_model</span><span class="p">(</span><span class="n">sky_error</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">radii</span><span class="p">[(</span><span class="nb">abs</span><span class="p">(</span><span class="n">core</span> <span class="o">+</span> <span class="n">tail</span> <span class="o">-</span> <span class="n">containment</span><span class="p">))</span><span class="o">.</span><span class="n">argmin</span><span class="p">()]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Use Rayleigh distribution to go from 1 sigma containment to</span>
+        <span class="c1"># containment given by function variable. Interval method returns</span>
+        <span class="c1"># bounds of equal probability about the median, but we want 1-sided</span>
+        <span class="c1"># bound, hence use (2 * containment - 1)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">sky_error</span>
+        <span class="k">if</span> <span class="n">upscale</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">*=</span> <span class="n">rayleigh</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">containment</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="make_skygrid_node">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.make_skygrid_node">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_skygrid_node</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a job to the workflow to produce the PyGRB search skygrid.&quot;&quot;&quot;</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+
+    <span class="c1"># Initialize job node</span>
+    <span class="n">grb_name</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-name&#39;</span><span class="p">)</span>
+    <span class="n">extra_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GRB&#39;</span><span class="o">+</span><span class="n">grb_name</span><span class="p">]</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;make_sky_grid&#39;</span><span class="p">,</span>
+                      <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+                      <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="o">+</span><span class="n">extra_tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--instruments&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.h5&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span>
+                             <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="p">,</span> <span class="n">store_file</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Add job node to the workflow</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+
+<div class="viewcode-block" id="generate_tc_prior">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.generate_tc_prior">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_tc_prior</span><span class="p">(</span><span class="n">wflow</span><span class="p">,</span> <span class="n">tc_path</span><span class="p">,</span> <span class="n">buffer_seg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the configuration file for the prior on the coalescence</span>
+<span class="sd">    time of injections, ensuring that these times fall in the analysis</span>
+<span class="sd">    time and avoid the onsource and its buffer.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tc_path : str</span>
+<span class="sd">        Path where the configuration file for the prior needs to be written.</span>
+<span class="sd">    buffer_seg : segmentlist</span>
+<span class="sd">        Start and end times of the buffer segment encapsulating the onsource.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Write the tc-prior configuration file if it does not exist</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tc_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Refusing to overwrite </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">tc_path</span><span class="p">)</span>
+    <span class="n">tc_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">tc_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;[prior-tc]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;name = uniform</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;min-tc = </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">wflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;max-tc = </span><span class="si">%s</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">wflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;[constraint-tc]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;name = custom</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;constraint_arg = (tc &lt; </span><span class="si">%s</span><span class="s2">) | (tc &gt; </span><span class="si">%s</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span>
+                  <span class="p">(</span><span class="n">buffer_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">buffer_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">tc_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Add the tc-prior configuration file url to wflow.cp if necessary</span>
+    <span class="n">tc_file_path</span> <span class="o">=</span> <span class="s2">&quot;file://&quot;</span><span class="o">+</span><span class="n">tc_path</span>
+    <span class="k">for</span> <span class="n">inj_sec</span> <span class="ow">in</span> <span class="n">wflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s2">&quot;injections&quot;</span><span class="p">):</span>
+        <span class="n">config_urls</span> <span class="o">=</span> <span class="n">wflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workflow-injections&quot;</span><span class="p">,</span>
+                                   <span class="n">inj_sec</span><span class="o">+</span><span class="s2">&quot;-config-files&quot;</span><span class="p">)</span>
+        <span class="n">config_urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">url</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">config_urls</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">tc_file_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config_urls</span><span class="p">:</span>
+            <span class="n">config_urls</span> <span class="o">+=</span> <span class="p">[</span><span class="n">tc_file_path</span><span class="p">]</span>
+        <span class="n">config_urls</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">config_urls</span><span class="p">])</span>
+        <span class="n">wflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;workflow-injections&quot;</span><span class="p">,</span>
+                     <span class="n">inj_sec</span><span class="o">+</span><span class="s2">&quot;-config-files&quot;</span><span class="p">,</span>
+                     <span class="n">config_urls</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="setup_pygrb_pp_workflow">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.setup_pygrb_pp_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_pygrb_pp_workflow</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="n">pp_dir</span><span class="p">,</span> <span class="n">seg_dir</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span>
+                            <span class="n">insp_files</span><span class="p">,</span> <span class="n">inj_files</span><span class="p">,</span> <span class="n">inj_insp_files</span><span class="p">,</span> <span class="n">inj_tags</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate post-processing section of PyGRB offline workflow</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    wf : The workflow object</span>
+<span class="sd">    pp_dir : The directory where the post-processing files will be stored</span>
+<span class="sd">    seg_dir : The directory where the segment files are stored</span>
+<span class="sd">    segment : The segment to be analyzed</span>
+<span class="sd">    bank_file : The full template bank file</span>
+<span class="sd">    insp_files : The list of inspiral files</span>
+<span class="sd">    inj_files : The list of injection files</span>
+<span class="sd">    inj_insp_files : The list of inspiral files for injections</span>
+<span class="sd">    inj_tags : The list of injection tags</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    trig_files : FileList</span>
+<span class="sd">        The list of combined trigger files</span>
+<span class="sd">        [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]</span>
+<span class="sd">        FileList (N can be set by the user and is 6 by default)</span>
+<span class="sd">    clustered_files : FileList</span>
+<span class="sd">        CLUSTERED FileList, same order as trig_files</span>
+<span class="sd">        Contains triggers after clustering</span>
+<span class="sd">    inj_find_files : FileList</span>
+<span class="sd">        FOUNDMISSED FileList covering all injection sets</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Begin setting up trig combiner job(s)</span>
+    <span class="c1"># Select executable class and initialize</span>
+    <span class="n">exe_class</span> <span class="o">=</span> <span class="n">_select_grb_pp_class</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="s2">&quot;trig_combiner&quot;</span><span class="p">)</span>
+    <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">wf</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s2">&quot;trig_combiner&quot;</span><span class="p">)</span>
+    <span class="c1"># Create node for coherent no injections jobs</span>
+    <span class="n">node</span><span class="p">,</span> <span class="n">trig_files</span> <span class="o">=</span> <span class="n">job_instance</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">wf</span><span class="o">.</span><span class="n">ifo_string</span><span class="p">,</span>
+                                                <span class="n">seg_dir</span><span class="p">,</span>
+                                                <span class="n">segment</span><span class="p">,</span>
+                                                <span class="n">insp_files</span><span class="p">,</span>
+                                                <span class="n">pp_dir</span><span class="p">,</span>
+                                                <span class="n">bank_file</span><span class="p">)</span>
+    <span class="n">wf</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+    <span class="c1"># Trig clustering for each trig file</span>
+    <span class="n">exe_class</span> <span class="o">=</span> <span class="n">_select_grb_pp_class</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="s2">&quot;trig_cluster&quot;</span><span class="p">)</span>
+    <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">wf</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s2">&quot;trig_cluster&quot;</span><span class="p">)</span>
+    <span class="n">clustered_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="k">for</span> <span class="n">trig_file</span> <span class="ow">in</span> <span class="n">trig_files</span><span class="p">:</span>
+        <span class="c1"># Create and add nodes</span>
+        <span class="n">node</span><span class="p">,</span> <span class="n">out_file</span> <span class="o">=</span> <span class="n">job_instance</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">trig_file</span><span class="p">,</span> <span class="n">pp_dir</span><span class="p">)</span>
+        <span class="n">wf</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">clustered_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+
+    <span class="c1"># Find injections from triggers</span>
+    <span class="n">exe_class</span> <span class="o">=</span> <span class="n">_select_grb_pp_class</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="s2">&quot;inj_finder&quot;</span><span class="p">)</span>
+    <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">wf</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s2">&quot;inj_finder&quot;</span><span class="p">)</span>
+    <span class="n">inj_find_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="k">for</span> <span class="n">inj_tag</span> <span class="ow">in</span> <span class="n">inj_tags</span><span class="p">:</span>
+        <span class="n">tag_inj_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">inj_files</span>
+                                  <span class="k">if</span> <span class="n">inj_tag</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">tags</span><span class="p">])</span>
+        <span class="c1"># The here stems from the injection group information</span>
+        <span class="c1"># being stored in the second tag. This could be improved</span>
+        <span class="c1"># depending on the final implementation of injections</span>
+        <span class="n">tag_insp_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">inj_insp_files</span>
+                                   <span class="k">if</span> <span class="n">inj_tag</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">node</span><span class="p">,</span> <span class="n">inj_find_file</span> <span class="o">=</span> <span class="n">job_instance</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span>
+                                           <span class="n">tag_inj_files</span><span class="p">,</span> <span class="n">tag_insp_files</span><span class="p">,</span>
+                                           <span class="n">bank_file</span><span class="p">,</span> <span class="n">pp_dir</span><span class="p">)</span>
+        <span class="n">wf</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">inj_find_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inj_find_file</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trig_files</span><span class="p">,</span> <span class="n">clustered_files</span><span class="p">,</span> <span class="n">inj_find_files</span></div>
+
+
+
+<div class="viewcode-block" id="PycbcGrbTrigCombinerExecutable">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigCombinerExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PycbcGrbTrigCombinerExecutable</span><span class="p">(</span><span class="n">Executable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; The class responsible for creating jobs</span>
+<span class="sd">    for &#39;&#39;pycbc_grb_trig_combiner&#39;&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">current_retention_level</span> <span class="o">=</span> <span class="n">Executable</span><span class="o">.</span><span class="n">ALL_TRIGGERS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cp</span><span class="o">=</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger_name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-name&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trig_start_time</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;start-time&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_trials</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;trig_combiner&#39;</span><span class="p">,</span> <span class="s1">&#39;num-trials&#39;</span><span class="p">))</span>
+
+<div class="viewcode-block" id="PycbcGrbTrigCombinerExecutable.create_node">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigCombinerExecutable.create_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo_tag</span><span class="p">,</span> <span class="n">seg_dir</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span> <span class="n">insp_files</span><span class="p">,</span>
+                    <span class="n">out_dir</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--verbose&#39;</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s2">&quot;--ifo-tag&quot;</span><span class="p">,</span> <span class="n">ifo_tag</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s2">&quot;--grb-name&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger_name</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s2">&quot;--trig-start-time&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trig_start_time</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s2">&quot;--segment-dir&quot;</span><span class="p">,</span> <span class="n">seg_dir</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s2">&quot;--input-files&quot;</span><span class="p">,</span> <span class="n">insp_files</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s2">&quot;--user-tag&quot;</span><span class="p">,</span> <span class="s2">&quot;PYGRB&quot;</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s2">&quot;--bank-file&quot;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+        <span class="c1"># Prepare output file tag</span>
+        <span class="n">user_tag</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PYGRB_GRB</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">trigger_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="n">user_tag</span> <span class="o">+=</span> <span class="s2">&quot;_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+        <span class="c1"># Add on/off source and off trial outputs</span>
+        <span class="n">output_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+        <span class="n">outfile_types</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ALL_TIMES&#39;</span><span class="p">,</span> <span class="s1">&#39;ONSOURCE&#39;</span><span class="p">,</span> <span class="s1">&#39;OFFSOURCE&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_trials</span><span class="p">):</span>
+            <span class="n">outfile_types</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;OFFTRIAL_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">out_type</span> <span class="ow">in</span> <span class="n">outfile_types</span><span class="p">:</span>
+            <span class="n">out_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">.h5&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                       <span class="n">ifo_tag</span><span class="p">,</span> <span class="n">user_tag</span><span class="p">,</span> <span class="n">out_type</span><span class="p">,</span>
+                       <span class="n">segment</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">segment</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">segment</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">out_file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">ifo_tag</span><span class="p">,</span> <span class="s1">&#39;trig_combiner&#39;</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span>
+                            <span class="n">file_url</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">out_name</span><span class="p">))</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+            <span class="n">output_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">node</span><span class="p">,</span> <span class="n">output_files</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PycbcGrbTrigClusterExecutable">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigClusterExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PycbcGrbTrigClusterExecutable</span><span class="p">(</span><span class="n">Executable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; The class responsible for creating jobs</span>
+<span class="sd">    for &#39;&#39;pycbc_grb_trig_cluster&#39;&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">current_retention_level</span> <span class="o">=</span> <span class="n">Executable</span><span class="o">.</span><span class="n">ALL_TRIGGERS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cp</span><span class="o">=</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PycbcGrbTrigClusterExecutable.create_node">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigClusterExecutable.create_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_file</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s2">&quot;--trig-file&quot;</span><span class="p">,</span> <span class="n">in_file</span><span class="p">)</span>
+        <span class="c1"># Determine output file name</span>
+        <span class="n">ifotag</span><span class="p">,</span> <span class="n">filetag</span><span class="p">,</span> <span class="n">segment</span> <span class="o">=</span> <span class="n">filename_metadata</span><span class="p">(</span><span class="n">in_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">segment</span>
+        <span class="n">out_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">_CLUSTERED-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">.h5&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifotag</span><span class="p">,</span> <span class="n">filetag</span><span class="p">,</span>
+                                                     <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
+        <span class="n">out_file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">ifotag</span><span class="p">,</span> <span class="s1">&#39;trig_cluster&#39;</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span>
+                        <span class="n">file_url</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">out_name</span><span class="p">))</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">node</span><span class="p">,</span> <span class="n">out_file</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PycbcGrbInjFinderExecutable">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbInjFinderExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PycbcGrbInjFinderExecutable</span><span class="p">(</span><span class="n">Executable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The class responsible for creating jobs for ``pycbc_grb_inj_finder``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">current_retention_level</span> <span class="o">=</span> <span class="n">Executable</span><span class="o">.</span><span class="n">ALL_TRIGGERS</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">exe_name</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">cp</span><span class="o">=</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">exe_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PycbcGrbInjFinderExecutable.create_node">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbInjFinderExecutable.create_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj_files</span><span class="p">,</span> <span class="n">inj_insp_files</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span>
+                    <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--input-files&#39;</span><span class="p">,</span> <span class="n">inj_insp_files</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--inj-files&#39;</span><span class="p">,</span> <span class="n">inj_files</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+        <span class="n">ifo_tag</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">segment</span> <span class="o">=</span> <span class="n">filename_metadata</span><span class="p">(</span><span class="n">inj_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">desc</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">out_name</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">_FOUNDMISSED-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">.h5&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">ifo_tag</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">segment</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">abs</span><span class="p">(</span><span class="n">segment</span><span class="p">))</span>
+        <span class="n">out_file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">ifo_tag</span><span class="p">,</span> <span class="s1">&#39;inj_finder&#39;</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">out_name</span><span class="p">),</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span><span class="p">,</span> <span class="n">out_file</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="build_segment_filelist">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.build_segment_filelist">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_segment_filelist</span><span class="p">(</span><span class="n">seg_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a FileList instance containing all segments txt files&quot;&quot;&quot;</span>
+
+    <span class="c1"># Needs to be in this order for consistency with _read_seg_files</span>
+    <span class="n">file_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bufferSeg.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;offSourceSeg.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;onSourceSeg.txt&quot;</span><span class="p">]</span>
+    <span class="n">seg_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">seg_dir</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">file_names</span><span class="p">]</span>
+    <span class="n">seg_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">sf</span><span class="p">)</span> <span class="k">for</span> <span class="n">sf</span> <span class="ow">in</span> <span class="n">seg_files</span><span class="p">]</span>
+    <span class="n">seg_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">(</span><span class="n">seg_files</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">seg_files</span></div>
+
+
+
+<div class="viewcode-block" id="make_pygrb_plot">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.make_pygrb_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_pygrb_plot</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">exec_name</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                    <span class="n">ifo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inj_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trig_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">onsource_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bank_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">seg_files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sky_grid_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a node for a plot of PyGRB results to the workflow&quot;&quot;&quot;</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+
+    <span class="c1"># Initialize job node with its tags</span>
+    <span class="n">grb_name</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-name&#39;</span><span class="p">)</span>
+    <span class="n">extra_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GRB&#39;</span><span class="o">+</span><span class="n">grb_name</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ifo</span><span class="p">:</span>
+        <span class="n">extra_tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">exec_name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                          <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+                          <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="o">+</span><span class="n">extra_tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">trig_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--trig-file&#39;</span><span class="p">,</span> <span class="n">trig_file</span><span class="p">)</span>
+    <span class="c1"># Pass the veto and segment files and options</span>
+    <span class="k">if</span> <span class="n">seg_files</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--seg-files&#39;</span><span class="p">,</span> <span class="n">seg_files</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sky_grid_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--sky-grid&#39;</span><span class="p">,</span> <span class="n">sky_grid_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+    <span class="c1"># Option to show the onsource trial if this is a plot of all data</span>
+    <span class="k">if</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pygrb_plot_snr_timeseries&#39;</span> <span class="ow">and</span> <span class="s1">&#39;alltimes&#39;</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--onsource&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exec_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pygrb_plot_injs_results&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;pygrb_plot_snr_timeseries&#39;</span><span class="p">]:</span>
+        <span class="n">trig_time</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-time&#39;</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--trigger-time&#39;</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">)</span>
+    <span class="c1"># Pass the injection file as an input File instance</span>
+    <span class="k">if</span> <span class="n">inj_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">exec_name</span> <span class="ow">not</span> <span class="ow">in</span> \
+            <span class="p">[</span><span class="s1">&#39;pygrb_plot_skygrid&#39;</span><span class="p">,</span> <span class="s1">&#39;pygrb_plot_stats_distribution&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;pycbc_plot_bank_corner&#39;</span><span class="p">]:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--found-missed-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pycbc_plot_bank_corner&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">inj_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+    <span class="c1"># IFO option</span>
+    <span class="k">if</span> <span class="n">ifo</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--ifo&#39;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+    <span class="c1"># Output files and final input file (passed as a File instance)</span>
+    <span class="k">if</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pygrb_efficiency&#39;</span><span class="p">:</span>
+        <span class="c1"># In this case tags[0] is the offtrial number</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--trial-name&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--injection-set-name&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="c1"># Output the sensitivity plot</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;plot_bkgd&#39;</span><span class="p">]:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;--background-output-file&#39;</span><span class="p">,</span>
+                                     <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;max_background&#39;</span><span class="p">])</span>
+        <span class="c1"># Output the exclusion distance plot and table</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--onsource-file&#39;</span><span class="p">,</span>
+                               <span class="n">onsource_file</span><span class="p">)</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;--onsource-output-file&#39;</span><span class="p">,</span>
+                                     <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;onsource&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">extra_tags</span><span class="p">)</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.json&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;--exclusion-dist-output-file&#39;</span><span class="p">,</span>
+                                     <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pycbc_plot_bank_corner&#39;</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;--output-plot-file&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="o">+</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;--output-file&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exec_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pygrb_plot_coh_ifosnr&#39;</span><span class="p">,</span> <span class="s1">&#39;pygrb_plot_null_stats&#39;</span><span class="p">]</span> \
+                <span class="ow">and</span> <span class="s1">&#39;zoomin&#39;</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--zoom-in&#39;</span><span class="p">)</span>
+    <span class="c1"># Quantity to be displayed on the y-axis of the plot</span>
+    <span class="k">if</span> <span class="n">exec_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pygrb_plot_chisq_veto&#39;</span><span class="p">,</span> <span class="s1">&#39;pygrb_plot_null_stats&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;pygrb_plot_snr_timeseries&#39;</span><span class="p">]:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--y-variable&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># Quantity to be displayed on the x-axis of the plot</span>
+    <span class="k">elif</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pygrb_plot_stats_distribution&#39;</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--x-variable&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pygrb_plot_injs_results&#39;</span><span class="p">:</span>
+        <span class="c1"># Variables to plot on x and y axes</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--y-variable&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--x-variable&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="c1"># Flag to plot found over missed or missed over found</span>
+        <span class="k">if</span> <span class="n">tags</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;missed-on-top&#39;</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="n">tags</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="c1"># Enable log axes</span>
+        <span class="n">subsection</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">log_flag</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;x-log&#39;</span><span class="p">,</span> <span class="s1">&#39;y-log&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="n">exec_name</span><span class="p">,</span> <span class="n">log_flag</span><span class="p">,</span>
+                                           <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="n">subsection</span><span class="p">]):</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="n">log_flag</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pycbc_plot_bank_corner&#39;</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--no-suptitle&#39;</span><span class="p">)</span>
+        <span class="c1">#if inj_file:</span>
+        <span class="c1">#    node.add_opt(&#39;--title&#39;, f&#39;\&quot;{tags[0]} injections\&quot;&#39;)</span>
+        <span class="c1">#    params = workflow.cp.get_opt_tags(exec_name, &#39;parameters&#39;, [&#39;injs&#39;])</span>
+        <span class="c1">#else:</span>
+        <span class="c1">#    node.add_opt(&#39;--title&#39;, &#39;\&quot;Template bank\&quot;&#39;)</span>
+        <span class="c1">#    params = workflow.cp.get_opt_tags(exec_name, &#39;parameters&#39;, [&#39;bank&#39;])</span>
+        <span class="c1">#node.add_opt(&#39;--parameters&#39;, params)</span>
+
+    <span class="c1"># Add job node to workflow</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="k">return</span> <span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+
+<div class="viewcode-block" id="make_pygrb_info_table">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.make_pygrb_info_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_pygrb_info_table</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">exec_name</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">in_files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Setup a job to create an html snippet with the GRB trigger information</span>
+<span class="sd">    or exlusion distances information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Organize tags</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">grb_name</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-name&#39;</span><span class="p">)</span>
+    <span class="n">extra_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GRB&#39;</span><span class="o">+</span><span class="n">grb_name</span><span class="p">]</span>
+
+    <span class="c1"># Initialize job node</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">exec_name</span><span class="p">,</span>
+                          <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+                          <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="o">+</span><span class="n">extra_tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+
+    <span class="c1"># Options</span>
+    <span class="k">if</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pygrb_grb_info_table&#39;</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--ifos&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">exec_name</span> <span class="o">==</span> <span class="s1">&#39;pygrb_exclusion_dist_table&#39;</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--input-files&#39;</span><span class="p">,</span> <span class="n">in_files</span><span class="p">)</span>
+
+    <span class="c1"># Output</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;--output-file&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="p">)</span>
+
+    <span class="c1"># Add job node to workflow</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="k">return</span> <span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+
+<div class="viewcode-block" id="make_pygrb_injs_tables">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.make_pygrb_injs_tables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_pygrb_injs_tables</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span> <span class="n">off_file</span><span class="p">,</span> <span class="n">seg_files</span><span class="p">,</span>
+                           <span class="n">inj_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">on_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a job to make quiet-found and missed-found injection tables,</span>
+<span class="sd">    or loudest trigger(s) table.&quot;&quot;&quot;</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+
+    <span class="c1"># Executable</span>
+    <span class="n">exec_name</span> <span class="o">=</span> <span class="s1">&#39;pygrb_page_tables&#39;</span>
+    <span class="c1"># Initialize job node</span>
+    <span class="n">grb_name</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-name&#39;</span><span class="p">)</span>
+    <span class="n">extra_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GRB&#39;</span><span class="o">+</span><span class="n">grb_name</span><span class="p">]</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">exec_name</span><span class="p">,</span>
+                          <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+                          <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="o">+</span><span class="n">extra_tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="c1"># Pass the bank-file</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+    <span class="c1"># Offsource input file (or equivalently trigger file for injections)</span>
+    <span class="n">offsource_file</span> <span class="o">=</span> <span class="n">off_file</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--offsource-file&#39;</span><span class="p">,</span> <span class="n">offsource_file</span><span class="p">)</span>
+    <span class="c1"># Pass the veto and segment files (as File instances)</span>
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--seg-files&#39;</span><span class="p">,</span> <span class="n">seg_files</span><span class="p">)</span>
+    <span class="c1"># Handle input/output for injections</span>
+    <span class="k">if</span> <span class="n">inj_file</span><span class="p">:</span>
+        <span class="c1"># Found-missed injection file (passed as File instance)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--found-missed-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+        <span class="c1"># Missed-found and quiet-found injections html output files</span>
+        <span class="k">for</span> <span class="n">mf_or_qf</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;missed-found&#39;</span><span class="p">,</span> <span class="s1">&#39;quiet-found&#39;</span><span class="p">]:</span>
+            <span class="n">mf_or_qf_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">mf_or_qf</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)]</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;--&#39;</span><span class="o">+</span><span class="n">mf_or_qf</span><span class="o">+</span><span class="s1">&#39;-injs-output-file&#39;</span><span class="p">,</span>
+                                     <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="o">+</span><span class="n">mf_or_qf_tags</span><span class="p">)</span>
+        <span class="c1"># Quiet-found injections h5 output file</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.h5&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;--quiet-found-injs-h5-output-file&#39;</span><span class="p">,</span>
+                                 <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;QUIET_FOUND&#39;</span><span class="p">])</span>
+    <span class="c1"># Handle input/output for onsource/offsource</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">src_type</span> <span class="o">=</span> <span class="s1">&#39;offsource-trigs&#39;</span>
+        <span class="k">if</span> <span class="n">on_file</span><span class="p">:</span>
+            <span class="n">src_type</span> <span class="o">=</span> <span class="s1">&#39;onsource-trig&#39;</span>
+            <span class="c1"># Pass onsource input File instance</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--onsource-file&#39;</span><span class="p">,</span> <span class="n">on_file</span><span class="p">)</span>
+        <span class="c1"># Loudest offsource/onsource triggers html and h5 output files</span>
+        <span class="n">src_type_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">src_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)]</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;--loudest-&#39;</span><span class="o">+</span><span class="n">src_type</span><span class="o">+</span><span class="s1">&#39;-output-file&#39;</span><span class="p">,</span>
+                                 <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="o">+</span><span class="n">src_type_tags</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.h5&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;--loudest-&#39;</span><span class="o">+</span><span class="n">src_type</span><span class="o">+</span><span class="s1">&#39;-h5-output-file&#39;</span><span class="p">,</span>
+                                 <span class="n">tags</span><span class="o">=</span><span class="n">extra_tags</span><span class="o">+</span><span class="n">src_type_tags</span><span class="p">)</span>
+
+    <span class="c1"># Add job node to the workflow</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="k">return</span> <span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+
+<span class="c1"># Based on setup_single_det_minifollowups</span>
+<div class="viewcode-block" id="setup_pygrb_minifollowups">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.setup_pygrb_minifollowups">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_pygrb_minifollowups</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">followups_file</span><span class="p">,</span> <span class="n">trigger_file</span><span class="p">,</span>
+                              <span class="n">dax_output</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">seg_files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create plots that followup the the loudest PyGRB triggers or</span>
+<span class="sd">    missed injections from an HDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">        The core workflow instance we are populating</span>
+<span class="sd">    followups_file: pycbc.workflow.File</span>
+<span class="sd">        The File class holding the triggers/injections to follow up</span>
+<span class="sd">    trigger_file: pycbc.workflow.File</span>
+<span class="sd">        The File class holding the triggers</span>
+<span class="sd">    dax_output: The directory that will contain the dax file</span>
+<span class="sd">    out_dir: path</span>
+<span class="sd">        The directory to store minifollowups result plots and files</span>
+<span class="sd">    seg_files: {pycbc.workflow.FileList, optional}</span>
+<span class="sd">        The list of segments Files</span>
+<span class="sd">    veto_file: {pycbc.workflow.File, optional}</span>
+<span class="sd">        The veto definer file</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the minifollowups executables</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Entering minifollowups module&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;workflow-minifollowups&#39;</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;There is no [workflow-minifollowups] section in &#39;</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;the configuration file&#39;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dax_output</span><span class="p">)</span>
+
+    <span class="c1"># Turn the config file into a File instance</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dax_output</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span>
+                                  <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_minifollowup.ini&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">))</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+    <span class="c1"># wikifile = curr_ifo + &#39;_&#39;.join(tags) + &#39;loudest_table.txt&#39;</span>
+    <span class="n">wikifile</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;loudest_table.txt&#39;</span>
+
+    <span class="c1"># Create the node</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;pygrb_minifollowups&#39;</span><span class="p">,</span>
+                     <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">dax_output</span><span class="p">,</span>
+                     <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--trig-file&#39;</span><span class="p">,</span> <span class="n">trigger_file</span><span class="p">)</span>
+
+    <span class="c1"># Grab and pass all necessary files as File instances</span>
+    <span class="k">if</span> <span class="n">seg_files</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--seg-files&#39;</span><span class="p">,</span> <span class="n">seg_files</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--config-files&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--followups-file&#39;</span><span class="p">,</span> <span class="n">followups_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--wiki-file&#39;</span><span class="p">,</span> <span class="n">wikifile</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_list_opt</span><span class="p">(</span><span class="s1">&#39;--tags&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax&#39;</span><span class="p">,</span> <span class="s1">&#39;--dax-file&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax.map&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;--output-map&#39;</span><span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">assert</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.dax&#39;</span><span class="p">)</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">map_file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.map&#39;</span><span class="p">)</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--workflow-name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--dax-file-directory&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="c1"># Execute this in a sub-workflow</span>
+    <span class="n">fil</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">SubWorkflow</span><span class="p">(</span><span class="n">fil</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">is_planned</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">set_subworkflow_properties</span><span class="p">(</span><span class="n">map_file</span><span class="p">,</span>
+                                   <span class="n">staging_site</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">staging_site</span><span class="p">,</span>
+                                   <span class="n">cache_file</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">cache_file</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_into_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups module&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">job</span></div>
+
+
+
+<div class="viewcode-block" id="setup_pygrb_results_workflow">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.grb_utils.setup_pygrb_results_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_pygrb_results_workflow</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="p">,</span> <span class="n">res_dir</span><span class="p">,</span> <span class="n">trig_files</span><span class="p">,</span> <span class="n">full_injs_files</span><span class="p">,</span> <span class="n">inj_files</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span>
+        <span class="n">seg_dir</span><span class="p">,</span> <span class="n">sky_grid_file</span><span class="p">,</span> <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">explicit_dependencies</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create subworkflow to produce plots, tables,</span>
+<span class="sd">    and results webpage for a PyGRB analysis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">        The core workflow instance we are populating</span>
+<span class="sd">    res_dir: The post-processing directory where</span>
+<span class="sd">        results (plots, etc.) will be stored</span>
+<span class="sd">    trig_files: FileList of trigger files</span>
+<span class="sd">    full_injs_files: Filelist of generated injections</span>
+<span class="sd">    inj_files: FileList of injection results</span>
+<span class="sd">    bank_file: The template bank File object</span>
+<span class="sd">    seg_dir: The directory path with the segments files</span>
+<span class="sd">    veto_file: {None, optional}</span>
+<span class="sd">        The veto File object</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the executables</span>
+<span class="sd">    explicit_dependencies: {None, optional}</span>
+<span class="sd">        nodes that must precede this</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">dax_output</span> <span class="o">=</span> <span class="n">res_dir</span><span class="o">+</span><span class="s1">&#39;/webpage_daxes&#39;</span>
+    <span class="c1"># _workflow.makedir(dax_output)</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dax_output</span><span class="p">)</span>
+
+    <span class="c1"># Create the node</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;pygrb_results_workflow&#39;</span><span class="p">,</span>
+                     <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifo_string</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">dax_output</span><span class="p">,</span>
+                     <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="c1"># Grab and pass all necessary files</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--trig-files&#39;</span><span class="p">,</span> <span class="n">trig_files</span><span class="p">)</span>
+    <span class="c1"># node.add_input_opt(&#39;--config-files&#39;, config_file)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--full-inj-files&#39;</span><span class="p">,</span> <span class="n">full_injs_files</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--inj-files&#39;</span><span class="p">,</span> <span class="n">inj_files</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--sky-grid&#39;</span><span class="p">,</span> <span class="n">sky_grid_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--segment-dir&#39;</span><span class="p">,</span> <span class="n">seg_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_list_opt</span><span class="p">(</span><span class="s1">&#39;--tags&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;--dax-file&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.map&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;--output-map&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="c1"># + [&#39;MAP&#39;], use_tmp_subdirs=True)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">assert</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.dax&#39;</span><span class="p">)</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">map_file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.map&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--workflow-name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="c1"># This is the output dir for the products of this node, namely dax and map</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="n">res_dir</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--dax-file-directory&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Turn the config file into a File instance</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dax_output</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span>
+                                  <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;webpage.ini&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">))</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--config-files&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+
+    <span class="c1"># Track additional ini file produced by pycbc_pygrb_results_workflow</span>
+    <span class="n">out_file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                    <span class="s1">&#39;pygrb_results_workflow&#39;</span><span class="p">,</span>
+                    <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+                    <span class="n">file_url</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dax_output</span><span class="p">,</span> <span class="n">name</span><span class="o">+</span><span class="s1">&#39;.ini&#39;</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+
+    <span class="c1"># Add node to the workflow</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">if</span> <span class="n">explicit_dependencies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">dep</span> <span class="ow">in</span> <span class="n">explicit_dependencies</span><span class="p">:</span>
+            <span class="n">workflow</span><span class="o">.</span><span class="n">add_explicit_dependancy</span><span class="p">(</span><span class="n">dep</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+
+    <span class="c1"># Execute this in a sub-workflow</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">SubWorkflow</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">is_planned</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># , _id=&#39;results&#39;)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">set_subworkflow_properties</span><span class="p">(</span><span class="n">map_file</span><span class="p">,</span>
+                                   <span class="n">staging_site</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">staging_site</span><span class="p">,</span>
+                                   <span class="n">cache_file</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">cache_file</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_into_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

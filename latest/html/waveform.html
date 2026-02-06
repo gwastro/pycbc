@@ -1,0 +1,536 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waveforms &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Filtering" href="filter.html" />
+    <link rel="prev" title="Generating Noise" href="noise.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Waveforms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-waveforms-can-i-generate">What waveforms can I generate?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-time-domain-waveforms">Plotting Time Domain Waveforms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generating-one-waveform-in-multiple-detectors">Generating one waveform in multiple detectors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#selecting-which-modes-to-include">Selecting which modes to include</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculating-the-match-between-waveforms">Calculating the match between waveforms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-a-td-and-fd-waveform-together-in-the-td">Plotting a TD and FD waveform together in the TD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-gw-phase-and-amplitude-of-td-waveform">Plotting GW phase and amplitude of TD waveform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-frequency-evolution-of-td-waveform">Plotting frequency evolution of TD waveform</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-a-custom-waveform">Adding a custom waveform</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Waveforms</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/waveform.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="waveforms">
+<h1>Waveforms<a class="headerlink" href="#waveforms" title="Link to this heading"></a></h1>
+<section id="what-waveforms-can-i-generate">
+<h2>What waveforms can I generate?<a class="headerlink" href="#what-waveforms-can-i-generate" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">td_approximants</span><span class="p">,</span> <span class="n">fd_approximants</span>
+
+<span class="c1"># List of td approximants that are available</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">td_approximants</span><span class="p">())</span>
+
+<span class="c1"># List of fd approximants that are currently available</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">fd_approximants</span><span class="p">())</span>
+
+<span class="c1"># Note that these functions only print what is available for your current</span>
+<span class="c1"># processing context. If a waveform is implemented in CUDA or OpenCL, it will</span>
+<span class="c1"># only be listed when running under a CUDA or OpenCL Scheme.</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ python ../examples/waveform/what_waveform.py
+No CuPy
+No CuPy or GPU PhenomHM module.
+No CuPy or GPU response available.
+No CuPy or GPU interpolation available.
+[&#39;TaylorT1&#39;, &#39;TaylorT2&#39;, &#39;TaylorT3&#39;, &#39;SpinTaylorT1&#39;, &#39;SpinTaylorT4&#39;, &#39;SpinTaylorT5&#39;, &#39;PhenSpinTaylor&#39;, &#39;PhenSpinTaylorRD&#39;, &#39;EOBNRv2&#39;, &#39;EOBNRv2HM&#39;, &#39;TEOBResum_ROM&#39;, &#39;SEOBNRv1&#39;, &#39;SEOBNRv2&#39;, &#39;SEOBNRv2_opt&#39;, &#39;SEOBNRv3&#39;, &#39;SEOBNRv3_pert&#39;, &#39;SEOBNRv3_opt&#39;, &#39;SEOBNRv3_opt_rk4&#39;, &#39;SEOBNRv4&#39;, &#39;SEOBNRv4_opt&#39;, &#39;SEOBNRv4P&#39;, &#39;SEOBNRv4PHM&#39;, &#39;SEOBNRv2T&#39;, &#39;SEOBNRv4T&#39;, &#39;SEOBNRv4_ROM_NRTidalv2&#39;, &#39;SEOBNRv4_ROM_NRTidalv2_NSBH&#39;, &#39;HGimri&#39;, &#39;IMRPhenomA&#39;, &#39;IMRPhenomB&#39;, &#39;IMRPhenomC&#39;, &#39;IMRPhenomD&#39;, &#39;IMRPhenomD_NRTidalv2&#39;, &#39;IMRPhenomNSBH&#39;, &#39;IMRPhenomHM&#39;, &#39;IMRPhenomPv2&#39;, &#39;IMRPhenomPv2_NRTidal&#39;, &#39;IMRPhenomPv2_NRTidalv2&#39;, &#39;TaylorEt&#39;, &#39;TaylorT4&#39;, &#39;EccentricTD&#39;, &#39;SpinDominatedWf&#39;, &#39;NR_hdf5&#39;, &#39;NRSur7dq2&#39;, &#39;NRSur7dq4&#39;, &#39;SEOBNRv4HM&#39;, &#39;NRHybSur3dq8&#39;, &#39;IMRPhenomXAS&#39;, &#39;IMRPhenomXHM&#39;, &#39;IMRPhenomPv3&#39;, &#39;IMRPhenomPv3HM&#39;, &#39;IMRPhenomXP&#39;, &#39;IMRPhenomXPHM&#39;, &#39;TEOBResumS&#39;, &#39;IMRPhenomT&#39;, &#39;IMRPhenomTHM&#39;, &#39;IMRPhenomTP&#39;, &#39;IMRPhenomTPHM&#39;, &#39;SEOBNRv4HM_PA&#39;, &#39;pSEOBNRv4HM_PA&#39;, &#39;IMRPhenomXAS_NRTidalv2&#39;, &#39;IMRPhenomXP_NRTidalv2&#39;, &#39;IMRPhenomXO4a&#39;, &#39;ExternalPython&#39;, &#39;IMRPhenomXAS_NRTidalv3&#39;, &#39;IMRPhenomXP_NRTidalv3&#39;, &#39;SEOBNRv5_ROM_NRTidalv3&#39;, &#39;IMRPhenomXPNR&#39;, &#39;TaylorF2&#39;, &#39;SEOBNRv1_ROM_EffectiveSpin&#39;, &#39;SEOBNRv1_ROM_DoubleSpin&#39;, &#39;SEOBNRv2_ROM_EffectiveSpin&#39;, &#39;SEOBNRv2_ROM_DoubleSpin&#39;, &#39;EOBNRv2_ROM&#39;, &#39;EOBNRv2HM_ROM&#39;, &#39;SEOBNRv2_ROM_DoubleSpin_HI&#39;, &#39;SEOBNRv4_ROM&#39;, &#39;SEOBNRv4HM_ROM&#39;, &#39;SEOBNRv5_ROM&#39;, &#39;IMRPhenomD_NRTidal&#39;, &#39;SpinTaylorF2&#39;, &#39;TaylorF2NL&#39;, &#39;PreTaylorF2&#39;, &#39;SpinTaylorF2_SWAPPER&#39;]
+[&#39;EccentricFD&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2Ecc&#39;, &#39;TaylorF2NLTides&#39;, &#39;TaylorF2RedSpin&#39;, &#39;TaylorF2RedSpinTidal&#39;, &#39;SpinTaylorF2&#39;, &#39;EOBNRv2_ROM&#39;, &#39;EOBNRv2HM_ROM&#39;, &#39;SEOBNRv1_ROM_EffectiveSpin&#39;, &#39;SEOBNRv1_ROM_DoubleSpin&#39;, &#39;SEOBNRv2_ROM_EffectiveSpin&#39;, &#39;SEOBNRv2_ROM_DoubleSpin&#39;, &#39;SEOBNRv2_ROM_DoubleSpin_HI&#39;, &#39;Lackey_Tidal_2013_SEOBNRv2_ROM&#39;, &#39;SEOBNRv4_ROM&#39;, &#39;SEOBNRv4HM_ROM&#39;, &#39;SEOBNRv4_ROM_NRTidal&#39;, &#39;SEOBNRv4_ROM_NRTidalv2&#39;, &#39;SEOBNRv4_ROM_NRTidalv2_NSBH&#39;, &#39;SEOBNRv4T_surrogate&#39;, &#39;IMRPhenomA&#39;, &#39;IMRPhenomB&#39;, &#39;IMRPhenomC&#39;, &#39;IMRPhenomD&#39;, &#39;IMRPhenomD_NRTidal&#39;, &#39;IMRPhenomD_NRTidalv2&#39;, &#39;IMRPhenomNSBH&#39;, &#39;IMRPhenomHM&#39;, &#39;IMRPhenomP&#39;, &#39;IMRPhenomPv2&#39;, &#39;IMRPhenomPv2_NRTidal&#39;, &#39;IMRPhenomPv2_NRTidalv2&#39;, &#39;SpinTaylorT4Fourier&#39;, &#39;SpinTaylorT5Fourier&#39;, &#39;NRSur4d2s&#39;, &#39;IMRPhenomXAS&#39;, &#39;IMRPhenomXHM&#39;, &#39;IMRPhenomPv3&#39;, &#39;IMRPhenomPv3HM&#39;, &#39;IMRPhenomXP&#39;, &#39;IMRPhenomXPHM&#39;, &#39;SEOBNRv5_ROM&#39;, &#39;IMRPhenomXAS_NRTidalv2&#39;, &#39;IMRPhenomXP_NRTidalv2&#39;, &#39;IMRPhenomXO4a&#39;, &#39;ExternalPython&#39;, &#39;SEOBNRv5HM_ROM&#39;, &#39;IMRPhenomXAS_NRTidalv3&#39;, &#39;IMRPhenomXP_NRTidalv3&#39;, &#39;SEOBNRv5_ROM_NRTidalv3&#39;, &#39;IMRPhenomXPNR&#39;, &#39;SpinTaylorF2_SWAPPER&#39;, &#39;TaylorF2NL&#39;, &#39;PreTaylorF2&#39;, &#39;multiband&#39;, &#39;TaylorF2_INTERP&#39;, &#39;SpinTaylorT5&#39;, &#39;SEOBNRv1_ROM_EffectiveSpin_INTERP&#39;, &#39;SEOBNRv1_ROM_DoubleSpin_INTERP&#39;, &#39;SEOBNRv2_ROM_EffectiveSpin_INTERP&#39;, &#39;SEOBNRv2_ROM_DoubleSpin_INTERP&#39;, &#39;EOBNRv2_ROM_INTERP&#39;, &#39;EOBNRv2HM_ROM_INTERP&#39;, &#39;SEOBNRv2_ROM_DoubleSpin_HI_INTERP&#39;, &#39;SEOBNRv4_ROM_INTERP&#39;, &#39;SEOBNRv4HM_ROM_INTERP&#39;, &#39;SEOBNRv4&#39;, &#39;SEOBNRv4P&#39;, &#39;SEOBNRv5_ROM_INTERP&#39;, &#39;IMRPhenomC_INTERP&#39;, &#39;IMRPhenomD_INTERP&#39;, &#39;IMRPhenomPv2_INTERP&#39;, &#39;IMRPhenomD_NRTidal_INTERP&#39;, &#39;IMRPhenomPv2_NRTidal_INTERP&#39;, &#39;IMRPhenomHM_INTERP&#39;, &#39;IMRPhenomPv3HM_INTERP&#39;, &#39;IMRPhenomXHM_INTERP&#39;, &#39;IMRPhenomXPHM_INTERP&#39;, &#39;SpinTaylorF2_INTERP&#39;, &#39;TaylorF2NL_INTERP&#39;, &#39;PreTaylorF2_INTERP&#39;, &#39;SpinTaylorF2_SWAPPER_INTERP&#39;]
+</pre></div>
+</div>
+</section>
+<section id="plotting-time-domain-waveforms">
+<h2>Plotting Time Domain Waveforms<a class="headerlink" href="#plotting-time-domain-waveforms" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_td_waveform</span>
+
+
+<span class="k">for</span> <span class="n">apx</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;SEOBNRv4&#39;</span><span class="p">,</span> <span class="s1">&#39;IMRPhenomD&#39;</span><span class="p">]:</span>
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="n">apx</span><span class="p">,</span>
+                                 <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                 <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                 <span class="n">spin1z</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                                 <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">,</span>
+                                 <span class="n">f_lower</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+    <span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">apx</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Strain&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/0ade72095df83e64d5349edd2104d032/plot_waveform.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/cbfb2ea8108d59acf9ebe75239a40269/plot_waveform.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/a370f2d3d86bf49e84425cc59758ae86/plot_waveform.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/ec56f84d4e01b1c82083a56c0d8a5123/plot_waveform.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/plot_waveform.png" class="plot-directive" src="_images/plot_waveform.png" />
+</figure>
+</section>
+<section id="generating-one-waveform-in-multiple-detectors">
+<h2>Generating one waveform in multiple detectors<a class="headerlink" href="#generating-one-waveform-in-multiple-detectors" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_td_waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+
+
+<span class="n">apx</span> <span class="o">=</span> <span class="s1">&#39;SEOBNRv4&#39;</span>
+<span class="c1"># NOTE: Inclination runs from 0 to pi, with poles at 0 and pi</span>
+<span class="c1">#       coa_phase runs from 0 to 2 pi.</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="n">apx</span><span class="p">,</span>
+                         <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">spin1z</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                         <span class="n">spin2z</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+                         <span class="n">inclination</span><span class="o">=</span><span class="mf">1.23</span><span class="p">,</span>
+                         <span class="n">coa_phase</span><span class="o">=</span><span class="mf">2.45</span><span class="p">,</span>
+                         <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">,</span>
+                         <span class="n">f_lower</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+<span class="n">det_h1</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">)</span>
+<span class="n">det_l1</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="s1">&#39;L1&#39;</span><span class="p">)</span>
+<span class="n">det_v1</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="s1">&#39;V1&#39;</span><span class="p">)</span>
+
+<span class="c1"># Choose a GPS end time, sky location, and polarization phase for the merger</span>
+<span class="c1"># NOTE: Right ascension and polarization phase runs from 0 to 2pi</span>
+<span class="c1">#       Declination runs from pi/2. to -pi/2 with the poles at pi/2. and -pi/2.</span>
+<span class="n">end_time</span> <span class="o">=</span> <span class="mi">1192529720</span>
+<span class="n">declination</span> <span class="o">=</span> <span class="mf">0.65</span>
+<span class="n">right_ascension</span> <span class="o">=</span> <span class="mf">4.67</span>
+<span class="n">polarization</span> <span class="o">=</span> <span class="mf">2.34</span>
+<span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">end_time</span>
+<span class="n">hc</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">end_time</span>
+
+<span class="n">signal_h1</span> <span class="o">=</span> <span class="n">det_h1</span><span class="o">.</span><span class="n">project_wave</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span>  <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">polarization</span><span class="p">)</span>
+<span class="n">signal_l1</span> <span class="o">=</span> <span class="n">det_l1</span><span class="o">.</span><span class="n">project_wave</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span>  <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">polarization</span><span class="p">)</span>
+<span class="n">signal_v1</span> <span class="o">=</span> <span class="n">det_v1</span><span class="o">.</span><span class="n">project_wave</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span>  <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">polarization</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signal_h1</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">signal_h1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;H1&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signal_l1</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">signal_l1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;L1&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">signal_v1</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">signal_v1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;V1&#39;</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Strain&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/1a8c7a97487fee58ca6907fc6aec21ea/plot_detwaveform.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/970b616a4c3afcd372b110a34c727039/plot_detwaveform.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/a32b063245d40146934e009a78b2e9e3/plot_detwaveform.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/9390221efa9b25cc56943ebdb7dcca2d/plot_detwaveform.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/plot_detwaveform.png" class="plot-directive" src="_images/plot_detwaveform.png" />
+</figure>
+</section>
+<section id="selecting-which-modes-to-include">
+<h2>Selecting which modes to include<a class="headerlink" href="#selecting-which-modes-to-include" title="Link to this heading"></a></h2>
+<p>Gravitational waves can be decomposed into a set
+of modes. Some approximants only calculate the dominant
+l=2, m=2 mode, while others included higher-order modes. These
+often, but not always, include ‘HM’ in the name. The modes
+present in the output polarizations can be selected for these waveforms
+as demonstrated below. By default, all modes that the waveform model
+supports are typically generated.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_td_waveform</span>
+
+<span class="c1"># Let&#39;s plot what our new waveform looks like</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+<span class="c1"># You can select sets of modes or individual modes using the &#39;mode_array&#39;</span>
+<span class="c1"># The standard format is to provide a list of (l, m) modes, however</span>
+<span class="c1"># a string format is also provided to aid use in population from config files.</span>
+<span class="c1"># e.g. &quot;22 33&quot; is also acceptable to select these two modes.</span>
+<span class="c1"># &quot;None&quot; will result in the waveform return its default which is usually</span>
+<span class="c1"># to return all implemented modes.</span>
+<span class="k">for</span> <span class="n">mode_select</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span>  
+                    <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span> <span class="c1"># Select two modes at once</span>
+                    <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)],</span>
+                    <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> 
+                    <span class="p">[(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)],</span>
+                    <span class="p">[(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span>
+                   <span class="p">]:</span> 
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;IMRPhenomXPHM&quot;</span><span class="p">,</span>
+                         <span class="n">mass1</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+                         <span class="n">mass2</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                         <span class="n">f_lower</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
+                         <span class="n">mode_array</span><span class="o">=</span><span class="n">mode_select</span><span class="p">,</span>
+                         <span class="n">inclination</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+                         <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">)</span>
+                     
+
+
+    <span class="k">if</span> <span class="n">mode_select</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;Full Waveform&#39;</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;l, m = &quot;</span> <span class="o">+</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mode_select</span><span class="p">])</span>
+
+    <span class="p">(</span><span class="n">hp</span> <span class="o">/</span> <span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time [s]&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Relative Strain&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/d6e2eeb650c67fb5aee2416467791fd4/higher_modes.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/168313a00888f0f3fca2de438a7001d0/higher_modes.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/cd42dcf19f5f79be8c513e654b62f25e/higher_modes.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/a9c7975e4229dddf16539c8bb067843b/higher_modes.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/higher_modes.png" class="plot-directive" src="_images/higher_modes.png" />
+</figure>
+</section>
+<section id="calculating-the-match-between-waveforms">
+<h2>Calculating the match between waveforms<a class="headerlink" href="#calculating-the-match-between-waveforms" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_td_waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">match</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd</span><span class="w"> </span><span class="kn">import</span> <span class="n">aLIGOZeroDetHighPower</span>
+
+<span class="n">f_low</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">sample_rate</span> <span class="o">=</span> <span class="mi">4096</span>
+
+<span class="c1"># Generate the two waveforms to compare</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;EOBNRv2&quot;</span><span class="p">,</span>
+                         <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">f_lower</span><span class="o">=</span><span class="n">f_low</span><span class="p">,</span>
+                         <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="n">sample_rate</span><span class="p">)</span>
+
+<span class="n">sp</span><span class="p">,</span> <span class="n">sc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;TaylorT4&quot;</span><span class="p">,</span>
+                         <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">f_lower</span><span class="o">=</span><span class="n">f_low</span><span class="p">,</span>
+                         <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="n">sample_rate</span><span class="p">)</span>
+
+<span class="c1"># Resize the waveforms to the same length</span>
+<span class="n">tlen</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hp</span><span class="p">))</span>
+<span class="n">sp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">tlen</span><span class="p">)</span>
+<span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">tlen</span><span class="p">)</span>
+
+<span class="c1"># Generate the aLIGO ZDHP PSD</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sp</span><span class="o">.</span><span class="n">duration</span>
+<span class="n">flen</span> <span class="o">=</span> <span class="n">tlen</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">f_low</span><span class="p">)</span>
+
+<span class="c1"># Note: This takes a while the first time as an FFT plan is generated</span>
+<span class="c1"># subsequent calls are much faster.</span>
+<span class="n">m</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="n">match</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">sp</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">f_low</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The match is: </span><span class="si">{:.4f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ python ../examples/waveform/match_waveform.py
+No CuPy
+No CuPy or GPU PhenomHM module.
+No CuPy or GPU response available.
+No CuPy or GPU interpolation available.
+The match is: 0.9534
+</pre></div>
+</div>
+</section>
+<section id="plotting-a-td-and-fd-waveform-together-in-the-td">
+<h2>Plotting a TD and FD waveform together in the TD<a class="headerlink" href="#plotting-a-td-and-fd-waveform-together-in-the-td" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;Plot a time domain and Fourier domain waveform together in the time domain.</span>
+<span class="sd">Note that without special cleanup the Fourier domain waveform will exhibit</span>
+<span class="sd">the Gibb&#39;s phenomenon. (http://en.wikipedia.org/wiki/Gibbs_phenomenon)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span><span class="p">,</span> <span class="n">fft</span><span class="p">,</span> <span class="n">waveform</span>
+
+
+<span class="c1"># Get a time domain waveform</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s1">&#39;SEOBNRv4&#39;</span><span class="p">,</span>
+                             <span class="n">mass1</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+<span class="c1"># Get a frequency domain waveform</span>
+<span class="n">sptilde</span><span class="p">,</span> <span class="n">sctilde</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span> <span class="n">get_fd_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;TaylorF2&quot;</span><span class="p">,</span>
+                             <span class="n">mass1</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+<span class="c1"># FFT it to the time-domain</span>
+<span class="n">tlen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">hp</span><span class="o">.</span><span class="n">delta_t</span> <span class="o">/</span> <span class="n">sptilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+<span class="n">sptilde</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">tlen</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">sp</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">TimeSeries</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tlen</span><span class="p">),</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">hp</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span>
+<span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">sptilde</span><span class="p">,</span> <span class="n">sp</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">sp</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;TaylorF2 (IFFT)&quot;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;SEOBNRv4&#39;</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Strain&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/756240f62f9fd8b6941073ae6fe3e5dc/plot_fd_td.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/be267a7c70e9075914224ec7b04c45f6/plot_fd_td.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/afadbefa604476a881ca7ecd4c8fac1a/plot_fd_td.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/57f2754f3c667a72e8d0a0039b619755/plot_fd_td.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/plot_fd_td.png" class="plot-directive" src="_images/plot_fd_td.png" />
+</figure>
+</section>
+<section id="plotting-gw-phase-and-amplitude-of-td-waveform">
+<h2>Plotting GW phase and amplitude of TD waveform<a class="headerlink" href="#plotting-gw-phase-and-amplitude-of-td-waveform" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform</span>
+
+
+<span class="k">for</span> <span class="n">apx</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;SEOBNRv4&#39;</span><span class="p">,</span> <span class="s1">&#39;TaylorT4&#39;</span><span class="p">,</span> <span class="s1">&#39;IMRPhenomB&#39;</span><span class="p">]:</span>
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="n">apx</span><span class="p">,</span>
+                                 <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                 <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                 <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">,</span>
+                                 <span class="n">f_lower</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">trim_zeros</span><span class="p">(),</span> <span class="n">hc</span><span class="o">.</span><span class="n">trim_zeros</span><span class="p">()</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">amplitude_from_polarizations</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">phase_from_polarizations</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+
+    <span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">apx</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;GW Strain Amplitude&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;GW Phase (radians)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/ced57b28fbb0c1bd45582785eb34f1de/plot_phase.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/3a1f7917f6e1935db1d12e6c55f86853/plot_phase.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/9061a8eb75c5dd7d1a0d35a3589cbc7f/plot_phase.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/d2774010069f78f3f44c074dd73b758d/plot_phase.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/plot_phase.png" class="plot-directive" src="_images/plot_phase.png" />
+</figure>
+</section>
+<section id="plotting-frequency-evolution-of-td-waveform">
+<h2>Plotting frequency evolution of TD waveform<a class="headerlink" href="#plotting-frequency-evolution-of-td-waveform" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform</span>
+
+
+<span class="k">for</span> <span class="n">phase_order</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">]:</span>
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s1">&#39;SpinTaylorT4&#39;</span><span class="p">,</span>
+                                 <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                 <span class="n">phase_order</span><span class="o">=</span><span class="n">phase_order</span><span class="p">,</span>
+                                 <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">,</span>
+                                 <span class="n">f_lower</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">trim_zeros</span><span class="p">(),</span> <span class="n">hc</span><span class="o">.</span><span class="n">trim_zeros</span><span class="p">()</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">amplitude_from_polarizations</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">frequency_from_polarizations</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+
+    <span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;PN Order = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">phase_order</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper left&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/75e4294f476c985202b4218289acb60d/plot_freq.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/f054669a6fcd6624e0c07865da3978e7/plot_freq.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/b47605ece9341b3cd4f5daede64f1016/plot_freq.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/ebeb2b3479033c4a3b3361caf8180638/plot_freq.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/plot_freq.png" class="plot-directive" src="_images/plot_freq.png" />
+</figure>
+</section>
+<section id="adding-a-custom-waveform">
+<h2>Adding a custom waveform<a class="headerlink" href="#adding-a-custom-waveform" title="Link to this heading"></a></h2>
+<p>You can also add your own custom waveform and make it available through
+the waveform interface standard. You can directly call the code as below
+or if you include it in a python package, <a class="reference internal" href="waveform_plugin.html#waveform-plugin"><span class="std std-ref">PyCBC can directly detect it!</span></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_waveform</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">flow</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">]</span> <span class="c1"># Required parameter</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">]</span>   <span class="c1"># Required parameter</span>
+    <span class="n">fpeak</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;fpeak&#39;</span><span class="p">]</span>  <span class="c1"># A new parameter for my model</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">t</span><span class="o">/</span><span class="n">t</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="n">fpeak</span> <span class="o">-</span> <span class="n">flow</span><span class="p">)</span> <span class="o">+</span> <span class="n">flow</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">t</span>
+
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">a</span>
+
+    <span class="c1"># Return product should be a pycbc time series in this case for</span>
+    <span class="c1"># each GW polarization</span>
+    <span class="c1">#</span>
+    <span class="c1">#</span>
+    <span class="c1"># Note that by convention, the time at 0 is a fiducial reference.</span>
+    <span class="c1"># For CBC waveforms, this would be set to where the merger occurs</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wf</span><span class="o">.</span><span class="n">real</span><span class="p">(),</span> <span class="n">wf</span><span class="o">.</span><span class="n">imag</span><span class="p">()</span>
+
+
+<span class="c1"># This tells pycbc about our new waveform so we can call it from standard</span>
+<span class="c1"># pycbc functions. If this were a frequency-domain model, select &#39;frequency&#39;</span>
+<span class="c1"># instead of &#39;time&#39; to this function call.</span>
+<span class="n">pycbc</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">add_custom_waveform</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">test_waveform</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Let&#39;s plot what our new waveform looks like</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span>
+                                        <span class="n">f_lower</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">fpeak</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                                        <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">hp</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">hf</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hf</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">hf</span><span class="o">.</span><span class="n">real</span><span class="p">())</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/c80593d8e985069830e2d7b113c0c9b2/add_waveform.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>)</p>
+<figure class="align-default" id="id1">
+<img alt="_images/add_waveform_00.png" class="plot-directive" src="_images/add_waveform_00.png" />
+<figcaption>
+<p><span class="caption-text">(<a class="reference download internal" download="" href="_downloads/ea8b62d728fdb3bb0fe6d478a9a254b7/add_waveform_00.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/92505b33321d111bbd97283e6b3d31d1/add_waveform_00.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/85838b72b4fb049f7accd4b3a2cf3c35/add_waveform_00.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id2">
+<img alt="_images/add_waveform_01.png" class="plot-directive" src="_images/add_waveform_01.png" />
+<figcaption>
+<p><span class="caption-text">(<a class="reference download internal" download="" href="_downloads/79afe3bbaf5ada4e3ae6fdd90673b7cc/add_waveform_01.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/f2923c4f5e653f716f9a3d1d2efa38b6/add_waveform_01.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/c56e0fd2fba714b66390581568758862/add_waveform_01.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="noise.html" class="btn btn-neutral float-left" title="Generating Noise" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="filter.html" class="btn btn-neutral float-right" title="Filtering" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

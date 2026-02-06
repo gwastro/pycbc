@@ -1,0 +1,501 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.neutron_stars.pg_isso_solver &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.neutron_stars.pg_isso_solver</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.neutron_stars.pg_isso_solver</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2022 Francesco Pannarale, Andrew Williamson,</span>
+<span class="c1"># Samuel Higginbotham</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)</span>
+<span class="sd">formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.</span>
+
+<span class="sd">.. _Stone, Loeb, Berger, PRD 87, 084053 (2013):</span>
+<span class="sd">    http://dx.doi.org/10.1103/PhysRevD.87.084053</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">root_scalar</span>
+
+
+<div class="viewcode-block" id="ISCO_solution">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.ISCO_solution">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ISCO_solution</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Analytic solution of the innermost</span>
+<span class="sd">    stable circular orbit (ISCO) for the Kerr metric.</span>
+
+<span class="sd">    ..See eq. (2.21) of</span>
+<span class="sd">    Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)`</span>
+<span class="sd">    https://articles.adsabs.harvard.edu/pdf/1972ApJ...178..347B</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+<span class="sd">    incl: float</span>
+<span class="sd">        inclination angle between the BH spin and the orbital angular</span>
+<span class="sd">        momentum in radians</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="n">sgn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">incl</span><span class="p">))</span>
+    <span class="n">Z1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cbrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cbrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">chi</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cbrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">chi</span><span class="p">))</span>
+    <span class="n">Z2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">+</span> <span class="n">Z1</span> <span class="o">*</span> <span class="n">Z1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">Z2</span> <span class="o">-</span> <span class="n">sgn</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mi">3</span> <span class="o">-</span> <span class="n">Z1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">+</span> <span class="n">Z1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">Z2</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ISSO_eq_at_pole">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ISSO_eq_at_pole</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">chi</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Polynomial that enables the calculation of the Kerr polar</span>
+<span class="sd">    (:math:`\iota = \pm \pi / 2`) innermost stable spherical orbit</span>
+<span class="sd">    (ISSO) radius via the roots of</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        P(r) &amp;= r^3 [r^2 (r - 6) + \chi^2 (3 r + 4)] \\</span>
+<span class="sd">             &amp;\quad + \chi^4 [3 r (r - 2) + \chi^2] \, ,</span>
+
+<span class="sd">    where :math:`\chi` is the BH dimensionless spin parameter. Physical</span>
+<span class="sd">    solutions are between 6 and</span>
+<span class="sd">    :math:`1 + \sqrt{3} + \sqrt{3 + 2 \sqrt{3}}`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    r: float</span>
+<span class="sd">        the radial coordinate in BH mass units</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">r</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">chi2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="o">+</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">chi2</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ISSO_eq_at_pole_dr">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole_dr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ISSO_eq_at_pole_dr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">chi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Partial derivative of :func:`ISSO_eq_at_pole` with respect to r.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    r: float</span>
+<span class="sd">        the radial coordinate in BH mass units</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="n">twlvchi2</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="n">sxchi4</span> <span class="o">=</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="mi">6</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">5</span> <span class="o">-</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">4</span> <span class="o">+</span> <span class="n">twlvchi2</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="n">twlvchi2</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sxchi4</span> <span class="o">*</span> <span class="n">r</span>
+        <span class="o">+</span> <span class="n">sxchi4</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ISSO_eq_at_pole_dr2">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole_dr2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ISSO_eq_at_pole_dr2</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">chi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Double partial derivative of :func:`ISSO_eq_at_pole` with</span>
+<span class="sd">    respect to r.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    r: float</span>
+<span class="sd">        the radial coordinate in BH mass units</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="mi">30</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">4</span> <span class="o">-</span> <span class="mi">120</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">36</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">24</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">r</span>
+        <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PG_ISSO_eq">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">PG_ISSO_eq</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Polynomial that enables the calculation of a generic innermost</span>
+<span class="sd">    stable spherical orbit (ISSO) radius via the roots in :math:`r` of</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        S(r) &amp;= r^8 Z(r) + \chi^2 (1 - \cos(\iota)^2) \\</span>
+<span class="sd">             &amp;\quad * [\chi^2 (1 - \cos(\iota)^2) Y(r) - 2 r^4 X(r)]\,,</span>
+
+<span class="sd">    where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        X(r) &amp;= \chi^2 (\chi^2 (3 \chi^2 + 4 r (2 r - 3)) \\</span>
+<span class="sd">             &amp;\quad + r^2 (15 r (r - 4) + 28)) - 6 r^4 (r^2 - 4) \, ,</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        Y(r) &amp;= \chi^4 (\chi^4 + r^2 [7 r (3 r - 4) + 36]) \\</span>
+<span class="sd">             &amp;\quad + 6 r (r - 2) \\</span>
+<span class="sd">             &amp;\qquad * (\chi^6 + 2 r^3</span>
+<span class="sd">             [\chi^2 (3 r + 2) + 3 r^2 (r - 2)]) \, ,</span>
+
+<span class="sd">    and :math:`Z(r) =` :func:`ISCO_eq`. Physical solutions are between</span>
+<span class="sd">    the equatorial ISSO (i.e. the ISCO) radius (:func:`ISCO_eq`) and</span>
+<span class="sd">    the polar ISSO radius (:func:`ISSO_eq_at_pole`).</span>
+<span class="sd">    See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.</span>
+
+<span class="sd">    .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):</span>
+<span class="sd">        http://dx.doi.org/10.1103/PhysRevD.87.084053</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    r: float</span>
+<span class="sd">        the radial coordinate in BH mass units</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+<span class="sd">    incl: float</span>
+<span class="sd">        inclination angle between the BH spin and the orbital angular</span>
+<span class="sd">        momentum in radians</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="n">chi4</span> <span class="o">=</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">r</span>
+    <span class="n">r4</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">r2</span>
+    <span class="n">three_r</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">r</span>
+    <span class="n">r_minus_2</span> <span class="o">=</span> <span class="n">r</span> <span class="o">-</span> <span class="mi">2</span>
+    <span class="n">sin_incl2</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">incl</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">chi2</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">chi2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">r</span> <span class="o">-</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">15</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">28</span><span class="p">))</span>
+        <span class="o">-</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">r4</span> <span class="o">*</span> <span class="p">(</span><span class="n">r2</span> <span class="o">-</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">chi4</span> <span class="o">*</span> <span class="p">(</span><span class="n">chi4</span> <span class="o">+</span> <span class="n">r2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="n">three_r</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">36</span><span class="p">))</span>
+        <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="n">r_minus_2</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="n">chi4</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">chi2</span> <span class="o">*</span> <span class="p">(</span><span class="n">three_r</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">r_minus_2</span><span class="p">)))</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mi">6</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">chi2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">14</span><span class="p">)</span> <span class="o">-</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">r4</span> <span class="o">*</span> <span class="n">r4</span> <span class="o">*</span> <span class="n">Z</span> <span class="o">+</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">sin_incl2</span> <span class="o">*</span> <span class="p">(</span><span class="n">chi2</span> <span class="o">*</span> <span class="n">sin_incl2</span> <span class="o">*</span> <span class="n">Y</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">r4</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PG_ISSO_eq_dr">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq_dr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">PG_ISSO_eq_dr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Partial derivative of :func:`PG_ISSO_eq` with respect to r.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    r: float</span>
+<span class="sd">        the radial coordinate in BH mass units</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+<span class="sd">    incl: float</span>
+<span class="sd">        inclination angle between the BH spin and the orbital angular</span>
+<span class="sd">        momentum in radians</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sini</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">incl</span><span class="p">)</span>
+    <span class="n">sin2i</span> <span class="o">=</span> <span class="n">sini</span> <span class="o">*</span> <span class="n">sini</span>
+    <span class="n">sin4i</span> <span class="o">=</span> <span class="n">sin2i</span> <span class="o">*</span> <span class="n">sin2i</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="n">chi4</span> <span class="o">=</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="n">chi6</span> <span class="o">=</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="n">chi8</span> <span class="o">=</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">chi4</span>
+    <span class="n">chi10</span> <span class="o">=</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">chi4</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="mi">12</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">11</span> <span class="o">-</span> <span class="mi">132</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">10</span>
+        <span class="o">+</span> <span class="n">r</span><span class="o">**</span><span class="mi">9</span> <span class="o">*</span> <span class="p">(</span><span class="mi">120</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">+</span> <span class="mi">360</span><span class="p">)</span> <span class="o">-</span> <span class="n">r</span><span class="o">**</span><span class="mi">8</span> <span class="o">*</span> <span class="mi">252</span> <span class="o">*</span> <span class="n">chi2</span>
+        <span class="o">+</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">7</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">36</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">-</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">+</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">chi4</span>
+            <span class="o">-</span> <span class="mi">48</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">sin2i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="mi">7</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">6</span> <span class="o">*</span> <span class="p">(</span><span class="mi">120</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">144</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">36</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">-</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">+</span> <span class="mi">144</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin4i</span>
+            <span class="o">-</span> <span class="mi">56</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin2i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">r</span><span class="o">**</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="mi">120</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">240</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">r</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="mi">84</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">-</span> <span class="mi">24</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">192</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mi">84</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin4i</span>
+        <span class="o">+</span> <span class="n">r</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">chi10</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">+</span> <span class="mi">72</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span> <span class="o">-</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">chi10</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PG_ISSO_eq_dr2">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq_dr2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">PG_ISSO_eq_dr2</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Second partial derivative of :func:`PG_ISSO_eq` with respect to</span>
+<span class="sd">    r.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    r: float</span>
+<span class="sd">        the radial coordinate in BH mass units</span>
+<span class="sd">    chi: float</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+<span class="sd">    incl: float</span>
+<span class="sd">        inclination angle between the BH spin and the orbital angular</span>
+<span class="sd">        momentum in radians</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sini</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">incl</span><span class="p">)</span>
+    <span class="n">sin2i</span> <span class="o">=</span> <span class="n">sini</span> <span class="o">*</span> <span class="n">sini</span>
+    <span class="n">sin4i</span> <span class="o">=</span> <span class="n">sin2i</span> <span class="o">*</span> <span class="n">sin2i</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">chi</span>
+    <span class="n">chi4</span> <span class="o">=</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="n">chi6</span> <span class="o">=</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">chi2</span>
+    <span class="n">chi8</span> <span class="o">=</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">chi4</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="mi">132</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">10</span> <span class="o">-</span> <span class="mi">1320</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">9</span>
+        <span class="o">+</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">8</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">+</span> <span class="mi">36</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2016</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">7</span>
+        <span class="o">+</span> <span class="mi">56</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">6</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">36</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">-</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">+</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">chi4</span>
+            <span class="o">-</span> <span class="mi">48</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">sin2i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="mi">42</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">120</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">144</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">4</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">36</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">-</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">+</span> <span class="mi">144</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin4i</span>
+            <span class="o">-</span> <span class="mi">56</span> <span class="o">*</span> <span class="n">chi4</span> <span class="o">*</span> <span class="n">sin2i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">r</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="mi">480</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">960</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">r</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">252</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">-</span> <span class="mi">72</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin2i</span> <span class="o">-</span> <span class="mi">576</span> <span class="o">*</span> <span class="n">chi6</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span>
+        <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="mi">168</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin4i</span>
+        <span class="o">+</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">sin4i</span> <span class="o">+</span> <span class="mi">72</span> <span class="o">*</span> <span class="n">chi8</span> <span class="o">*</span> <span class="n">sin4i</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PG_ISSO_solver">
+<a class="viewcode-back" href="../../../pycbc.neutron_stars.html#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_solver">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">PG_ISSO_solver</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function that determines the radius of the innermost stable</span>
+<span class="sd">    spherical orbit (ISSO) for a Kerr BH and a generic inclination</span>
+<span class="sd">    angle between the BH spin and the orbital angular momentum.</span>
+<span class="sd">    This function finds the appropriate root of :func:`PG_ISSO_eq`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    chi: {float, array}</span>
+<span class="sd">        the BH dimensionless spin parameter</span>
+<span class="sd">    incl: {float, array}</span>
+<span class="sd">        the inclination angle between the BH spin and the orbital</span>
+<span class="sd">        angular momentum in radians</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    solution: array</span>
+<span class="sd">        the radius of the orbit in BH mass units</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Auxiliary variables</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">chi</span><span class="p">):</span>
+        <span class="n">chi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">incl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">incl</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">chi</span><span class="p">)</span>
+    <span class="c1"># ISCO radius for the given spin magnitude</span>
+    <span class="n">rISCO_limit</span> <span class="o">=</span> <span class="n">ISCO_solution</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">)</span>
+    <span class="c1"># If the inclination is 0 or pi, just output the ISCO radius</span>
+    <span class="n">equatorial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">incl</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">incl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">equatorial</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">rISCO_limit</span>
+
+    <span class="c1"># ISSO radius for an inclination of pi/2</span>
+    <span class="c1"># Initial guess is based on the extrema of the polar ISSO radius equation,</span>
+    <span class="c1"># that are: r=6 (chi=1) and r=1+sqrt(3)+sqrt(3+sqrt(12))=5.274... (chi=0)</span>
+    <span class="n">initial_guess</span> <span class="o">=</span> <span class="p">[</span><span class="mf">5.27451056440629</span> <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="mi">6</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chi</span><span class="p">]</span>
+    <span class="n">rISSO_at_pole_limit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">root_scalar</span><span class="p">(</span>
+            <span class="n">ISSO_eq_at_pole</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">g0</span><span class="p">,</span> <span class="n">fprime</span><span class="o">=</span><span class="n">ISSO_eq_at_pole_dr</span><span class="p">,</span>
+            <span class="n">fprime2</span><span class="o">=</span><span class="n">ISSO_eq_at_pole_dr2</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="o">.</span><span class="n">root</span>
+        <span class="k">for</span> <span class="n">g0</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_guess</span><span class="p">,</span> <span class="n">chi</span><span class="p">)])</span>
+    <span class="c1"># If the inclination is pi/2, just output the ISSO radius at the pole(s)</span>
+    <span class="n">polar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">incl</span><span class="p">,</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">polar</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">rISSO_at_pole_limit</span>
+
+    <span class="c1"># Otherwise, find the ISSO radius for a generic inclination</span>
+    <span class="n">initial_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">rISCO_limit</span><span class="p">,</span> <span class="n">rISSO_at_pole_limit</span><span class="p">)</span>
+    <span class="n">initial_lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">rISCO_limit</span><span class="p">,</span> <span class="n">rISSO_at_pole_limit</span><span class="p">)</span>
+    <span class="n">brackets</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">bl</span><span class="p">,</span> <span class="n">bh</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">c</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">PG_ISSO_eq</span><span class="p">(</span><span class="n">bl</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">inc</span><span class="p">)</span> <span class="o">*</span>
+                     <span class="n">PG_ISSO_eq</span><span class="p">(</span><span class="n">bh</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">inc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">bl</span><span class="p">,</span> <span class="n">bh</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">inc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_lo</span><span class="p">,</span> <span class="n">initial_hi</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">)]</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">root_scalar</span><span class="p">(</span>
+            <span class="n">PG_ISSO_eq</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">g0</span><span class="p">,</span> <span class="n">fprime</span><span class="o">=</span><span class="n">PG_ISSO_eq_dr</span><span class="p">,</span> <span class="n">bracket</span><span class="o">=</span><span class="n">bracket</span><span class="p">,</span>
+            <span class="n">fprime2</span><span class="o">=</span><span class="n">PG_ISSO_eq_dr2</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">inc</span><span class="p">),</span> <span class="n">xtol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span><span class="o">.</span><span class="n">root</span>
+        <span class="k">for</span> <span class="n">g0</span><span class="p">,</span> <span class="n">bracket</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">inc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_hi</span><span class="p">,</span> <span class="n">brackets</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">)])</span>
+    <span class="n">oob</span> <span class="o">=</span> <span class="p">(</span><span class="n">solution</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">solution</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">oob</span><span class="p">):</span>
+        <span class="n">solution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">root_scalar</span><span class="p">(</span>
+                <span class="n">PG_ISSO_eq</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">g0</span><span class="p">,</span> <span class="n">fprime</span><span class="o">=</span><span class="n">PG_ISSO_eq_dr</span><span class="p">,</span> <span class="n">bracket</span><span class="o">=</span><span class="n">bracket</span><span class="p">,</span>
+                <span class="n">fprime2</span><span class="o">=</span><span class="n">PG_ISSO_eq_dr2</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">inc</span><span class="p">))</span><span class="o">.</span><span class="n">root</span>
+            <span class="k">if</span> <span class="n">ob</span> <span class="k">else</span> <span class="n">sol</span> <span class="k">for</span> <span class="n">g0</span><span class="p">,</span> <span class="n">bracket</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">inc</span><span class="p">,</span> <span class="n">ob</span><span class="p">,</span> <span class="n">sol</span>
+            <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">initial_lo</span><span class="p">,</span> <span class="n">brackets</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">incl</span><span class="p">,</span> <span class="n">oob</span><span class="p">,</span> <span class="n">solution</span><span class="p">)</span>
+            <span class="p">])</span>
+        <span class="n">oob</span> <span class="o">=</span> <span class="p">(</span><span class="n">solution</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">solution</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">oob</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to obtain some solutions!&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">solution</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

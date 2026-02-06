@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.live package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.neutron_stars package" href="pycbc.neutron_stars.html" />
+    <link rel="prev" title="pycbc.io package" href="pycbc.io.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.live package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.live.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-live-package">
+<h1>pycbc.live package<a class="headerlink" href="#pycbc-live-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.live.significance_fits">
+<span id="pycbc-live-significance-fits-module"></span><h2>pycbc.live.significance_fits module<a class="headerlink" href="#module-pycbc.live.significance_fits" title="Link to this heading"></a></h2>
+<p>Functions for defining the live significance fits</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.significance_fits.add_live_significance_duration_bin_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.significance_fits.</span></span><span class="sig-name descname"><span class="pre">add_live_significance_duration_bin_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/significance_fits.html#add_live_significance_duration_bin_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.significance_fits.add_live_significance_duration_bin_options" title="Link to this definition"></a></dt>
+<dd><p>Add options used to calculate duration bin edges in live
+singles significance fits</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.significance_fits.add_live_significance_trigger_pruning_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.significance_fits.</span></span><span class="sig-name descname"><span class="pre">add_live_significance_trigger_pruning_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/significance_fits.html#add_live_significance_trigger_pruning_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.significance_fits.add_live_significance_trigger_pruning_options" title="Link to this definition"></a></dt>
+<dd><p>Add options used for pruning in live singles significance fits</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.significance_fits.duration_bins_from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.significance_fits.</span></span><span class="sig-name descname"><span class="pre">duration_bins_from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/significance_fits.html#duration_bins_from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.significance_fits.duration_bins_from_cli" title="Link to this definition"></a></dt>
+<dd><p>Create the duration bins from CLI options.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.significance_fits.verify_live_significance_duration_bin_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.significance_fits.</span></span><span class="sig-name descname"><span class="pre">verify_live_significance_duration_bin_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/significance_fits.html#verify_live_significance_duration_bin_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.significance_fits.verify_live_significance_duration_bin_options" title="Link to this definition"></a></dt>
+<dd><p>Verify options used to calculate duration bin edges in live
+singles significance fits</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.significance_fits.verify_live_significance_trigger_pruning_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.significance_fits.</span></span><span class="sig-name descname"><span class="pre">verify_live_significance_trigger_pruning_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/significance_fits.html#verify_live_significance_trigger_pruning_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.significance_fits.verify_live_significance_trigger_pruning_options" title="Link to this definition"></a></dt>
+<dd><p>Verify options used for pruning in live singles significance fits</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.live.snr_optimizer">
+<span id="pycbc-live-snr-optimizer-module"></span><h2>pycbc.live.snr_optimizer module<a class="headerlink" href="#module-pycbc.live.snr_optimizer" title="Link to this heading"></a></h2>
+<p>This module contains functions for optimizing the signal-to-noise ratio
+of triggers produced by PyCBC Live. Also contained within this module are the
+command line arguments required and options group for the SNR optimization.
+This module is primarily used in the pycbc_optimize_snr program.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.callback_func">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">callback_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convergence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#callback_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.callback_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.check_snr_optimizer_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">check_snr_optimizer_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#check_snr_optimizer_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.check_snr_optimizer_options" title="Link to this definition"></a></dt>
+<dd><p>Deal with default options and required parameters given optimizer option</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.compute_minus_network_snr">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">compute_minus_network_snr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#compute_minus_network_snr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.compute_minus_network_snr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.compute_minus_network_snr_pso">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">compute_minus_network_snr_pso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">argv</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#compute_minus_network_snr_pso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.compute_minus_network_snr_pso" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.compute_network_snr_core">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">compute_network_snr_core</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coinc_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approximant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raise_err</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#compute_network_snr_core"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.compute_network_snr_core" title="Link to this definition"></a></dt>
+<dd><p>Compute network SNR as a function over mchirp, eta, and two aligned
+spin components, stored in that order in the sequence v.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – A list containing the input values for mchirp, eta, and spin
+components.</p></li>
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – A dictionary containing keys of ifos (‘H1’, ‘L1’) and
+values of the frequency series data for those ifos</p></li>
+<li><p><strong>coinc_times</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – A dictionary containing the coincidence times for the network.</p></li>
+<li><p><strong>ifos</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – A list of the ifos, e.g. [‘H1’, ‘L1’]</p></li>
+<li><p><strong>flen</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The length of the data.</p></li>
+<li><p><strong>approximant</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The approximant used for the waveform model.</p></li>
+<li><p><strong>flow</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The lower frequency bound.</p></li>
+<li><p><strong>f_end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The upper frequency bound.</p></li>
+<li><p><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency spacing.</p></li>
+<li><p><strong>sample_rate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The sampling rate of the data.</p></li>
+<li><p><strong>raise_err</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – A flag indicating whether to raise an error if an exception
+occurs during the computation. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>network_snr</strong> (<em>float</em>) – The computed network SNR (Signal-to-Noise Ratio) value.</p></li>
+<li><p><strong>snr_series_dict</strong> (<em>dict</em>) – A dictionary containing the snr timeseries from each ifo.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.insert_snr_optimizer_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">insert_snr_optimizer_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#insert_snr_optimizer_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.insert_snr_optimizer_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.optimize_di">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">optimize_di</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cli_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#optimize_di"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.optimize_di" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.optimize_pso">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">optimize_pso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cli_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#optimize_pso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.optimize_pso" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.snr_optimizer.optimize_shgo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.snr_optimizer.</span></span><span class="sig-name descname"><span class="pre">optimize_shgo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cli_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_point</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/snr_optimizer.html#optimize_shgo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.snr_optimizer.optimize_shgo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.live.supervision">
+<span id="pycbc-live-supervision-module"></span><h2>pycbc.live.supervision module<a class="headerlink" href="#module-pycbc.live.supervision" title="Link to this heading"></a></h2>
+<p>This module contains functions for supervising codes to run regularly
+during pycbc_live production, taking input from the search and returning
+files which can be used in the search.
+This module is primarily used in the pycbc_live_supervise_* programs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.supervision.dict_to_args">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.supervision.</span></span><span class="sig-name descname"><span class="pre">dict_to_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/supervision.html#dict_to_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.supervision.dict_to_args" title="Link to this definition"></a></dt>
+<dd><p>Convert an option dictionary into a list to be used by subprocess.run</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.supervision.ensure_directories">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.supervision.</span></span><span class="sig-name descname"><span class="pre">ensure_directories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">control_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/supervision.html#ensure_directories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.supervision.ensure_directories" title="Link to this definition"></a></dt>
+<dd><p>Ensure that the required directories exist</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.supervision.mail_volunteers_error">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.supervision.</span></span><span class="sig-name descname"><span class="pre">mail_volunteers_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">controls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mail_body_lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/supervision.html#mail_volunteers_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.supervision.mail_volunteers_error" title="Link to this definition"></a></dt>
+<dd><p>Email a list of people, defined by mail-volunteers-file
+To be used for errors or unusual occurences</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.supervision.run_and_error">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.supervision.</span></span><span class="sig-name descname"><span class="pre">run_and_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command_arguments</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/supervision.html#run_and_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.supervision.run_and_error" title="Link to this definition"></a></dt>
+<dd><p>Wrapper around subprocess.run to catch errors and send emails if required</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.supervision.symlink">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.supervision.</span></span><span class="sig-name descname"><span class="pre">symlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">link_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/supervision.html#symlink"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.supervision.symlink" title="Link to this definition"></a></dt>
+<dd><p>Create a symbolic link replacing the destination and checking for
+errors.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.live.supervision.wait_for_utc_time">
+<span class="sig-prename descclassname"><span class="pre">pycbc.live.supervision.</span></span><span class="sig-name descname"><span class="pre">wait_for_utc_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/live/supervision.html#wait_for_utc_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.live.supervision.wait_for_utc_time" title="Link to this definition"></a></dt>
+<dd><p>Wait until the UTC time is as given by <cite>target_str</cite>, in HH:MM:SS format.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.live">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.live" title="Link to this heading"></a></h2>
+<p>This packages contains modules to help with pycbc live running</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.io.html" class="btn btn-neutral float-left" title="pycbc.io package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.neutron_stars.html" class="btn btn-neutral float-right" title="pycbc.neutron_stars package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

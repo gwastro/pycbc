@@ -1,0 +1,497 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.neutron_stars package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.noise package" href="pycbc.noise.html" />
+    <link rel="prev" title="pycbc.live package" href="pycbc.live.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.neutron_stars package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.neutron_stars.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-neutron-stars-package">
+<h1>pycbc.neutron_stars package<a class="headerlink" href="#pycbc-neutron-stars-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.neutron_stars.eos_utils">
+<span id="pycbc-neutron-stars-eos-utils-module"></span><h2>pycbc.neutron_stars.eos_utils module<a class="headerlink" href="#module-pycbc.neutron_stars.eos_utils" title="Link to this heading"></a></h2>
+<p>Utility functions for handling NS equations of state</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.eos_utils.foucart18">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.eos_utils.</span></span><span class="sig-name descname"><span class="pre">foucart18</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ns_compactness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ns_b_mass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bh_spin_mag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bh_spin_pol</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/eos_utils.html#foucart18"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.eos_utils.foucart18" title="Link to this definition"></a></dt>
+<dd><p>Function that determines the remnant disk mass of an NS-BH system
+using the fit to numerical-relativity results discussed in
+<a class="reference external" href="https://doi.org/10.1103/PhysRevD.98.081501">Foucart, Hinderer &amp; Nissanke, PRD 98, 081501(R) (2018)</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eta</strong> (<em>{float</em><em>, </em><em>array}</em>) – The symmetric mass ratio of the system
+(note: primary is assumed to be the BH).</p></li>
+<li><p><strong>ns_compactness</strong> (<em>{float</em><em>, </em><em>array}</em>) – NS compactness parameter.</p></li>
+<li><p><strong>ns_b_mass</strong> (<em>{float</em><em>, </em><em>array}</em>) – Baryonic mass of the NS.</p></li>
+<li><p><strong>bh_spin_mag</strong> (<em>{float</em><em>, </em><em>array}</em>) – Dimensionless spin magnitude of the BH.</p></li>
+<li><p><strong>bh_spin_pol</strong> (<em>{float</em><em>, </em><em>array}</em>) – The tilt angle of the BH spin.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.eos_utils.initialize_eos">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.eos_utils.</span></span><span class="sig-name descname"><span class="pre">initialize_eos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ns_mass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/eos_utils.html#initialize_eos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.eos_utils.initialize_eos" title="Link to this definition"></a></dt>
+<dd><p>Load an equation of state and return the compactness and baryonic
+mass for a given neutron star mass</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ns_mass</strong> (<em>{float</em><em>, </em><em>array}</em>) – The gravitational mass of the neutron star, in solar masses.</p></li>
+<li><p><strong>eos</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the equation of state.</p></li>
+<li><p><strong>extrapolate</strong> (<em>boolean</em><em>, </em><em>optional</em>) – Invoke extrapolation in scipy.interpolate.interp1d in the low-mass
+regime. In the high-mass regime, the maximum NS mass supported by the
+equation of state is not allowed to be exceeded. Default is False
+(so ValueError is raised whenever ns_mass is out of bounds).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ns_compactness</strong> (<em>float</em>) – Compactness parameter of the neutron star.</p></li>
+<li><p><strong>ns_b_mass</strong> (<em>float</em>) – Baryonic mass of the neutron star.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.eos_utils.interp_grav_mass_to_baryon_mass">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.eos_utils.</span></span><span class="sig-name descname"><span class="pre">interp_grav_mass_to_baryon_mass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ns_g_mass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ns_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/eos_utils.html#interp_grav_mass_to_baryon_mass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.eos_utils.interp_grav_mass_to_baryon_mass" title="Link to this definition"></a></dt>
+<dd><p>Determines the baryonic mass of an NS given its gravitational
+mass and an NS equilibrium sequence (in solar masses).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ns_g_mass</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – NS gravitational mass (in solar masses)</p></li>
+<li><p><strong>ns_sequence</strong> (<em>numpy.array</em>) – Contains the sequence data in the form NS gravitational
+mass (in solar masses), NS baryonic mass (in solar
+masses), NS compactness (dimensionless)</p></li>
+<li><p><strong>extrapolate</strong> (<em>boolean</em><em>, </em><em>optional</em>) – Invoke extrapolation in scipy.interpolate.interp1d.
+Default is False (so ValueError is raised for ns_g_mass out of bounds)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.eos_utils.interp_grav_mass_to_compactness">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.eos_utils.</span></span><span class="sig-name descname"><span class="pre">interp_grav_mass_to_compactness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ns_g_mass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ns_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrapolate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/eos_utils.html#interp_grav_mass_to_compactness"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.eos_utils.interp_grav_mass_to_compactness" title="Link to this definition"></a></dt>
+<dd><p>Determines the dimensionless compactness parameter of an NS given
+its gravitational mass and an NS equilibrium sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ns_g_mass</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – NS gravitational mass (in solar masses)</p></li>
+<li><p><strong>ns_sequence</strong> (<em>numpy.array</em>) – Contains the sequence data in the form NS gravitational
+mass (in solar masses), NS baryonic mass (in solar
+masses), NS compactness (dimensionless)</p></li>
+<li><p><strong>extrapolate</strong> (<em>boolean</em><em>, </em><em>optional</em>) – Invoke extrapolation in scipy.interpolate.interp1d.
+Default is False (so ValueError is raised for ns_g_mass out of bounds)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.eos_utils.load_ns_sequence">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.eos_utils.</span></span><span class="sig-name descname"><span class="pre">load_ns_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eos_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/eos_utils.html#load_ns_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.eos_utils.load_ns_sequence" title="Link to this definition"></a></dt>
+<dd><p>Load the data of an NS non-rotating equilibrium sequence generated
+using the equation of state (EOS) chosen by the user.
+File format is: grav mass (Msun), baryonic mass (Msun), compactness</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>eos_name</strong> (<em>string</em>) – NS equation of state label (‘2H’ is the only supported
+choice at the moment)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ns_sequence</strong> (<em>numpy.array</em>) – contains the sequence data in the form NS gravitational
+mass (in solar masses), NS baryonic mass (in solar
+masses), NS compactness (dimensionless)</p></li>
+<li><p><strong>max_ns_g_mass</strong> (<em>float</em>) – the maximum NS gravitational mass (in solar masses) in
+the sequence (this is the mass of the most massive stable
+NS)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.neutron_stars.pg_isso_solver">
+<span id="pycbc-neutron-stars-pg-isso-solver-module"></span><h2>pycbc.neutron_stars.pg_isso_solver module<a class="headerlink" href="#module-pycbc.neutron_stars.pg_isso_solver" title="Link to this heading"></a></h2>
+<p>Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)
+formalism. See <a class="reference external" href="http://dx.doi.org/10.1103/PhysRevD.87.084053">Stone, Loeb, Berger, PRD 87, 084053 (2013)</a>.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.ISCO_solution">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">ISCO_solution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#ISCO_solution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.ISCO_solution" title="Link to this definition"></a></dt>
+<dd><p>Analytic solution of the innermost
+stable circular orbit (ISCO) for the Kerr metric.</p>
+<p>..See eq. (2.21) of
+Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)`
+<a class="reference external" href="https://articles.adsabs.harvard.edu/pdf/1972ApJ...178..347B">https://articles.adsabs.harvard.edu/pdf/1972ApJ…178..347B</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+<li><p><strong>incl</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – inclination angle between the BH spin and the orbital angular
+momentum in radians</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">ISSO_eq_at_pole</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#ISSO_eq_at_pole"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole" title="Link to this definition"></a></dt>
+<dd><p>Polynomial that enables the calculation of the Kerr polar
+(<span class="math notranslate nohighlight">\(\iota = \pm \pi / 2\)</span>) innermost stable spherical orbit
+(ISSO) radius via the roots of</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}P(r) &amp;= r^3 [r^2 (r - 6) + \chi^2 (3 r + 4)] \\
+     &amp;\quad + \chi^4 [3 r (r - 2) + \chi^2] \, ,\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\chi\)</span> is the BH dimensionless spin parameter. Physical
+solutions are between 6 and
+<span class="math notranslate nohighlight">\(1 + \sqrt{3} + \sqrt{3 + 2 \sqrt{3}}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the radial coordinate in BH mass units</p></li>
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole_dr">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">ISSO_eq_at_pole_dr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#ISSO_eq_at_pole_dr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole_dr" title="Link to this definition"></a></dt>
+<dd><p>Partial derivative of <a class="reference internal" href="#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole" title="pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole"><code class="xref py py-func docutils literal notranslate"><span class="pre">ISSO_eq_at_pole()</span></code></a> with respect to r.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the radial coordinate in BH mass units</p></li>
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole_dr2">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">ISSO_eq_at_pole_dr2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#ISSO_eq_at_pole_dr2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole_dr2" title="Link to this definition"></a></dt>
+<dd><p>Double partial derivative of <a class="reference internal" href="#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole" title="pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole"><code class="xref py py-func docutils literal notranslate"><span class="pre">ISSO_eq_at_pole()</span></code></a> with
+respect to r.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the radial coordinate in BH mass units</p></li>
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">PG_ISSO_eq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#PG_ISSO_eq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq" title="Link to this definition"></a></dt>
+<dd><p>Polynomial that enables the calculation of a generic innermost
+stable spherical orbit (ISSO) radius via the roots in <span class="math notranslate nohighlight">\(r\)</span> of</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}S(r) &amp;= r^8 Z(r) + \chi^2 (1 - \cos(\iota)^2) \\
+     &amp;\quad * [\chi^2 (1 - \cos(\iota)^2) Y(r) - 2 r^4 X(r)]\,,\end{split}\]</div>
+<p>where</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}X(r) &amp;= \chi^2 (\chi^2 (3 \chi^2 + 4 r (2 r - 3)) \\
+     &amp;\quad + r^2 (15 r (r - 4) + 28)) - 6 r^4 (r^2 - 4) \, ,\end{split}\]</div>
+<div class="math notranslate nohighlight">
+\[\begin{split}Y(r) &amp;= \chi^4 (\chi^4 + r^2 [7 r (3 r - 4) + 36]) \\
+     &amp;\quad + 6 r (r - 2) \\
+     &amp;\qquad * (\chi^6 + 2 r^3
+     [\chi^2 (3 r + 2) + 3 r^2 (r - 2)]) \, ,\end{split}\]</div>
+<p>and <span class="math notranslate nohighlight">\(Z(r) =\)</span> <code class="xref py py-func docutils literal notranslate"><span class="pre">ISCO_eq()</span></code>. Physical solutions are between
+the equatorial ISSO (i.e. the ISCO) radius (<code class="xref py py-func docutils literal notranslate"><span class="pre">ISCO_eq()</span></code>) and
+the polar ISSO radius (<a class="reference internal" href="#pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole" title="pycbc.neutron_stars.pg_isso_solver.ISSO_eq_at_pole"><code class="xref py py-func docutils literal notranslate"><span class="pre">ISSO_eq_at_pole()</span></code></a>).
+See <a class="reference external" href="http://dx.doi.org/10.1103/PhysRevD.87.084053">Stone, Loeb, Berger, PRD 87, 084053 (2013)</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the radial coordinate in BH mass units</p></li>
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+<li><p><strong>incl</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – inclination angle between the BH spin and the orbital angular
+momentum in radians</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq_dr">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">PG_ISSO_eq_dr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#PG_ISSO_eq_dr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq_dr" title="Link to this definition"></a></dt>
+<dd><p>Partial derivative of <a class="reference internal" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq" title="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq"><code class="xref py py-func docutils literal notranslate"><span class="pre">PG_ISSO_eq()</span></code></a> with respect to r.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the radial coordinate in BH mass units</p></li>
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+<li><p><strong>incl</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – inclination angle between the BH spin and the orbital angular
+momentum in radians</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq_dr2">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">PG_ISSO_eq_dr2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#PG_ISSO_eq_dr2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq_dr2" title="Link to this definition"></a></dt>
+<dd><p>Second partial derivative of <a class="reference internal" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq" title="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq"><code class="xref py py-func docutils literal notranslate"><span class="pre">PG_ISSO_eq()</span></code></a> with respect to
+r.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the radial coordinate in BH mass units</p></li>
+<li><p><strong>chi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – the BH dimensionless spin parameter</p></li>
+<li><p><strong>incl</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – inclination angle between the BH spin and the orbital angular
+momentum in radians</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_solver">
+<span class="sig-prename descclassname"><span class="pre">pycbc.neutron_stars.pg_isso_solver.</span></span><span class="sig-name descname"><span class="pre">PG_ISSO_solver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">incl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/neutron_stars/pg_isso_solver.html#PG_ISSO_solver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_solver" title="Link to this definition"></a></dt>
+<dd><p>Function that determines the radius of the innermost stable
+spherical orbit (ISSO) for a Kerr BH and a generic inclination
+angle between the BH spin and the orbital angular momentum.
+This function finds the appropriate root of <a class="reference internal" href="#pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq" title="pycbc.neutron_stars.pg_isso_solver.PG_ISSO_eq"><code class="xref py py-func docutils literal notranslate"><span class="pre">PG_ISSO_eq()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chi</strong> (<em>{float</em><em>, </em><em>array}</em>) – the BH dimensionless spin parameter</p></li>
+<li><p><strong>incl</strong> (<em>{float</em><em>, </em><em>array}</em>) – the inclination angle between the BH spin and the orbital
+angular momentum in radians</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>solution</strong> – the radius of the orbit in BH mass units</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.neutron_stars">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.neutron_stars" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.live.html" class="btn btn-neutral float-left" title="pycbc.live package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.noise.html" class="btn btn-neutral float-right" title="pycbc.noise package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

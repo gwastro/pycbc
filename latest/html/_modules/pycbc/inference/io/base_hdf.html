@@ -1,0 +1,1248 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.io.base_hdf &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">pycbc.inference.io</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.io.base_hdf</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.io.base_hdf</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016 Christopher M. Biwer, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># self.option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;This modules defines functions for reading and writing samples that the</span>
+<span class="sd">inference samplers generate.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inject</span><span class="w"> </span><span class="kn">import</span> <span class="n">InjectionSet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">dump_state</span><span class="p">,</span> <span class="n">load_state</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkflowConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span>
+
+
+<div class="viewcode-block" id="format_attr">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.format_attr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_attr</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Formats an attr so that it can be read in either python 2 or 3.</span>
+
+<span class="sd">    In python 2, strings that are saved as an attribute in an hdf file default</span>
+<span class="sd">    to unicode. Since unicode was removed in python 3, if you load that file</span>
+<span class="sd">    in a python 3 environment, the strings will be read as bytes instead, which</span>
+<span class="sd">    causes a number of issues. This attempts to fix that. If the value is</span>
+<span class="sd">    a bytes string, then it will be decoded into a string. If the value is</span>
+<span class="sd">    a numpy array of byte strings, it will convert the array to a list of</span>
+<span class="sd">    strings.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    val : obj</span>
+<span class="sd">        The value to format. This will try to apply decoding to the value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    obj</span>
+<span class="sd">        If ``val`` was a byte string, the value as a ``str``. If the value</span>
+<span class="sd">        was a numpy array of ``bytes_``, the value as a list of ``str``.</span>
+<span class="sd">        Otherwise, just returns the value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bytes_</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unicode_</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">val</span></div>
+
+
+
+<div class="viewcode-block" id="BaseInferenceFile">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseInferenceFile</span><span class="p">(</span><span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all inference hdf files.</span>
+
+<span class="sd">    This is a subclass of the h5py.File object. It adds functions for</span>
+<span class="sd">    handling reading and writing the samples from the samplers.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The path to the HDF file.</span>
+<span class="sd">    mode : {None, str}</span>
+<span class="sd">        The mode to open the file, eg. &quot;w&quot; for write and &quot;r&quot; for read.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">samples_group</span> <span class="o">=</span> <span class="s1">&#39;samples&#39;</span>
+    <span class="n">sampler_group</span> <span class="o">=</span> <span class="s1">&#39;sampler_info&#39;</span>
+    <span class="n">data_group</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span>
+    <span class="n">injections_group</span> <span class="o">=</span> <span class="s1">&#39;injections&#39;</span>
+    <span class="n">config_group</span> <span class="o">=</span> <span class="s1">&#39;config_file&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BaseInferenceFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># check that file type matches self</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filetype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;filetype&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;w&#39;</span><span class="p">:</span>
+                <span class="c1"># first time creating the file, add this class&#39;s name</span>
+                <span class="n">filetype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;filetype&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">filetype</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filetype</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filetype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">filetype</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">filetype</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This file has filetype </span><span class="si">{}</span><span class="s2">, whereas this class &quot;</span>
+                             <span class="s2">&quot;is named </span><span class="si">{}</span><span class="s2">. This indicates that the file was &quot;</span>
+                             <span class="s2">&quot;not written by this class, and so cannot be &quot;</span>
+                             <span class="s2">&quot;read by this class.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filetype</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Things stored in ``.attrs`` are promoted to instance attributes.</span>
+
+<span class="sd">        Note that properties will be called before this, so if there are any</span>
+<span class="sd">        properties that share the same name as something in ``.attrs``, that</span>
+<span class="sd">        property will get returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BaseInferenceFile.getattrs">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.getattrs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getattrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">create_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for getting the `attrs` from the file or group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            Get the attrs of the specified group. If None or ``/``, will</span>
+<span class="sd">            retrieve the file&#39;s ``attrs``.</span>
+<span class="sd">        create_missing: bool, optional</span>
+<span class="sd">            If ``group`` is provided, but doesn&#39;t yet exist in the file, create</span>
+<span class="sd">            the group. Otherwise, a KeyError will be raised. Default is True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        h5py.File.attrs</span>
+<span class="sd">            An attrs instance of the file or requested group.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s2">&quot;/&quot;</span><span class="p">:</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">create_missing</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+                    <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">return</span> <span class="n">attrs</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_samples">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;This should write all of the provided samples.</span>
+
+<span class="sd">        This function should be used to write both samples and model stats.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        samples : dict</span>
+<span class="sd">            Samples should be provided as a dictionary of numpy arrays.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            Any other keyword args the sampler needs to write data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.parse_parameters">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.parse_parameters">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">array_class</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses a parameters arg to figure out what fields need to be loaded.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parameters : (list of) strings</span>
+<span class="sd">            The parameter(s) to retrieve. A parameter can be the name of any</span>
+<span class="sd">            field in ``samples_group``, a virtual field or method of</span>
+<span class="sd">            ``FieldArray`` (as long as the file contains the necessary fields</span>
+<span class="sd">            to derive the virtual field or method), and/or a function of</span>
+<span class="sd">            these.</span>
+<span class="sd">        array_class : array class, optional</span>
+<span class="sd">            The type of array to use to parse the parameters. The class must</span>
+<span class="sd">            have a ``parse_parameters`` method. Default is to use a</span>
+<span class="sd">            ``FieldArray``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list :</span>
+<span class="sd">            A list of strings giving the fields to load from the file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the type of array class to use</span>
+        <span class="k">if</span> <span class="n">array_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">array_class</span> <span class="o">=</span> <span class="n">FieldArray</span>
+        <span class="c1"># get the names of fields needed for the given parameters</span>
+        <span class="n">possible_fields</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">array_class</span><span class="o">.</span><span class="n">parse_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">possible_fields</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">array_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Reads samples for the given parameter(s).</span>
+
+<span class="sd">        The ``parameters`` can be the name of any dataset in ``samples_group``,</span>
+<span class="sd">        a virtual field or method of ``FieldArray`` (as long as the file</span>
+<span class="sd">        contains the necessary fields to derive the virtual field or method),</span>
+<span class="sd">        and/or any numpy function of these.</span>
+
+<span class="sd">        The ``parameters`` are parsed to figure out what datasets are needed.</span>
+<span class="sd">        Only those datasets will be loaded, and will be the base-level fields</span>
+<span class="sd">        of the returned ``FieldArray``.</span>
+
+<span class="sd">        The ``static_params`` are also added as attributes of the returned</span>
+<span class="sd">        ``FieldArray``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        parameters : (list of) strings</span>
+<span class="sd">            The parameter(s) to retrieve.</span>
+<span class="sd">        array_class : FieldArray-like class, optional</span>
+<span class="sd">            The type of array to return. The class must have ``from_kwargs``</span>
+<span class="sd">            and ``parse_parameters`` methods. If None, will return a</span>
+<span class="sd">            ``FieldArray``.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to ``read_raw_samples``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FieldArray :</span>
+<span class="sd">            The samples as a ``FieldArray``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the type of array class to use</span>
+        <span class="k">if</span> <span class="n">array_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">array_class</span> <span class="o">=</span> <span class="n">FieldArray</span>
+        <span class="c1"># get the names of fields needed for the given parameters</span>
+        <span class="n">possible_fields</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">loadfields</span> <span class="o">=</span> <span class="n">array_class</span><span class="o">.</span><span class="n">parse_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">possible_fields</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span><span class="n">loadfields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># convert to FieldArray</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">array_class</span><span class="o">.</span><span class="n">from_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">samples</span><span class="p">)</span>
+        <span class="c1"># add the static params and attributes</span>
+        <span class="n">addatrs</span> <span class="o">=</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="o">+</span>
+                   <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="n">addatrs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">loadfields</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">format_attr</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">format_attr</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">samples</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_raw_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_raw_samples">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Low level function for reading datasets in the samples group.</span>
+
+<span class="sd">        This should return a dictionary of numpy arrays.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.extra_args_parser">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.extra_args_parser">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extra_args_parser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Provides a parser that can be used to parse sampler-specific command</span>
+<span class="sd">        line options for loading samples.</span>
+
+<span class="sd">        This is optional. Inheriting classes may override this if they want to</span>
+<span class="sd">        implement their own options.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parser : argparse.ArgumentParser, optional</span>
+<span class="sd">            Instead of creating a parser, add arguments to the given one. If</span>
+<span class="sd">            none provided, will create one.</span>
+<span class="sd">        skip_args : list, optional</span>
+<span class="sd">            Don&#39;t include the given options. Options should be given as the</span>
+<span class="sd">            option string, minus the &#39;--&#39;. For example,</span>
+<span class="sd">            ``skip_args=[&#39;iteration&#39;]`` would cause the ``--iteration``</span>
+<span class="sd">            argument not to be included.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to the parser that is</span>
+<span class="sd">            created.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        parser : argparse.ArgumentParser or None</span>
+<span class="sd">            If this class adds extra arguments, an argument parser with the</span>
+<span class="sd">            extra arguments. Otherwise, will just return whatever was passed</span>
+<span class="sd">            for the ``parser`` argument (default is None).</span>
+<span class="sd">        actions : list of argparse.Action</span>
+<span class="sd">            List of the actions that were added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parser</span><span class="p">,</span> <span class="p">[]</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_optional_args</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">err_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convenience function to retrieve arguments from an argparse</span>
+<span class="sd">        namespace.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args : list of str</span>
+<span class="sd">            List of arguments to retreive.</span>
+<span class="sd">        opts : argparse.namespace</span>
+<span class="sd">            Namespace to retreive arguments for.</span>
+<span class="sd">        err_on_missing : bool, optional</span>
+<span class="sd">            If an argument is not found in the namespace, raise an</span>
+<span class="sd">            AttributeError. Otherwise, just pass. Default is False.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are added to the return dictionary.</span>
+<span class="sd">            Any keyword argument that is the same as an argument in ``args``</span>
+<span class="sd">            will override what was retrieved from ``opts``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary mapping arguments to values retrieved from ``opts``. If</span>
+<span class="sd">            keyword arguments were provided, these will also be included in the</span>
+<span class="sd">            dictionary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">parsed</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">err_on_missing</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+        <span class="n">parsed</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parsed</span>
+
+<div class="viewcode-block" id="BaseInferenceFile.samples_from_cli">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.samples_from_cli">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples_from_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Reads samples from the given command-line options.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        opts : argparse Namespace</span>
+<span class="sd">            The options with the settings to use for loading samples (the sort</span>
+<span class="sd">            of thing returned by ``ArgumentParser().parse_args``).</span>
+<span class="sd">        parameters : (list of) str, optional</span>
+<span class="sd">            A list of the parameters to load. If none provided, will try to</span>
+<span class="sd">            get the parameters to load from ``opts.parameters``.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to ``read_samples``. These</span>
+<span class="sd">            will override any options with the same name.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FieldArray :</span>
+<span class="sd">            Array of the loaded samples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="k">elif</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="c1"># parse optional arguments</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">extra_actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_args_parser</span><span class="p">()</span>
+        <span class="n">extra_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">act</span><span class="o">.</span><span class="n">dest</span> <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">extra_actions</span><span class="p">]</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_optional_args</span><span class="p">(</span><span class="n">extra_args</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_samples</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of the static_params. The keys are the argument</span>
+<span class="sd">        names, values are the value they were set to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;static_params&quot;</span><span class="p">]}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">effective_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the effective number of samples stored in the file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;effective_nsamples&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="BaseInferenceFile.write_effective_nsamples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_effective_nsamples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_effective_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">effective_nsamples</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the effective number of samples stored in the file.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;effective_nsamples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">effective_nsamples</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The default start index to use when reading samples.</span>
+
+<span class="sd">        Unless overridden by sub-class attribute, just returns 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The default interval to use when reading samples.</span>
+
+<span class="sd">        Unless overridden by sub-class attribute, just returns 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The defaut end index to use when reading samples.</span>
+
+<span class="sd">        Unless overriden by sub-class attribute, just return ``None``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the (last) saved command line.</span>
+
+<span class="sd">        If the file was created from a run that resumed from a checkpoint, only</span>
+<span class="sd">        the last command line used is returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cmd : string</span>
+<span class="sd">            The command line that created this InferenceFile.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cmd&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cmd</span>
+
+<div class="viewcode-block" id="BaseInferenceFile.write_logevidence">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_logevidence">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_logevidence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lnz</span><span class="p">,</span> <span class="n">dlnz</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the given log evidence and its error.</span>
+
+<span class="sd">        Results are saved to file&#39;s &#39;log_evidence&#39; and &#39;dlog_evidence&#39;</span>
+<span class="sd">        attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lnz : float</span>
+<span class="sd">            The log of the evidence.</span>
+<span class="sd">        dlnz : float</span>
+<span class="sd">            The error in the estimate of the log evidence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;log_evidence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lnz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;dlog_evidence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dlnz</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_evidence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the log of the evidence and its error, if they exist in the</span>
+<span class="sd">        file. Raises a KeyError otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;log_evidence&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;dlog_evidence&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="BaseInferenceFile.write_random_state">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_random_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_random_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the state of the random number generator from the file.</span>
+
+<span class="sd">        The random state is written to ``sampler_group``/random_state.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str</span>
+<span class="sd">            Name of group to write random state to.</span>
+<span class="sd">        state : tuple, optional</span>
+<span class="sd">            Specify the random state to write. If None, will use</span>
+<span class="sd">            ``numpy.random.get_state()``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Write out the default numpy random state</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">group</span>
+        <span class="n">dataset_name</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;random_state&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">has_gauss</span><span class="p">,</span> <span class="n">cached_gauss</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">if</span> <span class="n">dataset_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">arr</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">fletcher32</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">dtype</span><span class="o">=</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">arr</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;has_gauss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">has_gauss</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cached_gauss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cached_gauss</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_random_state">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_random_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_random_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the state of the random number generator from the file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str</span>
+<span class="sd">            Name of group to read random state from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple with 5 elements that can be passed to numpy.set_state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Read numpy randomstate</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">group</span>
+        <span class="n">dataset_name</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="s2">&quot;random_state&quot;</span><span class="p">])</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">][:]</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">]</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]</span>
+        <span class="n">has_gauss</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;has_gauss&quot;</span><span class="p">]</span>
+        <span class="n">cached_gauss</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cached_gauss&quot;</span><span class="p">]</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">s</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">has_gauss</span><span class="p">,</span> <span class="n">cached_gauss</span>
+        <span class="k">return</span> <span class="n">state</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_strain">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_strain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_strain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain_dict</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes strain for each IFO to file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        strain : {dict, FrequencySeries}</span>
+<span class="sd">            A dict of FrequencySeries where the key is the IFO.</span>
+<span class="sd">        group : {None, str}</span>
+<span class="sd">            The group to write the strain to. If None, will write to the top</span>
+<span class="sd">            level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span> <span class="o">+</span> <span class="s2">&quot;/</span><span class="si">{ifo}</span><span class="s2">/strain&quot;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">subgroup</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="n">subgroup</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">strain</span> <span class="ow">in</span> <span class="n">strain_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span> <span class="o">=</span> <span class="n">strain</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_stilde">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_stilde">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_stilde</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stilde_dict</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes stilde for each IFO to file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        stilde : {dict, FrequencySeries}</span>
+<span class="sd">            A dict of FrequencySeries where the key is the IFO.</span>
+<span class="sd">        group : {None, str}</span>
+<span class="sd">            The group to write the strain to. If None, will write to the top</span>
+<span class="sd">            level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span> <span class="o">+</span> <span class="s2">&quot;/</span><span class="si">{ifo}</span><span class="s2">/stilde&quot;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">subgroup</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="n">subgroup</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">stilde</span> <span class="ow">in</span> <span class="n">stilde_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span> <span class="o">=</span> <span class="n">stilde</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stilde</span><span class="o">.</span><span class="n">delta_f</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;epoch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">stilde</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_psd">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_psd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_psd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">psds</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes PSD for each IFO to file.</span>
+
+<span class="sd">        PSDs are written to ``[{group}/]data/{detector}/psds/0``, where {group}</span>
+<span class="sd">        is the optional keyword argument.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        psds : dict</span>
+<span class="sd">            A dict of detector name -&gt; FrequencySeries.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            Specify a top-level group to write the data to. If ``None`` (the</span>
+<span class="sd">            default), data will be written to the file&#39;s top level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">subgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span> <span class="o">+</span> <span class="s2">&quot;/</span><span class="si">{ifo}</span><span class="s2">/psds/0&quot;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">subgroup</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="n">subgroup</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">psds</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span> <span class="o">=</span> <span class="n">psds</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">psds</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">delta_f</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_injections">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_injections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_injections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes injection parameters from the given injection file.</span>
+
+<span class="sd">        Everything in the injection file is copied to</span>
+<span class="sd">        ``[{group}/]injections_group``, where ``{group}`` is the optional</span>
+<span class="sd">        keyword argument.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        injection_file : str</span>
+<span class="sd">            Path to HDF injection file.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            Specify a top-level group to write the injections group to. If</span>
+<span class="sd">            ``None`` (the default), injections group will be written to the</span>
+<span class="sd">            file&#39;s top level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing injection file to output&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">injections_group</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">injections_group</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">injection_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">BaseInferenceFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Could not read </span><span class="si">%s</span><span class="s2"> as an HDF file&quot;</span><span class="p">,</span>
+                <span class="n">injection_file</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_injections">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_injections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_injections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets injection parameters.</span>
+
+<span class="sd">        Injections are retrieved from ``[{group}/]injections``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            Group that the injections group is in. Default (None) is to look</span>
+<span class="sd">            in the top-level.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FieldArray</span>
+<span class="sd">            Array of the injection parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">injections_group</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">injections_group</span><span class="p">])</span>
+        <span class="n">injset</span> <span class="o">=</span> <span class="n">InjectionSet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">hdf_group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">injections</span> <span class="o">=</span> <span class="n">injset</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">FieldArray</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">injections</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_command_line">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_command_line">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_command_line</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes command line to attributes.</span>
+
+<span class="sd">        The command line is written to the file&#39;s ``attrs[&#39;cmd&#39;]``. If this</span>
+<span class="sd">        attribute already exists in the file (this can happen when resuming</span>
+<span class="sd">        from a checkpoint), ``attrs[&#39;cmd&#39;]`` will be a list storing the current</span>
+<span class="sd">        command line and all previous command lines.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">previous</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cmd&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">previous</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="c1"># convert to list</span>
+                <span class="n">previous</span> <span class="o">=</span> <span class="p">[</span><span class="n">previous</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">previous</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">previous</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">previous</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;cmd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmd</span> <span class="o">+</span> <span class="n">previous</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.get_slice">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.get_slice">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_slice</span><span class="p">(</span><span class="n">thin_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Formats a slice to retrieve a thinned array from an HDF file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        thin_start : float or int, optional</span>
+<span class="sd">            The starting index to use. If provided, the ``int`` will be taken.</span>
+<span class="sd">        thin_interval : float or int, optional</span>
+<span class="sd">            The interval to use. If provided the ceiling of it will be taken.</span>
+<span class="sd">        thin_end : float or int, optional</span>
+<span class="sd">            The end index to use. If provided, the ``int`` will be taken.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        slice :</span>
+<span class="sd">            The slice needed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">thin_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thin_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">thin_start</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">thin_interval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">thin_interval</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">thin_end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thin_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">thin_end</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="n">thin_start</span><span class="p">,</span> <span class="n">thin_end</span><span class="p">,</span> <span class="n">thin_interval</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.copy_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.copy_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies all metadata from this file to the other file.</span>
+
+<span class="sd">        Metadata is defined as everything in the top-level ``.attrs``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : InferenceFile</span>
+<span class="sd">            An open inference file to write the data to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Copying metadata&quot;</span><span class="p">)</span>
+        <span class="c1"># copy attributes</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.copy_info">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.copy_info">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies &quot;info&quot; from this file to the other.</span>
+
+<span class="sd">        &quot;Info&quot; is defined all groups that are not the samples group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : output file</span>
+<span class="sd">            The output file. Must be an hdf file.</span>
+<span class="sd">        ignore : (list of) str</span>
+<span class="sd">            Don&#39;t copy the given groups.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Copying info&quot;</span><span class="p">)</span>
+        <span class="c1"># copy non-samples/stats data</span>
+        <span class="k">if</span> <span class="n">ignore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ignore</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignore</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">ignore</span> <span class="o">=</span> <span class="p">[</span><span class="n">ignore</span><span class="p">]</span>
+        <span class="n">ignore</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ignore</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">])</span>
+        <span class="n">copy_groups</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="n">ignore</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">copy_groups</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">BaseInferenceFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.copy_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.copy_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameter_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">read_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">write_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Should copy samples to the other files.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : InferenceFile</span>
+<span class="sd">            An open inference file to write to.</span>
+<span class="sd">        parameters : list of str, optional</span>
+<span class="sd">            List of parameters to copy. If None, will copy all parameters.</span>
+<span class="sd">        parameter_names : dict, optional</span>
+<span class="sd">            Rename one or more parameters to the given name. The dictionary</span>
+<span class="sd">            should map parameter -&gt; parameter name. If None, will just use the</span>
+<span class="sd">            original parameter names.</span>
+<span class="sd">        read_args : dict, optional</span>
+<span class="sd">            Arguments to pass to ``read_samples``.</span>
+<span class="sd">        write_args : dict, optional</span>
+<span class="sd">            Arguments to pass to ``write_samples``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># select the samples to copy</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading samples to copy&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="c1"># if list of desired parameters is different, rename</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">):</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;variable_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="k">if</span> <span class="n">read_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">read_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_samples</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="o">**</span><span class="n">read_args</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Copying </span><span class="si">{}</span><span class="s2"> samples&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="c1"># if different parameter names are desired, get them from the samples</span>
+        <span class="k">if</span> <span class="n">parameter_names</span><span class="p">:</span>
+            <span class="n">arrs</span> <span class="o">=</span> <span class="p">{</span><span class="n">pname</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">pname</span> <span class="ow">in</span> <span class="n">parameter_names</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">arrs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">p</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span> <span class="k">if</span>
+                         <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameter_names</span><span class="p">})</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">arrs</span><span class="p">)</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;variable_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">fieldnames</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing samples&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">write_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">write_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">other</span><span class="o">.</span><span class="n">write_samples</span><span class="p">({</span><span class="n">p</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">},</span>
+                            <span class="o">**</span><span class="n">write_args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.copy">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.copy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameter_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">read_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">write_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copies metadata, info, and samples in this file to another file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : str or InferenceFile</span>
+<span class="sd">            The file to write to. May be either a string giving a filename,</span>
+<span class="sd">            or an open hdf file. If the former, the file will be opened with</span>
+<span class="sd">            the write attribute (note that if a file already exists with that</span>
+<span class="sd">            name, it will be deleted).</span>
+<span class="sd">        ignore : (list of) strings</span>
+<span class="sd">            Don&#39;t copy the given groups. If the samples group is included, no</span>
+<span class="sd">            samples will be copied.</span>
+<span class="sd">        parameters : list of str, optional</span>
+<span class="sd">            List of parameters in the samples group to copy. If None, will copy</span>
+<span class="sd">            all parameters.</span>
+<span class="sd">        parameter_names : dict, optional</span>
+<span class="sd">            Rename one or more parameters to the given name. The dictionary</span>
+<span class="sd">            should map parameter -&gt; parameter name. If None, will just use the</span>
+<span class="sd">            original parameter names.</span>
+<span class="sd">        read_args : dict, optional</span>
+<span class="sd">            Arguments to pass to ``read_samples``.</span>
+<span class="sd">        write_args : dict, optional</span>
+<span class="sd">            Arguments to pass to ``write_samples``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        InferenceFile</span>
+<span class="sd">            The open file handler to other.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">):</span>
+            <span class="c1"># check that we&#39;re not trying to overwrite this file</span>
+            <span class="k">if</span> <span class="n">other</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;destination is the same as this file&quot;</span><span class="p">)</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="c1"># metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_metadata</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="c1"># info</span>
+        <span class="k">if</span> <span class="n">ignore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ignore</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ignore</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">ignore</span> <span class="o">=</span> <span class="p">[</span><span class="n">ignore</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_info</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="n">ignore</span><span class="p">)</span>
+        <span class="c1"># samples</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copy_samples</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span>
+                              <span class="n">parameter_names</span><span class="o">=</span><span class="n">parameter_names</span><span class="p">,</span>
+                              <span class="n">read_args</span><span class="o">=</span><span class="n">read_args</span><span class="p">,</span>
+                              <span class="n">write_args</span><span class="o">=</span><span class="n">write_args</span><span class="p">)</span>
+            <span class="c1"># if any down selection was done, re-set the default</span>
+            <span class="c1"># thin-start/interval/end</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">my_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">][</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">other</span><span class="p">[</span><span class="n">other</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">other_shape</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="n">other</span><span class="o">.</span><span class="n">samples_group</span><span class="p">][</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">my_shape</span> <span class="o">!=</span> <span class="n">other_shape</span><span class="p">:</span>
+                <span class="n">other</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;thin_start&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">other</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;thin_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">other</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;thin_end&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">other</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_kwargs_to_attrs">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_kwargs_to_attrs">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_kwargs_to_attrs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Writes the given keywords to the given ``attrs``.</span>
+
+<span class="sd">        If any keyword argument points to a dict, the keyword will point to a</span>
+<span class="sd">        list of the dict&#39;s keys. Each key is then written to the attrs with its</span>
+<span class="sd">        corresponding value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        attrs : an HDF attrs</span>
+<span class="sd">            The ``attrs`` of an hdf file or a group in an hdf file.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            The keywords to write.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">val</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                <span class="c1"># just call self again with the dict as kwargs</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">write_kwargs_to_attrs</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="o">**</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to write data.</span>
+
+<span class="sd">        Given ``data`` is written as a dataset with ``name`` in ``path``.</span>
+<span class="sd">        If the dataset or path do not exist yet, the dataset and path will</span>
+<span class="sd">        be created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            The name to associate with the data. This will be the dataset</span>
+<span class="sd">            name (if data is array-like) or the key in the attrs.</span>
+<span class="sd">        data : array, dict, or atomic</span>
+<span class="sd">            The data to write. If a dictionary, a subgroup will be created</span>
+<span class="sd">            for each key, and the values written there. This will be done</span>
+<span class="sd">            recursively until an array or atomic (e.g., float, int, str), is</span>
+<span class="sd">            found. Otherwise, the data is written to the given name.</span>
+<span class="sd">        path : str, optional</span>
+<span class="sd">            Write to the given path. Default (None) will write to the top</span>
+<span class="sd">            level. If the path does not exist in the file, it will be</span>
+<span class="sd">            created.</span>
+<span class="sd">        append : bool, optional</span>
+<span class="sd">            Append the data to what is currently in the file if ``path/name``</span>
+<span class="sd">            already exists in the file, and if it does not, create the dataset</span>
+<span class="sd">            so that its last dimension can be resized. The data can only</span>
+<span class="sd">            be appended along the last dimension, and if it already exists in</span>
+<span class="sd">            the data, it must be resizable along this dimension. If ``False``</span>
+<span class="sd">            (the default) what is in the file will be overwritten, and the</span>
+<span class="sd">            given data must have the same shape.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">path</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># create the group</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">path</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># call myself for each key, value pair in the dictionary</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="p">]),</span>
+                                <span class="n">append</span><span class="o">=</span><span class="n">append</span><span class="p">)</span>
+        <span class="c1"># if appending, we need to resize the data on disk, or, if it doesn&#39;t</span>
+        <span class="c1"># exist yet, create a dataset that is resizable along the last</span>
+        <span class="c1"># dimension</span>
+        <span class="k">elif</span> <span class="n">append</span><span class="p">:</span>
+            <span class="c1"># cast the data to an array if it isn&#39;t already one</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">data</span><span class="p">])</span>
+            <span class="n">dshape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">ndata</span> <span class="o">=</span> <span class="n">dshape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">startidx</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">dshape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                   <span class="n">axis</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="c1"># dataset doesn&#39;t exist yet</span>
+                <span class="n">group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">dshape</span><span class="p">,</span>
+                                     <span class="n">maxshape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dshape</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="kc">None</span><span class="p">]),</span>
+                                     <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">fletcher32</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">startidx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="n">startidx</span><span class="p">:</span><span class="n">startidx</span><span class="o">+</span><span class="n">ndata</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">][()]</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="c1"># dataset doesn&#39;t exist yet</span>
+                <span class="n">group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.write_config_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.write_config_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_config_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the given config file parser.</span>
+
+<span class="sd">        File is stored as a pickled buffer array to ``config_parser/{index}``,</span>
+<span class="sd">        where ``{index}`` is an integer corresponding to the number of config</span>
+<span class="sd">        files that have been saved. The first time a save is called, it is</span>
+<span class="sd">        stored to ``0``, and incremented from there.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : ConfigParser</span>
+<span class="sd">            Config parser to save.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the index of the last saved file</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="c1"># hasn&#39;t been written yet</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="c1"># we&#39;ll store the config file as a text file that is pickled</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="c1"># now pickle it</span>
+        <span class="n">dump_state</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config_group</span><span class="p">,</span> <span class="n">dsetname</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_config_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_config_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_config_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_cp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the config file that was used.</span>
+
+<span class="sd">        A ``ValueError`` is raised if no config files have been saved, or if</span>
+<span class="sd">        the requested index larger than the number of stored config files.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        return_cp : bool, optional</span>
+<span class="sd">            If true, returns the loaded config file as</span>
+<span class="sd">            :py:class:`pycbc.workflow.configuration.WorkflowConfigParser`</span>
+<span class="sd">            type. Otherwise will return as string buffer. Default is True.</span>
+<span class="sd">        index : int, optional</span>
+<span class="sd">            The config file to load. If ``write_config_file`` has been called</span>
+<span class="sd">            multiple times (as would happen if restarting from a checkpoint),</span>
+<span class="sd">            there will be config files stored. Default (-1) is to load the</span>
+<span class="sd">            last saved file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        WorkflowConfigParser or StringIO :</span>
+<span class="sd">            The parsed config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the stored indices</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;no config files saved in hdf&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;no config file matches requested index&quot;</span><span class="p">)</span>
+        <span class="n">cf</span> <span class="o">=</span> <span class="n">load_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config_group</span><span class="p">,</span> <span class="n">dsetname</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+        <span class="n">cf</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_cp</span><span class="p">:</span>
+            <span class="n">cp</span> <span class="o">=</span> <span class="n">WorkflowConfigParser</span><span class="p">()</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cp</span>
+        <span class="k">return</span> <span class="n">cf</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads the data stored in the file as a FrequencySeries.</span>
+
+<span class="sd">        Only works for models that store data as a frequency series in</span>
+<span class="sd">        ``data/DET/stilde``. A ``KeyError`` will be raised if the model used</span>
+<span class="sd">        did not store data in that path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            Group that the data group is in. Default (None) is to look in the</span>
+<span class="sd">            top-level.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector name -&gt; FrequencySeries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/stilde&#39;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">path</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">det</span><span class="p">)]</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span>
+                <span class="n">group</span><span class="p">[()],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">],</span>
+                <span class="n">epoch</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;epoch&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="BaseInferenceFile.read_psds">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile.read_psds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_psds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads the PSDs stored in the file as a FrequencySeries.</span>
+
+<span class="sd">        Only works for models that store PSDs in</span>
+<span class="sd">        ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used</span>
+<span class="sd">        did not store PSDs in that path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            Group that the data group is in. Default (None) is to look in the</span>
+<span class="sd">            top-level.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of detector name -&gt; FrequencySeries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/psds/0&#39;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_group</span><span class="p">])</span>
+        <span class="n">psds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">[</span><span class="n">path</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">det</span><span class="p">)]</span>
+            <span class="n">psds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span>
+                <span class="n">group</span><span class="p">[()],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">psds</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

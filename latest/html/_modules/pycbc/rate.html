@@ -1,0 +1,507 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.rate &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.rate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.rate</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bisect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">bin_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.rate&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="integral_element">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.integral_element">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">integral_element</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">pdf</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Returns an array of elements of the integrand dP = p(mu) dmu</span>
+<span class="sd">    for a density p(mu) defined at sample values mu ; samples need</span>
+<span class="sd">    not be equally spaced.  Uses a simple trapezium rule.</span>
+<span class="sd">    Number of dP elements is 1 - (number of mu samples).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">dmu</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">bin_mean</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">pdf</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.</span>
+    <span class="k">return</span> <span class="n">dmu</span> <span class="o">*</span> <span class="n">bin_mean</span></div>
+
+
+
+<div class="viewcode-block" id="normalize_pdf">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.normalize_pdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_pdf</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">pofmu</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a function pofmu defined at rate sample values mu and</span>
+<span class="sd">    normalizes it to be a suitable pdf. Both mu and pofmu must be</span>
+<span class="sd">    arrays or lists of the same length.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">pofmu</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Probabilities cannot be negative, don&#39;t ask me to &quot;</span>
+                         <span class="s2">&quot;normalize a function with negative values!&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rates cannot be negative, don&#39;t ask me to &quot;</span>
+                         <span class="s2">&quot;normalize a function over a negative domain!&quot;</span><span class="p">)</span>
+
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">integral_element</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">pofmu</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">pofmu</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">dp</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_upper_limit">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.compute_upper_limit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_upper_limit</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the upper limit mu_high of confidence level alpha for a</span>
+<span class="sd">    posterior distribution post on the given parameter mu.</span>
+<span class="sd">    The posterior need not be normalized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">dp</span> <span class="o">=</span> <span class="n">integral_element</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">)</span>
+        <span class="n">high_idx</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect_left</span><span class="p">(</span><span class="n">dp</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span> <span class="o">/</span> <span class="n">dp</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="c1"># if alpha is in (0,1] and post is non-negative, bisect_left</span>
+        <span class="c1"># will always return an index in the range of mu since</span>
+        <span class="c1"># post.cumsum()/post.sum() will always begin at 0 and end at 1</span>
+        <span class="n">mu_high</span> <span class="o">=</span> <span class="n">mu_in</span><span class="p">[</span><span class="n">high_idx</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">mu_high</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mu_in</span><span class="p">[</span><span class="n">post</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Confidence level must be in (0,1].&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mu_high</span></div>
+
+
+
+<div class="viewcode-block" id="compute_lower_limit">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.compute_lower_limit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_lower_limit</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the lower limit mu_low of confidence level alpha for a</span>
+<span class="sd">    posterior distribution post on the given parameter mu.</span>
+<span class="sd">    The posterior need not be normalized.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">dp</span> <span class="o">=</span> <span class="n">integral_element</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">)</span>
+        <span class="n">low_idx</span> <span class="o">=</span> <span class="n">bisect</span><span class="o">.</span><span class="n">bisect_right</span><span class="p">(</span><span class="n">dp</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span> <span class="o">/</span> <span class="n">dp</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="c1"># if alpha is in [0,1) and post is non-negative, bisect_right</span>
+        <span class="c1"># will always return an index in the range of mu since</span>
+        <span class="c1"># post.cumsum()/post.sum() will always begin at 0 and end at 1</span>
+        <span class="n">mu_low</span> <span class="o">=</span> <span class="n">mu_in</span><span class="p">[</span><span class="n">low_idx</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">mu_low</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mu_in</span><span class="p">[</span><span class="n">post</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Confidence level must be in (0,1].&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mu_low</span></div>
+
+
+
+<div class="viewcode-block" id="confidence_interval_min_width">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.confidence_interval_min_width">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">confidence_interval_min_width</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Returns the minimal-width confidence interval [mu_low, mu_high] of</span>
+<span class="sd">    confidence level alpha for a posterior distribution post on the parameter mu.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Confidence level must be in (0,1).&quot;</span><span class="p">)</span>
+
+    <span class="c1"># choose a step size for the sliding confidence window</span>
+    <span class="n">alpha_step</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+    <span class="c1"># initialize the lower and upper limits</span>
+    <span class="n">mu_low</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+    <span class="n">mu_high</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+
+    <span class="c1"># find the smallest window (by delta-mu) stepping by dalpha</span>
+    <span class="k">for</span> <span class="n">ai</span> <span class="ow">in</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">alpha_step</span><span class="p">):</span>
+        <span class="n">ml</span> <span class="o">=</span> <span class="n">compute_lower_limit</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">ai</span><span class="p">)</span>
+        <span class="n">mh</span> <span class="o">=</span> <span class="n">compute_upper_limit</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">ai</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mh</span> <span class="o">-</span> <span class="n">ml</span> <span class="o">&lt;</span> <span class="n">mu_high</span> <span class="o">-</span> <span class="n">mu_low</span><span class="p">:</span>
+            <span class="n">mu_low</span> <span class="o">=</span> <span class="n">ml</span>
+            <span class="n">mu_high</span> <span class="o">=</span> <span class="n">mh</span>
+
+    <span class="k">return</span> <span class="n">mu_low</span><span class="p">,</span> <span class="n">mu_high</span></div>
+
+
+
+<div class="viewcode-block" id="hpd_coverage">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.hpd_coverage">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hpd_coverage</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">pdf</span><span class="p">,</span> <span class="n">thresh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Integrates a pdf over mu taking only bins where</span>
+<span class="sd">    the mean over the bin is above a given threshold</span>
+<span class="sd">    This gives the coverage of the HPD interval for</span>
+<span class="sd">    the given threshold.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">integral_element</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">pdf</span><span class="p">)</span>
+    <span class="n">bin_mean</span> <span class="o">=</span> <span class="p">(</span><span class="n">pdf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">pdf</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.</span>
+
+    <span class="k">return</span> <span class="n">dp</span><span class="p">[</span><span class="n">bin_mean</span> <span class="o">&gt;</span> <span class="n">thresh</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="hpd_threshold">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.hpd_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hpd_threshold</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">tol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    For a PDF post over samples mu_in, find a density</span>
+<span class="sd">    threshold such that the region having higher density</span>
+<span class="sd">    has coverage of at least alpha, and less than alpha</span>
+<span class="sd">    plus a given tolerance.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">norm_post</span> <span class="o">=</span> <span class="n">normalize_pdf</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">)</span>
+    <span class="c1"># initialize bisection search</span>
+    <span class="n">p_minus</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">p_plus</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+    <span class="k">while</span> <span class="nb">abs</span><span class="p">(</span><span class="n">hpd_coverage</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">norm_post</span><span class="p">,</span> <span class="n">p_minus</span><span class="p">)</span> <span class="o">-</span>
+              <span class="n">hpd_coverage</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">norm_post</span><span class="p">,</span> <span class="n">p_plus</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="n">tol</span><span class="p">:</span>
+        <span class="n">p_test</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_minus</span> <span class="o">+</span> <span class="n">p_plus</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="k">if</span> <span class="n">hpd_coverage</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">p_test</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">alpha</span><span class="p">:</span>
+            <span class="c1"># test value was too low or just right</span>
+            <span class="n">p_minus</span> <span class="o">=</span> <span class="n">p_test</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># test value was too high</span>
+            <span class="n">p_plus</span> <span class="o">=</span> <span class="n">p_test</span>
+    <span class="c1"># p_minus never goes above the required threshold and p_plus never goes below</span>
+    <span class="c1"># thus on exiting p_minus is at or below the required threshold and the</span>
+    <span class="c1"># difference in coverage is within tolerance</span>
+    <span class="k">return</span> <span class="n">p_minus</span></div>
+
+
+
+<div class="viewcode-block" id="hpd_credible_interval">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.hpd_credible_interval">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hpd_credible_interval</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Returns the minimum and maximum rate values of the HPD</span>
+<span class="sd">    (Highest Posterior Density) credible interval for a posterior</span>
+<span class="sd">    post defined at the sample values mu_in.  Samples need not be</span>
+<span class="sd">    uniformly spaced and posterior need not be normalized.</span>
+
+<span class="sd">    Will not return a correct credible interval if the posterior</span>
+<span class="sd">    is multimodal and the correct interval is not contiguous;</span>
+<span class="sd">    in this case will over-cover by including the whole range from</span>
+<span class="sd">    minimum to maximum mu.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">alpha</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">nonzero_samples</span> <span class="o">=</span> <span class="n">mu_in</span><span class="p">[</span><span class="n">post</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">mu_low</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">nonzero_samples</span><span class="p">)</span>
+        <span class="n">mu_high</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">nonzero_samples</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># determine the highest PDF for which the region with</span>
+        <span class="c1"># higher density has sufficient coverage</span>
+        <span class="n">pthresh</span> <span class="o">=</span> <span class="n">hpd_threshold</span><span class="p">(</span><span class="n">mu_in</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tolerance</span><span class="p">)</span>
+        <span class="n">samples_over_threshold</span> <span class="o">=</span> <span class="n">mu_in</span><span class="p">[</span><span class="n">post</span> <span class="o">&gt;</span> <span class="n">pthresh</span><span class="p">]</span>
+        <span class="n">mu_low</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">samples_over_threshold</span><span class="p">)</span>
+        <span class="n">mu_high</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">samples_over_threshold</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mu_low</span><span class="p">,</span> <span class="n">mu_high</span></div>
+
+
+
+<span class="c1"># Following functions are for the old pylal volume vs mass calculations</span>
+<span class="c1"># These were replaced by &#39;imr_utils&#39; functions now contained in sensitivity.py</span>
+<span class="c1"># and bin_utils.py</span>
+
+
+<div class="viewcode-block" id="integrate_efficiency">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.integrate_efficiency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">integrate_efficiency</span><span class="p">(</span><span class="n">dbins</span><span class="p">,</span> <span class="n">eff</span><span class="p">,</span> <span class="n">err</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">logbins</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">logbins</span><span class="p">:</span>
+        <span class="n">logd</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dbins</span><span class="p">)</span>
+        <span class="n">dlogd</span> <span class="o">=</span> <span class="n">logd</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">logd</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># use log midpoint of bins</span>
+        <span class="n">dreps</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dbins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dbins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">4.</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">dreps</span><span class="o">**</span><span class="mf">3.</span> <span class="o">*</span> <span class="n">eff</span> <span class="o">*</span> <span class="n">dlogd</span><span class="p">)</span>
+        <span class="c1"># propagate errors in eff to errors in v</span>
+        <span class="n">verr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mf">4.</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">dreps</span><span class="o">**</span><span class="mf">3.</span> <span class="o">*</span> <span class="n">err</span> <span class="o">*</span> <span class="n">dlogd</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dd</span> <span class="o">=</span> <span class="n">dbins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">dbins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dreps</span> <span class="o">=</span> <span class="p">(</span><span class="n">dbins</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">dbins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="n">vol</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">4.</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">dreps</span><span class="o">**</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">eff</span> <span class="o">*</span> <span class="n">dd</span><span class="p">)</span>
+        <span class="c1"># propagate errors</span>
+        <span class="n">verr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mf">4.</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">dreps</span><span class="o">**</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">err</span> <span class="o">*</span> <span class="n">dd</span><span class="p">)</span><span class="o">**</span><span class="mf">2.</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">vol</span><span class="p">,</span> <span class="n">verr</span></div>
+
+
+
+<div class="viewcode-block" id="compute_efficiency">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.compute_efficiency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_efficiency</span><span class="p">(</span><span class="n">f_dist</span><span class="p">,</span> <span class="n">m_dist</span><span class="p">,</span> <span class="n">dbins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Compute the efficiency as a function of distance for the given sets of found</span>
+<span class="sd">    and missed injection distances.</span>
+<span class="sd">    Note that injections that do not fit into any dbin get lost :(</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">efficiency</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dbins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dbins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">dlow</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dbins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">dhigh</span> <span class="o">=</span> <span class="n">dbins</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">dlow</span> <span class="o">&lt;=</span> <span class="n">f_dist</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">f_dist</span> <span class="o">&lt;</span> <span class="n">dhigh</span><span class="p">))</span>
+        <span class="n">missed</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">dlow</span> <span class="o">&lt;=</span> <span class="n">m_dist</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">m_dist</span> <span class="o">&lt;</span> <span class="n">dhigh</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">found</span><span class="o">+</span><span class="n">missed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># avoid divide by 0 in empty bins</span>
+            <span class="n">missed</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">efficiency</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">found</span> <span class="o">+</span> <span class="n">missed</span><span class="p">)</span>
+        <span class="n">error</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">efficiency</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">efficiency</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">/</span>
+                              <span class="p">(</span><span class="n">found</span> <span class="o">+</span> <span class="n">missed</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">efficiency</span><span class="p">,</span> <span class="n">error</span></div>
+
+
+
+<div class="viewcode-block" id="mean_efficiency_volume">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.mean_efficiency_volume">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_efficiency_volume</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">missed</span><span class="p">,</span> <span class="n">dbins</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># no efficiency here</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dbins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dbins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+
+    <span class="c1"># only need distances</span>
+    <span class="n">f_dist</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">l</span><span class="o">.</span><span class="n">distance</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">found</span><span class="p">])</span>
+    <span class="n">m_dist</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">l</span><span class="o">.</span><span class="n">distance</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">missed</span><span class="p">])</span>
+
+    <span class="c1"># compute the efficiency and its variance</span>
+    <span class="n">eff</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">compute_efficiency</span><span class="p">(</span><span class="n">f_dist</span><span class="p">,</span> <span class="n">m_dist</span><span class="p">,</span> <span class="n">dbins</span><span class="p">)</span>
+    <span class="n">vol</span><span class="p">,</span> <span class="n">verr</span> <span class="o">=</span> <span class="n">integrate_efficiency</span><span class="p">(</span><span class="n">dbins</span><span class="p">,</span> <span class="n">eff</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">eff</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">verr</span></div>
+
+
+
+<div class="viewcode-block" id="filter_injections_by_mass">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.filter_injections_by_mass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_injections_by_mass</span><span class="p">(</span><span class="n">injs</span><span class="p">,</span> <span class="n">mbins</span><span class="p">,</span> <span class="n">bin_num</span><span class="p">,</span> <span class="n">bin_type</span><span class="p">,</span> <span class="n">bin_num2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    For a given set of injections (sim_inspiral rows), return the subset</span>
+<span class="sd">    of injections that fall within the given mass range.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">bin_type</span> <span class="o">==</span> <span class="s2">&quot;Mass1_Mass2&quot;</span><span class="p">:</span>
+        <span class="n">m1bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mbins</span><span class="o">.</span><span class="n">lower</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+                                    <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mbins</span><span class="o">.</span><span class="n">upper</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]])))</span>
+        <span class="n">m1lo</span> <span class="o">=</span> <span class="n">m1bins</span><span class="p">[</span><span class="n">bin_num</span><span class="p">]</span>
+        <span class="n">m1hi</span> <span class="o">=</span> <span class="n">m1bins</span><span class="p">[</span><span class="n">bin_num</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">m2bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mbins</span><span class="o">.</span><span class="n">lower</span><span class="p">()[</span><span class="mi">1</span><span class="p">],</span>
+                                    <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mbins</span><span class="o">.</span><span class="n">upper</span><span class="p">()[</span><span class="mi">1</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]])))</span>
+        <span class="n">m2lo</span> <span class="o">=</span> <span class="n">m2bins</span><span class="p">[</span><span class="n">bin_num2</span><span class="p">]</span>
+        <span class="n">m2hi</span> <span class="o">=</span> <span class="n">m2bins</span><span class="p">[</span><span class="n">bin_num2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">newinjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span>
+                   <span class="p">((</span><span class="n">m1lo</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">m1hi</span> <span class="ow">and</span> <span class="n">m2lo</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">m2hi</span><span class="p">)</span> <span class="ow">or</span>
+                    <span class="p">(</span><span class="n">m1lo</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">m1hi</span> <span class="ow">and</span> <span class="n">m2lo</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">m2hi</span><span class="p">))]</span>
+        <span class="k">return</span> <span class="n">newinjs</span>
+
+    <span class="n">mbins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mbins</span><span class="o">.</span><span class="n">lower</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mbins</span><span class="o">.</span><span class="n">upper</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]])))</span>
+    <span class="n">mlow</span> <span class="o">=</span> <span class="n">mbins</span><span class="p">[</span><span class="n">bin_num</span><span class="p">]</span>
+    <span class="n">mhigh</span> <span class="o">=</span> <span class="n">mbins</span><span class="p">[</span><span class="n">bin_num</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">bin_type</span> <span class="o">==</span> <span class="s2">&quot;Chirp_Mass&quot;</span><span class="p">:</span>
+        <span class="n">newinjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span> <span class="p">(</span><span class="n">mlow</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mchirp</span> <span class="o">&lt;</span> <span class="n">mhigh</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">bin_type</span> <span class="o">==</span> <span class="s2">&quot;Total_Mass&quot;</span><span class="p">:</span>
+        <span class="n">newinjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span> <span class="p">(</span><span class="n">mlow</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">l</span><span class="o">.</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">mhigh</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">bin_type</span> <span class="o">==</span> <span class="s2">&quot;Component_Mass&quot;</span><span class="p">:</span>
+        <span class="c1"># here it is assumed that m2 is fixed</span>
+        <span class="n">newinjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span> <span class="p">(</span><span class="n">mlow</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">mhigh</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">bin_type</span> <span class="o">==</span> <span class="s2">&quot;BNS_BBH&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">bin_num</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+            <span class="c1"># BNS/BBH case</span>
+            <span class="n">newinjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span>
+                       <span class="p">(</span><span class="n">mlow</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">mhigh</span> <span class="ow">and</span> <span class="n">mlow</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">mhigh</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># NSBH</span>
+            <span class="n">newinjs</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span> <span class="p">(</span><span class="n">mbins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">mbins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span>
+                                           <span class="n">mbins</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">mbins</span><span class="p">[</span><span class="mi">3</span><span class="p">])]</span>
+            <span class="c1"># BHNS</span>
+            <span class="n">newinjs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">injs</span> <span class="k">if</span> <span class="p">(</span><span class="n">mbins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">mbins</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span>
+                                            <span class="n">mbins</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">l</span><span class="o">.</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">mbins</span><span class="p">[</span><span class="mi">3</span><span class="p">])]</span>
+
+    <span class="k">return</span> <span class="n">newinjs</span></div>
+
+
+
+<div class="viewcode-block" id="compute_volume_vs_mass">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.rate.compute_volume_vs_mass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_volume_vs_mass</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">missed</span><span class="p">,</span> <span class="n">mass_bins</span><span class="p">,</span> <span class="n">bin_type</span><span class="p">,</span> <span class="n">dbins</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the average luminosity an experiment was sensitive to</span>
+
+<span class="sd">    Assumes that luminosity is uniformly distributed in space.</span>
+<span class="sd">    Input is the sets of found and missed injections.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># mean and std estimate for luminosity</span>
+    <span class="n">volArray</span> <span class="o">=</span> <span class="n">bin_utils</span><span class="o">.</span><span class="n">BinnedArray</span><span class="p">(</span><span class="n">mass_bins</span><span class="p">)</span>
+    <span class="n">vol2Array</span> <span class="o">=</span> <span class="n">bin_utils</span><span class="o">.</span><span class="n">BinnedArray</span><span class="p">(</span><span class="n">mass_bins</span><span class="p">)</span>
+
+    <span class="c1"># found/missed stats</span>
+    <span class="n">foundArray</span> <span class="o">=</span> <span class="n">bin_utils</span><span class="o">.</span><span class="n">BinnedArray</span><span class="p">(</span><span class="n">mass_bins</span><span class="p">)</span>
+    <span class="n">missedArray</span> <span class="o">=</span> <span class="n">bin_utils</span><span class="o">.</span><span class="n">BinnedArray</span><span class="p">(</span><span class="n">mass_bins</span><span class="p">)</span>
+
+    <span class="c1"># compute the mean luminosity in each mass bin</span>
+    <span class="n">effvmass</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">errvmass</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># 2D case first</span>
+    <span class="k">if</span> <span class="n">bin_type</span> <span class="o">==</span> <span class="s2">&quot;Mass1_Mass2&quot;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">mc1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mass_bins</span><span class="o">.</span><span class="n">centres</span><span class="p">()[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">mc2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mass_bins</span><span class="o">.</span><span class="n">centres</span><span class="p">()[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">newfound</span> <span class="o">=</span> <span class="n">filter_injections_by_mass</span><span class="p">(</span>
+                                              <span class="n">found</span><span class="p">,</span> <span class="n">mass_bins</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">bin_type</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">newmissed</span> <span class="o">=</span> <span class="n">filter_injections_by_mass</span><span class="p">(</span>
+                                             <span class="n">missed</span><span class="p">,</span> <span class="n">mass_bins</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">bin_type</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+                <span class="n">foundArray</span><span class="p">[(</span><span class="n">mc1</span><span class="p">,</span> <span class="n">mc2</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newfound</span><span class="p">)</span>
+                <span class="n">missedArray</span><span class="p">[(</span><span class="n">mc1</span><span class="p">,</span> <span class="n">mc2</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newmissed</span><span class="p">)</span>
+
+                <span class="c1"># compute the volume using this injection set</span>
+                <span class="n">meaneff</span><span class="p">,</span> <span class="n">efferr</span><span class="p">,</span> <span class="n">meanvol</span><span class="p">,</span> <span class="n">volerr</span> <span class="o">=</span> <span class="n">mean_efficiency_volume</span><span class="p">(</span>
+                                                    <span class="n">newfound</span><span class="p">,</span> <span class="n">newmissed</span><span class="p">,</span> <span class="n">dbins</span><span class="p">)</span>
+                <span class="n">effvmass</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meaneff</span><span class="p">)</span>
+                <span class="n">errvmass</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">efferr</span><span class="p">)</span>
+                <span class="n">volArray</span><span class="p">[(</span><span class="n">mc1</span><span class="p">,</span> <span class="n">mc2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">meanvol</span>
+                <span class="n">vol2Array</span><span class="p">[(</span><span class="n">mc1</span><span class="p">,</span> <span class="n">mc2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">volerr</span>
+
+        <span class="k">return</span> <span class="n">volArray</span><span class="p">,</span> <span class="n">vol2Array</span><span class="p">,</span> <span class="n">foundArray</span><span class="p">,</span> <span class="n">missedArray</span><span class="p">,</span> <span class="n">effvmass</span><span class="p">,</span> <span class="n">errvmass</span>
+
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">mc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mass_bins</span><span class="o">.</span><span class="n">centres</span><span class="p">()[</span><span class="mi">0</span><span class="p">]):</span>
+
+        <span class="c1"># filter out injections not in this mass bin</span>
+        <span class="n">newfound</span> <span class="o">=</span> <span class="n">filter_injections_by_mass</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">mass_bins</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">bin_type</span><span class="p">)</span>
+        <span class="n">newmissed</span> <span class="o">=</span> <span class="n">filter_injections_by_mass</span><span class="p">(</span><span class="n">missed</span><span class="p">,</span> <span class="n">mass_bins</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">bin_type</span><span class="p">)</span>
+
+        <span class="n">foundArray</span><span class="p">[(</span><span class="n">mc</span><span class="p">,</span> <span class="p">)]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newfound</span><span class="p">)</span>
+        <span class="n">missedArray</span><span class="p">[(</span><span class="n">mc</span><span class="p">,</span> <span class="p">)]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">newmissed</span><span class="p">)</span>
+
+        <span class="c1"># compute the volume using this injection set</span>
+        <span class="n">meaneff</span><span class="p">,</span> <span class="n">efferr</span><span class="p">,</span> <span class="n">meanvol</span><span class="p">,</span> <span class="n">volerr</span> <span class="o">=</span> <span class="n">mean_efficiency_volume</span><span class="p">(</span>
+                                                    <span class="n">newfound</span><span class="p">,</span> <span class="n">newmissed</span><span class="p">,</span> <span class="n">dbins</span><span class="p">)</span>
+        <span class="n">effvmass</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meaneff</span><span class="p">)</span>
+        <span class="n">errvmass</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">efferr</span><span class="p">)</span>
+        <span class="n">volArray</span><span class="p">[(</span><span class="n">mc</span><span class="p">,</span> <span class="p">)]</span> <span class="o">=</span> <span class="n">meanvol</span>
+        <span class="n">vol2Array</span><span class="p">[(</span><span class="n">mc</span><span class="p">,</span> <span class="p">)]</span> <span class="o">=</span> <span class="n">volerr</span>
+
+    <span class="k">return</span> <span class="n">volArray</span><span class="p">,</span> <span class="n">vol2Array</span><span class="p">,</span> <span class="n">foundArray</span><span class="p">,</span> <span class="n">missedArray</span><span class="p">,</span> <span class="n">effvmass</span><span class="p">,</span> <span class="n">errvmass</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

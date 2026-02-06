@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.noise.reproduceable &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.noise.reproduceable</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.noise.reproduceable</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2017  Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="o">,</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">complex_same_precision_as</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomState</span>
+
+<span class="c1"># This constant need to be constant to be able to recover identical results.</span>
+<span class="n">BLOCK_SAMPLES</span> <span class="o">=</span> <span class="mi">1638400</span>
+
+<div class="viewcode-block" id="block">
+<a class="viewcode-back" href="../../../pycbc.noise.html#pycbc.noise.reproduceable.block">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">block</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return block of normal random numbers</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seed : {None, int}</span>
+<span class="sd">        The seed to generate the noise.sd</span>
+<span class="sd">    sample_rate: float</span>
+<span class="sd">        Sets the variance of the white noise</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    noise : numpy.ndarray</span>
+<span class="sd">        Array of random numbers</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="n">BLOCK_SAMPLES</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span> <span class="o">%</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">)</span>
+    <span class="n">variance</span> <span class="o">=</span> <span class="n">sample_rate</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">num</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">variance</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="normal">
+<a class="viewcode-back" href="../../../pycbc.noise.html#pycbc.noise.reproduceable.normal">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normal</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="mi">16384</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate data with a white Gaussian (normal) distribution</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    start_time : int</span>
+<span class="sd">        Start time in GPS seconds to generate noise</span>
+<span class="sd">    end_time : int</span>
+<span class="sd">        End time in GPS seconds to generate noise</span>
+<span class="sd">    sample-rate: float</span>
+<span class="sd">        Sample rate to generate the data at. Keep constant if you want to</span>
+<span class="sd">        ensure continuity between disjoint time spans.</span>
+<span class="sd">    seed : {None, int}</span>
+<span class="sd">        The seed to generate the noise.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    noise : TimeSeries</span>
+<span class="sd">        A TimeSeries containing gaussian noise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This is reproduceable because we used fixed seeds from known values</span>
+    <span class="n">block_dur</span> <span class="o">=</span> <span class="n">BLOCK_SAMPLES</span> <span class="o">/</span> <span class="n">sample_rate</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">start</span> <span class="o">/</span> <span class="n">block_dur</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">end</span> <span class="o">/</span> <span class="n">block_dur</span><span class="p">))</span>
+
+    <span class="c1"># The data evenly divides so the last block would be superfluous</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="o">%</span> <span class="n">block_dur</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">e</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="n">sv</span> <span class="o">=</span> <span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">**</span><span class="mi">50</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">block</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">sv</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+                              <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="p">(</span><span class="n">s</span> <span class="o">*</span> <span class="n">block_dur</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ts</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="colored_noise">
+<a class="viewcode-back" href="../../../pycbc.noise.html#pycbc.noise.reproduceable.colored_noise">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">colored_noise</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span>
+                  <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="mi">16384</span><span class="p">,</span>
+                  <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                  <span class="n">filter_duration</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                  <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create noise from a PSD</span>
+
+<span class="sd">    Return noise from the chosen PSD. Note that if unique noise is desired</span>
+<span class="sd">    a unique seed should be provided.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    psd : pycbc.types.FrequencySeries</span>
+<span class="sd">        PSD to color the noise</span>
+<span class="sd">    start_time : int</span>
+<span class="sd">        Start time in GPS seconds to generate noise</span>
+<span class="sd">    end_time : int</span>
+<span class="sd">        End time in GPS seconds to generate nosie</span>
+<span class="sd">    seed : {None, int}</span>
+<span class="sd">        The seed to generate the noise.</span>
+<span class="sd">    sample_rate: {16384, float}</span>
+<span class="sd">        The sample rate of the output data. Keep constant if you want to</span>
+<span class="sd">        ensure continuity between disjoint time spans.</span>
+<span class="sd">    low_frequency_cutof : {1.0, float}</span>
+<span class="sd">        The low frequency cutoff to pass to the PSD generation.</span>
+<span class="sd">    filter_duration : {128, float}</span>
+<span class="sd">        The duration in seconds of the coloring filter</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    noise : TimeSeries</span>
+<span class="sd">        A TimeSeries containing gaussian noise colored by the given psd.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">/</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">oldlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span>
+    <span class="n">psd</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">flen</span><span class="p">)</span>
+
+    <span class="c1"># Want to avoid zeroes in PSD.</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="n">psd</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">oldlen</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">psd</span><span class="p">[</span><span class="n">oldlen</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">psd</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_val</span>
+
+    <span class="n">fil_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">filter_duration</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">wn_dur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">filter_duration</span>
+    <span class="k">if</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">&gt;=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">filter_duration</span><span class="p">):</span>
+        <span class="c1"># If the PSD is short enough, this method is less memory intensive than</span>
+        <span class="c1"># resizing and then calling inverse_spectrum_truncation</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">filter_duration</span><span class="p">))</span>
+        <span class="c1"># inverse_spectrum_truncation truncates the inverted PSD. To truncate</span>
+        <span class="c1"># the non-inverted PSD we give it the inverted PSD to truncate and then</span>
+        <span class="c1"># invert the output.</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">inverse_spectrum_truncation</span><span class="p">(</span>
+                                <span class="mf">1.</span><span class="o">/</span><span class="n">psd</span><span class="p">,</span>
+                                <span class="n">fil_len</span><span class="p">,</span>
+                                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                                <span class="n">trunc_method</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">)</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">psd</span><span class="p">))</span>
+        <span class="c1"># Zero-pad the time-domain PSD to desired length. Zeroes must be added</span>
+        <span class="c1"># in the middle, so some rolling between a resize is used.</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+        <span class="n">psd</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">fil_len</span><span class="p">)</span>
+        <span class="n">psd</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">wn_dur</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
+        <span class="n">psd</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="n">fil_len</span><span class="p">)</span>
+        <span class="c1"># As time series is still mirrored the complex frequency components are</span>
+        <span class="c1"># 0. But convert to real by using abs as in inverse_spectrum_truncate</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">wn_dur</span><span class="p">)</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">inverse_spectrum_truncation</span><span class="p">(</span>
+                                <span class="mf">1.</span><span class="o">/</span><span class="n">psd</span><span class="p">,</span>
+                                <span class="n">fil_len</span><span class="p">,</span>
+                                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                                <span class="n">trunc_method</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">)</span>
+
+    <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">low_frequency_cutoff</span> <span class="o">/</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">psd</span><span class="p">[:</span><span class="n">kmin</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">asd</span> <span class="o">=</span> <span class="p">(</span><span class="n">psd</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">())</span><span class="o">**</span><span class="mf">0.25</span>
+    <span class="k">del</span> <span class="n">psd</span>
+
+    <span class="n">white_noise</span> <span class="o">=</span> <span class="n">normal</span><span class="p">(</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">filter_duration</span><span class="p">,</span>
+                         <span class="n">end_time</span> <span class="o">+</span> <span class="n">filter_duration</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                         <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">white_noise</span> <span class="o">=</span> <span class="n">white_noise</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+    <span class="c1"># Here we color. Do not want to duplicate memory here though so use &#39;*=&#39;</span>
+    <span class="n">white_noise</span> <span class="o">*=</span> <span class="n">asd</span><span class="o">*</span><span class="n">scale</span>
+    <span class="k">del</span> <span class="n">asd</span>
+    <span class="n">colored</span> <span class="o">=</span> <span class="n">white_noise</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">(</span><span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="n">sample_rate</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">white_noise</span>
+    <span class="k">return</span> <span class="n">colored</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="noise_from_string">
+<a class="viewcode-back" href="../../../pycbc.noise.html#pycbc.noise.reproduceable.noise_from_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">noise_from_string</span><span class="p">(</span><span class="n">psd_name</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span>
+                      <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="n">sample_rate</span><span class="o">=</span><span class="mi">16384</span><span class="p">,</span>
+                      <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                      <span class="n">filter_duration</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+                      <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create noise from an analytic PSD</span>
+
+<span class="sd">    Return noise from the chosen PSD. Note that if unique noise is desired</span>
+<span class="sd">    a unique seed should be provided.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    psd_name : str</span>
+<span class="sd">        Name of the analytic PSD to use.</span>
+<span class="sd">    start_time : int</span>
+<span class="sd">        Start time in GPS seconds to generate noise</span>
+<span class="sd">    end_time : int</span>
+<span class="sd">        End time in GPS seconds to generate nosie</span>
+<span class="sd">    seed : {None, int}</span>
+<span class="sd">        The seed to generate the noise.</span>
+<span class="sd">    sample_rate: {16384, float}</span>
+<span class="sd">        The sample rate of the output data. Keep constant if you want to</span>
+<span class="sd">        ensure continuity between disjoint time spans.</span>
+<span class="sd">    low_frequency_cutof : {10.0, float}</span>
+<span class="sd">        The low frequency cutoff to pass to the PSD generation.</span>
+<span class="sd">    filter_duration : {128, float}</span>
+<span class="sd">        The duration in seconds of the coloring filter</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    noise : TimeSeries</span>
+<span class="sd">        A TimeSeries containing gaussian noise colored by the given psd.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">filter_duration</span>
+    <span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">psd_name</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">colored_noise</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span>
+                         <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                         <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span>
+                         <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                         <span class="n">filter_duration</span><span class="o">=</span><span class="n">filter_duration</span><span class="p">,</span>
+                         <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

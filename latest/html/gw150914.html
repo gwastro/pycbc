@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Processing with GW150914 &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Gravitational-wave Detectors" href="detector.html" />
+    <link rel="prev" title="Performing FFTs in PyCBC" href="fft.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Signal Processing with GW150914</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-the-whitened-strain">Plotting the whitened strain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculate-the-signal-to-noise">Calculate the signal-to-noise</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#listen-to-gw150914-in-hanford">Listen to GW150914 in Hanford</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Signal Processing with GW150914</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/gw150914.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="signal-processing-with-gw150914">
+<h1>Signal Processing with GW150914<a class="headerlink" href="#signal-processing-with-gw150914" title="Link to this heading"></a></h1>
+<p>Here are some interesting examples of how to process LIGO data using GW150914
+as an example.</p>
+<section id="plotting-the-whitened-strain">
+<h2>Plotting the whitened strain<a class="headerlink" href="#plotting-the-whitened-strain" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">highpass_fir</span><span class="p">,</span> <span class="n">lowpass_fir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd</span><span class="w"> </span><span class="kn">import</span> <span class="n">welch</span><span class="p">,</span> <span class="n">interpolate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">Merger</span>
+
+
+<span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">]:</span>
+    <span class="c1"># Read data and remove low frequency content</span>
+    <span class="n">h1</span> <span class="o">=</span> <span class="n">Merger</span><span class="p">(</span><span class="s2">&quot;GW150914&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strain</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+    <span class="n">h1</span> <span class="o">=</span> <span class="n">highpass_fir</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+    <span class="c1"># Calculate the noise spectrum</span>
+    <span class="n">psd</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">welch</span><span class="p">(</span><span class="n">h1</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">h1</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="c1"># whiten</span>
+    <span class="n">white_strain</span> <span class="o">=</span> <span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span> <span class="o">/</span> <span class="n">psd</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+
+    <span class="c1"># remove some of the high and low</span>
+    <span class="n">smooth</span> <span class="o">=</span> <span class="n">highpass_fir</span><span class="p">(</span><span class="n">white_strain</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">smooth</span> <span class="o">=</span> <span class="n">lowpass_fir</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+    <span class="c1"># time shift and flip L1</span>
+    <span class="k">if</span> <span class="n">ifo</span> <span class="o">==</span> <span class="s1">&#39;L1&#39;</span><span class="p">:</span>
+        <span class="n">smooth</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">smooth</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">.007</span> <span class="o">/</span> <span class="n">smooth</span><span class="o">.</span><span class="n">delta_t</span><span class="p">))</span>
+
+    <span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">smooth</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">smooth</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">ifo</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mf">1126259462.21</span><span class="p">,</span> <span class="mf">1126259462.45</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Smoothed-Whitened Strain&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;GPS Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/ee23b70d8131236cc3dd84ced4d22d73/gw150914_shape.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/7fa21a05f250d2884f77bcb07370ba50/gw150914_shape.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/bd31c32757b3607607fd2e349c669b07/gw150914_shape.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/e624742bd0b6fac4d6f692fa2364acc1/gw150914_shape.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/gw150914_shape.png" class="plot-directive" src="_images/gw150914_shape.png" />
+</figure>
+</section>
+<section id="calculate-the-signal-to-noise">
+<h2>Calculate the signal-to-noise<a class="headerlink" href="#calculate-the-signal-to-noise" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.request</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlretrieve</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_frame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">highpass_fir</span><span class="p">,</span> <span class="n">matched_filter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_fd_waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd</span><span class="w"> </span><span class="kn">import</span> <span class="n">welch</span><span class="p">,</span> <span class="n">interpolate</span>
+
+
+<span class="c1"># Read data and remove low frequency content</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;H-H1_LOSC_4_V2-1126259446-32.gwf&#39;</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.gwosc.org/GW150914data/&quot;</span> <span class="o">+</span> <span class="n">fname</span>
+<span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">fname</span><span class="p">)</span>
+<span class="n">h1</span> <span class="o">=</span> <span class="n">read_frame</span><span class="p">(</span><span class="s1">&#39;H-H1_LOSC_4_V2-1126259446-32.gwf&#39;</span><span class="p">,</span> <span class="s1">&#39;H1:LOSC-STRAIN&#39;</span><span class="p">)</span>
+<span class="n">h1</span> <span class="o">=</span> <span class="n">highpass_fir</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Calculate the noise spectrum</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">welch</span><span class="p">(</span><span class="n">h1</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">h1</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+
+<span class="c1"># Generate a template to filter with</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_fd_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;IMRPhenomD&quot;</span><span class="p">,</span> <span class="n">mass1</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+                         <span class="n">f_lower</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="n">h1</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+<span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Calculate the complex (two-phase SNR)</span>
+<span class="n">snr</span> <span class="o">=</span> <span class="n">matched_filter</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="mf">20.0</span><span class="p">)</span>
+
+<span class="c1"># Remove regions corrupted by filter wraparound</span>
+<span class="n">snr</span> <span class="o">=</span> <span class="n">snr</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">//</span> <span class="mi">4</span><span class="p">]</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">snr</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">snr</span><span class="p">))</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;signal-to-noise&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;GPS Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/1804f9c9926d99639541c44054a1fa50/gw150914_h1_snr.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/a1e83afccc8df7dd2af9da87099a64c9/gw150914_h1_snr.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/53ae15772e158f8a14196904c7bfdd50/gw150914_h1_snr.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/81c6031e0f6e3a150cefb716f43d66a6/gw150914_h1_snr.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/gw150914_h1_snr.png" class="plot-directive" src="_images/gw150914_h1_snr.png" />
+</figure>
+</section>
+<section id="listen-to-gw150914-in-hanford">
+<h2>Listen to GW150914 in Hanford<a class="headerlink" href="#listen-to-gw150914-in-hanford" title="Link to this heading"></a></h2>
+<p>Here we’ll make a frequency shifted and slowed version of GW150914 as
+it can be heard in the Hanford data.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_frame</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">highpass_fir</span><span class="p">,</span> <span class="n">lowpass_fir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd</span><span class="w"> </span><span class="kn">import</span> <span class="n">welch</span><span class="p">,</span> <span class="n">interpolate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.request</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlretrieve</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># python &lt; 3</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlretrieve</span>
+
+<span class="c1"># Read data and remove low frequency content</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;H-H1_LOSC_4_V2-1126259446-32.gwf&#39;</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://www.gwosc.org/GW150914data/&quot;</span> <span class="o">+</span> <span class="n">fname</span>
+<span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">fname</span><span class="p">)</span>
+<span class="n">h1</span> <span class="o">=</span> <span class="n">highpass_fir</span><span class="p">(</span><span class="n">read_frame</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;H1:LOSC-STRAIN&#39;</span><span class="p">),</span> <span class="mf">15.0</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Calculate the noise spectrum and whiten</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">welch</span><span class="p">(</span><span class="n">h1</span><span class="p">),</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">white_strain</span> <span class="o">=</span> <span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span> <span class="o">/</span> <span class="n">psd</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+
+<span class="c1"># remove some of the high and low frequencies</span>
+<span class="n">smooth</span> <span class="o">=</span> <span class="n">highpass_fir</span><span class="p">(</span><span class="n">white_strain</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">smooth</span> <span class="o">=</span> <span class="n">lowpass_fir</span><span class="p">(</span><span class="n">white_strain</span><span class="p">,</span> <span class="mi">250</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="c1">#strech out and shift the frequency upwards to aid human hearing</span>
+<span class="n">fdata</span> <span class="o">=</span> <span class="n">smooth</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+<span class="n">fdata</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mi">1200</span> <span class="o">/</span> <span class="n">fdata</span><span class="o">.</span><span class="n">delta_f</span><span class="p">))</span>
+<span class="n">smooth</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">fdata</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">(),</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">1024</span><span class="p">)</span>
+
+<span class="c1">#Take slice around signal</span>
+<span class="n">smooth</span> <span class="o">=</span> <span class="n">smooth</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">smooth</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1500</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">smooth</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">3000</span><span class="p">]</span>
+<span class="n">smooth</span><span class="o">.</span><span class="n">save_to_wav</span><span class="p">(</span><span class="s1">&#39;gw150914_h1_chirp.wav&#39;</span><span class="p">)</span>
+
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="_downloads/e898125cf7aee08e9696e6389c6a8f4b/gw150914_h1_chirp.wav"><code class="xref download docutils literal notranslate"><span class="pre">The</span> <span class="pre">audio</span></code></a></p>
+<p>Note, google chrome may not play wav files correctly, please download to listen.</p>
+<audio controls><source src='_downloads/gw150914_h1_chirp.wav' type='audio/wav'</audio></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fft.html" class="btn btn-neutral float-left" title="Performing FFTs in PyCBC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="detector.html" class="btn btn-neutral float-right" title="Gravitational-wave Detectors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

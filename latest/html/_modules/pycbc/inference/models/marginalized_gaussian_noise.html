@@ -1,0 +1,950 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.marginalized_gaussian_noise &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.marginalized_gaussian_noise</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.marginalized_gaussian_noise</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018  Charlie Hoy, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This module provides model classes that assume the noise is Gaussian and</span>
+<span class="sd">allows for the likelihood to be marginalized over phase and/or time and/or</span>
+<span class="sd">distance.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">generator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseGaussianNoise</span><span class="p">,</span>
+                             <span class="n">create_waveform_generator</span><span class="p">,</span>
+                             <span class="n">GaussianNoise</span><span class="p">,</span> <span class="n">catch_waveform_error</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">marginalize_likelihood</span><span class="p">,</span> <span class="n">DistMarg</span>
+
+
+<div class="viewcode-block" id="MarginalizedPhaseGaussianNoise">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MarginalizedPhaseGaussianNoise</span><span class="p">(</span><span class="n">GaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The likelihood is analytically marginalized over phase.</span>
+
+<span class="sd">    This class can be used with signal models that can be written as:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \tilde{h}(f; \Theta, \phi) = A(f; \Theta)e^{i\Psi(f; \Theta) + i \phi},</span>
+
+<span class="sd">    where :math:`\phi` is an arbitrary phase constant. This phase constant</span>
+<span class="sd">    can be analytically marginalized over with a uniform prior as follows:</span>
+<span class="sd">    assuming the noise is stationary and Gaussian (see `GaussianNoise`</span>
+<span class="sd">    for details), the posterior is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p(\Theta,\phi|d)</span>
+<span class="sd">            &amp;\propto p(\Theta)p(\phi)p(d|\Theta,\phi) \\</span>
+<span class="sd">            &amp;\propto p(\Theta)\frac{1}{2\pi}\exp\left[</span>
+<span class="sd">                -\frac{1}{2}\sum_{i}^{N_D} \left&lt;</span>
+<span class="sd">                    h_i(\Theta,\phi) - d_i, h_i(\Theta,\phi) - d_i</span>
+<span class="sd">                \right&gt;\right].</span>
+
+<span class="sd">    Here, the sum is over the number of detectors :math:`N_D`, :math:`d_i`</span>
+<span class="sd">    and :math:`h_i` are the data and signal in detector :math:`i`,</span>
+<span class="sd">    respectively, and we have assumed a uniform prior on :math:`\phi \in [0,</span>
+<span class="sd">    2\pi)`. With the form of the signal model given above, the inner product</span>
+<span class="sd">    in the exponent can be written as:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        -\frac{1}{2}\left&lt;h_i - d_i, h_i- d_i\right&gt;</span>
+<span class="sd">            &amp;= \left&lt;h_i, d_i\right&gt; -</span>
+<span class="sd">               \frac{1}{2}\left&lt;h_i, h_i\right&gt; -</span>
+<span class="sd">               \frac{1}{2}\left&lt;d_i, d_i\right&gt; \\</span>
+<span class="sd">            &amp;= \Re\left\{O(h^0_i, d_i)e^{-i\phi}\right\} -</span>
+<span class="sd">               \frac{1}{2}\left&lt;h^0_i, h^0_i\right&gt; -</span>
+<span class="sd">               \frac{1}{2}\left&lt;d_i, d_i\right&gt;,</span>
+
+<span class="sd">    where:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        h_i^0 &amp;\equiv \tilde{h}_i(f; \Theta, \phi=0); \\</span>
+<span class="sd">        O(h^0_i, d_i) &amp;\equiv 4 \int_0^\infty</span>
+<span class="sd">            \frac{\tilde{h}_i^*(f; \Theta,0)\tilde{d}_i(f)}{S_n(f)}\mathrm{d}f.</span>
+
+<span class="sd">    Gathering all of the terms that are not dependent on :math:`\phi` together:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \alpha(\Theta, d) \equiv \exp\left[-\frac{1}{2}\sum_i</span>
+<span class="sd">            \left&lt;h^0_i, h^0_i\right&gt; + \left&lt;d_i, d_i\right&gt;\right],</span>
+
+<span class="sd">    we can marginalize the posterior over :math:`\phi`:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p(\Theta|d)</span>
+<span class="sd">            &amp;\propto p(\Theta)\alpha(\Theta,d)\frac{1}{2\pi}</span>
+<span class="sd">                     \int_{0}^{2\pi}\exp\left[\Re \left\{</span>
+<span class="sd">                         e^{-i\phi} \sum_i O(h^0_i, d_i)</span>
+<span class="sd">                     \right\}\right]\mathrm{d}\phi \\</span>
+<span class="sd">            &amp;\propto p(\Theta)\alpha(\Theta, d)\frac{1}{2\pi}</span>
+<span class="sd">                     \int_{0}^{2\pi}\exp\left[</span>
+<span class="sd">                         x(\Theta,d)\cos(\phi) + y(\Theta, d)\sin(\phi)</span>
+<span class="sd">                     \right]\mathrm{d}\phi.</span>
+
+<span class="sd">    The integral in the last line is equal to :math:`2\pi I_0(\sqrt{x^2+y^2})`,</span>
+<span class="sd">    where :math:`I_0` is the modified Bessel function of the first kind. Thus</span>
+<span class="sd">    the marginalized posterior is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p(\Theta|d) \propto</span>
+<span class="sd">            I_0\left(\left|\sum_i O(h^0_i, d_i)\right|\right)</span>
+<span class="sd">             p(\Theta)\exp\left[\frac{1}{2}\sum_i\left( \left&lt;h^0_i, h^0_i\right&gt; -</span>
+<span class="sd">                                    \left&lt;d_i, d_i\right&gt; \right)\right]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;marginalized_phase&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MarginalizedPhaseGaussianNoise</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="n">static_params</span><span class="o">=</span><span class="n">static_params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each</span>
+<span class="sd">        detector.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;loglr&#39;</span><span class="p">,</span> <span class="s1">&#39;maxl_phase&#39;</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to set loglr values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="c1"># maxl phase doesn&#39;t exist, so set it to nan</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_phase&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+            <span class="c1"># snr can&#39;t be &lt; 0 by definition, so return 0</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+<span class="sd">        .. math::</span>
+<span class="sd">            \log \mathcal{L}(\Theta) =</span>
+<span class="sd">                I_0 \left(\left|\sum_i O(h^0_i, d_i)\right|\right) -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h^0_i, h^0_i\right&gt;,</span>
+<span class="sd">        at the current point in parameter space :math:`\Theta`.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio evaluated at the given point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ifodata_same_rate_length</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">wfs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">))</span>
+        <span class="n">hh</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">hd</span> <span class="o">=</span> <span class="mi">0</span><span class="n">j</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># the kmax of the waveforms may be different than internal kmax</span>
+            <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">kmax</span><span class="p">:</span>
+                <span class="c1"># if the waveform terminates before the filtering low frequency</span>
+                <span class="c1"># cutoff, then the loglr is just 0 for this detector</span>
+                <span class="n">hh_i</span> <span class="o">=</span> <span class="mf">0.</span>
+                <span class="n">hd_i</span> <span class="o">=</span> <span class="mi">0</span><span class="n">j</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># whiten the waveform</span>
+                <span class="n">h</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span>
+                <span class="c1"># calculate inner products</span>
+                <span class="n">hh_i</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span>
+                    <span class="n">h</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">hd_i</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">])</span>
+            <span class="c1"># store</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">),</span> <span class="n">hh_i</span><span class="p">)</span>
+            <span class="n">hh</span> <span class="o">+=</span> <span class="n">hh_i</span>
+            <span class="n">hd</span> <span class="o">+=</span> <span class="n">hd_i</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="o">.</span><span class="n">maxl_phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">hd</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">marginalize_likelihood</span><span class="p">(</span><span class="n">hd</span><span class="p">,</span> <span class="n">hh</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MarginalizedTime">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MarginalizedTime</span><span class="p">(</span><span class="n">DistMarg</span><span class="p">,</span> <span class="n">BaseGaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This likelihood numerically marginalizes over time</span>
+
+<span class="sd">    This likelihood is optimized for marginalizing over time, but can also</span>
+<span class="sd">    handle marginalization over polarization, phase (where appropriate),</span>
+<span class="sd">    and sky location. The time series is interpolated using a</span>
+<span class="sd">    quadratic apparoximation for sub-sample times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;marginalized_time&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span>
+                 <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># the flag used in `_loglr`</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span> <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="n">variable_params</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_marginalization</span><span class="p">(</span>
+                               <span class="n">variable_params</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MarginalizedTime</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Determine if all data have the same sampling rate and segment length</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ifodata_same_rate_length</span><span class="p">:</span>
+            <span class="c1"># create a waveform generator for all ifos</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+                <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+                <span class="n">generator_class</span><span class="o">=</span><span class="n">generator</span><span class="o">.</span><span class="n">FDomainDetFrameTwoPolNoRespGenerator</span><span class="p">,</span>
+                <span class="n">gates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;static_params&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># create a waveform generator for each ifo respectively</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]},</span>
+                    <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+                    <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+                    <span class="n">generator_class</span><span class="o">=</span><span class="n">generator</span><span class="o">.</span><span class="n">FDomainDetFrameTwoPolNoRespGenerator</span><span class="p">,</span>
+                    <span class="n">gates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;static_params&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dets</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model sample rate was set less than the&quot;</span>
+                                     <span class="s2">&quot; data. &quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using </span><span class="si">%s</span><span class="s2"> sample rate for marginalization&quot;</span><span class="p">,</span>
+                         <span class="n">sample_rate</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to set loglr values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+<span class="sd">        or inner product &lt;s|h&gt; and &lt;h|h&gt; if `self.return_sh_hh` is True.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">matched_filter_core</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ifodata_same_rate_length</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">wfs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">))</span>
+        <span class="n">sh_total</span> <span class="o">=</span> <span class="n">hh_total</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">snr_estimate</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cplx_hpd</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cplx_hcd</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hphp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hchc</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hphc</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># the kmax of the waveforms may be different than internal kmax</span>
+            <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hc</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">kmax</span><span class="p">)</span>
+
+            <span class="c1"># whiten both polarizations</span>
+            <span class="n">hp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+            <span class="n">hc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+
+            <span class="c1"># Use a higher sample rate if requested</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tlen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">duration</span><span class="p">))</span>
+                <span class="n">flen</span> <span class="o">=</span> <span class="n">tlen</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">flen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            
+            <span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">flen</span><span class="p">)</span>
+            <span class="n">hc</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">flen</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">flen</span><span class="p">)</span>
+
+            <span class="n">cplx_hpd</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">matched_filter_core</span><span class="p">(</span>
+                                 <span class="n">hp</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                                 <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_lower</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_upper</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                                 <span class="n">h_norm</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">cplx_hcd</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">matched_filter_core</span><span class="p">(</span>
+                                 <span class="n">hc</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                                 <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_lower</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_f_upper</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                                 <span class="n">h_norm</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">hphp</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+            <span class="n">hchc</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+            <span class="n">hphc</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+
+            <span class="n">snr_proxy</span> <span class="o">=</span> <span class="p">((</span><span class="n">cplx_hpd</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">/</span> <span class="n">hphp</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">()</span> <span class="o">+</span>
+                         <span class="p">(</span><span class="n">cplx_hcd</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">/</span> <span class="n">hchc</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">())</span>
+            <span class="n">snr_estimate</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">snr_proxy</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_ifos</span><span class="p">(</span><span class="n">snr_estimate</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr_draw</span><span class="p">(</span><span class="n">snrs</span><span class="o">=</span><span class="n">snr_estimate</span><span class="p">)</span>
+        
+        <span class="n">refframe</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+        <span class="n">ref_tc</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precalc_antenna_factors</span><span class="p">:</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_precalc_antenna_factors</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+                <span class="n">pol_phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">fc</span><span class="p">)</span> <span class="o">*</span> <span class="n">pol_phase</span>
+                <span class="n">fp</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">fc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">imag</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span>
+                                        <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span>
+                                        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">],</span> <span class="n">tc</span><span class="p">)</span>
+
+            <span class="n">cplx_hd</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">cplx_hpd</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">at_time</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span>
+                                                 <span class="n">interpolate</span><span class="o">=</span><span class="s1">&#39;quadratic&#39;</span><span class="p">)</span>
+            <span class="n">cplx_hd</span> <span class="o">+=</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">cplx_hcd</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">at_time</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span>
+                                                  <span class="n">interpolate</span><span class="o">=</span><span class="s1">&#39;quadratic&#39;</span><span class="p">)</span>
+            <span class="n">hh</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span> <span class="o">*</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">hphp</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+</span>
+                  <span class="n">fc</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hchc</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+</span>
+                  <span class="mf">2.0</span> <span class="o">*</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hphc</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+
+            <span class="n">sh_total</span> <span class="o">+=</span> <span class="n">cplx_hd</span>
+            <span class="n">hh_total</span> <span class="o">+=</span> <span class="n">hh</span>
+
+        <span class="n">loglr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">loglr</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<div class="viewcode-block" id="MarginalizedPolarization">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MarginalizedPolarization</span><span class="p">(</span><span class="n">DistMarg</span><span class="p">,</span> <span class="n">BaseGaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; This likelihood numerically marginalizes over polarization angle</span>
+
+<span class="sd">    This class implements the Gaussian likelihood with an explicit numerical</span>
+<span class="sd">    marginalization over polarization angle. This is accomplished using</span>
+<span class="sd">    a fixed set of integration points distribution uniformation between</span>
+<span class="sd">    0 and 2pi. By default, 1000 integration points are used.</span>
+<span class="sd">    The &#39;polarization_samples&#39; argument can be passed to set an alternate</span>
+<span class="sd">    number of integration points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;marginalized_polarization&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">polarization_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="n">variable_params</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_marginalization</span><span class="p">(</span>
+                               <span class="n">variable_params</span><span class="p">,</span>
+                               <span class="n">polarization_samples</span><span class="o">=</span><span class="n">polarization_samples</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MarginalizedPolarization</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Determine if all data have the same sampling rate and segment length</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ifodata_same_rate_length</span><span class="p">:</span>
+            <span class="c1"># create a waveform generator for all ifos</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+                <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+                <span class="n">generator_class</span><span class="o">=</span><span class="n">generator</span><span class="o">.</span><span class="n">FDomainDetFrameTwoPolGenerator</span><span class="p">,</span>
+                <span class="n">gates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;static_params&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># create a waveform generator for each ifo respectively</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">det</span><span class="p">]},</span>
+                    <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+                    <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+                    <span class="n">generator_class</span><span class="o">=</span><span class="n">generator</span><span class="o">.</span><span class="n">FDomainDetFrameTwoPolGenerator</span><span class="p">,</span>
+                    <span class="n">gates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;static_params&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dets</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds ``loglr``, ``maxl_polarization``, and the ``optimal_snrsq`` in</span>
+<span class="sd">        each detector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;loglr&#39;</span><span class="p">,</span> <span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="s1">&#39;maxl_loglr&#39;</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to set loglr values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;loglr&#39;</span><span class="p">,</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="c1"># maxl phase doesn&#39;t exist, so set it to nan</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+            <span class="c1"># snr can&#39;t be &lt; 0 by definition, so return 0</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_ifodata_same_rate_length</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">wfs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">))</span>
+
+        <span class="n">lr</span> <span class="o">=</span> <span class="n">sh_total</span> <span class="o">=</span> <span class="n">hh_total</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">refframe</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+        <span class="n">ref_tc</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+            <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span>
+                                    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">],</span> <span class="n">tc</span><span class="p">)</span>
+
+            <span class="c1"># the kmax of the waveforms may be different than internal kmax</span>
+            <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hc</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+            <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">kmax</span><span class="p">)</span>
+
+            <span class="c1"># whiten both polarizations</span>
+            <span class="n">hp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+            <span class="n">hc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+
+            <span class="c1"># h = fp * hp + hc * hc</span>
+            <span class="c1"># &lt;h, d&gt; = fp * &lt;hp,d&gt; + fc * &lt;hc,d&gt;</span>
+            <span class="c1"># the inner products</span>
+            <span class="n">cplx_hpd</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">])</span>  <span class="c1"># &lt;hp, d&gt;</span>
+            <span class="n">cplx_hcd</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">])</span>  <span class="c1"># &lt;hc, d&gt;</span>
+
+            <span class="n">cplx_hd</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">cplx_hpd</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">cplx_hcd</span>
+
+            <span class="c1"># &lt;h, h&gt; = &lt;fp * hp + fc * hc, fp * hp + fc * hc&gt;</span>
+            <span class="c1"># = Real(fpfp * &lt;hp,hp&gt; + fcfc * &lt;hc,hc&gt; + \</span>
+            <span class="c1">#  fphc * (&lt;hp, hc&gt; + &lt;hc, hp&gt;))</span>
+            <span class="n">hphp</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt; hp, hp&gt;</span>
+            <span class="n">hchc</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hc, hc&gt;</span>
+
+            <span class="c1"># Below could be combined, but too tired to figure out</span>
+            <span class="c1"># if there should be a sign applied if so</span>
+            <span class="n">hphc</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hp, hc&gt;</span>
+            <span class="n">hchp</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hp</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>  <span class="c1"># &lt;hc, hp&gt;</span>
+
+            <span class="n">hh</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">hphp</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hchc</span> <span class="o">+</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="p">(</span><span class="n">hphc</span> <span class="o">+</span> <span class="n">hchp</span><span class="p">)</span>
+            <span class="c1"># store</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">),</span> <span class="n">hh</span><span class="p">)</span>
+            <span class="n">sh_total</span> <span class="o">+=</span> <span class="n">cplx_hd</span>
+            <span class="n">hh_total</span> <span class="o">+=</span> <span class="n">hh</span>
+
+        <span class="n">lr</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">maxl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">,</span>
+                  <span class="n">return_peak</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># store the maxl polarization</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span>
+                <span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_loglr&#39;</span><span class="p">,</span> <span class="n">maxl</span><span class="p">)</span>
+
+        <span class="c1"># just store the maxl optimal snrsq</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_optimal_snrsq&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">p</span><span class="p">)[</span><span class="n">idx</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">lr</span></div>
+
+
+
+<div class="viewcode-block" id="MarginalizedHMPolPhase">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MarginalizedHMPolPhase</span><span class="p">(</span><span class="n">BaseGaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Numerically marginalizes waveforms with higher modes over polarization</span>
+<span class="sd">    `and` phase.</span>
+
+<span class="sd">    This class implements the Gaussian likelihood with an explicit numerical</span>
+<span class="sd">    marginalization over polarization angle and orbital phase. This is</span>
+<span class="sd">    accomplished using a fixed set of integration points distributed uniformly</span>
+<span class="sd">    between 0 and 2:math:`\pi` for both the polarization and phase. By default,</span>
+<span class="sd">    100 integration points are used for each parameter, giving :math:`10^4`</span>
+<span class="sd">    evaluation points in total. This can be modified using the</span>
+<span class="sd">    ``polarization_samples`` and ``coa_phase_samples`` arguments.</span>
+
+<span class="sd">    This only works with waveforms that return separate spherical harmonic</span>
+<span class="sd">    modes for each waveform. For a list of currently supported approximants,</span>
+<span class="sd">    see :py:func:`pycbc.waveform.waveform_modes.fd_waveform_mode_approximants`</span>
+<span class="sd">    and :py:func:`pycbc.waveform.waveform_modes.td_waveform_mode_approximants`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_params : (tuple of) string(s)</span>
+<span class="sd">        A tuple of parameter names that will be varied.</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        A dictionary of data, in which the keys are the detector names and the</span>
+<span class="sd">        values are the data (assumed to be unwhitened). All data must have the</span>
+<span class="sd">        same frequency resolution.</span>
+<span class="sd">    low_frequency_cutoff : dict</span>
+<span class="sd">        A dictionary of starting frequencies, in which the keys are the</span>
+<span class="sd">        detector names and the values are the starting frequencies for the</span>
+<span class="sd">        respective detectors to be used for computing inner products.</span>
+<span class="sd">    psds : dict, optional</span>
+<span class="sd">        A dictionary of FrequencySeries keyed by the detector names. The</span>
+<span class="sd">        dictionary must have a psd for each detector specified in the data</span>
+<span class="sd">        dictionary. If provided, the inner products in each detector will be</span>
+<span class="sd">        weighted by 1/psd of that detector.</span>
+<span class="sd">    high_frequency_cutoff : dict, optional</span>
+<span class="sd">        A dictionary of ending frequencies, in which the keys are the</span>
+<span class="sd">        detector names and the values are the ending frequencies for the</span>
+<span class="sd">        respective detectors to be used for computing inner products. If not</span>
+<span class="sd">        provided, the minimum of the largest frequency stored in the data</span>
+<span class="sd">        and a given waveform will be used.</span>
+<span class="sd">    normalize : bool, optional</span>
+<span class="sd">        If True, the normalization factor :math:`alpha` will be included in the</span>
+<span class="sd">        log likelihood. See :py:class:`GaussianNoise` for details. Default is</span>
+<span class="sd">        to not include it.</span>
+<span class="sd">    polarization_samples : int, optional</span>
+<span class="sd">        How many points to use in polarization. Default is 100.</span>
+<span class="sd">    coa_phase_samples : int, optional</span>
+<span class="sd">        How many points to use in phase. Defaults is 100.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to</span>
+<span class="sd">        :py:class:`BaseGaussianNoise</span>
+<span class="sd">        &lt;pycbc.inference.models.gaussian_noise.BaseGaussianNoise&gt;`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;marginalized_hmpolphase&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">polarization_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                 <span class="n">coa_phase_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                 <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># set up the boiler-plate attributes</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MarginalizedHMPolPhase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">,</span>
+            <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="n">normalize</span><span class="p">,</span>
+            <span class="n">static_params</span><span class="o">=</span><span class="n">static_params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># create the waveform generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span> <span class="o">=</span> <span class="n">create_waveform_generator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">waveform_transforms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+            <span class="n">recalibration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">recalibration</span><span class="p">,</span>
+            <span class="n">generator_class</span><span class="o">=</span><span class="n">generator</span><span class="o">.</span><span class="n">FDomainDetFrameModesGenerator</span><span class="p">,</span>
+            <span class="n">gates</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">)</span>
+        <span class="n">pol</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">polarization_samples</span><span class="p">)</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">coa_phase_samples</span><span class="p">)</span>
+        <span class="c1"># remap to every combination of the parameters</span>
+        <span class="c1"># this gets every combination by mappin them to an NxM grid</span>
+        <span class="c1"># one needs to be transposed so that they run allong opposite</span>
+        <span class="c1"># dimensions</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">coa_phase_samples</span> <span class="o">*</span> <span class="n">polarization_samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pol</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">pol</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">coa_phase_samples</span><span class="p">,</span> <span class="n">polarization_samples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase_fac</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dets</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="MarginalizedHMPolPhase.phase_fac">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase.phase_fac">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phase_fac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The phase :math:`\exp[i m \phi]`.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_fac</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># hasn&#39;t been computed yet, calculate it</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_phase_fac</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">m</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_fac</span><span class="p">[</span><span class="n">m</span><span class="p">]</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds ``maxl_polarization`` and the ``maxl_phase``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="s1">&#39;maxl_phase&#39;</span><span class="p">,</span> <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to set loglr values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># maxl phase doesn&#39;t exist, so set it to nan</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_phase&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_unmarginalized</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="c1"># Some optimizations not yet taken:</span>
+        <span class="c1"># * higher m calculations could have a lot of redundancy</span>
+        <span class="c1"># * fp/fc need not be calculated except where polarization is different</span>
+        <span class="c1"># * may be possible to simplify this by making smarter use of real/imag</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="n">lr</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">hds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hhs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">refframe</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+        <span class="n">ref_tc</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">modes</span> <span class="ow">in</span> <span class="n">wfs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+            <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dets</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pol</span><span class="p">,</span> <span class="n">tc</span><span class="p">)</span>
+
+            <span class="c1"># loop over modes and prepare the waveform modes</span>
+            <span class="c1"># we will sum up zetalm = glm &lt;ulm, d&gt; + i glm &lt;vlm, d&gt;</span>
+            <span class="c1"># over all common m so that we can apply the phase once</span>
+            <span class="n">zetas</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">rlms</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">slms</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">modes</span><span class="p">:</span>
+                <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">mode</span>
+                <span class="n">ulm</span><span class="p">,</span> <span class="n">vlm</span> <span class="o">=</span> <span class="n">modes</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+
+                <span class="c1"># whiten the waveforms</span>
+                <span class="c1"># the kmax of the waveforms may be different than internal kmax</span>
+                <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ulm</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">vlm</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kmax</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+                <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">kmax</span><span class="p">)</span>
+                <span class="n">ulm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+                <span class="n">vlm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kmin</span><span class="p">[</span><span class="n">det</span><span class="p">]:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+
+                <span class="c1"># the inner products</span>
+                <span class="c1"># &lt;ulm, d&gt;</span>
+                <span class="n">ulmd</span> <span class="o">=</span> <span class="n">ulm</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+                <span class="c1"># &lt;vlm, d&gt;</span>
+                <span class="n">vlmd</span> <span class="o">=</span> <span class="n">vlm</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_whitened_data</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+
+                <span class="c1"># add inclination, and pack into a complex number</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">lal</span>
+                <span class="n">glm</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">SpinWeightedSphericalHarmonic</span><span class="p">(</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+
+                <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">zetas</span><span class="p">:</span>
+                    <span class="n">zetas</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="n">j</span>
+                <span class="n">zetas</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">+=</span> <span class="n">glm</span> <span class="o">*</span> <span class="p">(</span><span class="n">ulmd</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">vlmd</span><span class="p">)</span>
+
+                <span class="c1"># Get condense set of the parts of the waveform that only diff</span>
+                <span class="c1"># by m, this is used next to help calculate &lt;h, h&gt;</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">glm</span> <span class="o">*</span> <span class="n">ulm</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">glm</span> <span class="o">*</span> <span class="n">vlm</span>
+
+                <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rlms</span><span class="p">:</span>
+                    <span class="n">rlms</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+                    <span class="n">slms</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rlms</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span>
+                    <span class="n">slms</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">+=</span> <span class="n">s</span>
+
+            <span class="c1"># now compute all possible &lt;hlm, hlm&gt;</span>
+            <span class="n">rr_m</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">ss_m</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">rs_m</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">sr_m</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">combos</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations_with_replacement</span><span class="p">(</span><span class="n">rlms</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">mprime</span> <span class="ow">in</span> <span class="n">combos</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">rlms</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">slms</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+                <span class="n">rprime</span> <span class="o">=</span> <span class="n">rlms</span><span class="p">[</span><span class="n">mprime</span><span class="p">]</span>
+                <span class="n">sprime</span> <span class="o">=</span> <span class="n">slms</span><span class="p">[</span><span class="n">mprime</span><span class="p">]</span>
+                <span class="n">rr_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">rprime</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">ss_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">sprime</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">rs_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">rprime</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">sr_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">sprime</span><span class="p">[</span><span class="n">slc</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
+                <span class="c1"># store the conjugate for easy retrieval later</span>
+                <span class="n">rr_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span> <span class="o">=</span> <span class="n">rr_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span>
+                <span class="n">ss_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span> <span class="o">=</span> <span class="n">ss_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span>
+                <span class="n">rs_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span> <span class="o">=</span> <span class="n">sr_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span>
+                <span class="n">sr_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span> <span class="o">=</span> <span class="n">rs_m</span><span class="p">[</span><span class="n">mprime</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span>
+            <span class="c1"># now apply the phase to all the common ms</span>
+            <span class="n">hpd</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">hcd</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">hphp</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">hchc</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">hphc</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">zeta</span> <span class="ow">in</span> <span class="n">zetas</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">phase_coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase_fac</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+                <span class="c1"># &lt;h+, d&gt; = (exp[i m phi] * zeta).real()</span>
+                <span class="c1"># &lt;hx, d&gt; = -(exp[i m phi] * zeta).imag()</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">phase_coeff</span> <span class="o">*</span> <span class="n">zeta</span>
+                <span class="n">hpd</span> <span class="o">+=</span> <span class="n">z</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">hcd</span> <span class="o">-=</span> <span class="n">z</span><span class="o">.</span><span class="n">imag</span>
+
+                <span class="c1"># now calculate the contribution to &lt;h, h&gt;</span>
+                <span class="n">cosm</span> <span class="o">=</span> <span class="n">phase_coeff</span><span class="o">.</span><span class="n">real</span>
+                <span class="n">sinm</span> <span class="o">=</span> <span class="n">phase_coeff</span><span class="o">.</span><span class="n">imag</span>
+
+                <span class="k">for</span> <span class="n">mprime</span> <span class="ow">in</span> <span class="n">zetas</span><span class="p">:</span>
+                    <span class="n">pcprime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase_fac</span><span class="p">(</span><span class="n">mprime</span><span class="p">)</span>
+
+                    <span class="n">cosmprime</span> <span class="o">=</span> <span class="n">pcprime</span><span class="o">.</span><span class="n">real</span>
+                    <span class="n">sinmprime</span> <span class="o">=</span> <span class="n">pcprime</span><span class="o">.</span><span class="n">imag</span>
+                    <span class="c1"># needed components</span>
+                    <span class="n">rr</span> <span class="o">=</span> <span class="n">rr_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span>
+                    <span class="n">ss</span> <span class="o">=</span> <span class="n">ss_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span>
+                    <span class="n">rs</span> <span class="o">=</span> <span class="n">rs_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span>
+                    <span class="n">sr</span> <span class="o">=</span> <span class="n">sr_m</span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">mprime</span><span class="p">]</span>
+                    <span class="c1"># &lt;hp, hp&gt;</span>
+                    <span class="n">hphp</span> <span class="o">+=</span> <span class="n">rr</span> <span class="o">*</span> <span class="n">cosm</span> <span class="o">*</span> <span class="n">cosmprime</span> \
+                        <span class="o">+</span> <span class="n">ss</span> <span class="o">*</span> <span class="n">sinm</span> <span class="o">*</span> <span class="n">sinmprime</span> \
+                        <span class="o">-</span> <span class="n">rs</span> <span class="o">*</span> <span class="n">cosm</span> <span class="o">*</span> <span class="n">sinmprime</span> \
+                        <span class="o">-</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">sinm</span> <span class="o">*</span> <span class="n">cosmprime</span>
+                    <span class="c1"># &lt;hc, hc&gt;</span>
+                    <span class="n">hchc</span> <span class="o">+=</span> <span class="n">rr</span> <span class="o">*</span> <span class="n">sinm</span> <span class="o">*</span> <span class="n">sinmprime</span> \
+                        <span class="o">+</span> <span class="n">ss</span> <span class="o">*</span> <span class="n">cosm</span> <span class="o">*</span> <span class="n">cosmprime</span> \
+                        <span class="o">+</span> <span class="n">rs</span> <span class="o">*</span> <span class="n">sinm</span> <span class="o">*</span> <span class="n">cosmprime</span> \
+                        <span class="o">+</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">cosm</span> <span class="o">*</span> <span class="n">sinmprime</span>
+                    <span class="c1"># &lt;hp, hc&gt;</span>
+                    <span class="n">hphc</span> <span class="o">+=</span> <span class="o">-</span><span class="n">rr</span> <span class="o">*</span> <span class="n">cosm</span> <span class="o">*</span> <span class="n">sinmprime</span> \
+                        <span class="o">+</span> <span class="n">ss</span> <span class="o">*</span> <span class="n">sinm</span> <span class="o">*</span> <span class="n">cosmprime</span> \
+                        <span class="o">+</span> <span class="n">sr</span> <span class="o">*</span> <span class="n">sinm</span> <span class="o">*</span> <span class="n">sinmprime</span> \
+                        <span class="o">-</span> <span class="n">rs</span> <span class="o">*</span> <span class="n">cosm</span> <span class="o">*</span> <span class="n">cosmprime</span>
+
+            <span class="c1"># Now apply the polarizations and calculate the loglr</span>
+            <span class="c1"># We have h = Fp * hp + Fc * hc</span>
+            <span class="c1"># loglr = &lt;h, d&gt; - &lt;h, h&gt;/2</span>
+            <span class="c1">#       = Fp*&lt;hp, d&gt; + Fc*&lt;hc, d&gt;</span>
+            <span class="c1">#          - (1/2)*(Fp*Fp*&lt;hp, hp&gt; + Fc*Fc*&lt;hc, hc&gt;</span>
+            <span class="c1">#                   + 2*Fp*Fc&lt;hp, hc&gt;)</span>
+            <span class="c1"># (in the last line we have made use of the time series being</span>
+            <span class="c1">#  real, so that &lt;a, b&gt; = &lt;b, a&gt;).</span>
+            <span class="n">hd</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">hpd</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hcd</span>
+            <span class="n">hh</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">hphp</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hchc</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hphc</span>
+            <span class="n">hds</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hd</span>
+            <span class="n">hhs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hh</span>
+            <span class="n">lr</span> <span class="o">+=</span> <span class="n">hd</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">hh</span>
+
+        <span class="k">if</span> <span class="n">return_unmarginalized</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">hds</span><span class="p">,</span> <span class="n">hhs</span>
+
+        <span class="n">lr_total</span> <span class="o">=</span> <span class="n">special</span><span class="o">.</span><span class="n">logsumexp</span><span class="p">(</span><span class="n">lr</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">)</span>
+
+        <span class="c1"># store the maxl values</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">lr</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_polarization&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pol</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;maxl_phase&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">lr_total</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

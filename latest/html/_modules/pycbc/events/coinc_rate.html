@@ -1,0 +1,361 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.coinc_rate &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.coinc_rate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.coinc_rate</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; This module contains functions for calculating expected rates of noise</span>
+<span class="sd">    and signal coincidences.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.detector</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.coinc_rate&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="multiifo_noise_lograte">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coinc_rate.multiifo_noise_lograte">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">multiifo_noise_lograte</span><span class="p">(</span><span class="n">log_rates</span><span class="p">,</span> <span class="n">slop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the expected rate of noise coincidences for multiple</span>
+<span class="sd">    combinations of detectors</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    log_rates: dict</span>
+<span class="sd">        Key: ifo string, Value: sequence of log single-detector trigger rates,</span>
+<span class="sd">        units assumed to be Hz</span>
+<span class="sd">    slop: float</span>
+<span class="sd">        time added to maximum time-of-flight between detectors to account</span>
+<span class="sd">        for timing error</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    expected_log_rates: dict</span>
+<span class="sd">        Key: ifo combination string</span>
+<span class="sd">        Value: expected log coincidence rate in the combination, units log Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">expected_log_rates</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Order of ifos must be stable in output dict keys, so sort them</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">log_rates</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">ifostring</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+
+    <span class="c1"># Calculate coincidence for all-ifo combination</span>
+    <span class="n">expected_log_rates</span><span class="p">[</span><span class="n">ifostring</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">combination_noise_lograte</span><span class="p">(</span><span class="n">log_rates</span><span class="p">,</span> <span class="n">slop</span><span class="p">)</span>
+
+    <span class="c1"># If more than one possible coincidence type exists,</span>
+    <span class="c1"># calculate coincidence for subsets through recursion</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># Calculate rate for each &#39;miss-one-out&#39; detector combination</span>
+        <span class="n">subsets</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">ifos</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">subset</span> <span class="ow">in</span> <span class="n">subsets</span><span class="p">:</span>
+            <span class="n">rates_subset</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">:</span>
+                <span class="n">rates_subset</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_rates</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">sub_coinc_rates</span> <span class="o">=</span> <span class="n">multiifo_noise_lograte</span><span class="p">(</span><span class="n">rates_subset</span><span class="p">,</span> <span class="n">slop</span><span class="p">)</span>
+            <span class="c1"># add these sub-coincidences to the overall dictionary</span>
+            <span class="k">for</span> <span class="n">sub_coinc</span> <span class="ow">in</span> <span class="n">sub_coinc_rates</span><span class="p">:</span>
+                <span class="n">expected_log_rates</span><span class="p">[</span><span class="n">sub_coinc</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_coinc_rates</span><span class="p">[</span><span class="n">sub_coinc</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">expected_log_rates</span></div>
+
+
+
+<div class="viewcode-block" id="combination_noise_rate">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coinc_rate.combination_noise_rate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">combination_noise_rate</span><span class="p">(</span><span class="n">rates</span><span class="p">,</span> <span class="n">slop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the expected rate of noise coincidences for a combination of</span>
+<span class="sd">    detectors</span>
+<span class="sd">    WARNING: for high stat values, numerical underflow can occur</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rates: dict</span>
+<span class="sd">        Key: ifo string, Value: sequence of single-detector trigger rates,</span>
+<span class="sd">        units assumed to be Hz</span>
+<span class="sd">    slop: float</span>
+<span class="sd">        time added to maximum time-of-flight between detectors to account</span>
+<span class="sd">        for timing error</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy array</span>
+<span class="sd">        Expected coincidence rate in the combination, units Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;combination_noise_rate() is liable to numerical &#39;</span>
+                   <span class="s1">&#39;underflows, use combination_noise_lograte &#39;</span>
+                   <span class="s1">&#39;instead&#39;</span><span class="p">)</span>
+    <span class="n">log_rates</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="ow">in</span> <span class="n">rates</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="c1"># exp may underflow</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">combination_noise_lograte</span><span class="p">(</span><span class="n">log_rates</span><span class="p">,</span> <span class="n">slop</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="combination_noise_lograte">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coinc_rate.combination_noise_lograte">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">combination_noise_lograte</span><span class="p">(</span><span class="n">log_rates</span><span class="p">,</span> <span class="n">slop</span><span class="p">,</span> <span class="n">dets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the expected rate of noise coincidences for a combination of</span>
+<span class="sd">    detectors given log of single detector noise rates</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    log_rates: dict</span>
+<span class="sd">        Key: ifo string, Value: sequence of log single-detector trigger rates,</span>
+<span class="sd">        units assumed to be Hz</span>
+<span class="sd">    slop: float</span>
+<span class="sd">        time added to maximum time-of-flight between detectors to account</span>
+<span class="sd">        for timing error</span>
+<span class="sd">    dets: dict</span>
+<span class="sd">        Key: ifo string, Value: pycbc.detector.Detector object</span>
+<span class="sd">        If not provided, will be created from ifo strings</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy array</span>
+<span class="sd">        Expected log coincidence rate in the combination, units Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># multiply product of trigger rates by the overlap time</span>
+    <span class="n">allowed_area</span> <span class="o">=</span> <span class="n">multiifo_noise_coincident_area</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">log_rates</span><span class="p">),</span>
+                                                  <span class="n">slop</span><span class="p">,</span>
+                                                  <span class="n">dets</span><span class="o">=</span><span class="n">dets</span><span class="p">)</span>
+    <span class="c1"># list(dict.values()) is python-3-proof</span>
+    <span class="n">rateprod</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">log_rates</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">allowed_area</span><span class="p">)</span> <span class="o">+</span> <span class="n">rateprod</span></div>
+
+
+
+<div class="viewcode-block" id="multiifo_noise_coincident_area">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coinc_rate.multiifo_noise_coincident_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">multiifo_noise_coincident_area</span><span class="p">(</span><span class="n">ifos</span><span class="p">,</span> <span class="n">slop</span><span class="p">,</span> <span class="n">dets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the total extent of time offset between 2 detectors,</span>
+<span class="sd">    or area of the 2d space of time offsets for 3 detectors, for</span>
+<span class="sd">    which a coincidence can be generated</span>
+<span class="sd">    Cannot yet handle more than 3 detectors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ifos: list of strings</span>
+<span class="sd">        list of interferometers</span>
+<span class="sd">    slop: float</span>
+<span class="sd">        extra time to add to maximum time-of-flight for timing error</span>
+<span class="sd">    dets: dict</span>
+<span class="sd">        Key: ifo string, Value: pycbc.detector.Detector object</span>
+<span class="sd">        If not provided, will be created from ifo strings</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    allowed_area: float</span>
+<span class="sd">        area in units of seconds^(n_ifos-1) that coincident values can fall in</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># set up detector objects</span>
+    <span class="k">if</span> <span class="n">dets</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dets</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">Detector</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">}</span>
+    <span class="n">n_ifos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_ifos</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">allowed_area</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> \
+            <span class="p">(</span><span class="n">dets</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">light_travel_time_to_detector</span><span class="p">(</span><span class="n">dets</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span> <span class="o">+</span> <span class="n">slop</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n_ifos</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">tofs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_ifos</span><span class="p">)</span>
+        <span class="n">ifo2_num</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># calculate travel time between detectors (plus extra for timing error)</span>
+        <span class="c1"># TO DO: allow for different timing errors between different detectors</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ifos</span><span class="p">):</span>
+            <span class="n">ifo2_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_ifos</span><span class="p">)))</span>
+            <span class="n">det0</span> <span class="o">=</span> <span class="n">dets</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">det1</span> <span class="o">=</span> <span class="n">dets</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="n">ifo2_num</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span>
+            <span class="n">tofs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">det0</span><span class="o">.</span><span class="n">light_travel_time_to_detector</span><span class="p">(</span><span class="n">det1</span><span class="p">)</span> <span class="o">+</span> <span class="n">slop</span>
+
+        <span class="c1"># combine these to calculate allowed area</span>
+        <span class="n">allowed_area</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ifos</span><span class="p">):</span>
+            <span class="n">allowed_area</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tofs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">tofs</span><span class="p">[</span><span class="n">ifo2_num</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">-</span> <span class="n">tofs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not able to deal with more than 3 ifos&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">allowed_area</span></div>
+
+
+
+<div class="viewcode-block" id="multiifo_signal_coincident_area">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coinc_rate.multiifo_signal_coincident_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">multiifo_signal_coincident_area</span><span class="p">(</span><span class="n">ifos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the area in which signal time differences are physically allowed</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ifos: list of strings</span>
+<span class="sd">        list of interferometers</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    allowed_area: float</span>
+<span class="sd">        area in units of seconds^(n_ifos-1) that coincident signals will occupy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_ifos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">n_ifos</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">det0</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">Detector</span><span class="p">(</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">det1</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">Detector</span><span class="p">(</span><span class="n">ifos</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">allowed_area</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">det0</span><span class="o">.</span><span class="n">light_travel_time_to_detector</span><span class="p">(</span><span class="n">det1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n_ifos</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">dets</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">tofs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_ifos</span><span class="p">)</span>
+        <span class="n">ifo2_num</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># set up detector objects</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">dets</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">Detector</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+
+        <span class="c1"># calculate travel time between detectors</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ifos</span><span class="p">):</span>
+            <span class="n">ifo2_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_ifos</span><span class="p">)))</span>
+            <span class="n">det0</span> <span class="o">=</span> <span class="n">dets</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">det1</span> <span class="o">=</span> <span class="n">dets</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="n">ifo2_num</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span>
+            <span class="n">tofs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">det0</span><span class="o">.</span><span class="n">light_travel_time_to_detector</span><span class="p">(</span><span class="n">det1</span><span class="p">)</span>
+
+        <span class="c1"># calculate allowed area</span>
+        <span class="n">phi_12</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span><span class="p">((</span><span class="n">tofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">tofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">tofs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                              <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">tofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">tofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">allowed_area</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">tofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">tofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi_12</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not able to deal with more than 3 ifos&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">allowed_area</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

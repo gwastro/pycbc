@@ -1,0 +1,576 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.coherent &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.coherent</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.coherent</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2022 Andrew Williamson</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; This module contains functions for calculating and manipulating coherent</span>
+<span class="sd">triggers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.coherent&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_coinc_indexes">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.get_coinc_indexes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_coinc_indexes</span><span class="p">(</span><span class="n">idx_dict</span><span class="p">,</span> <span class="n">time_delay_idx</span><span class="p">,</span> <span class="n">min_nifos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the indexes corresponding to coincident triggers. If only one</span>
+<span class="sd">    detector is available in the network, the list of its unique indexes is</span>
+<span class="sd">    simply returned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    idx_dict: dict</span>
+<span class="sd">        Dictionary of indexes of triggers above threshold in each</span>
+<span class="sd">        detector</span>
+<span class="sd">    time_delay_idx: dict</span>
+<span class="sd">        Dictionary giving time delay index (time_delay*sample_rate) for</span>
+<span class="sd">        each detector</span>
+<span class="sd">    min_nifos: int</span>
+<span class="sd">        The minimum number of detectors needed to be above threshold</span>
+<span class="sd">        for a coincidence to be produced</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coinc_idx: list</span>
+<span class="sd">        List of indexes for triggers in geocent time that appear in</span>
+<span class="sd">        multiple detectors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coinc_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">idx_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># Create list of indexes above single detector threshold, in geocent</span>
+        <span class="c1"># time (-time_delay_idx[ifo] applies the time delay for the specific</span>
+        <span class="c1"># detector). This can be searched later for triggers appearing in</span>
+        <span class="c1"># multiple detectors.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">coinc_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">coinc_list</span><span class="p">,</span> <span class="n">idx_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">time_delay_idx</span><span class="p">[</span><span class="n">ifo</span><span class="p">]]</span>
+            <span class="p">)</span>
+    <span class="c1"># Search through coinc_idx for repeated indexes. These must have been loud</span>
+    <span class="c1"># in at least min_nifos detectors if the analysis uses more than 1</span>
+    <span class="c1"># detector.</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">coinc_list</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">coinc_idx</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">counts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">min_nifos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">coinc_idx</span></div>
+
+
+
+<div class="viewcode-block" id="get_coinc_triggers">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.get_coinc_triggers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_coinc_triggers</span><span class="p">(</span><span class="n">snrs</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">t_delay_idx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary, indexed by IFO, that collects the individual</span>
+<span class="sd">    IFO SNRs of coincident triggers by using the indices of such triggers</span>
+<span class="sd">    within the complete SNR timeseries of each IFO.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    snrs: dict</span>
+<span class="sd">        Dictionary of single detector SNR time series</span>
+<span class="sd">    idx: list</span>
+<span class="sd">        List of geocentric time indexes of coincident triggers</span>
+<span class="sd">    t_delay_idx: dict</span>
+<span class="sd">        Dictionary of indexes corresponding to light travel time from</span>
+<span class="sd">        geocenter for each detector</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coincs: dict</span>
+<span class="sd">        Dictionary of coincident trigger SNRs in each detector</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># loops through snrs</span>
+    <span class="c1"># %len(snrs[ifo]) was included as part of a wrap-around solution</span>
+    <span class="n">coincs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">ifo</span><span class="p">:</span> <span class="n">snrs</span><span class="p">[</span><span class="n">ifo</span><span class="p">][(</span><span class="n">idx</span> <span class="o">+</span> <span class="n">t_delay_idx</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">snrs</span><span class="p">[</span><span class="n">ifo</span><span class="p">])]</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">snrs</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">coincs</span></div>
+
+
+
+<div class="viewcode-block" id="coincident_snr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.coincident_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">coincident_snr</span><span class="p">(</span><span class="n">snr_dict</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">time_delay_idx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the coincident SNR for all coincident triggers above</span>
+<span class="sd">    threshold</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    snr_dict: dict</span>
+<span class="sd">        Dictionary of individual detector SNRs</span>
+<span class="sd">    index: list</span>
+<span class="sd">        List of indexes (geocentric) for which to calculate coincident</span>
+<span class="sd">        SNR</span>
+<span class="sd">    threshold: float</span>
+<span class="sd">        Coincident SNR threshold. Triggers below this are cut</span>
+<span class="sd">    time_delay_idx: dict</span>
+<span class="sd">        Dictionary of time delay from geocenter in indexes for each</span>
+<span class="sd">        detector</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rho_coinc: numpy.ndarray</span>
+<span class="sd">        Coincident SNR values for surviving triggers</span>
+<span class="sd">    index: list</span>
+<span class="sd">        The subset of input indexes corresponding to triggers that</span>
+<span class="sd">        survive the cuts</span>
+<span class="sd">    coinc_triggers: dict</span>
+<span class="sd">        Dictionary of individual detector SNRs for triggers that</span>
+<span class="sd">        survive cuts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Restrict the snr timeseries to just the interesting points</span>
+    <span class="n">coinc_triggers</span> <span class="o">=</span> <span class="n">get_coinc_triggers</span><span class="p">(</span><span class="n">snr_dict</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">time_delay_idx</span><span class="p">)</span>
+    <span class="c1"># Calculate the coincident snr</span>
+    <span class="n">snr_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">coinc_triggers</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">coinc_triggers</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+    <span class="p">)</span>
+    <span class="n">rho_coinc</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">snr_array</span> <span class="o">*</span> <span class="n">snr_array</span><span class="o">.</span><span class="n">conj</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span>
+    <span class="c1"># Apply threshold</span>
+    <span class="n">thresh_indexes</span> <span class="o">=</span> <span class="n">rho_coinc</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">thresh_indexes</span><span class="p">]</span>
+    <span class="n">coinc_triggers</span> <span class="o">=</span> <span class="n">get_coinc_triggers</span><span class="p">(</span><span class="n">snr_dict</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">time_delay_idx</span><span class="p">)</span>
+    <span class="n">rho_coinc</span> <span class="o">=</span> <span class="n">rho_coinc</span><span class="p">[</span><span class="n">thresh_indexes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">rho_coinc</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">coinc_triggers</span></div>
+
+
+
+<div class="viewcode-block" id="get_projection_matrix">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.get_projection_matrix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_projection_matrix</span><span class="p">(</span><span class="n">f_plus</span><span class="p">,</span> <span class="n">f_cross</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;standard&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the matrix that projects the signal onto the network.</span>
+<span class="sd">    Definitions can be found in Fairhurst (2018) [arXiv:1712.04724].</span>
+<span class="sd">    For the standard projection see Eq. 8, and for left/right</span>
+<span class="sd">    circular projections see Eq. 21, with further discussion in</span>
+<span class="sd">    Appendix A. See also Williamson et al. (2014) [arXiv:1410.6042]</span>
+<span class="sd">    for discussion in context of the GRB search with restricted</span>
+<span class="sd">    binary inclination angles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f_plus: dict</span>
+<span class="sd">        Dictionary containing the plus antenna response factors for</span>
+<span class="sd">        each IFO</span>
+<span class="sd">    f_cross: dict</span>
+<span class="sd">        Dictionary containing the cross antenna response factors for</span>
+<span class="sd">        each IFO</span>
+<span class="sd">    sigma: dict</span>
+<span class="sd">        Dictionary of the sensitivity weights for each IFO</span>
+<span class="sd">    projection: optional, {string, &#39;standard&#39;}</span>
+<span class="sd">        The signal polarization to project. Choice of &#39;standard&#39;</span>
+<span class="sd">        (unrestricted; default), &#39;right&#39; or &#39;left&#39; (circular</span>
+<span class="sd">        polarizations)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    projection_matrix: np.ndarray</span>
+<span class="sd">        The matrix that projects the signal onto the detector network</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate the weighted antenna responses</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sigma</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">w_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">f_plus</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">])</span>
+    <span class="n">w_c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">f_cross</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">])</span>
+
+    <span class="c1"># Get the projection matrix associated with the requested projection</span>
+    <span class="k">if</span> <span class="n">projection</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">:</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">projection_matrix</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_p</span><span class="p">))</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="n">denom</span>
+    <span class="k">elif</span> <span class="n">projection</span> <span class="o">==</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
+        <span class="n">projection_matrix</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_p</span><span class="p">))</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">projection</span> <span class="o">==</span> <span class="s2">&quot;right&quot;</span><span class="p">:</span>
+        <span class="n">projection_matrix</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_c</span><span class="p">))</span> <span class="o">*</span> <span class="mi">1</span><span class="n">j</span>
+        <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_p</span><span class="p">,</span> <span class="n">w_p</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">w_c</span><span class="p">,</span> <span class="n">w_c</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Unknown projection: </span><span class="si">{</span><span class="n">projection</span><span class="si">}</span><span class="s1">. Allowed values are: &#39;</span>
+            <span class="s1">&#39;&quot;standard&quot;, &quot;left&quot;, and &quot;right&quot;&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">projection_matrix</span></div>
+
+
+
+<div class="viewcode-block" id="coherent_snr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.coherent_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">coherent_snr</span><span class="p">(</span>
+    <span class="n">snr_triggers</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">projection_matrix</span><span class="p">,</span> <span class="n">coinc_snr</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the coherent SNR for a given set of triggers. See</span>
+<span class="sd">    Eq. 2.26 of Harry &amp; Fairhurst (2011) [arXiv:1012.4939].</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    snr_triggers: dict</span>
+<span class="sd">        Dictionary of the normalised complex snr time series for each</span>
+<span class="sd">        ifo</span>
+<span class="sd">    index: numpy.ndarray</span>
+<span class="sd">        Array of the indexes corresponding to triggers</span>
+<span class="sd">    threshold: float</span>
+<span class="sd">        Coherent SNR threshold. Triggers below this are cut</span>
+<span class="sd">    projection_matrix: numpy.ndarray</span>
+<span class="sd">        Matrix that projects the signal onto the network</span>
+<span class="sd">    coinc_snr: Optional- The coincident snr for each trigger.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rho_coh: numpy.ndarray</span>
+<span class="sd">        Array of coherent SNR for the detector network</span>
+<span class="sd">    index: numpy.ndarray</span>
+<span class="sd">        Indexes that survive cuts</span>
+<span class="sd">    snrv: dict</span>
+<span class="sd">        Dictionary of individual deector triggers that survive cuts</span>
+<span class="sd">    coinc_snr: list or None (default: None)</span>
+<span class="sd">        The coincident SNR values for triggers surviving the coherent</span>
+<span class="sd">        cut</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate rho_coh</span>
+    <span class="n">snr_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">snr_triggers</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">snr_triggers</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+    <span class="p">)</span>
+    <span class="n">snr_proj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">snr_array</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">projection_matrix</span><span class="p">)</span>
+    <span class="n">rho_coh2</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">snr_proj</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">*</span> <span class="n">snr_array</span><span class="p">)</span>
+    <span class="n">rho_coh</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rho_coh2</span><span class="p">))</span>
+    <span class="c1"># Apply thresholds</span>
+    <span class="n">above</span> <span class="o">=</span> <span class="n">rho_coh</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+    <span class="n">coinc_snr</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">coinc_snr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">coinc_snr</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coinc_snr</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">coinc_snr</span> <span class="o">=</span> <span class="n">coinc_snr</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+    <span class="n">snrv</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">ifo</span><span class="p">:</span> <span class="n">snr_triggers</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">above</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">snr_triggers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="n">rho_coh</span> <span class="o">=</span> <span class="n">rho_coh</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">rho_coh</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span> <span class="n">coinc_snr</span></div>
+
+
+
+<div class="viewcode-block" id="network_chisq">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.network_chisq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">network_chisq</span><span class="p">(</span><span class="n">chisq</span><span class="p">,</span> <span class="n">chisq_dof</span><span class="p">,</span> <span class="n">snr_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the network chi-squared statistic. This is the sum of</span>
+<span class="sd">    SNR-weighted individual detector chi-squared values. See Eq. 5.4</span>
+<span class="sd">    of Dorrington (2019) [http://orca.cardiff.ac.uk/id/eprint/128124].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    chisq: dict</span>
+<span class="sd">        Dictionary of individual detector chi-squared statistics</span>
+<span class="sd">    chisq_dof: dict</span>
+<span class="sd">        Dictionary of the number of degrees of freedom of the</span>
+<span class="sd">        chi-squared statistic</span>
+<span class="sd">    snr_dict: dict</span>
+<span class="sd">        Dictionary of complex individual detector SNRs</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    net_chisq: list</span>
+<span class="sd">        Network chi-squared values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">snr_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">chisq_per_dof</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">chisq_per_dof</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">chisq</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">/</span> <span class="n">chisq_dof</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+    <span class="n">snr2</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">ifo</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">snr_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">snr_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span>
+    <span class="p">}</span>
+    <span class="n">coinc_snr2</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">snr2</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">snr2_ratio</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="n">snr2</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">/</span> <span class="n">coinc_snr2</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">}</span>
+    <span class="n">net_chisq</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">chisq_per_dof</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">snr2_ratio</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">net_chisq</span></div>
+
+
+
+<div class="viewcode-block" id="null_snr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.null_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">null_snr</span><span class="p">(</span>
+    <span class="n">rho_coh</span><span class="p">,</span> <span class="n">rho_coinc</span><span class="p">,</span> <span class="n">apply_cut</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">null_min</span><span class="o">=</span><span class="mf">5.25</span><span class="p">,</span> <span class="n">null_grad</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+    <span class="n">null_step</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">snrv</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the null SNR and optionally apply threshold cut where</span>
+<span class="sd">    null SNR &gt; null_min where coherent SNR &lt; null_step</span>
+<span class="sd">    and null SNR &gt; (null_grad * rho_coh + null_min) elsewhere. See</span>
+<span class="sd">    Eq. 3.1 of Harry &amp; Fairhurst (2011) [arXiv:1012.4939] or</span>
+<span class="sd">    Eqs. 11 and 12 of Williamson et al. (2014) [arXiv:1410.6042].</span>
+<span class="sd">    Note that in Eq. 12 rho_coh should instead be rho_coh-null_step as</span>
+<span class="sd">    reported in Eq. 4.73 of https://orca.cardiff.ac.uk/id/eprint/128124/.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rho_coh: numpy.ndarray</span>
+<span class="sd">        Array of coherent snr triggers</span>
+<span class="sd">    rho_coinc: numpy.ndarray</span>
+<span class="sd">        Array of coincident snr triggers</span>
+<span class="sd">    apply_cut: bool</span>
+<span class="sd">        Apply a cut and downweight on null SNR determined by null_min,</span>
+<span class="sd">        null_grad, null_step (default True)</span>
+<span class="sd">    null_min: scalar</span>
+<span class="sd">        Any trigger with null SNR below this is retained</span>
+<span class="sd">    null_grad: scalar</span>
+<span class="sd">        Gradient of null SNR cut where coherent SNR &gt; null_step</span>
+<span class="sd">    null_step: scalar</span>
+<span class="sd">        The threshold in coherent SNR rho_coh above which the null SNR</span>
+<span class="sd">        threshold increases as null_grad * rho_coh</span>
+<span class="sd">    index: dict or None (optional; default None)</span>
+<span class="sd">        Indexes of triggers. If given, will remove triggers that fail</span>
+<span class="sd">        cuts</span>
+<span class="sd">    snrv: dict of None (optional; default None)</span>
+<span class="sd">        Individual detector SNRs. If given will remove triggers that</span>
+<span class="sd">        fail cut</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    null: numpy.ndarray</span>
+<span class="sd">        Null SNR for surviving triggers</span>
+<span class="sd">    rho_coh: numpy.ndarray</span>
+<span class="sd">        Coherent SNR for surviving triggers</span>
+<span class="sd">    rho_coinc: numpy.ndarray</span>
+<span class="sd">        Coincident SNR for suviving triggers</span>
+<span class="sd">    index: dict</span>
+<span class="sd">        Indexes for surviving triggers</span>
+<span class="sd">    snrv: dict</span>
+<span class="sd">        Single detector SNRs for surviving triggers</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">index</span>
+    <span class="n">snrv</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">snrv</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">snrv</span>
+    <span class="c1"># Calculate null SNRs</span>
+    <span class="n">null2</span> <span class="o">=</span> <span class="n">rho_coinc</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">rho_coh</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="c1"># Numerical errors may make this negative and break the sqrt, so set</span>
+    <span class="c1"># negative values to 0.</span>
+    <span class="n">null2</span><span class="p">[</span><span class="n">null2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">null</span> <span class="o">=</span> <span class="n">null2</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="k">if</span> <span class="n">apply_cut</span><span class="p">:</span>
+        <span class="c1"># Make cut on null.</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">((</span><span class="n">null</span> <span class="o">&lt;</span> <span class="n">null_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">rho_coh</span> <span class="o">&lt;=</span> <span class="n">null_step</span><span class="p">))</span>
+            <span class="o">|</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">null</span> <span class="o">&lt;</span> <span class="p">((</span><span class="n">rho_coh</span> <span class="o">-</span> <span class="n">null_step</span><span class="p">)</span> <span class="o">*</span> <span class="n">null_grad</span> <span class="o">+</span> <span class="n">null_min</span><span class="p">))</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">rho_coh</span> <span class="o">&gt;</span> <span class="n">null_step</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+        <span class="n">rho_coh</span> <span class="o">=</span> <span class="n">rho_coh</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+        <span class="n">snrv</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="n">snrv</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">keep</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">snrv</span><span class="p">}</span>
+        <span class="n">rho_coinc</span> <span class="o">=</span> <span class="n">rho_coinc</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+        <span class="n">null</span> <span class="o">=</span> <span class="n">null</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">null</span><span class="p">,</span> <span class="n">rho_coh</span><span class="p">,</span> <span class="n">rho_coinc</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">snrv</span></div>
+
+
+
+<div class="viewcode-block" id="reweight_snr_by_null">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.reweight_snr_by_null">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reweight_snr_by_null</span><span class="p">(</span>
+        <span class="n">network_snr</span><span class="p">,</span> <span class="n">null</span><span class="p">,</span> <span class="n">coherent</span><span class="p">,</span> <span class="n">null_min</span><span class="o">=</span><span class="mf">5.25</span><span class="p">,</span> <span class="n">null_grad</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">null_step</span><span class="o">=</span><span class="mf">20.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-weight the detection statistic as a function of the null SNR.</span>
+<span class="sd">    See Eq. 16 of Williamson et al. (2014) [arXiv:1410.6042] and note</span>
+<span class="sd">    that the 4.25 appearing there is actually linked to the 5.25 of</span>
+<span class="sd">    Eq. 12, hence the -1 carried out in this function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    network_snr: numpy.ndarray</span>
+<span class="sd">        Array containing SNR statistic to be re-weighted</span>
+<span class="sd">    null: numpy.ndarray</span>
+<span class="sd">        Null SNR array</span>
+<span class="sd">    coherent:</span>
+<span class="sd">        Coherent SNR array</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rw_snr: numpy.ndarray</span>
+<span class="sd">        Re-weighted SNR for each trigger</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">downweight</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">((</span><span class="n">null</span> <span class="o">&gt;</span> <span class="n">null_min</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">coherent</span> <span class="o">&lt;=</span> <span class="n">null_step</span><span class="p">))</span>
+        <span class="o">|</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">null</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">coherent</span> <span class="o">*</span> <span class="n">null_grad</span> <span class="o">+</span> <span class="n">null_min</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="o">&amp;</span> <span class="p">(</span><span class="n">coherent</span> <span class="o">&gt;</span> <span class="n">null_step</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">rw_fac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">coherent</span> <span class="o">&gt;</span> <span class="n">null_step</span><span class="p">,</span>
+        <span class="mi">1</span> <span class="o">+</span> <span class="n">null</span> <span class="o">-</span> <span class="p">(</span><span class="n">null_min</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">coherent</span> <span class="o">-</span> <span class="n">null_step</span><span class="p">)</span> <span class="o">*</span> <span class="n">null_grad</span><span class="p">,</span>
+        <span class="mi">1</span> <span class="o">+</span> <span class="n">null</span> <span class="o">-</span> <span class="p">(</span><span class="n">null_min</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">rw_snr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">downweight</span><span class="p">,</span> <span class="n">network_snr</span> <span class="o">/</span> <span class="n">rw_fac</span><span class="p">,</span> <span class="n">network_snr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rw_snr</span></div>
+
+
+
+<div class="viewcode-block" id="reweightedsnr_cut">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.coherent.reweightedsnr_cut">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reweightedsnr_cut</span><span class="p">(</span><span class="n">rw_snr</span><span class="p">,</span> <span class="n">rw_snr_threshold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a cut on reweighted snr based on a given threshold</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rw_snr: array of reweighted snr</span>
+<span class="sd">    rw_snr_threshhold: any reweighted snr below this threshold is set to 0</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rw_snr: array of reweighted snr with cut values as 0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">rw_snr_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rw_snr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">rw_snr</span> <span class="o">&lt;</span> <span class="n">rw_snr_threshold</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">rw_snr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rw_snr</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

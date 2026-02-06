@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using PyCBC Distributions from PyCBC Inference &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="PyCBC searches" href="searches.html" />
+    <link rel="prev" title="Filtering" href="filter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using PyCBC Distributions from PyCBC Inference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#generating-samples-in-a-python-script-by-using-the-ini-file">Generating samples in a Python script by using the .ini file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#making-mass-distributions-in-m1-and-m2">Making Mass Distributions in M1 and M2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generating-mchirp-and-q-from-uniform-mass1-and-mass2">Generating mchirp and q from uniform mass1 and mass2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sky-location-distribution-as-spin-distribution-example">Sky Location Distribution as Spin Distribution Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Using PyCBC Distributions from PyCBC Inference</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/distributions.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-pycbc-distributions-from-pycbc-inference">
+<h1>Using PyCBC Distributions from PyCBC Inference<a class="headerlink" href="#using-pycbc-distributions-from-pycbc-inference" title="Link to this heading"></a></h1>
+<p>The aim of this page is to demonstrate some simple uses of the distributions available from the distributions.py module available at <a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions" title="pycbc.distributions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.distributions</span></code></a>.</p>
+<section id="generating-samples-in-a-python-script-by-using-the-ini-file">
+<h2>Generating samples in a Python script by using the .ini file<a class="headerlink" href="#generating-samples-in-a-python-script-by-using-the-ini-file" title="Link to this heading"></a></h2>
+<p>This example shows how to generate samples in a Python script by using a standalone .ini <a class="reference download internal" download="" href="_downloads/38956967dd9b9b4dc9cd8d616ea21c75/pycbc_bbh_prior.ini"><code class="xref download docutils literal notranslate"><span class="pre">file</span></code></a>,
+in this example, we can also learn that when we draw samples from source-frame masses and comoving volume uniformly, the distributions of detector-frame masses are not uniform.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.distributions.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_samples_from_config</span>
+
+
+<span class="c1"># A path to the .ini file.</span>
+<span class="n">CONFIG_PATH</span> <span class="o">=</span> <span class="s2">&quot;./pycbc_bbh_prior.ini&quot;</span>
+<span class="n">random_seed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Draw a single sample.</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">draw_samples_from_config</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">CONFIG_PATH</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span>
+
+<span class="c1"># Print all parameters.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+<span class="c1"># Print a certain parameter, for example &#39;mass1&#39;.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;mass1&#39;</span><span class="p">])</span>
+
+<span class="c1"># Draw 1000000 samples, and select all values of a certain parameter.</span>
+<span class="n">n_bins</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">draw_samples_from_config</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">CONFIG_PATH</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">ax3</span><span class="p">,</span> <span class="n">ax4</span><span class="p">,</span> <span class="n">ax5</span><span class="p">,</span> <span class="n">ax6</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flat</span>
+
+<span class="n">ax1</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:][</span><span class="s1">&#39;srcmass1&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:][</span><span class="s1">&#39;srcmass2&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:][</span><span class="s1">&#39;comoving_volume&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax4</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:][</span><span class="s1">&#39;redshift&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax5</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:][</span><span class="s1">&#39;distance&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax6</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[:][</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">)</span>
+
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;srcmass1&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;srcmass2&#39;</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;comoving_volume&#39;</span><span class="p">)</span>
+<span class="n">ax4</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;redshift&#39;</span><span class="p">)</span>
+<span class="n">ax5</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;distance&#39;</span><span class="p">)</span>
+<span class="n">ax6</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;mass1 or mass2&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/e3ccf002aa53cbbf3323984129e98e33/sampling_from_config_example.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/580c5d22556c2d170e7bd639531e9c6c/sampling_from_config_example.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/5308da9784fcffea8dc8006461bf0e95/sampling_from_config_example.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/b9a3044c41b67e20301e970f7dbcdc78/sampling_from_config_example.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/sampling_from_config_example.png" class="plot-directive" src="_images/sampling_from_config_example.png" />
+</figure>
+</section>
+<section id="making-mass-distributions-in-m1-and-m2">
+<h2>Making Mass Distributions in M1 and M2<a class="headerlink" href="#making-mass-distributions-in-m1-and-m2" title="Link to this heading"></a></h2>
+<p>Here we will demonstrate how to make different mass populations of binaries. This example shows uniform and gaussian mass distributions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span>
+
+<span class="c1"># Create a mass distribution object that is uniform between 0.5 and 1.5</span>
+<span class="c1"># solar masses.</span>
+<span class="n">mass1_distribution</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="n">mass1</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">))</span>
+<span class="c1"># Take 100000 random variable samples from this uniform mass distribution.</span>
+<span class="n">mass1_samples</span> <span class="o">=</span> <span class="n">mass1_distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1000000</span><span class="p">)</span>
+
+<span class="c1"># Draw another distribution that is Gaussian between 0.5 and 1.5 solar masses</span>
+<span class="c1"># with a mean of 1.2 solar masses and a standard deviation of 0.15 solar</span>
+<span class="c1"># masses. Gaussian takes the variance as an input so square the standard</span>
+<span class="c1"># deviation.</span>
+<span class="n">variance</span> <span class="o">=</span> <span class="mf">0.15</span><span class="o">*</span><span class="mf">0.15</span>
+<span class="n">mass2_gaussian</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">mass2</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span> <span class="n">mass2_mean</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+                                        <span class="n">mass2_var</span><span class="o">=</span><span class="n">variance</span><span class="p">)</span>
+
+<span class="c1"># Take 100000 random variable samples from this gaussian mass distribution.</span>
+<span class="n">mass2_samples</span> <span class="o">=</span> <span class="n">mass2_gaussian</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1000000</span><span class="p">)</span>
+
+<span class="c1"># We can make pairs of distributions together, instead of apart.</span>
+<span class="n">two_mass_distributions</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="n">mass3</span><span class="o">=</span><span class="p">(</span><span class="mf">1.6</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
+                                               <span class="n">mass4</span><span class="o">=</span><span class="p">(</span><span class="mf">1.6</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">))</span>
+<span class="n">two_mass_samples</span> <span class="o">=</span> <span class="n">two_mass_distributions</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">1000000</span><span class="p">)</span>
+
+<span class="c1"># Choose 50 bins for the histogram subplots.</span>
+<span class="n">n_bins</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="c1"># Plot histograms of samples in subplots</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax0</span><span class="p">,</span> <span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">,</span> <span class="n">ax3</span><span class="p">,</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">flat</span>
+
+<span class="n">ax0</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">mass1_samples</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">mass2_samples</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">two_mass_samples</span><span class="p">[</span><span class="s1">&#39;mass3&#39;</span><span class="p">],</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">two_mass_samples</span><span class="p">[</span><span class="s1">&#39;mass4&#39;</span><span class="p">],</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+
+<span class="n">ax0</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Mass 1 samples&#39;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Mass 2 samples&#39;</span><span class="p">)</span>
+<span class="n">ax2</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Mass 3 samples&#39;</span><span class="p">)</span>
+<span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Mass 4 samples&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/d826f63b8efa7e8c4f54808a773fa653/mass_examples.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/34b738a7a8bc972a787d891767c676d1/mass_examples.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/5aa9cd1937d058f7eb06602fe48d0228/mass_examples.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/adabcee75346fe062f34af90d0fa1bf0/mass_examples.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/mass_examples.png" class="plot-directive" src="_images/mass_examples.png" />
+</figure>
+</section>
+<section id="generating-mchirp-and-q-from-uniform-mass1-and-mass2">
+<h2>Generating mchirp and q from uniform mass1 and mass2<a class="headerlink" href="#generating-mchirp-and-q-from-uniform-mass1-and-mass2" title="Link to this heading"></a></h2>
+<p>This example shows chirp mass and mass ratio samples drawn from uniform mass1 and mass2 with boundaries given by chirp mass and mass ratio. The first row of the figures below are the chirp mass and mass ratio samples, and the same set of samples converted to mass1 and mass2, respectively. The second row are the marginalized distribution for chirp mass and mass ratio, with comparisons for analytical probability density function (PDF).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Create chirp mass and mass ratio distribution object that is uniform</span>
+<span class="c1"># in mass1 and mass2</span>
+<span class="n">minmc</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">maxmc</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">mc_distribution</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">MchirpfromUniformMass1Mass2</span><span class="p">(</span><span class="n">mc</span><span class="o">=</span><span class="p">(</span><span class="n">minmc</span><span class="p">,</span><span class="n">maxmc</span><span class="p">))</span>
+<span class="c1"># generate q in a symmetric range [min, 1/min] to make mass1 and mass2</span>
+<span class="c1"># symmetric</span>
+<span class="n">minq</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="mi">4</span>
+<span class="n">maxq</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">minq</span>
+<span class="n">q_distribution</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">QfromUniformMass1Mass2</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="p">(</span><span class="n">minq</span><span class="p">,</span><span class="n">maxq</span><span class="p">))</span>
+
+<span class="c1"># Take 100000 random variable samples from this chirp mass and mass ratio</span>
+<span class="c1"># distribution.</span>
+<span class="n">n_size</span> <span class="o">=</span> <span class="mi">100000</span>
+<span class="n">mc_samples</span> <span class="o">=</span> <span class="n">mc_distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n_size</span><span class="p">)</span>
+<span class="n">q_samples</span> <span class="o">=</span> <span class="n">q_distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n_size</span><span class="p">)</span>
+
+<span class="c1"># Convert chirp mass and mass ratio to mass1 and mass2</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass1_from_mchirp_q</span><span class="p">(</span><span class="n">mc_samples</span><span class="p">[</span><span class="s1">&#39;mc&#39;</span><span class="p">],</span><span class="n">q_samples</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">])</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass2_from_mchirp_q</span><span class="p">(</span><span class="n">mc_samples</span><span class="p">[</span><span class="s1">&#39;mc&#39;</span><span class="p">],</span><span class="n">q_samples</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">])</span>
+
+<span class="c1"># Check the 1D marginalization of mchirp and q is consistent with the </span>
+<span class="c1"># expected analytical formula</span>
+<span class="n">n_bins</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">xq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minq</span><span class="p">,</span><span class="n">maxq</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">yq</span> <span class="o">=</span> <span class="p">((</span><span class="mi">1</span><span class="o">+</span><span class="n">xq</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">xq</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">xmc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minmc</span><span class="p">,</span><span class="n">maxmc</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">ymc</span> <span class="o">=</span> <span class="n">xmc</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="c1"># Plot histograms of samples in subplots</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">221</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist2d</span><span class="p">(</span><span class="n">mc_samples</span><span class="p">[</span><span class="s1">&#39;mc&#39;</span><span class="p">],</span> <span class="n">q_samples</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;chirp mass&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;mass ratio&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">fraction</span><span class="o">=</span><span class="mf">.05</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;number of samples&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">222</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist2d</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;mass1&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;mass2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">fraction</span><span class="o">=</span><span class="mf">.05</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;number of samples&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">223</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">mc_samples</span><span class="p">[</span><span class="s1">&#39;mc&#39;</span><span class="p">],</span><span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;samples&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xmc</span><span class="p">,</span><span class="n">ymc</span><span class="o">*</span><span class="n">mc_distribution</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;$P(M_c)\propto M_c$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;chirp mass&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;PDF&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">224</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">q_samples</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">],</span><span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;samples&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xq</span><span class="p">,</span><span class="n">yq</span><span class="o">*</span><span class="n">q_distribution</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;$P(q)\propto((1+q)/q^3)^{2/5}$&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;mass ratio&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;PDF&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/714de35ed3e315227db7afe4501cc42a/mchirp_q_from_uniform_m1m2_example.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/a17ff9da6a718d5bf3338f800293a453/mchirp_q_from_uniform_m1m2_example.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/2c4c00a374e743238ba1025c90d0f7f8/mchirp_q_from_uniform_m1m2_example.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/66a2739b160c03de5085d31a82c8e4c7/mchirp_q_from_uniform_m1m2_example.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/mchirp_q_from_uniform_m1m2_example.png" class="plot-directive" src="_images/mchirp_q_from_uniform_m1m2_example.png" />
+</figure>
+</section>
+<section id="sky-location-distribution-as-spin-distribution-example">
+<h2>Sky Location Distribution as Spin Distribution Example<a class="headerlink" href="#sky-location-distribution-as-spin-distribution-example" title="Link to this heading"></a></h2>
+<p>Here we can make a distribution of spins of unit length with equal distribution in x, y, and z to sample the surface of a unit sphere.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.coordinates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">co</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span>
+
+<span class="c1"># We can choose any bounds between 0 and pi for this distribution but in</span>
+<span class="c1"># units of pi so we use between 0 and 1</span>
+<span class="n">theta_low</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">theta_high</span> <span class="o">=</span> <span class="mf">1.</span>
+
+<span class="c1"># Units of pi for the bounds of the azimuthal angle which goes from 0 to 2 pi</span>
+<span class="n">phi_low</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">phi_high</span> <span class="o">=</span> <span class="mf">2.</span>
+
+<span class="c1"># Create a distribution object from distributions.py. Here we are using the</span>
+<span class="c1"># Uniform Solid Angle function which takes</span>
+<span class="c1"># theta = polar_bounds(theta_lower_bound to a theta_upper_bound), and then</span>
+<span class="c1"># phi = azimuthal_ bound(phi_lower_bound to a phi_upper_bound).</span>
+<span class="n">uniform_solid_angle_distribution</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">UniformSolidAngle</span><span class="p">(</span>
+                                          <span class="n">polar_bounds</span><span class="o">=</span><span class="p">(</span><span class="n">theta_low</span><span class="p">,</span><span class="n">theta_high</span><span class="p">),</span>
+                                          <span class="n">azimuthal_bounds</span><span class="o">=</span><span class="p">(</span><span class="n">phi_low</span><span class="p">,</span><span class="n">phi_high</span><span class="p">))</span>
+
+<span class="c1"># Now we can take a random variable sample from that distribution. In this</span>
+<span class="c1"># case we want 50000 samples.</span>
+<span class="n">solid_angle_samples</span> <span class="o">=</span> <span class="n">uniform_solid_angle_distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">500000</span><span class="p">)</span>
+
+<span class="c1"># Make spins with unit length for coordinate transformation below.</span>
+<span class="n">spin_mag</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">500000</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">500000</span><span class="p">):</span>
+    <span class="n">spin_mag</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+
+<span class="c1"># Use the pycbc.coordinates as co spherical_to_cartesian function to convert</span>
+<span class="c1"># from spherical polar coordinates to cartesian coordinates</span>
+<span class="n">spinx</span><span class="p">,</span> <span class="n">spiny</span><span class="p">,</span> <span class="n">spinz</span> <span class="o">=</span> <span class="n">co</span><span class="o">.</span><span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">spin_mag</span><span class="p">,</span>
+                                                <span class="n">solid_angle_samples</span><span class="p">[</span><span class="s1">&#39;phi&#39;</span><span class="p">],</span>
+                                                <span class="n">solid_angle_samples</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">])</span>
+
+<span class="c1"># Choose 50 bins for the histograms.</span>
+<span class="n">n_bins</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">spinx</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Spin x samples&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">spiny</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Spin y samples&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">spinz</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">n_bins</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Spin z samples&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/17017417929c18b256c527a86855b0d6/spin_examples.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/e6e757065100efe0ec250cc14a832a1a/spin_examples.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/2c118961f6835a9f39d1ed3179e5f8cf/spin_examples.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/7ddb9eb469843013650edee52e109a37/spin_examples.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/spin_examples.png" class="plot-directive" src="_images/spin_examples.png" />
+</figure>
+<p>Using much of the same code we can also show how this sampling accurately covers the surface of a unit sphere.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.coordinates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">co</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span>
+
+<span class="c1"># We can choose any bounds between 0 and pi for this distribution but in units</span>
+<span class="c1"># of pi so we use between 0 and 1.</span>
+<span class="n">theta_low</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">theta_high</span> <span class="o">=</span> <span class="mf">1.</span>
+
+<span class="c1"># Units of pi for the bounds of the azimuthal angle which goes from 0 to 2 pi.</span>
+<span class="n">phi_low</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="n">phi_high</span> <span class="o">=</span> <span class="mf">2.</span>
+
+<span class="c1"># Create a distribution object from distributions.py</span>
+<span class="c1"># Here we are using the Uniform Solid Angle function which takes</span>
+<span class="c1"># theta = polar_bounds(theta_lower_bound to a theta_upper_bound), and then</span>
+<span class="c1"># phi = azimuthal_bound(phi_lower_bound to a phi_upper_bound).</span>
+<span class="n">uniform_solid_angle_distribution</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">UniformSolidAngle</span><span class="p">(</span>
+                                          <span class="n">polar_bounds</span><span class="o">=</span><span class="p">(</span><span class="n">theta_low</span><span class="p">,</span><span class="n">theta_high</span><span class="p">),</span>
+                                          <span class="n">azimuthal_bounds</span><span class="o">=</span><span class="p">(</span><span class="n">phi_low</span><span class="p">,</span><span class="n">phi_high</span><span class="p">))</span>
+
+<span class="c1"># Now we can take a random variable sample from that distribution.</span>
+<span class="c1"># In this case we want 50000 samples.</span>
+<span class="n">solid_angle_samples</span> <span class="o">=</span> <span class="n">uniform_solid_angle_distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+
+<span class="c1"># Make a spin 1 magnitude since solid angle is only 2 dimensions and we need a</span>
+<span class="c1"># 3rd dimension for a 3D plot that we make later on.</span>
+<span class="n">spin_mag</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">10000</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10000</span><span class="p">):</span>
+    <span class="n">spin_mag</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+
+<span class="c1"># Use pycbc.coordinates as co. Use  spherical_to_cartesian function to</span>
+<span class="c1"># convert from spherical polar coordinates to cartesian coordinates.</span>
+<span class="n">spinx</span><span class="p">,</span> <span class="n">spiny</span><span class="p">,</span> <span class="n">spinz</span> <span class="o">=</span> <span class="n">co</span><span class="o">.</span><span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">spin_mag</span><span class="p">,</span>
+                                                <span class="n">solid_angle_samples</span><span class="p">[</span><span class="s1">&#39;phi&#39;</span><span class="p">],</span>
+                                                <span class="n">solid_angle_samples</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">])</span>
+
+<span class="c1"># Plot the spherical distribution of spins to make sure that we</span>
+<span class="c1"># distributed across  the surface of a sphere.</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">spinx</span><span class="p">,</span> <span class="n">spiny</span><span class="p">,</span> <span class="n">spinz</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Spin X Axis&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Spin Y Axis&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">&#39;Spin Z Axis&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/10ea8f0d73c2ddf7a7ebba1e433fdffc/spin_spatial_distr_example.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/05845f8d3bf9d32d657f354cc407d9b2/spin_spatial_distr_example.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/48fcb3929c3394b6314094d743085ae0/spin_spatial_distr_example.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/09fe48e222843938c8c0ed47251231a6/spin_spatial_distr_example.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/spin_spatial_distr_example.png" class="plot-directive" src="_images/spin_spatial_distr_example.png" />
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="filter.html" class="btn btn-neutral float-left" title="Filtering" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="searches.html" class="btn btn-neutral float-right" title="PyCBC searches" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

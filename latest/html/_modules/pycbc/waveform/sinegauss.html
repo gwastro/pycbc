@@ -1,0 +1,229 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.sinegauss &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.sinegauss</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.sinegauss</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Generation of sine-Gaussian bursty type things</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.types</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+
+<div class="viewcode-block" id="cached_arange">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.sinegauss.cached_arange">[docs]</a>
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cached_arange</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">kmax</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta_f</span></div>
+
+
+
+<div class="viewcode-block" id="fd_sine_gaussian">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.sinegauss.fd_sine_gaussian">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_sine_gaussian</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">quality</span><span class="p">,</span> <span class="n">central_frequency</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate a Fourier domain sine-Gaussian</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amp: float</span>
+<span class="sd">        Amplitude of the sine-Gaussian</span>
+<span class="sd">    quality: float</span>
+<span class="sd">        The quality factor</span>
+<span class="sd">    central_frequency: float</span>
+<span class="sd">        The central frequency of the sine-Gaussian</span>
+<span class="sd">    fmin: float</span>
+<span class="sd">        The minimum frequency to generate the sine-Gaussian. This determines</span>
+<span class="sd">        the length of the output vector.</span>
+<span class="sd">    fmax: float</span>
+<span class="sd">        The maximum frequency to generate the sine-Gaussian</span>
+<span class="sd">    delta_f: float</span>
+<span class="sd">        The size of the frequency step</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sg: pycbc.types.Frequencyseries</span>
+<span class="sd">        A Fourier domain sine-Gaussian</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Optimization note: Ian has profiled and done optimization on this</span>
+    <span class="c1"># function. If further speed up is needed caching the v vector and</span>
+    <span class="c1"># avoiding a numpy.zeros call would be the next thing to speed up.</span>
+    <span class="c1"># After that the numpy.exp call dominates.</span>
+    <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">fmin</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">))</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">fmax</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">))</span>
+
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">tau</span> <span class="o">=</span> <span class="p">(</span><span class="n">quality</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">central_frequency</span><span class="p">))</span>
+    <span class="n">quality_sq</span> <span class="o">=</span> <span class="n">quality</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">cached_arange</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">)</span>
+
+    <span class="c1"># exp(exp_term1) and exp(exp_term2) are often 0 (at double-precision</span>
+    <span class="c1"># level) but still slow to compute. Want to shortcut this by not</span>
+    <span class="c1"># computing terms at values where we don&#39;t need to. Use e**(-50) ~ 0 as</span>
+    <span class="c1"># the point at which we no longer compute np.exp. Given that the maximum</span>
+    <span class="c1"># value is O(1), e**(-50) / e**(-1) is 0 at double precision and this is</span>
+    <span class="c1"># safe.</span>
+
+    <span class="c1"># We first figure out which points we need to compute amplitudes for</span>
+    <span class="n">exp_term_cutoff</span> <span class="o">=</span> <span class="o">-</span><span class="mi">50</span>
+
+    <span class="n">v</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="c1"># Only consider points larger than kmin</span>
+    <span class="n">indices</span><span class="p">[</span><span class="n">kmin</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># Find frequencies at which first term is equal to exp_term_cutoff</span>
+    <span class="n">low_freq_first_term</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">central_frequency</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="n">exp_term_cutoff</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">high_freq_first_term</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">central_frequency</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="n">exp_term_cutoff</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">low_freq_first_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">kmin</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">low_freq_first_term</span><span class="o">//</span><span class="n">delta_f</span><span class="p">))</span>
+    <span class="n">high_freq_first_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">high_freq_first_term</span><span class="o">//</span><span class="n">delta_f</span><span class="p">))</span>
+    <span class="c1"># Find frequency at which second term drops to exp_term_cutoff</span>
+    <span class="n">high_freq_second_idx</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">exp_term_cutoff</span> <span class="o">/</span> <span class="n">quality_sq</span> <span class="o">*</span> <span class="n">central_frequency</span> <span class="o">//</span> <span class="n">delta_f</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">exp_term_1</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span>
+        <span class="n">tau</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> 
+        <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">low_freq_first_idx</span><span class="p">:</span><span class="n">high_freq_first_idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">central_frequency</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">**</span><span class="mf">2.0</span>
+
+    <span class="n">A_term</span> <span class="o">=</span> <span class="n">amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">pi</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">tau</span>
+
+    <span class="n">v</span><span class="p">[</span><span class="n">low_freq_first_idx</span><span class="p">:</span><span class="n">high_freq_first_idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">A_term</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exp_term_1</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c1"># If the first term is already less than e**50 don&#39;t need the second</span>
+    <span class="c1"># term at all ... It&#39;s often the case that the second term is not needed.</span>
+    <span class="k">if</span> <span class="n">high_freq_second_idx</span> <span class="o">&gt;</span> <span class="n">kmin</span><span class="p">:</span>
+        <span class="n">exp_term_2</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="n">quality_sq</span> <span class="o">*</span> <span class="n">f</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">high_freq_second_idx</span><span class="p">]</span> <span class="o">/</span> <span class="n">central_frequency</span>
+        <span class="p">)</span>
+        <span class="n">v</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">high_freq_second_idx</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">exp_term_2</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">FrequencySeries</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,444 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.lambda_mapping &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.lambda_mapping</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.lambda_mapping</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013 Ian W. Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MTSUN_SI</span><span class="p">,</span> <span class="n">PI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.libutils</span>
+
+<span class="n">lal</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">libutils</span><span class="o">.</span><span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lal&#39;</span><span class="p">)</span>
+<span class="n">lalsimulation</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">libutils</span><span class="o">.</span><span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lalsimulation&#39;</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.lambda_mapping&#39;</span><span class="p">)</span>
+
+<span class="c1"># PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE</span>
+<span class="n">pycbcValidTmpltbankOrders</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;zeroPN&#39;</span><span class="p">,</span><span class="s1">&#39;onePN&#39;</span><span class="p">,</span><span class="s1">&#39;onePointFivePN&#39;</span><span class="p">,</span><span class="s1">&#39;twoPN&#39;</span><span class="p">,</span>\
+      <span class="s1">&#39;twoPointFivePN&#39;</span><span class="p">,</span><span class="s1">&#39;threePN&#39;</span><span class="p">,</span><span class="s1">&#39;threePointFivePN&#39;</span><span class="p">]</span>
+
+<span class="n">pycbcValidOrdersHelpDescriptions</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">     * zeroPN: Will only include the dominant term (proportional to chirp mass)</span>
+<span class="s2">     * onePN: Will only the leading orbit term and first correction at 1PN</span>
+<span class="s2">     * onePointFivePN: Will include orbit and spin terms to 1.5PN.</span>
+<span class="s2">     * twoPN: Will include orbit and spin terms to 2PN.</span>
+<span class="s2">     * twoPointFivePN: Will include orbit and spin terms to 2.5PN.</span>
+<span class="s2">     * threePN: Will include orbit terms to 3PN and spin terms to 2.5PN.</span>
+<span class="s2">     * threePointFivePN: Include orbit terms to 3.5PN and spin terms to 2.5PN</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="generate_mapping">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.lambda_mapping.generate_mapping">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_mapping</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will take an order string and return a mapping between</span>
+<span class="sd">    components in the metric and the various Lambda components. This must be</span>
+<span class="sd">    used (and consistently used) when generating the metric *and* when</span>
+<span class="sd">    transforming to/from the xi_i coordinates to the lambda_i coordinates.</span>
+
+<span class="sd">    NOTE: This is not a great way of doing this. It would be nice to clean</span>
+<span class="sd">    this up. Hence pulling this function out. The valid PN orders are</span>
+<span class="sd">    {}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    order : string</span>
+<span class="sd">        A string containing a PN order. Valid values are given above.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mapping : dictionary</span>
+<span class="sd">        A mapping between the active Lambda terms and index in the metric</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;zeroPN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;onePN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;onePointFivePN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;twoPN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda5&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;twoPointFivePN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda6&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda6&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;threePN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda7&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s1">&#39;threePointFivePN&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span>
+    <span class="c1"># For some as-of-yet unknown reason, the tidal terms are not giving correct</span>
+    <span class="c1"># match estimates when enabled. So, for now, this order is commented out.</span>
+    <span class="c1">#if order == &#39;tidalTesting&#39;:</span>
+    <span class="c1">#    mapping[&#39;Lambda10&#39;] = 8</span>
+    <span class="c1">#    mapping[&#39;Lambda12&#39;] = 9</span>
+    <span class="c1">#    return mapping</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Order </span><span class="si">%s</span><span class="s2"> is not understood.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">order</span><span class="p">))</span></div>
+
+
+<span class="c1"># Override doc so the PN orders are added automatically to online docs</span>
+<span class="n">generate_mapping</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> \
+    <span class="n">generate_mapping</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pycbcValidOrdersHelpDescriptions</span><span class="p">)</span>
+
+<div class="viewcode-block" id="generate_inverse_mapping">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.lambda_mapping.generate_inverse_mapping">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_inverse_mapping</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Genereate a lambda entry -&gt; PN order map.</span>
+
+<span class="sd">    This function will generate the opposite of generate mapping. So where</span>
+<span class="sd">    generate_mapping gives dict[key] = item this will give</span>
+<span class="sd">    dict[item] = key. Valid PN orders are:</span>
+<span class="sd">    {}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    order : string</span>
+<span class="sd">        A string containing a PN order. Valid values are given above.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mapping : dictionary</span>
+<span class="sd">        An inverse mapping between the active Lambda terms and index in the</span>
+<span class="sd">        metric</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">generate_mapping</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="n">inv_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">inv_mapping</span><span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">return</span> <span class="n">inv_mapping</span></div>
+
+
+<span class="n">generate_inverse_mapping</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> \
+    <span class="n">generate_inverse_mapping</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pycbcValidOrdersHelpDescriptions</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_ethinca_orders">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.lambda_mapping.get_ethinca_orders">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_ethinca_orders</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the dictionary mapping TaylorF2 PN order names to twice-PN</span>
+<span class="sd">    orders (powers of v/c)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ethinca_orders</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;zeroPN&quot;</span>           <span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                      <span class="s2">&quot;onePN&quot;</span>            <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                      <span class="s2">&quot;onePointFivePN&quot;</span>   <span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                      <span class="s2">&quot;twoPN&quot;</span>            <span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                      <span class="s2">&quot;twoPointFivePN&quot;</span>   <span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                      <span class="s2">&quot;threePN&quot;</span>          <span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                      <span class="s2">&quot;threePointFivePN&quot;</span> <span class="p">:</span> <span class="mi">7</span>
+                     <span class="p">}</span>
+    <span class="k">return</span> <span class="n">ethinca_orders</span></div>
+
+
+<div class="viewcode-block" id="ethinca_order_from_string">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.lambda_mapping.ethinca_order_from_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ethinca_order_from_string</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the integer giving twice the post-Newtonian order</span>
+<span class="sd">    used by the ethinca calculation. Currently valid only for TaylorF2 metric</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    order : string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="ow">in</span> <span class="n">get_ethinca_orders</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">get_ethinca_orders</span><span class="p">()[</span><span class="n">order</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Order &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">order</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; is not valid for ethinca&quot;</span>
+                           <span class="s2">&quot;calculation! Valid orders: &quot;</span><span class="o">+</span>
+                           <span class="nb">str</span><span class="p">(</span><span class="n">get_ethinca_orders</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="get_chirp_params">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.lambda_mapping.get_chirp_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_chirp_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">f0</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span>
+                     <span class="n">quadparam1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quadparam2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambda1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">lambda2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take a set of masses and spins and convert to the various lambda</span>
+<span class="sd">    coordinates that describe the orbital phase. Accepted PN orders are:</span>
+<span class="sd">    {}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mass1 : float or array</span>
+<span class="sd">        Mass1 of input(s).</span>
+<span class="sd">    mass2 : float or array</span>
+<span class="sd">        Mass2 of input(s).</span>
+<span class="sd">    spin1z : float or array</span>
+<span class="sd">        Parallel spin component(s) of body 1.</span>
+<span class="sd">    spin2z : float or array</span>
+<span class="sd">        Parallel spin component(s) of body 2.</span>
+<span class="sd">    f0 : float</span>
+<span class="sd">        This is an arbitrary scaling factor introduced to avoid the potential</span>
+<span class="sd">        for numerical overflow when calculating this. Generally the default</span>
+<span class="sd">        value (70) is safe here. **IMPORTANT, if you want to calculate the</span>
+<span class="sd">        ethinca metric components later this MUST be set equal to f_low.**</span>
+<span class="sd">        This value must also be used consistently (ie. don&#39;t change its value</span>
+<span class="sd">        when calling different functions!).</span>
+<span class="sd">    order : string</span>
+<span class="sd">        The Post-Newtonian order that is used to translate from masses and</span>
+<span class="sd">        spins to the lambda_i coordinate system. Valid orders given above.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    lambdas : list of floats or numpy.arrays</span>
+<span class="sd">        The lambda coordinates for the input system(s)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Determine whether array or single value input</span>
+    <span class="n">sngl_inp</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">num_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">sngl_inp</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># If you care about speed, you aren&#39;t calling this function one entry</span>
+        <span class="c1"># at a time.</span>
+        <span class="n">mass1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass1</span><span class="p">])</span>
+        <span class="n">mass2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass2</span><span class="p">])</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin1z</span><span class="p">])</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin2z</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">quadparam1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quadparam1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">quadparam1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">quadparam2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quadparam2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">quadparam2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">lambda1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lambda1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lambda1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">lambda2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lambda2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lambda2</span><span class="p">])</span>
+        <span class="n">num_points</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">quadparam1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">quadparam1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">quadparam2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">quadparam2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lambda1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lambda1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lambda2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lambda2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">mass1_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">mass1_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">mass1</span><span class="p">[:]</span>
+    <span class="n">mass2_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">mass2_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">mass2</span><span class="p">[:]</span>
+    <span class="n">spin1z_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">spin1z_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">spin1z</span><span class="p">[:]</span>
+    <span class="n">spin2z_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">spin2z_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">spin2z</span><span class="p">[:]</span>
+    <span class="n">lambda1_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">lambda1_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">lambda1</span><span class="p">[:]</span>
+    <span class="n">lambda2_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">lambda2_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">lambda2</span><span class="p">[:]</span>
+    <span class="n">dquadparam1_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">dquadparam1_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">quadparam1</span><span class="p">[:]</span> <span class="o">-</span> <span class="mf">1.</span>
+    <span class="n">dquadparam2_v</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+    <span class="n">dquadparam2_v</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">quadparam2</span><span class="p">[:]</span> <span class="o">-</span> <span class="mf">1.</span>
+
+    <span class="n">phasing_arr</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">SimInspiralTaylorF2AlignedPhasingArray</span>\
+        <span class="p">(</span><span class="n">mass1_v</span><span class="p">,</span> <span class="n">mass2_v</span><span class="p">,</span> <span class="n">spin1z_v</span><span class="p">,</span> <span class="n">spin2z_v</span><span class="p">,</span> <span class="n">lambda1_v</span><span class="p">,</span> <span class="n">lambda2_v</span><span class="p">,</span>
+         <span class="n">dquadparam1_v</span><span class="p">,</span> <span class="n">dquadparam2_v</span><span class="p">)</span>
+
+    <span class="n">vec_len</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">PN_PHASING_SERIES_MAX_ORDER</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">phasing_vs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">num_points</span><span class="p">,</span> <span class="n">vec_len</span><span class="p">])</span>
+    <span class="n">phasing_vlogvs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">num_points</span><span class="p">,</span> <span class="n">vec_len</span><span class="p">])</span>
+    <span class="n">phasing_vlogvsqs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">num_points</span><span class="p">,</span> <span class="n">vec_len</span><span class="p">])</span>
+
+    <span class="n">lng</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">)</span>
+    <span class="n">jmp</span> <span class="o">=</span> <span class="n">lng</span> <span class="o">*</span> <span class="n">vec_len</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">vec_len</span><span class="p">):</span>
+        <span class="n">phasing_vs</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">phasing_arr</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">lng</span><span class="o">*</span><span class="n">idx</span> <span class="p">:</span> <span class="n">lng</span><span class="o">*</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">phasing_vlogvs</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">phasing_arr</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">jmp</span> <span class="o">+</span> <span class="n">lng</span><span class="o">*</span><span class="n">idx</span> <span class="p">:</span> <span class="n">jmp</span> <span class="o">+</span> <span class="n">lng</span><span class="o">*</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">phasing_vlogvsqs</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">phasing_arr</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">jmp</span> <span class="o">+</span> <span class="n">lng</span><span class="o">*</span><span class="n">idx</span> <span class="p">:</span> <span class="mi">2</span><span class="o">*</span><span class="n">jmp</span> <span class="o">+</span> <span class="n">lng</span><span class="o">*</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+
+    <span class="n">pim</span> <span class="o">=</span> <span class="n">PI</span> <span class="o">*</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span><span class="p">)</span><span class="o">*</span><span class="n">MTSUN_SI</span>
+    <span class="n">pmf</span> <span class="o">=</span> <span class="n">pim</span> <span class="o">*</span> <span class="n">f0</span>
+    <span class="n">pmf13</span> <span class="o">=</span> <span class="n">pmf</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+    <span class="n">logpim13</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">pim</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span>
+
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">generate_inverse_mapping</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+    <span class="n">lambdas</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lambda_str</span> <span class="o">=</span> <span class="s1">&#39;^Lambda([0-9]+)&#39;</span>
+    <span class="n">loglambda_str</span> <span class="o">=</span> <span class="s1">&#39;^LogLambda([0-9]+)&#39;</span>
+    <span class="n">logloglambda_str</span> <span class="o">=</span> <span class="s1">&#39;^LogLogLambda([0-9]+)&#39;</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+        <span class="c1"># RE magic engage!</span>
+        <span class="n">rematch</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">lambda_str</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">rematch</span><span class="p">:</span>
+            <span class="n">pn_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rematch</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">phasing_vs</span><span class="p">[:,</span><span class="n">pn_order</span><span class="p">]</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">term</span> <span class="o">+</span> <span class="n">logpim13</span> <span class="o">*</span> <span class="n">phasing_vlogvs</span><span class="p">[:,</span><span class="n">pn_order</span><span class="p">]</span>
+            <span class="n">lambdas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">term</span> <span class="o">*</span> <span class="n">pmf13</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="o">+</span><span class="n">pn_order</span><span class="p">))</span>
+            <span class="k">continue</span>
+        <span class="n">rematch</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">loglambda_str</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">rematch</span><span class="p">:</span>
+            <span class="n">pn_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rematch</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">lambdas</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">phasing_vlogvs</span><span class="p">[:,</span><span class="n">pn_order</span><span class="p">])</span> <span class="o">*</span> <span class="n">pmf13</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="o">+</span><span class="n">pn_order</span><span class="p">))</span>
+            <span class="k">continue</span>
+        <span class="n">rematch</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">logloglambda_str</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">rematch</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;LOGLOG terms are not implemented&quot;</span><span class="p">)</span>
+            <span class="c1">#pn_order = int(rematch.groups()[0])</span>
+            <span class="c1">#lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))</span>
+            <span class="c1">#continue</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Failed to parse &quot;</span> <span class="o">+</span>  <span class="n">mapping</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sngl_inp</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">lambdas</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lambdas</span></div>
+
+
+<span class="n">get_chirp_params</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> \
+    <span class="n">get_chirp_params</span><span class="o">.</span><span class="vm">__doc__</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pycbcValidOrdersHelpDescriptions</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

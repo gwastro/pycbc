@@ -1,0 +1,748 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inject package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.io package" href="pycbc.io.html" />
+    <link rel="prev" title="pycbc.inference.sampler package" href="pycbc.inference.sampler.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.inject package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.inject.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-inject-package">
+<h1>pycbc.inject package<a class="headerlink" href="#pycbc-inject-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.inject.inject">
+<span id="pycbc-inject-inject-module"></span><h2>pycbc.inject.inject module<a class="headerlink" href="#module-pycbc.inject.inject" title="Link to this heading"></a></h2>
+<p>This module provides utilities for injecting signals into data</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">CBCHDFInjectionSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdf_group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#CBCHDFInjectionSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_HDFInjectionSet</span></code></p>
+<p>Manages CBC injections.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_filter_rejector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injection_sample_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generate_injections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#CBCHDFInjectionSet.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet.apply" title="Link to this definition"></a></dt>
+<dd><p>Add injections (as seen by a particular detector) to a time series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Time series to inject signals into, of type float32 or float64.</p></li>
+<li><p><strong>detector_name</strong> (<em>string</em>) – Name of the detector used for projecting injections.</p></li>
+<li><p><strong>f_lower</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Low-frequency cutoff for injected signals. If None, use value
+provided by each injection.</p></li>
+<li><p><strong>distance_scale</strong> (<em>{1</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Factor to scale the distance of an injection with. The default is
+no scaling.</p></li>
+<li><p><strong>simulation_ids</strong> (<em>iterable</em><em>, </em><em>optional</em>) – If given, only inject signals with the given simulation IDs.</p></li>
+<li><p><strong>inj_filter_rejector</strong> (<em>InjFilterRejector instance; optional</em><em>, </em><em>default=None</em>) – If given send each injected waveform to the InjFilterRejector
+instance so that it can store a reduced representation of that
+injection if necessary.</p></li>
+<li><p><strong>injection_sample_rate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – The sample rate to generate the signal before injection</p></li>
+<li><p><strong>generate_injections</strong> (<em>boolean</em><em>, </em><em>optional</em><em> (</em><em>default=True</em><em>)</em>) – If this is False, injections will not be added to the data. This
+can be used if your data already contains injections, or if you
+are separately providing injection strain to add to the data, and
+you still want to know injection times to make use of injection
+optimizations (mostly through the InjFilterRejector).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – For invalid types of <cite>strain</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet.end_times">
+<span class="sig-name descname"><span class="pre">end_times</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#CBCHDFInjectionSet.end_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet.end_times" title="Link to this definition"></a></dt>
+<dd><p>Return the end times of all injections</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet.injtype">
+<span class="sig-name descname"><span class="pre">injtype</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cbc'</span></em><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet.injtype" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet.make_strain_from_inj_object">
+<span class="sig-name descname"><span class="pre">make_strain_from_inj_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#CBCHDFInjectionSet.make_strain_from_inj_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet.make_strain_from_inj_object" title="Link to this definition"></a></dt>
+<dd><p>Make a h(t) strain time-series from an injection object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inj</strong> (<em>injection object</em>) – The injection object to turn into a strain h(t). Can be any
+object which has waveform parameters as attributes, such as an
+element in a <code class="docutils literal notranslate"><span class="pre">WaveformArray</span></code>.</p></li>
+<li><p><strong>delta_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Sample rate to make injection at.</p></li>
+<li><p><strong>detector_name</strong> (<em>string</em>) – Name of the detector used for projecting injections.</p></li>
+<li><p><strong>f_lower</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Low-frequency cutoff for injected signals. If None, use value
+provided by each injection.</p></li>
+<li><p><strong>distance_scale</strong> (<em>{1</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Factor to scale the distance of an injection with. The default is
+no scaling.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>signal</strong> – h(t) corresponding to the injection.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet.required_params">
+<span class="sig-name descname"><span class="pre">required_params</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('tc',)</span></em><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet.required_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.CBCHDFInjectionSet.supported_approximants">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supported_approximants</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#CBCHDFInjectionSet.supported_approximants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.CBCHDFInjectionSet.supported_approximants" title="Link to this definition"></a></dt>
+<dd><p>Return a list of the supported approximants.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">IncoherentFromFileHDFInjectionSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdf_group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_HDFInjectionSet</span></code></p>
+<p>Manages injecting an arbitrary time series loaded from a file.</p>
+<p>The injections must have the following attributes set:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">filename</span></code>: (str) the name of the file to load containing the time
+series. The file type and format can be a frame file or anything
+understood by <a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.load_timeseries" title="pycbc.types.timeseries.load_timeseries"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.types.timeseries.load_timeseries()</span></code></a>. If a
+frame file (ends in <code class="docutils literal notranslate"><span class="pre">.gwf</span></code>) is specified, a <code class="docutils literal notranslate"><span class="pre">channel</span></code> attribute must
+also be set.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DETECTOR_gps_time</span></code>: (float) The GPS time at which the time series
+should be added to the <code class="docutils literal notranslate"><span class="pre">DETECTOR</span></code> data, where <code class="docutils literal notranslate"><span class="pre">DETECTOR</span></code> is the name
+of the instrument to inject into (e.g., <code class="docutils literal notranslate"><span class="pre">h1_gps_time</span></code>). <strong>The time
+series will only be injected into a detector if a GPS time is given for
+that detector.</strong> Set to -inf, nan, or do not provide a GPS time for a
+particular detector if you do not want to inject into that detector.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ref_point</span></code>: (str or float) What to use as the reference time of the
+injected time series. The time series will be injected into the detector
+such that the <code class="docutils literal notranslate"><span class="pre">ref_point</span></code> in the time series occurs at the specifed
+<code class="docutils literal notranslate"><span class="pre">DETECTOR_gps_time</span></code>. Options are: <code class="docutils literal notranslate"><span class="pre">'start'</span></code>, <code class="docutils literal notranslate"><span class="pre">'end'</span></code>, <code class="docutils literal notranslate"><span class="pre">'center'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'absmax'</span></code>, or a float giving the number of seconds into the time
+series.</p></li>
+</ul>
+<p>In addition, the following attributes may optionally be provided:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">channel</span></code>: (str): If the filename points to a frame file, the channel
+to load in that file. Must be provided for frame files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DETECTOR_phase_shift</span></code>: (float) Apply a phase shift to the time series
+before adding it to detector <code class="docutils literal notranslate"><span class="pre">DETECTOR</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DETECTOR_amp_scale</span></code>: (float) Scale the amplitude by the given amount
+before adding it to detector <code class="docutils literal notranslate"><span class="pre">DETECTOR</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">slice_start</span></code>: (float) Slice the time series starting at
+<code class="docutils literal notranslate"><span class="pre">ref_point</span> <span class="pre">+</span> <span class="pre">slice_start</span></code> before injecting into the data. Measured in
+seconds.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">slice_end</span></code>: (float) Slice the time series ending at
+<code class="docutils literal notranslate"><span class="pre">ref_point</span> <span class="pre">+</span> <span class="pre">slice_end</span></code> before injecting into the data. Measured in
+seconds.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">left_taper_width</span></code>: (float) Taper the start of the time series (after
+slicing) using half a kaiser window over the given number of seconds.
+See <cite>:py:func:waveform.utils.td_taper</cite> for more details.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">right_taper_width</span></code>: (float) Taper the end of the time series (after
+slicing) using half a kaiser window over the given number of seconds.
+See <cite>:py:func:waveform.utils.td_taper</cite> for more details.</p></li>
+</ul>
+<p>The signal will be resampled to the same sample rate as the data it is
+being injected into.</p>
+<p>In order to use with <code class="docutils literal notranslate"><span class="pre">pycbc_create_injections</span></code>, set the <code class="docutils literal notranslate"><span class="pre">approximant</span></code>
+name to <code class="docutils literal notranslate"><span class="pre">'incoherent_from_file'</span></code>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injection_sample_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_filter_rejector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generate_injections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.apply" title="Link to this definition"></a></dt>
+<dd><p>Adds injections to a detector’s time series.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.end_times">
+<span class="sig-name descname"><span class="pre">end_times</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.end_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.end_times" title="Link to this definition"></a></dt>
+<dd><p>Return the end times of all injections</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.injtype">
+<span class="sig-name descname"><span class="pre">injtype</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'incoherent_from_file'</span></em><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.injtype" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.loadts">
+<span class="sig-name descname"><span class="pre">loadts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.loadts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.loadts" title="Link to this definition"></a></dt>
+<dd><p>Loads an injection time series.</p>
+<p>After the first time a time series is loaded it will be added to an
+internal buffer for faster in case another injection uses the same
+series.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.make_strain_from_inj_object">
+<span class="sig-name descname"><span class="pre">make_strain_from_inj_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.make_strain_from_inj_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.make_strain_from_inj_object" title="Link to this definition"></a></dt>
+<dd><p>Make a h(t) strain time-series from an injection object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.required_params">
+<span class="sig-name descname"><span class="pre">required_params</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('filename',</span> <span class="pre">'ref_point')</span></em><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.required_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.set_ref_time">
+<span class="sig-name descname"><span class="pre">set_ref_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.set_ref_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.set_ref_time" title="Link to this definition"></a></dt>
+<dd><p>Sets t=0 of the given time series based on what the given
+injection’s <code class="docutils literal notranslate"><span class="pre">ref_point</span></code> is.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.slice_and_taper">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">slice_and_taper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.slice_and_taper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.slice_and_taper" title="Link to this definition"></a></dt>
+<dd><p>Slices and tapers a timeseries based on the injection settings.</p>
+<p>This assumes that <code class="docutils literal notranslate"><span class="pre">set_ref_time</span></code> has been applied to the timeseries
+first. A copy of the time series will be returned even if no slicing
+or tapering is done.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.supported_approximants">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supported_approximants</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#IncoherentFromFileHDFInjectionSet.supported_approximants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.supported_approximants" title="Link to this definition"></a></dt>
+<dd><p>Return a list of the supported approximants.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inject.inject.InjectionSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">InjectionSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#InjectionSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.InjectionSet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages sets of injections and injects them into time series.</p>
+<p>Injections are read from either LIGOLW XML files or HDF files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sim_file</strong> (<em>string</em>) – Path to an hdf file or a LIGOLW XML file that contains a
+SimInspiralTable.</p></li>
+<li><p><strong>**kwds</strong> – The rest of the keyword arguments are passed to the waveform generation
+function when generating injections.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.InjectionSet.table">
+<span class="sig-name descname"><span class="pre">table</span></span><a class="headerlink" href="#pycbc.inject.inject.InjectionSet.table" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.InjectionSet.from_cli">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#InjectionSet.from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.InjectionSet.from_cli" title="Link to this definition"></a></dt>
+<dd><p>Return an instance of InjectionSet configured as specified
+on the command line.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.InjectionSet.write">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">static_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#InjectionSet.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.InjectionSet.write" title="Link to this definition"></a></dt>
+<dd><p>Writes the injection samples to the given hdf file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the file to write to.</p></li>
+<li><p><strong>samples</strong> (<em>io.FieldArray</em>) – FieldArray of parameters.</p></li>
+<li><p><strong>write_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – Only write the given parameter names. All given names must be keys
+in <code class="docutils literal notranslate"><span class="pre">samples</span></code>. Default is to write all parameters in <code class="docutils literal notranslate"><span class="pre">samples</span></code>.</p></li>
+<li><p><strong>static_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Dictionary mapping static parameter names to values. These are
+written to the <code class="docutils literal notranslate"><span class="pre">attrs</span></code>.</p></li>
+<li><p><strong>injtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Specify which <cite>HDFInjectionSet</cite> class to use for writing. If not
+provided, will try to determine it by looking for an approximant in
+the <code class="docutils literal notranslate"><span class="pre">static_args</span></code>, followed by the <code class="docutils literal notranslate"><span class="pre">samples</span></code>.</p></li>
+<li><p><strong>**metadata</strong> – All other keyword arguments will be written to the file’s attrs.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">RingdownHDFInjectionSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdf_group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#RingdownHDFInjectionSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_HDFInjectionSet</span></code></p>
+<p>Manages a ringdown injection: reads injection from hdf file
+and injects it into time series.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_ids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_filter_rejector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injection_sample_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generate_injections</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#RingdownHDFInjectionSet.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet.apply" title="Link to this definition"></a></dt>
+<dd><p>Add injection (as seen by a particular detector) to a time series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Time series to inject signals into, of type float32 or float64.</p></li>
+<li><p><strong>detector_name</strong> (<em>string</em>) – Name of the detector used for projecting injections.</p></li>
+<li><p><strong>distance_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Factor to scale the distance of an injection with. The default (=1)
+is no scaling.</p></li>
+<li><p><strong>simulation_ids</strong> (<em>iterable</em><em>, </em><em>optional</em>) – If given, only inject signals with the given simulation IDs.</p></li>
+<li><p><strong>inj_filter_rejector</strong> (<em>InjFilterRejector instance</em><em>, </em><em>optional</em>) – Not implemented. If not <code class="docutils literal notranslate"><span class="pre">None</span></code>, a <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code> will
+be raised.</p></li>
+<li><p><strong>injection_sample_rate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – The sample rate to generate the signal before injection</p></li>
+<li><p><strong>generate_injections</strong> (<em>boolean</em><em>, </em><em>optional</em><em> (</em><em>default=True</em><em>)</em>) – If this is False, injections will not be added to the data. This
+can be used if your data already contains injections, or if you
+are separately providing injection strain to add to the data, and
+you still want to know injection times to make use of injection
+optimizations (mostly through the InjFilterRejector).
+Not yet implemented for Ringdown Injection Files.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.14)"><strong>NotImplementedError</strong></a> – If an <code class="docutils literal notranslate"><span class="pre">inj_filter_rejector</span></code> is provided.
+    Or if generate_injections is not True.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – For invalid types of <cite>strain</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet.end_times">
+<span class="sig-name descname"><span class="pre">end_times</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#RingdownHDFInjectionSet.end_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet.end_times" title="Link to this definition"></a></dt>
+<dd><p>Return the approximate end times of all injections.</p>
+<p>Currently, this just assumes all ringdowns are 2 seconds long.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet.injtype">
+<span class="sig-name descname"><span class="pre">injtype</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ringdown'</span></em><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet.injtype" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet.make_strain_from_inj_object">
+<span class="sig-name descname"><span class="pre">make_strain_from_inj_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#RingdownHDFInjectionSet.make_strain_from_inj_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet.make_strain_from_inj_object" title="Link to this definition"></a></dt>
+<dd><p>Make a h(t) strain time-series from an injection object as read from
+an hdf file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inj</strong> (<em>injection object</em>) – The injection object to turn into a strain h(t).</p></li>
+<li><p><strong>delta_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Sample rate to make injection at.</p></li>
+<li><p><strong>detector_name</strong> (<em>string</em>) – Name of the detector used for projecting injections.</p></li>
+<li><p><strong>distance_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Factor to scale the distance of an injection with. The default (=1)
+is no scaling.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>signal</strong> – h(t) corresponding to the injection.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet.required_params">
+<span class="sig-name descname"><span class="pre">required_params</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('tc',)</span></em><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet.required_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.RingdownHDFInjectionSet.supported_approximants">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">supported_approximants</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#RingdownHDFInjectionSet.supported_approximants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.RingdownHDFInjectionSet.supported_approximants" title="Link to this definition"></a></dt>
+<dd><p>Return a list of the supported approximants.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inject.inject.SGBurstInjectionSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">SGBurstInjectionSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_file</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#SGBurstInjectionSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.SGBurstInjectionSet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages sets of sine-Gaussian burst injections: reads injections
+from LIGOLW XML files and injects them into time series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sim_file</strong> (<em>string</em>) – Path to a LIGOLW XML file containing a SimBurstTable
+with injection definitions.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.SGBurstInjectionSet.indoc">
+<span class="sig-name descname"><span class="pre">indoc</span></span><a class="headerlink" href="#pycbc.inject.inject.SGBurstInjectionSet.indoc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.inject.inject.SGBurstInjectionSet.table">
+<span class="sig-name descname"><span class="pre">table</span></span><a class="headerlink" href="#pycbc.inject.inject.SGBurstInjectionSet.table" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.inject.SGBurstInjectionSet.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#SGBurstInjectionSet.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.SGBurstInjectionSet.apply" title="Link to this definition"></a></dt>
+<dd><p>Add injections (as seen by a particular detector) to a time series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Time series to inject signals into, of type float32 or float64.</p></li>
+<li><p><strong>detector_name</strong> (<em>string</em>) – Name of the detector used for projecting injections.</p></li>
+<li><p><strong>f_lower</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Low-frequency cutoff for injected signals. If None, use value
+provided by each injection.</p></li>
+<li><p><strong>distance_scale</strong> (<em>{1</em><em>, </em><em>foat}</em><em>, </em><em>optional</em>) – Factor to scale the distance of an injection with. The default is
+no scaling.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – For invalid types of <cite>strain</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.inject.get_hdf_injtype">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">get_hdf_injtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#get_hdf_injtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.get_hdf_injtype" title="Link to this definition"></a></dt>
+<dd><p>Gets the HDFInjectionSet class to use with the given file.</p>
+<p>This looks for the <code class="docutils literal notranslate"><span class="pre">injtype</span></code> in the given file’s top level <code class="docutils literal notranslate"><span class="pre">attrs</span></code>. If
+that attribute isn’t set, will default to <a class="reference internal" href="#pycbc.inject.inject.CBCHDFInjectionSet" title="pycbc.inject.inject.CBCHDFInjectionSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">CBCHDFInjectionSet</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sim_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the file. The file must already exist.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The type of HDFInjectionSet to use.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HDFInjectionSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.inject.hdf_injtype_from_approximant">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">hdf_injtype_from_approximant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">approximant</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#hdf_injtype_from_approximant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.hdf_injtype_from_approximant" title="Link to this definition"></a></dt>
+<dd><p>Gets the HDFInjectionSet class to use with the given approximant.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>approximant</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the approximant.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The type of HDFInjectionSet to use.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HDFInjectionSet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.inject.legacy_approximant_name">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">legacy_approximant_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#legacy_approximant_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.legacy_approximant_name" title="Link to this definition"></a></dt>
+<dd><p>Convert the old style xml approximant name to a name
+and phase_order. Alex: I hate this function. Please delete this when we
+use Collin’s new tables.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.inject.projector">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">projector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detector_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#projector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.projector" title="Link to this definition"></a></dt>
+<dd><p>Use the injection row to project the polarizations into the
+detector frame</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.inject.set_sim_data">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.inject.</span></span><span class="sig-name descname"><span class="pre">set_sim_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/inject.html#set_sim_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.inject.set_sim_data" title="Link to this definition"></a></dt>
+<dd><p>Sets data of a SimInspiral instance.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.inject.injfilterrejector">
+<span id="pycbc-inject-injfilterrejector-module"></span><h2>pycbc.inject.injfilterrejector module<a class="headerlink" href="#module-pycbc.inject.injfilterrejector" title="Link to this heading"></a></h2>
+<p>This module contains functions to filter injections with only useful templates.</p>
+<p>This module implements a set of checks to test for each segment and template
+combination whether injections contained within the segment are sufficiently
+“similar” to the template to require a matched-filter. There are a few ways of
+testing the “similarity” of templates and injections.</p>
+<ul class="simple">
+<li><p>A chirp time threshold rejects templates if chirp time difference is large</p></li>
+<li><p>A coarse match threshold rejects templates if a coarse overlap is small</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inject.injfilterrejector.</span></span><span class="sig-name descname"><span class="pre">InjFilterRejector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">injection_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chirp_time_window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_lower</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coarsematch_deltaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coarsematch_fmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_trigger_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for holding parameters for using injection/template pre-filtering.</p>
+<p>This class is responsible for identifying where a matched-filter operation
+between templates and data is unncessary because the injections contained
+in the data will not match well with the given template.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.find_indices_in_injection_intervals">
+<span class="sig-name descname"><span class="pre">find_indices_in_injection_intervals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trig_times</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.find_indices_in_injection_intervals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.find_indices_in_injection_intervals" title="Link to this definition"></a></dt>
+<dd><p>Identify indices within trig_times that corresponds to times within
+the injection intervals.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.from_cli">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.from_cli" title="Link to this definition"></a></dt>
+<dd><p>Create an InjFilterRejector instance from command-line options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.from_cli_multi_ifos">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli_multi_ifos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.from_cli_multi_ifos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.from_cli_multi_ifos" title="Link to this definition"></a></dt>
+<dd><p>Create an InjFilterRejector instance from command-line options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.from_cli_single_ifo">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli_single_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.from_cli_single_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.from_cli_single_ifo" title="Link to this definition"></a></dt>
+<dd><p>Create an InjFilterRejector instance from command-line options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.generate_short_inj_from_inj">
+<span class="sig-name descname"><span class="pre">generate_short_inj_from_inj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inj_waveform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.generate_short_inj_from_inj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.generate_short_inj_from_inj" title="Link to this definition"></a></dt>
+<dd><p>Generate and a store a truncated representation of inj_waveform.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.get_inj_end_times">
+<span class="sig-name descname"><span class="pre">get_inj_end_times</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.get_inj_end_times"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.get_inj_end_times" title="Link to this definition"></a></dt>
+<dd><p>Return a list of the sorted injection end times.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.precompute_injection_intervals">
+<span class="sig-name descname"><span class="pre">precompute_injection_intervals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.precompute_injection_intervals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.precompute_injection_intervals" title="Link to this definition"></a></dt>
+<dd><p>Precompute and merge windows around the injections to speed up later
+determination of whether triggers are within the injection times.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.InjFilterRejector.template_segment_checker">
+<span class="sig-name descname"><span class="pre">template_segment_checker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bank</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#InjFilterRejector.template_segment_checker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.InjFilterRejector.template_segment_checker" title="Link to this definition"></a></dt>
+<dd><p>Test if injections in segment are worth filtering with template.</p>
+<p>Using the current template, current segment, and injections within that
+segment. Test if the injections and sufficiently “similar” to any of
+the injections to justify actually performing a matched-filter call.
+Ther are two parts to this test: First we check if the chirp time of
+the template is within a provided window of any of the injections. If
+not then stop here, it is not worth filtering this template, segment
+combination for this injection set. If this check passes we compute a
+match between a coarse representation of the template and a coarse
+representation of each of the injections. If that match is above a
+user-provided value for any of the injections then filtering can
+proceed. This is currently only available if using frequency-domain
+templates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>FIXME</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>FIXME</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.insert_injfilterrejector_option_group">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.injfilterrejector.</span></span><span class="sig-name descname"><span class="pre">insert_injfilterrejector_option_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#insert_injfilterrejector_option_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.insert_injfilterrejector_option_group" title="Link to this definition"></a></dt>
+<dd><p>Add options for injfilterrejector to executable.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inject.injfilterrejector.insert_injfilterrejector_option_group_multi_ifo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inject.injfilterrejector.</span></span><span class="sig-name descname"><span class="pre">insert_injfilterrejector_option_group_multi_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inject/injfilterrejector.html#insert_injfilterrejector_option_group_multi_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inject.injfilterrejector.insert_injfilterrejector_option_group_multi_ifo" title="Link to this definition"></a></dt>
+<dd><p>Add options for injfilterrejector to executable.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.inject">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.inject" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.inference.sampler.html" class="btn btn-neutral float-left" title="pycbc.inference.sampler package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.io.html" class="btn btn-neutral float-right" title="pycbc.io package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

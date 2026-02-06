@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.fgmc_laguerre &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.fgmc_laguerre</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.fgmc_laguerre</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016 Jolien Creighton</span>
+<span class="c1">#           (C) 2021 Jolien Creighton &amp; Thomas Dent</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Based ultimately on code used for O1 rate calculations, see</span>
+<span class="sd">https://git.ligo.org/RatesAndPopulations/lvc-rates-and-pop/-/blob/master/bin/O1_scripts/lvc_rates_calc_posterior</span>
+<span class="sd">and technical documentation at https://dcc.ligo.org/LIGO-T1700029/public</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sst</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ssp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sop</span>
+
+
+<div class="viewcode-block" id="augmented_rv_continuous">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_laguerre.augmented_rv_continuous">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">augmented_rv_continuous</span><span class="p">(</span><span class="n">sst</span><span class="o">.</span><span class="n">rv_continuous</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">,</span> <span class="n">texunit</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\mbox</span><span class="si">{dimensionless}</span><span class="s1">&#39;</span><span class="p">,</span>
+                 <span class="n">texsymb</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        unit : string, optional</span>
+<span class="sd">            units of independent variable</span>
+<span class="sd">        texunit : string, optional</span>
+<span class="sd">            units of independent variable, in tex format</span>
+<span class="sd">        texsymb : string, optional</span>
+<span class="sd">            symbol of independent variable, in tex format</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">augmented_rv_continuous</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hpd_interval_vec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hpd_interval_scalar</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texunit</span> <span class="o">=</span> <span class="n">texunit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">texsymb</span> <span class="o">=</span> <span class="n">texsymb</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hpd_interval_scalar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">width</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="o">-</span> <span class="n">a</span>
+
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>  <span class="c1"># a is displaced slightly from 0</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>  <span class="c1"># upper limit</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">sop</span><span class="o">.</span><span class="n">fminbound</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">))</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+
+<div class="viewcode-block" id="augmented_rv_continuous.hpd_interval">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_laguerre.augmented_rv_continuous.hpd_interval">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hpd_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Confidence interval of highest probability density.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        alpha : array_like of float</span>
+<span class="sd">            Probability that an rv will be drawn from the returned range.</span>
+<span class="sd">            Each value should be in the range [0, 1].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        a, b : ndarray of float</span>
+<span class="sd">            end-points of range that contain ``100 * alpha %`` of the rv&#39;s</span>
+<span class="sd">            possible values.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">number</span><span class="p">)):</span>
+            <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hpd_interval_scalar</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hpd_interval_vec</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="count_posterior">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_laguerre.count_posterior">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">count_posterior</span><span class="p">(</span><span class="n">augmented_rv_continuous</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Count posterior distribution.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logbf</span><span class="p">,</span> <span class="n">laguerre_n</span><span class="p">,</span> <span class="n">Lambda0</span><span class="p">,</span> <span class="n">prior</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;count posterior&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;signals/experiment&#39;</span><span class="p">,</span>
+                 <span class="n">texunit</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\mathrm</span><span class="si">{signals}</span><span class="s1">/\mathrm</span><span class="si">{experiment}</span><span class="s1">&#39;</span><span class="p">,</span>
+                 <span class="n">texsymb</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\Lambda_1&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        logbf : array_like</span>
+<span class="sd">            logs of normalized foreground over background pdf ratios of events</span>
+<span class="sd">        laguerre_n: int</span>
+<span class="sd">            degree of generalized Laguerre polynomial for quadrature formula</span>
+<span class="sd">        Lambda0 : float</span>
+<span class="sd">            background rate (default=len(bayesfac))</span>
+<span class="sd">        prior : float or count_posterior, optional</span>
+<span class="sd">            prior distribution power law of improper prior if float</span>
+<span class="sd">            or count posterior distribution if count_posterior</span>
+<span class="sd">            (default=-0.5: Jeffreys prior)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">count_posterior</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                                              <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span> <span class="n">texunit</span><span class="o">=</span><span class="n">texunit</span><span class="p">,</span>
+                                              <span class="n">texsymb</span><span class="o">=</span><span class="n">texsymb</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Lambda0</span> <span class="o">=</span> <span class="n">Lambda0</span>
+        <span class="c1"># weighted Bayes factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">logbf</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lambda0</span>
+
+        <span class="c1"># power-law priors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">prior</span>
+        <span class="k">if</span> <span class="n">prior</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">1.0</span>
+        <span class="k">elif</span> <span class="n">prior</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="n">prior</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># regularize at x = 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">xtol</span><span class="p">)</span> <span class="o">**</span> <span class="n">prior</span>
+
+        <span class="c1"># pre-compute Gaussian-Generalized-Laguerre quadrature</span>
+        <span class="c1"># abscissas and weights, along with pdf at these abscissas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">ssp</span><span class="o">.</span><span class="n">la_roots</span><span class="p">(</span><span class="n">laguerre_n</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ww</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="n">xx</span><span class="p">)</span>
+                              <span class="k">for</span> <span class="n">xx</span><span class="p">,</span> <span class="n">ww</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c1"># discourage underflows by evaluating ln L and using ln(1+x) function</span>
+        <span class="n">logL</span> <span class="o">=</span> <span class="o">-</span><span class="n">x</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logL</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">*</span> <span class="n">P</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">sig</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pdf</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="count_posterior.expect">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_laguerre.count_posterior.expect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate expected value of a function with respect to the</span>
+<span class="sd">            distribution.</span>
+
+<span class="sd">        The expected value of a function ``f(x)`` with respect to a</span>
+<span class="sd">        distribution ``dist`` is defined as::</span>
+
+<span class="sd">            E[x] = Integral(f(x) * dist.pdf(x))</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        func : callable</span>
+<span class="sd">            Function for which integral is calculated. Takes only one argument.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        expect : float</span>
+<span class="sd">            The calculated expected value.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># FIXME: not as feature rich as the expect method this overrides</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pp</span> <span class="o">*</span> <span class="n">func</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span> <span class="k">for</span> <span class="n">xx</span><span class="p">,</span> <span class="n">pp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_munp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="n">n</span><span class="p">)</span>
+
+<div class="viewcode-block" id="count_posterior.p_bg">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_laguerre.count_posterior.p_bg">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">p_bg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logbf</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the false alarm probabilities of the events.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        logbf : array_like</span>
+<span class="sd">            Logs of foreground over background probability ratios of events.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># get weighted bayes factor</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">logbf</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lambda0</span>
+
+        <span class="n">P0</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">number</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">P0</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">P0</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="c1"># except in special cases above, return array of values</span>
+        <span class="k">return</span> <span class="n">P0</span></div>
+</div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;augmented_rv_continuous&#39;</span><span class="p">,</span> <span class="s1">&#39;count_posterior&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

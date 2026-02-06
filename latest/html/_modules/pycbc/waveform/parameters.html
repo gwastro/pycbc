@@ -1,0 +1,790 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.parameters &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.parameters</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.parameters</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016 Collin Capano</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Classes to define common parameters used for waveform generation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserList</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">UserList</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserList</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                  Base definitions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="Parameter">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.parameters.Parameter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Parameter</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class that stores information about a parameter. This is done by</span>
+<span class="sd">    sub-classing string, adding additional attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">description</span><span class="o">=</span><span class="s2">&quot;No description.&quot;</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+<div class="viewcode-block" id="Parameter.docstr">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.parameters.Parameter.docstr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">docstr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">include_label</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a string summarizing the parameter. Format is:</span>
+<span class="sd">        &lt;prefix&gt;``name`` : {``default``, ``dtype``}</span>
+<span class="sd">        &lt;prefix&gt;    ``description`` Label: ``label``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dtype_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;type &#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&gt;&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">dtype_str</span> <span class="o">=</span> <span class="n">dtype_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;class &#39;&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="c1"># This handles multi-line descriptions correctly</span>
+        <span class="n">desc_indent</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;    &#39;</span>
+        <span class="n">indented_desc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">desc_indent</span><span class="p">)</span>
+
+        <span class="n">outstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2"> : {</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">}</span><span class="se">\n</span><span class="si">%s</span><span class="s2">    </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">prefix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">),</span> <span class="n">dtype_str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span>
+                <span class="n">indented_desc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">include_label</span><span class="p">:</span>
+            <span class="n">outstr</span> <span class="o">+=</span> <span class="s2">&quot; Label: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">outstr</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ParameterList">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.parameters.ParameterList">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParameterList</span><span class="p">(</span><span class="n">UserList</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A list of parameters. Each element in the list is expected to be a</span>
+<span class="sd">    Parameter instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a list of the names of each parameter.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">aslist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cast to basic list.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of the parameters keyed by the parameters.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">([[</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span>
+
+<div class="viewcode-block" id="ParameterList.defaults">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.parameters.ParameterList.defaults">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a list of the name and default value of each parameter,</span>
+<span class="sd">        as tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">default</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ParameterList.default_dict">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.parameters.ParameterList.default_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of the name and default value of each</span>
+<span class="sd">        parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">())</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nodefaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a ParameterList of the parameters that have None for</span>
+<span class="sd">        defaults.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a list of the name and dtype of each parameter,</span>
+<span class="sd">        as tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dtype_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of the name and dtype of each parameter.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a list of the name and description of each parameter,</span>
+<span class="sd">        as tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">description</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">description_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a dictionary of the name and description of each parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptions</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a list of each parameter and its label, as tuples.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">label_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a dictionary of the name and label of each parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParameterList.docstr">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.parameters.ParameterList.docstr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">docstr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">include_label</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the ``docstr`` of each parameter joined together.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">docstr</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">include_label</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">])</span></div>
+</div>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                        Parameter definitions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="c1">#</span>
+<span class="c1">#   CBC intrinsic parameters</span>
+<span class="c1">#</span>
+<span class="n">mass1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mass1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_1~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The mass of the first component object in the &quot;</span>
+                          <span class="s2">&quot;binary (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">mass2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mass2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_2~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The mass of the second component object in the &quot;</span>
+                            <span class="s2">&quot;binary (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">spin1x</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin1x&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{1x}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The x component of the first binary component&#39;s &quot;</span>
+                            <span class="s2">&quot;dimensionless spin.&quot;</span><span class="p">)</span>
+<span class="n">spin1y</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin1y&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{1y}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The y component of the first binary component&#39;s &quot;</span>
+                            <span class="s2">&quot;dimensionless spin.&quot;</span><span class="p">)</span>
+<span class="n">spin1z</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin1z&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{1z}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The z component of the first binary component&#39;s &quot;</span>
+                            <span class="s2">&quot;dimensionless spin.&quot;</span><span class="p">)</span>
+<span class="n">spin2x</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin2x&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{2x}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The x component of the second binary component&#39;s &quot;</span>
+                            <span class="s2">&quot;dimensionless spin.&quot;</span><span class="p">)</span>
+<span class="n">spin2y</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin2y&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{2y}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The y component of the second binary component&#39;s &quot;</span>
+                            <span class="s2">&quot;dimensionless spin.&quot;</span><span class="p">)</span>
+<span class="n">spin2z</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin2z&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{2z}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The z component of the second binary component&#39;s &quot;</span>
+                            <span class="s2">&quot;dimensionless spin.&quot;</span><span class="p">)</span>
+<span class="n">eccentricity</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;eccentricity&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$e$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Eccentricity.&quot;</span><span class="p">)</span>
+
+<span class="c1"># derived parameters (these are not used for waveform generation)</span>
+<span class="n">mchirp</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mchirp&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The chirp mass of the binary (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">eta</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;eta&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\eta$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The symmetric mass ratio of the binary.&quot;</span><span class="p">)</span>
+<span class="n">mtotal</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mtotal&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$M~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The total mass of the binary (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">q</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;q&quot;</span><span class="p">,</span>
+              <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$q$&quot;</span><span class="p">,</span>
+              <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The mass ratio, m1/m2, where m1 &gt;= m2.&quot;</span><span class="p">)</span>
+<span class="n">srcmass1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;srcmass1&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                     <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_1^{\rm</span><span class="si">{src}</span><span class="s2">}~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The mass of the first component object in &quot;</span>
+                                 <span class="s2">&quot;the source frame (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">srcmass2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;srcmass1&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                     <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_2^{\rm</span><span class="si">{src}</span><span class="s2">}~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The mass of the second component object in &quot;</span>
+                                 <span class="s2">&quot;the source frame (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">srcmchirp</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;srcmchirp&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                      <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\mathcal</span><span class="si">{M}</span><span class="s2">^{\rm</span><span class="si">{src}</span><span class="s2">}~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                      <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The chirp mass of the binary in the &quot;</span>
+                                  <span class="s2">&quot;source frame (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">srcmtotal</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mtotal&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                      <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$M^{\rm</span><span class="si">{src}</span><span class="s2">}~(\mathrm</span><span class="si">{M}</span><span class="s2">_\odot)$&quot;</span><span class="p">,</span>
+                      <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The total mass of the binary in the &quot;</span>
+                                  <span class="s2">&quot;source frame (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">primary_mass</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;primary_mass&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_</span><span class="si">{1}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Mass of the primary object (in solar masses).&quot;</span><span class="p">)</span>
+<span class="n">secondary_mass</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;secondary_mass&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_</span><span class="si">{2}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Mass of the secondary object (in solar masses).&quot;</span><span class="p">)</span>
+
+<span class="c1"># derived parameters for component spins</span>
+<span class="n">chi_eff</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;chi_eff&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_\mathrm</span><span class="si">{eff}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Effective spin of the binary.&quot;</span><span class="p">)</span>
+<span class="n">chi_p</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;chi_p&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_p$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Effective precessing spin of the binary.&quot;</span><span class="p">)</span>
+<span class="n">spin_px</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_px&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{1x}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The x component of the dimensionless spin of the &quot;</span>
+                            <span class="s2">&quot;primary object.&quot;</span><span class="p">)</span>
+<span class="n">spin_py</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_py&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{1y}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The y component of the dimensionless spin of the &quot;</span>
+                            <span class="s2">&quot;primary object.&quot;</span><span class="p">)</span>
+<span class="n">spin_pz</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_pz&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{1z}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The z component of the dimensionless spin of the &quot;</span>
+                            <span class="s2">&quot;primary object.&quot;</span><span class="p">)</span>
+<span class="n">spin_sx</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_sx&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{2x}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The x component of the dimensionless spin of the &quot;</span>
+                            <span class="s2">&quot;secondary object.&quot;</span><span class="p">)</span>
+<span class="n">spin_sy</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_sy&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{2y}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The y component of the dimensionless spin of the &quot;</span>
+                            <span class="s2">&quot;secondary object.&quot;</span><span class="p">)</span>
+<span class="n">spin_sz</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_sz&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\chi_</span><span class="si">{2z}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The z component of the dimensionless spin of the &quot;</span>
+                            <span class="s2">&quot;secondary object.&quot;</span><span class="p">)</span>
+<span class="n">lambda1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;lambda1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Lambda_1$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The dimensionless tidal deformability parameter of object 1.&quot;</span><span class="p">)</span>
+<span class="n">lambda2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;lambda2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Lambda_2$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The dimensionless tidal deformability parameter of object 2.&quot;</span><span class="p">)</span>
+<span class="n">dquad_mon1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dquad_mon1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$qm_1$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Quadrupole-monopole parameter / m_1^5 -1.&quot;</span><span class="p">)</span>
+<span class="n">dquad_mon2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dquad_mon2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$qm_2$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Quadrupole-monopole parameter / m_2^5 -1.&quot;</span><span class="p">)</span>
+<span class="n">lambda_octu1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;lambda_octu1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Lambda_3^{(1)}$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The octupolar tidal deformability parameter of &quot;</span>
+                            <span class="s2">&quot;object 1.&quot;</span><span class="p">)</span>
+<span class="n">lambda_octu2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;lambda_octu2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Lambda_3^{(2)}$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The octupolar tidal deformability parameter of &quot;</span>
+                            <span class="s2">&quot;object 2.&quot;</span><span class="p">)</span>
+<span class="n">quadfmode1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;quadfmode1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_1 \omega_</span><span class="si">{02}</span><span class="s2">^{(1)}$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The quadrupolar f-mode angular frequency of &quot;</span>
+                            <span class="s2">&quot;object 1.&quot;</span><span class="p">)</span>
+<span class="n">quadfmode2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;quadfmode2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_ \omega_</span><span class="si">{02}</span><span class="s2">^{(2)}$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The quadrupolar f-mode angular frequency of &quot;</span>
+                            <span class="s2">&quot;object 2.&quot;</span><span class="p">)</span>
+<span class="n">octufmode1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;octufmode1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_1 \omega_</span><span class="si">{03}</span><span class="s2">^{(1)}$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The octupolar f-mode angular frequency of &quot;</span>
+                            <span class="s2">&quot;object 1.&quot;</span><span class="p">)</span>
+<span class="n">octufmode2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;octufmode2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_ \omega_</span><span class="si">{03}</span><span class="s2">^{(2)}$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The octupolar f-mode angular frequency of &quot;</span>
+                            <span class="s2">&quot;object 2.&quot;</span><span class="p">)</span>
+
+<span class="c1"># derived parameters for component spin magnitude and angles</span>
+<span class="n">spin1_a</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin1_a&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$a_</span><span class="si">{1}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The dimensionless spin magnitude &quot;</span>
+                                <span class="sa">r</span><span class="s2">&quot;$|\vec</span><span class="si">{s}</span><span class="s2">/m_</span><span class="si">{1}</span><span class="s2">^2|$.&quot;</span><span class="p">)</span>
+<span class="n">spin2_a</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin2_a&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$a_</span><span class="si">{2}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The dimensionless spin magnitude &quot;</span>
+                                <span class="sa">r</span><span class="s2">&quot;$|\vec</span><span class="si">{s}</span><span class="s2">/m_</span><span class="si">{2}</span><span class="s2">^2|$.&quot;</span><span class="p">)</span>
+<span class="n">spin1_azimuthal</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+                      <span class="s2">&quot;spin1_azimuthal&quot;</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\theta_1^\mathrm</span><span class="si">{azimuthal}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                      <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The azimuthal spin angle for mass 1.&quot;</span><span class="p">)</span>
+<span class="n">spin2_azimuthal</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+                      <span class="s2">&quot;spin2_azimuthal&quot;</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\theta_2^\mathrm</span><span class="si">{azimuthal}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                      <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The azimuthal spin angle for mass 2.&quot;</span><span class="p">)</span>
+<span class="n">spin1_polar</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin1_polar&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\theta_1^\mathrm</span><span class="si">{polar}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The polar spin angle for mass 1.&quot;</span><span class="p">)</span>
+<span class="n">spin2_polar</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin2_polar&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\theta_2^\mathrm</span><span class="si">{polar}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The polar spin angle for mass 2.&quot;</span><span class="p">)</span>
+
+
+<span class="c1">#</span>
+<span class="c1">#   Parameters needed for CBC waveform generation</span>
+<span class="c1">#</span>
+<span class="n">f_lower</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;f_lower&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$f_0$ (Hz)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The starting frequency of the waveform (in Hz).&quot;</span><span class="p">)</span>
+<span class="n">f_final</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;f_final&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$f_{\mathrm</span><span class="si">{final}</span><span class="s2">}$ (Hz)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The ending frequency of the waveform. The &quot;</span>
+                            <span class="s2">&quot;default (0) indicates that the choice is made by &quot;</span>
+                            <span class="s2">&quot;the respective approximant.&quot;</span><span class="p">)</span>
+<span class="n">f_final_func</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;f_final_func&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Use the given frequency function to compute f_final &quot;</span>
+                            <span class="s2">&quot;based on the parameters of the waveform.&quot;</span><span class="p">)</span>
+<span class="n">f_ref</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;f_ref&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$f_{\mathrm</span><span class="si">{ref}</span><span class="s2">}$ (Hz)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The reference frequency.&quot;</span><span class="p">)</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;delta_f&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Delta f$ (Hz)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The frequency step used to generate the waveform &quot;</span>
+                            <span class="s2">&quot;(in Hz).&quot;</span><span class="p">)</span>
+<span class="n">delta_t</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;delta_t&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Delta t$ (s)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The time step used to generate the waveform &quot;</span>
+                            <span class="s2">&quot;(in s).&quot;</span><span class="p">)</span>
+<span class="n">sample_points</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;sample_points&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;Array&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;An array of the frequencies (in Hz) at which to &quot;</span>
+                            <span class="s2">&quot;generate the waveform.&quot;</span><span class="p">)</span>
+<span class="n">approximant</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;approximant&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A string that indicates the chosen approximant.&quot;</span><span class="p">)</span>
+<span class="n">phase_order</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;phase_order&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The pN order of the orbital phase. The default &quot;</span>
+                            <span class="s2">&quot;of -1 indicates that all implemented orders are &quot;</span>
+                            <span class="s2">&quot;used.&quot;</span><span class="p">)</span>
+<span class="n">spin_order</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;spin_order&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The pN order of the spin corrections. The &quot;</span>
+                            <span class="s2">&quot;default of -1 indicates that all implemented &quot;</span>
+                            <span class="s2">&quot;orders are used.&quot;</span><span class="p">)</span>
+<span class="n">tidal_order</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;tidal_order&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The pN order of the tidal corrections. The &quot;</span>
+                            <span class="s2">&quot;default of -1 indicates that all implemented &quot;</span>
+                            <span class="s2">&quot;orders are used.&quot;</span><span class="p">)</span>
+<span class="n">amplitude_order</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;amplitude_order&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The pN order of the amplitude. The default of -1 &quot;</span>
+                            <span class="s2">&quot;indicates that all implemented orders are used.&quot;</span><span class="p">)</span>
+<span class="n">eccentricity_order</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;eccentricity_order&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The pN order of the eccentricity corrections.&quot;</span>
+                        <span class="s2">&quot;The default of -1 indicates that all implemented orders are used.&quot;</span><span class="p">)</span>
+<span class="n">numrel_data</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;numrel_data&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Sets the NR flags; only needed for NR waveforms.&quot;</span><span class="p">)</span>
+<span class="n">remnant_mass</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;remnant_mass&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$m_{\mathrm</span><span class="si">{rem}</span><span class="s2">}$&quot;</span><span class="p">,</span>
+                        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Remnant mass of NS-BH merger. See &quot;</span>
+                        <span class="s2">&quot;conversions.remnant_mass_&quot;</span>
+                        <span class="s2">&quot;from_mass1_mass2_spin1x_spin1y_spin1z_eos&quot;</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1">#   General location parameters</span>
+<span class="c1">#</span>
+<span class="n">distance</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;distance&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d_L$ (Mpc)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Luminosity distance to the binary (in Mpc).&quot;</span><span class="p">)</span>
+<span class="n">chirp_distance</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;chirp_distance&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d_c$ (Mpc)&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Chirp distance to the binary (in Mpc).&quot;</span><span class="p">)</span>
+<span class="n">coa_phase</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;coa_phase&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\phi_c$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Coalesence phase of the binary (in rad).&quot;</span><span class="p">)</span>
+<span class="n">inclination</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;inclination&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\iota$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Inclination (rad), defined as the angle between &quot;</span>
+                            <span class="s2">&quot;the orbital angular momentum L and the &quot;</span>
+                            <span class="s2">&quot;line-of-sight at the reference frequency.&quot;</span><span class="p">)</span>
+<span class="n">thetajn</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;thetajn&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\theta_</span><span class="si">{JN}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The angle between the total angular momentum &quot;</span>
+                                <span class="s2">&quot;J and the line-of-sight.&quot;</span><span class="p">)</span>
+<span class="n">long_asc_nodes</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;long_asc_nodes&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Omega$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Longitude of ascending nodes axis (rad).&quot;</span><span class="p">)</span>
+<span class="n">mean_per_ano</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mean_per_ano&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\delta$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Mean anomaly of the periastron (rad).&quot;</span><span class="p">)</span>
+<span class="n">tc</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;tc&quot;</span><span class="p">,</span>
+               <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$t_c$ (s)&quot;</span><span class="p">,</span>
+               <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Coalescence time (s) is the time when a GW &quot;</span>
+                           <span class="s2">&quot;reaches the origin of a certain coordinate system.&quot;</span><span class="p">)</span>
+<span class="n">delta_tc</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;delta_tc&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                     <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\Delta t_c~(\rm</span><span class="si">{s}</span><span class="s2">)$&quot;</span><span class="p">,</span>
+                     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Coalesence time offset.&quot;</span><span class="p">)</span>
+<span class="n">ra</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;ra&quot;</span><span class="p">,</span>
+               <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\alpha$&quot;</span><span class="p">,</span>
+               <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Right ascension (rad).&quot;</span><span class="p">)</span>
+<span class="n">dec</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dec&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\delta$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Declination (rad).&quot;</span><span class="p">)</span>
+<span class="n">polarization</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;polarization&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\psi$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Polarization angle (rad) in &quot;</span>
+                            <span class="s2">&quot;a certain coordinate system.&quot;</span><span class="p">)</span>
+<span class="n">redshift</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;redshift&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$z$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Redshift.&quot;</span><span class="p">)</span>
+<span class="n">comoving_volume</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;comoving_volume&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                            <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$V_C~(\rm</span><span class="si">{Mpc}</span><span class="s2">^3)$&quot;</span><span class="p">,</span>
+                            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Comoving volume (in cubic Mpc).&quot;</span><span class="p">)</span>
+<span class="n">eclipticlatitude</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;eclipticlatitude&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\beta$&quot;</span><span class="p">,</span>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;eclipticlatitude in SSB/LISA coords.&quot;</span><span class="p">)</span>
+<span class="n">eclipticlongitude</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;eclipticlongitude&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\lambda$&quot;</span><span class="p">,</span>
+                        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;eclipticlongitude in SSB/LISA coords.&quot;</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1">#   Calibration parameters</span>
+<span class="c1">#</span>
+<span class="n">delta_fs</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_delta_fs&quot;</span><span class="p">,</span>
+                     <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Change in optical spring freq (Hz).&quot;</span><span class="p">)</span>
+<span class="n">delta_fc</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_delta_fc&quot;</span><span class="p">,</span>
+                     <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                     <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Change in cavity pole freq (Hz).&quot;</span><span class="p">)</span>
+<span class="n">delta_qinv</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_delta_qinv&quot;</span><span class="p">,</span>
+                       <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                       <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Change in inverse quality factor.&quot;</span><span class="p">)</span>
+<span class="n">kappa_c</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_kappa_c&quot;</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">kappa_tst_re</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_kappa_tst_re&quot;</span><span class="p">,</span>
+                         <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">kappa_tst_im</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_kappa_tst_im&quot;</span><span class="p">,</span>
+                         <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">kappa_pu_re</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_kappa_pu_re&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">kappa_pu_im</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;calib_kappa_pu_im&quot;</span><span class="p">,</span>
+                        <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1">#   Non mandatory flags with default values</span>
+<span class="c1">#</span>
+<span class="n">frame_axis</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;frame_axis&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Allow to choose among orbital_l, view and total_j&quot;</span><span class="p">)</span>
+<span class="n">modes_choice</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;modes_choice&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Allow to turn on  among orbital_l, view and total_j&quot;</span><span class="p">)</span>
+<span class="n">side_bands</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;side_bands&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Flag for generating sidebands&quot;</span><span class="p">)</span>
+<span class="n">mode_array</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;mode_array&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Choose which (l,m) modes to include when &quot;</span>
+                            <span class="s2">&quot;generating a waveform. &quot;</span>
+                            <span class="s2">&quot;Only if approximant supports this feature.&quot;</span>
+                            <span class="s2">&quot;By default pass None and let lalsimulation &quot;</span>
+                            <span class="s2">&quot;use it&#39;s default behaviour.&quot;</span>
+                            <span class="s2">&quot;Example: mode_array = [ [2,2], [2,-2] ]&quot;</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1">#   Parametrized testing general relativity parameters</span>
+<span class="c1">#</span>
+<span class="n">dchi0</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi0&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_0$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;0PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_1$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;0.5PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_2$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;1PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi3</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi3&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_3$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;1.5PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi4</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi4&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_4$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;2PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi5</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi5&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_5$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;2.5PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi5l</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi5l&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_5</span><span class="si">{l}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;2.5PN logrithm testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi6</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi6&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_6$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;3PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi6l</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi6l&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_</span><span class="si">{6l}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;3PN logrithm testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dchi7</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dchi7&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\chi_7$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;3.5PN testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dalpha1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dalpha1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\alpha_1$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Merger-ringdown testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dalpha2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dalpha2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\alpha_2$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Merger-ringdown testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dalpha3</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dalpha3&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\alpha_3$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Merger-ringdown testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dalpha4</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dalpha4&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\alpha_4$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Merger-ringdown testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dalpha5</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dalpha5&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\alpha_5$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Merger-ringdown testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dbeta1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dbeta1&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\beta_1$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Intermediate testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dbeta2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dbeta2&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\beta_2$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Intermediate testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="n">dbeta3</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;dbeta3&quot;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$d\beta_3$&quot;</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Intermediate testingGR parameter.&quot;</span><span class="p">)</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                        Parameter list definitions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="c1"># parameters describing the location of a binary w.r.t.</span>
+<span class="c1"># the geocentric/LISA/SSB frame.</span>
+<span class="c1"># Note: we do not include distance here. This is because these are not</span>
+<span class="c1"># passed to the waveform generators in lalsimulation, but are instead applied</span>
+<span class="c1"># after a waveform is generated. Distance, however, is a parameter used by</span>
+<span class="c1"># the waveform generators.</span>
+<span class="n">location_params</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">polarization</span><span class="p">,</span>
+                                <span class="n">eclipticlatitude</span><span class="p">,</span> <span class="n">eclipticlongitude</span><span class="p">])</span>
+
+<span class="c1"># parameters describing the orientation of a binary w.r.t. the radiation</span>
+<span class="c1"># frame. Note: we include distance here, as it is typically used for generating</span>
+<span class="c1"># waveforms.</span>
+<span class="n">orientation_params</span> <span class="o">=</span> <span class="n">ParameterList</span>\
+    <span class="p">([</span><span class="n">distance</span><span class="p">,</span> <span class="n">coa_phase</span><span class="p">,</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">long_asc_nodes</span><span class="p">,</span> <span class="n">mean_per_ano</span><span class="p">])</span>
+
+<span class="c1"># the extrinsic parameters of a waveform</span>
+<span class="n">extrinsic_params</span> <span class="o">=</span> <span class="n">orientation_params</span> <span class="o">+</span> <span class="n">location_params</span>
+
+
+<span class="c1"># testing GR parameters</span>
+<span class="n">testingGR_params</span> <span class="o">=</span> <span class="n">ParameterList</span>\
+    <span class="p">([</span><span class="n">dchi0</span><span class="p">,</span> <span class="n">dchi1</span><span class="p">,</span> <span class="n">dchi2</span><span class="p">,</span> <span class="n">dchi3</span><span class="p">,</span> <span class="n">dchi4</span><span class="p">,</span> <span class="n">dchi5</span><span class="p">,</span> <span class="n">dchi5l</span><span class="p">,</span> <span class="n">dchi6</span><span class="p">,</span> <span class="n">dchi6l</span><span class="p">,</span>
+      <span class="n">dchi7</span><span class="p">,</span> <span class="n">dalpha1</span><span class="p">,</span> <span class="n">dalpha2</span><span class="p">,</span> <span class="n">dalpha3</span><span class="p">,</span> <span class="n">dalpha4</span><span class="p">,</span> <span class="n">dalpha5</span><span class="p">,</span>
+      <span class="n">dbeta1</span><span class="p">,</span> <span class="n">dbeta2</span><span class="p">,</span> <span class="n">dbeta3</span><span class="p">])</span>
+
+<span class="c1"># intrinsic parameters of a CBC waveform. Some of these are not recognized</span>
+<span class="c1"># by every waveform model</span>
+<span class="n">cbc_intrinsic_params</span> <span class="o">=</span> <span class="n">ParameterList</span>\
+    <span class="p">([</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1x</span><span class="p">,</span> <span class="n">spin1y</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2x</span><span class="p">,</span> <span class="n">spin2y</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+      <span class="n">eccentricity</span><span class="p">,</span> <span class="n">lambda1</span><span class="p">,</span> <span class="n">lambda2</span><span class="p">,</span> <span class="n">dquad_mon1</span><span class="p">,</span> <span class="n">dquad_mon2</span><span class="p">,</span> <span class="n">lambda_octu1</span><span class="p">,</span>
+      <span class="n">lambda_octu2</span><span class="p">,</span> <span class="n">quadfmode1</span><span class="p">,</span> <span class="n">quadfmode2</span><span class="p">,</span> <span class="n">octufmode1</span><span class="p">,</span> <span class="n">octufmode2</span><span class="p">])</span> <span class="o">+</span> \
+    <span class="n">testingGR_params</span>
+
+<span class="c1"># the parameters of a cbc in the radiation frame</span>
+<span class="n">cbc_rframe_params</span> <span class="o">=</span> <span class="n">cbc_intrinsic_params</span> <span class="o">+</span> <span class="n">orientation_params</span>
+
+<span class="c1"># calibration parameters</span>
+<span class="n">calibration_params</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span>
+    <span class="n">delta_fc</span><span class="p">,</span> <span class="n">delta_fs</span><span class="p">,</span> <span class="n">delta_qinv</span><span class="p">,</span> <span class="n">kappa_c</span><span class="p">,</span> <span class="n">kappa_tst_re</span><span class="p">,</span> <span class="n">kappa_tst_im</span><span class="p">,</span>
+    <span class="n">kappa_pu_re</span><span class="p">,</span> <span class="n">kappa_pu_im</span><span class="p">])</span>
+
+<span class="c1"># common generation parameters are parameters needed to generate either</span>
+<span class="c1"># a TD, FD, or frequency sequence waveform</span>
+<span class="n">common_generation_params</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span>
+    <span class="n">approximant</span><span class="p">,</span> <span class="n">f_ref</span><span class="p">,</span> <span class="n">phase_order</span><span class="p">,</span> <span class="n">spin_order</span><span class="p">,</span> <span class="n">tidal_order</span><span class="p">,</span> <span class="n">amplitude_order</span><span class="p">,</span> <span class="n">eccentricity_order</span><span class="p">])</span>
+
+<span class="c1"># Flags having discrete values, optional to generate either</span>
+<span class="c1"># a TD, FD, or frequency sequence waveform</span>
+<span class="n">flags_generation_params</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">frame_axis</span><span class="p">,</span> <span class="n">modes_choice</span><span class="p">,</span> <span class="n">side_bands</span><span class="p">,</span> <span class="n">mode_array</span><span class="p">])</span>
+
+<span class="c1"># the following are parameters needed to generate an FD or TD waveform that</span>
+<span class="c1"># is equally sampled</span>
+<span class="n">common_gen_equal_sampled_params</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">f_lower</span><span class="p">])</span> <span class="o">+</span> \
+    <span class="n">common_generation_params</span> <span class="o">+</span> <span class="n">flags_generation_params</span>
+
+<span class="c1"># the following are parameters that can be used to generate an FD waveform</span>
+<span class="n">fd_waveform_params</span> <span class="o">=</span> <span class="n">cbc_rframe_params</span> <span class="o">+</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">delta_f</span><span class="p">])</span> <span class="o">+</span> \
+    <span class="n">common_gen_equal_sampled_params</span> <span class="o">+</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">f_final</span><span class="p">,</span> <span class="n">f_final_func</span><span class="p">])</span>
+
+<span class="c1"># the following are parameters that can be used to generate a TD waveform</span>
+<span class="n">td_waveform_params</span> <span class="o">=</span> <span class="n">cbc_rframe_params</span> <span class="o">+</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">delta_t</span><span class="p">])</span> <span class="o">+</span> \
+    <span class="n">common_gen_equal_sampled_params</span> <span class="o">+</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">numrel_data</span><span class="p">])</span> <span class="o">+</span> \
+    <span class="n">flags_generation_params</span>
+
+<span class="c1"># The following are the minimum set of parameters that are required to</span>
+<span class="c1"># generate a FD or TD waveform. All other parameters have some default value as</span>
+<span class="c1"># defined above. Defaults of None simply mean that the value is not passed into</span>
+<span class="c1"># the lal_dict structure and the waveform generator will take whatever default</span>
+<span class="c1"># behaviour</span>
+<span class="n">td_required</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">f_lower</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">approximant</span><span class="p">])</span>
+<span class="n">fd_required</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">f_lower</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">approximant</span><span class="p">])</span>
+<span class="c1"># The following is required for the FD sequence waveforms with detector</span>
+<span class="c1"># response already applied</span>
+<span class="n">fd_det_sequence_required</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">f_lower</span><span class="p">,</span> <span class="n">approximant</span><span class="p">])</span>
+
+<span class="c1">####</span>
+<span class="n">cbc_td_required</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">approximant</span><span class="p">])</span>
+<span class="n">cbc_fd_required</span> <span class="o">=</span> <span class="n">ParameterList</span><span class="p">([</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">approximant</span><span class="p">])</span>
+
+<span class="c1"># the following are parameters that can be used to generate a</span>
+<span class="c1"># frequency series waveform</span>
+<span class="n">fd_waveform_sequence_params</span> <span class="o">=</span> <span class="n">cbc_rframe_params</span> <span class="o">+</span> \
+    <span class="n">ParameterList</span><span class="p">([</span><span class="n">sample_points</span><span class="p">])</span> <span class="o">+</span> <span class="n">common_generation_params</span> <span class="o">+</span> \
+    <span class="n">flags_generation_params</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

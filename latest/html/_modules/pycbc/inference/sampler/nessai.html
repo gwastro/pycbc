@@ -1,0 +1,559 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.nessai &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.nessai</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.nessai</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides class for using the nessai sampler package for parameter</span>
+<span class="sd">estimation.</span>
+
+<span class="sd">Documentation for nessai: https://nessai.readthedocs.io/en/latest/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">nessai.flowsampler</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nessai.model</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nessai.livepoint</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nessai.utils.multiprocessing</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">nessai.utils.settings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.lib.recfunctions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">rfn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSampler</span><span class="p">,</span> <span class="n">setup_output</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_optional_arg_from_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..io</span><span class="w"> </span><span class="kn">import</span> <span class="n">NessaiFile</span><span class="p">,</span> <span class="n">loadfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+
+
+<div class="viewcode-block" id="NessaiSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NessaiSampler</span><span class="p">(</span><span class="n">BaseSampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to construct a FlowSampler from the nessai package.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;nessai&quot;</span>
+    <span class="n">_io</span> <span class="o">=</span> <span class="n">NessaiFile</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">loglikelihood_function</span><span class="p">,</span>
+        <span class="n">nlive</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">run_kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">extra_kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nlive</span> <span class="o">=</span> <span class="n">nlive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_call</span> <span class="o">=</span> <span class="n">NessaiModel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">loglikelihood_function</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_kwds</span> <span class="o">=</span> <span class="n">extra_kwds</span> <span class="k">if</span> <span class="n">extra_kwds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_kwds</span> <span class="o">=</span> <span class="n">run_kwds</span> <span class="k">if</span> <span class="n">run_kwds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+
+        <span class="n">nessai</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">initialise_pool_variables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_call</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nprocesses</span> <span class="o">=</span> <span class="n">nprocesses</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nested_samples</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_posterior_samples</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logz</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dlogz</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resume_data</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_io</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The raw nested samples including the corresponding weights&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">nested_samples</span><span class="p">:</span>
+            <span class="n">ns</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">nested_samples</span><span class="p">)</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">nessai</span><span class="o">.</span><span class="n">livepoint</span><span class="o">.</span><span class="n">live_points_to_dict</span><span class="p">(</span>
+                <span class="n">ns</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;logwt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">log_posterior_weights</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;loglikelihood&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="s2">&quot;logL&quot;</span><span class="p">]</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;logprior&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="s2">&quot;logP&quot;</span><span class="p">]</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;it&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="s2">&quot;it&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="n">samples</span>
+
+<div class="viewcode-block" id="NessaiSampler.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the sampler&quot;&quot;&quot;</span>
+        <span class="n">default_kwds</span><span class="p">,</span> <span class="n">default_run_kwds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_kwds</span><span class="p">(</span>
+            <span class="n">importance_nested_sampler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_kwds</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="s2">&quot;importance_nested_sampler&quot;</span><span class="p">,</span> <span class="kc">False</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">extra_kwds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_kwds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">run_kwds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_kwds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Output in kwargs takes priority of extra kwds.</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">extra_kwds</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="c1"># If neither have been specified, use the path from the checkpoint file</span>
+        <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)),</span>
+                <span class="s2">&quot;outdir_nessai&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Updating keyword arguments with </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">extra_kwds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">default_kwds</span><span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">run_kwds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">default_run_kwds</span><span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initialising nessai FlowSampler&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">nessai</span><span class="o">.</span><span class="n">flowsampler</span><span class="o">.</span><span class="n">FlowSampler</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_call</span><span class="p">,</span>
+                <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span>
+                <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">,</span>
+                <span class="n">n_pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nprocesses</span><span class="p">,</span>
+                <span class="n">close_pool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">signal_handling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">resume_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resume_data</span><span class="p">,</span>
+                <span class="n">checkpoint_callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_callback</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">extra_kwds</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting sampling with nessai&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="n">run_kwds</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.get_default_kwds">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.get_default_kwds">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_default_kwds</span><span class="p">(</span><span class="n">importance_nested_sampler</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return lists of all allowed keyword arguments for nessai.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        default_kwds : list</span>
+<span class="sd">            List of keyword arguments that can be passed to FlowSampler</span>
+<span class="sd">        run_kwds: list</span>
+<span class="sd">            List of keyword arguments that can be passed to FlowSampler.run</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">nessai</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">get_all_kwargs</span><span class="p">(</span>
+            <span class="n">importance_nested_sampler</span><span class="o">=</span><span class="n">importance_nested_sampler</span><span class="p">,</span>
+            <span class="n">split_kwargs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the sampler from the given config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;sampler&quot;</span>
+        <span class="c1"># check name</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span>
+        <span class="p">),</span> <span class="s2">&quot;name in section [sampler] must match mine&quot;</span>
+
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;importance_nested_sampler&quot;</span><span class="p">):</span>
+            <span class="n">importance_nested_sampler</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">section</span><span class="p">,</span>
+                <span class="s2">&quot;importance_nested_sampler&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">importance_nested_sampler</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Requires additional development work, see the model class below</span>
+        <span class="k">if</span> <span class="n">importance_nested_sampler</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Importance nested sampler is not currently supported&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">default_kwds</span><span class="p">,</span> <span class="n">default_run_kwds</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_default_kwds</span><span class="p">(</span>
+            <span class="n">importance_nested_sampler</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Keyword arguments the user cannot configure via the config</span>
+        <span class="n">remove_kwds</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;pool&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;n_pool&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;close_pool&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;signal_handling&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;checkpoint_callback&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">kwd</span> <span class="ow">in</span> <span class="n">remove_kwds</span><span class="p">:</span>
+            <span class="n">default_kwds</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">kwd</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">default_run_kwds</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">kwd</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">kwds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">run_kwds</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># ast.literal_eval is used here since specifying a dictionary with all</span>
+        <span class="c1"># various types would be difficult. However, one may wish to revisit</span>
+        <span class="c1"># this in future, e.g. if evaluating code is a concern.</span>
+        <span class="k">for</span> <span class="n">d_out</span><span class="p">,</span> <span class="n">d_defaults</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">kwds</span><span class="p">,</span> <span class="n">run_kwds</span><span class="p">],</span> <span class="p">[</span><span class="n">default_kwds</span><span class="p">,</span> <span class="n">default_run_kwds</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">d_defaults</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="n">option</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="c1"># This will fail for e.g. a string with an underscore</span>
+                        <span class="n">option</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="n">d_out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">option</span>
+
+        <span class="c1"># Specified kwds</span>
+        <span class="n">ignore_kwds</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;nlive&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">}</span>
+        <span class="n">invalid_kwds</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">cp</span><span class="p">[</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="o">-</span> <span class="nb">set</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">kwds</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">run_kwds</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="o">-</span> <span class="n">ignore_kwds</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">invalid_kwds</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Config contains unknown options: </span><span class="si">{</span><span class="n">invalid_kwds</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;nessai keyword arguments: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">kwds</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;nessai run keyword arguments: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">run_kwds</span><span class="p">)</span>
+
+        <span class="n">loglikelihood_function</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s2">&quot;loglikelihood-function&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">loglikelihood_function</span><span class="o">=</span><span class="n">loglikelihood_function</span><span class="p">,</span>
+            <span class="n">nprocesses</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">,</span>
+            <span class="n">use_mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span>
+            <span class="n">run_kwds</span><span class="o">=</span><span class="n">run_kwds</span><span class="p">,</span>
+            <span class="n">extra_kwds</span><span class="o">=</span><span class="n">kwds</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Do not need to check number of samples for a nested sampler</span>
+        <span class="n">setup_output</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">check_nsamples</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">new_checkpoint</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">resume_from_checkpoint</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.set_initial_conditions">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.set_initial_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_initial_conditions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">initial_distribution</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">samples_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets up the starting point for the sampler.</span>
+
+<span class="sd">        This is not used for nessai.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.checkpoint_callback">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.checkpoint_callback">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback for checkpointing.</span>
+
+<span class="sd">        This will be called periodically by nessai.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write_pickled_data_into_checkpoint_file</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_results</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checkpoint the sampler&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.resume_from_checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.resume_from_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume_from_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the resume data from the checkpoint file.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">resume_data</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_pickled_data_from_checkpoint_file</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Found valid checkpoint file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Failed to load checkpoint file with error: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Finalize sampling&quot;&quot;&quot;</span>
+        <span class="n">logz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">log_evidence</span>
+        <span class="n">dlogz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">log_evidence_error</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;log Z, dlog Z: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">logz</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="NessaiSampler.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler.write_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the results to a given file.</span>
+
+<span class="sd">        Writes the nested samples, log-evidence and log-evidence error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_logevidence</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">log_evidence</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">ns</span><span class="o">.</span><span class="n">log_evidence_error</span><span class="p">,</span>
+            <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NessaiModel">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NessaiModel</span><span class="p">(</span><span class="n">nessai</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper for PyCBC Inference model class for use with nessai.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : inference.BaseModel instance</span>
+<span class="sd">        A model instance from PyCBC.</span>
+<span class="sd">    loglikelihood_function : str</span>
+<span class="sd">        Name of the log-likelihood method to call.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">loglikelihood_function</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">)</span>
+
+        <span class="c1"># Configure the log-likelihood function</span>
+        <span class="k">if</span> <span class="n">loglikelihood_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loglikelihood_function</span> <span class="o">=</span> <span class="s2">&quot;loglikelihood&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loglikelihood_function</span> <span class="o">=</span> <span class="n">loglikelihood_function</span>
+
+        <span class="c1"># Configure the priors bounds</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+            <span class="n">bounds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="o">**</span><span class="p">{</span>
+                    <span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">min</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">max</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dist</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+        <span class="c1"># Prior and likelihood are not vectorised</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorised_likelihood</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vectorised_prior</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Use the pool for computing the prior</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parallelise_prior</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="NessaiModel.to_dict">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a nessai live point array to a dictionary&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.to_live_points">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.to_live_points">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_live_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to the structured arrays used by nessai&quot;&quot;&quot;</span>
+        <span class="c1"># It is possible this could be made faster</span>
+        <span class="k">return</span> <span class="n">nessai</span><span class="o">.</span><span class="n">livepoint</span><span class="o">.</span><span class="n">numpy_array_to_live_points</span><span class="p">(</span>
+            <span class="n">rfn</span><span class="o">.</span><span class="n">structured_to_unstructured</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.new_point">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.new_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw a new point&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_live_points</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">N</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.new_point_log_prob">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.new_point_log_prob">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_point_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log-probability for the ``new_point`` method&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_evaluate_log_prior</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.log_prior">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.log_prior">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the log-prior&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">logprior</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.log_likelihood">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.log_likelihood">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the log-likelihood&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglikelihood_function</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.from_unit_hypercube">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.from_unit_hypercube">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_unit_hypercube</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map from the unit-hypercube to the prior.&quot;&quot;&quot;</span>
+        <span class="c1"># Needs to be implemented for importance nested sampler</span>
+        <span class="c1"># This method is already available in pycbc but the inverse is not</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="NessaiModel.to_unit_hypercube">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiModel.to_unit_hypercube">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_unit_hypercube</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map to the unit-hypercube to the prior.&quot;&quot;&quot;</span>
+        <span class="c1"># Needs to be implemented for importance nested sampler</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

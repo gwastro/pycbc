@@ -1,0 +1,270 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2021  Shichao Wu</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides functions for drawing samples from a standalone .ini file</span>
+<span class="sd">in a Python script, rather than in the command line.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">InterpolatingConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">transforms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.utils&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="prior_from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.utils.prior_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">prior_section</span><span class="o">=</span><span class="s1">&#39;prior&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads a prior distribution from the given config file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : pycbc.workflow.WorkflowConfigParser</span>
+<span class="sd">        The config file to read.</span>
+<span class="sd">    sections : list of str, optional</span>
+<span class="sd">        The sections to retrieve the prior from. If ``None`` (the default),</span>
+<span class="sd">        will look in sections starting with &#39;prior&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    distributions.JointDistribution</span>
+<span class="sd">        The prior distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Read variable and static parameters from the config file</span>
+    <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_params_from_config</span><span class="p">(</span>
+        <span class="n">cp</span><span class="p">,</span> <span class="n">prior_section</span><span class="o">=</span><span class="n">prior_section</span><span class="p">,</span> <span class="n">vargs_section</span><span class="o">=</span><span class="s1">&#39;variable_params&#39;</span><span class="p">,</span>
+        <span class="n">sargs_section</span><span class="o">=</span><span class="s1">&#39;static_params&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Read waveform_transforms to apply to priors from the config file</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)):</span>
+        <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">read_transforms_from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Read constraints to apply to priors from the config file</span>
+    <span class="n">constraints</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_constraints_from_config</span><span class="p">(</span>
+        <span class="n">cp</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">waveform_transforms</span><span class="p">,</span> <span class="n">static_args</span><span class="o">=</span><span class="n">static_params</span><span class="p">)</span>
+
+    <span class="c1"># Get PyCBC distribution instances for each variable parameter in the</span>
+    <span class="c1"># config file</span>
+    <span class="n">dists</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_distributions_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">prior_section</span><span class="p">)</span>
+
+    <span class="c1"># construct class that will return draws from the prior</span>
+    <span class="k">return</span> <span class="n">distributions</span><span class="o">.</span><span class="n">JointDistribution</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="o">*</span><span class="n">dists</span><span class="p">,</span>
+                                           <span class="o">**</span><span class="p">{</span><span class="s2">&quot;constraints&quot;</span><span class="p">:</span> <span class="n">constraints</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="draw_samples_from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.utils.draw_samples_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_samples_from_config</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">150914</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Generate sampling points from a standalone .ini file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The path to the .ini file.</span>
+<span class="sd">    num : int</span>
+<span class="sd">        The number of samples.</span>
+<span class="sd">    seed: int</span>
+<span class="sd">        The random seed for sampling.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    samples : pycbc.io.record.FieldArray</span>
+<span class="sd">        The parameter values and names of sample(s).</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Draw a sample from the distribution defined in the .ini file:</span>
+
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc.distributions.utils import draw_samples_from_config</span>
+
+<span class="sd">    &gt;&gt;&gt; # A path to the .ini file.</span>
+<span class="sd">    &gt;&gt;&gt; CONFIG_PATH = &quot;./pycbc_bbh_prior.ini&quot;</span>
+<span class="sd">    &gt;&gt;&gt; random_seed = np.random.randint(low=0, high=2**32-1)</span>
+<span class="sd">    &gt;&gt;&gt; sample = draw_samples_from_config(</span>
+<span class="sd">    &gt;&gt;&gt;          path=CONFIG_PATH, num=1, seed=random_seed)</span>
+
+<span class="sd">    &gt;&gt;&gt; # Print all parameters.</span>
+<span class="sd">    &gt;&gt;&gt; print(sample.fieldnames)</span>
+<span class="sd">    &gt;&gt;&gt; print(sample)</span>
+<span class="sd">    &gt;&gt;&gt; # Print a certain parameter, for example &#39;mass1&#39;.</span>
+<span class="sd">    &gt;&gt;&gt; print(sample[0][&#39;mass1&#39;])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="c1"># Initialise InterpolatingConfigParser class.</span>
+    <span class="n">config_parser</span> <span class="o">=</span> <span class="n">InterpolatingConfigParser</span><span class="p">()</span>
+    <span class="c1"># Read the file</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">config_parser</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Construct class that will draw the samples.</span>
+    <span class="n">prior_dists</span> <span class="o">=</span> <span class="n">prior_from_config</span><span class="p">(</span><span class="n">cp</span><span class="o">=</span><span class="n">config_parser</span><span class="p">)</span>
+    <span class="c1"># Draw samples from prior distribution.</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">prior_dists</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+
+    <span class="c1"># Apply parameter transformation.</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">config_parser</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)):</span>
+        <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">read_transforms_from_config</span><span class="p">(</span>
+                <span class="n">config_parser</span><span class="p">,</span> <span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">apply_transforms</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">waveform_transforms</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">samples</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft.fft_callback &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.fft.fft_callback</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.fft.fft_callback</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">subprocess</span><span class="o">,</span><span class="w"> </span><span class="nn">ctypes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mako.template</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span>
+
+<span class="n">full_corr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ cufftComplex in_call(void* input, size_t offset,</span>
+<span class="s2">                                void* caller_info, void* shared) {</span>
+<span class="s2">        cufftComplex r;</span>
+
+<span class="s2">        cufftComplex* hp =  ((cufftComplex*) callback_params.htilde);</span>
+<span class="s2">        cufftComplex h = hp[offset];</span>
+<span class="s2">        cufftComplex s = ((cufftComplex*) input)[offset];</span>
+
+<span class="s2">        r.x = h.x * s.x + h.y * s.y;</span>
+<span class="s2">        r.y = h.x * s.y - h.y * s.x;</span>
+
+<span class="s2">        return r;</span>
+<span class="s2">    }</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">zero_corr</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ cufftComplex in_call(void* input, size_t offset,</span>
+<span class="s2">                                void* caller_info, void* shared) {</span>
+<span class="s2">        if (offset &gt;= callback_params.in_kmax)</span>
+<span class="s2">            return (cufftComplex){0, 0};</span>
+<span class="s2">        else{</span>
+<span class="s2">            cufftComplex r;</span>
+
+<span class="s2">            cufftComplex s = ((cufftComplex*) input)[offset];</span>
+<span class="s2">            cufftComplex* hp =  ((cufftComplex*) callback_params.htilde);</span>
+<span class="s2">            cufftComplex h = hp[offset];</span>
+
+<span class="s2">            r.x = h.x * s.x + h.y * s.y;</span>
+<span class="s2">            r.y = h.x * s.y - h.y * s.x;</span>
+
+<span class="s2">            return r;</span>
+<span class="s2">        }</span>
+
+<span class="s2">    }</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">zero_out</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ void out_call(void *out, size_t offset, cufftComplex element,</span>
+<span class="s2">                             void *caller_info, void *shared){</span>
+<span class="s2">           if (offset &gt; callback_params.out_kmin &amp;&amp; offset &lt; callback_params.out_kmax)</span>
+<span class="s2">                ((cufftComplex*) out)[offset] = element;</span>
+<span class="s2">    }</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">copy_callback</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ cufftComplex correlate(void* input, size_t offset,</span>
+<span class="s2">                                void* caller_info, void* shared) {</span>
+<span class="s2">        return ((cufftComplex*)input)[offset];</span>
+<span class="s2">    }</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">copy_out</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ void out_call(void *out, size_t offset, cufftComplex element,</span>
+<span class="s2">                             void *caller_info, void *shared){</span>
+<span class="s2">           ((cufftComplex*) out)[offset] = element;</span>
+<span class="s2">    }</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">real_out</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ void out_call(void *out, size_t offset, cufftComplex element,</span>
+<span class="s2">                             void *caller_info, void *shared){</span>
+<span class="s2">           ((cufftReal*) out)[offset] = element.x * element.x + element.y * element.y;</span>
+<span class="s2">    }</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">copy_out_fp16</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ void out_call(void *out, size_t offset, cufftComplex element,</span>
+<span class="s2">                             void *caller_info, void *shared){</span>
+<span class="s2">           ((short*) out)[offset*2] = __float2half_rn(element.x);</span>
+<span class="s2">           ((short*) out)[offset*2+1] = __float2half_rn(element.y);</span>
+<span class="s2">    }</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="n">no_out</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    __device__ void out_call(void *out, size_t offset, cufftComplex element,</span>
+<span class="s2">                             void *caller_info, void *shared){</span>
+<span class="s2">    }</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">fftsrc</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    #include &lt;stdlib.h&gt;</span>
+<span class="s2">    #include &lt;stdio.h&gt;</span>
+<span class="s2">    #include &lt;string.h&gt;</span>
+<span class="s2">    #include &lt;math.h&gt;</span>
+<span class="s2">    #include &lt;cuda_runtime.h&gt;</span>
+<span class="s2">    #include &lt;cufft.h&gt;</span>
+<span class="s2">    #include &lt;cufftXt.h&gt;</span>
+
+<span class="s2">    typedef struct {</span>
+<span class="s2">        </span><span class="si">%f</span><span class="s2">or t, n in parameters:</span>
+<span class="s2">            $</span><span class="si">{t}</span><span class="s2"> $</span><span class="si">{n}</span><span class="s2">;</span>
+<span class="s2">        </span><span class="si">%e</span><span class="s2">ndfor</span>
+<span class="s2">    } param_t;</span>
+
+<span class="s2">    __constant__ param_t callback_params;</span>
+
+<span class="s2">    #define checkCudaErrors(val)  __checkCudaErrors__ ( (val), #val, __FILE__, __LINE__ )</span>
+
+<span class="s2">    template &lt;typename T&gt;</span>
+<span class="s2">    inline void __checkCudaErrors__(T code, const char *func, const char *file, int line)</span>
+<span class="s2">    {</span>
+<span class="s2">        if (code) {</span>
+<span class="s2">            fprintf(stderr, &quot;CUDA error at </span><span class="si">%s</span><span class="s2">:</span><span class="si">%d</span><span class="s2"> code=</span><span class="si">%d</span><span class="s2"> </span><span class="se">\\</span><span class="s2">&quot;</span><span class="si">%s</span><span class="se">\\</span><span class="s2">&quot; </span><span class="se">\\</span><span class="s2">n&quot;,</span>
+<span class="s2">                    file, line, (unsigned int)code, func);</span>
+<span class="s2">            cudaDeviceReset();</span>
+<span class="s2">            exit(EXIT_FAILURE);</span>
+<span class="s2">        }</span>
+<span class="s2">    }</span>
+
+<span class="s2">    </span><span class="si">% i</span><span class="s2">f input_callback:</span>
+<span class="s2">        $</span><span class="si">{input_callback}</span>
+<span class="s2">        __device__ cufftCallbackLoadC input_callback = in_call;</span>
+<span class="s2">    </span><span class="si">% e</span><span class="s2">ndif</span>
+
+<span class="s2">    </span><span class="si">% i</span><span class="s2">f output_callback:</span>
+<span class="s2">        $</span><span class="si">{output_callback}</span>
+<span class="s2">        __device__ cufftCallbackStoreC output_callback = out_call;</span>
+<span class="s2">    </span><span class="si">% e</span><span class="s2">ndif</span>
+
+<span class="s2">    extern &quot;C&quot;  cufftHandle* create_plan(unsigned int size){</span>
+<span class="s2">        cufftHandle* plan = new cufftHandle;</span>
+<span class="s2">        size_t work_size;</span>
+<span class="s2">        cufftCreate(plan);</span>
+<span class="s2">        checkCudaErrors(cufftMakePlan1d(*plan, size, CUFFT_C2C, 1, &amp;work_size));</span>
+
+
+<span class="s2">        </span><span class="si">% i</span><span class="s2">f input_callback:</span>
+<span class="s2">            cufftCallbackLoadC h_input_callback;</span>
+<span class="s2">            checkCudaErrors(cudaMemcpyFromSymbol(&amp;h_input_callback, input_callback,</span>
+<span class="s2">                                             sizeof(h_input_callback)));</span>
+<span class="s2">            checkCudaErrors(cufftXtSetCallback(*plan, (void **) &amp;h_input_callback,</span>
+<span class="s2">                                          CUFFT_CB_LD_COMPLEX, 0));</span>
+<span class="s2">        </span><span class="si">% e</span><span class="s2">ndif</span>
+
+<span class="s2">        </span><span class="si">% i</span><span class="s2">f output_callback:</span>
+<span class="s2">            cufftCallbackStoreC h_output_callback;</span>
+<span class="s2">            checkCudaErrors(cudaMemcpyFromSymbol(&amp;h_output_callback, output_callback,</span>
+<span class="s2">                                                 sizeof(h_output_callback)));</span>
+<span class="s2">            checkCudaErrors(cufftXtSetCallback(*plan, (void **) &amp;h_output_callback,</span>
+<span class="s2">                                              CUFFT_CB_ST_COMPLEX, 0));</span>
+<span class="s2">        </span><span class="si">% e</span><span class="s2">ndif</span>
+
+<span class="s2">        return plan;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    extern &quot;C&quot; void execute(cufftHandle* plan, cufftComplex* in, cufftComplex* out, param_t* p){</span>
+<span class="s2">         if (p != NULL)</span>
+<span class="s2">            checkCudaErrors(cudaMemcpyToSymbolAsync(callback_params, p, sizeof(param_t), 0,  cudaMemcpyHostToDevice, 0));</span>
+<span class="s2">         checkCudaErrors(cufftExecC2C(*plan, in, out, CUFFT_INVERSE));</span>
+<span class="s2">    }</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="compile">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fft_callback.compile">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compile the string source code into a shared object linked against</span>
+<span class="sd">    the static version of cufft for callback support.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If we start using this again, we should find a better place for the cache</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;/tmp&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">hash_file</span> <span class="o">=</span> <span class="n">cache</span> <span class="o">+</span> <span class="s2">&quot;.hash&quot;</span>
+    <span class="n">lib_file</span> <span class="o">=</span> <span class="n">cache</span> <span class="o">+</span> <span class="s2">&quot;.so&quot;</span>
+    <span class="n">obj_file</span> <span class="o">=</span> <span class="n">cache</span> <span class="o">+</span> <span class="s2">&quot;.o&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">hash_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span> <span class="o">==</span> <span class="nb">hash</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">lib_file</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">src_file</span> <span class="o">=</span> <span class="n">cache</span> <span class="o">+</span> <span class="s2">&quot;.cu&quot;</span>
+    <span class="n">fsrc</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">src_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">fsrc</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">fsrc</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nvcc&quot;</span><span class="p">,</span> <span class="s2">&quot;-ccbin&quot;</span><span class="p">,</span> <span class="s2">&quot;g++&quot;</span><span class="p">,</span> <span class="s2">&quot;-dc&quot;</span><span class="p">,</span> <span class="s2">&quot;-m64&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;--compiler-options&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;-fPIC&#39;&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">obj_file</span><span class="p">,</span>
+           <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="n">src_file</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nvcc&quot;</span><span class="p">,</span> <span class="s2">&quot;-shared&quot;</span><span class="p">,</span> <span class="s2">&quot;-ccbin&quot;</span><span class="p">,</span> <span class="s2">&quot;g++&quot;</span><span class="p">,</span> <span class="s2">&quot;-m64&quot;</span><span class="p">,</span>
+       <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">lib_file</span><span class="p">,</span> <span class="n">obj_file</span><span class="p">,</span> <span class="s2">&quot;-lcufft_static&quot;</span><span class="p">,</span> <span class="s2">&quot;-lculibos&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="n">hash_file</span> <span class="o">=</span> <span class="n">cache</span> <span class="o">+</span> <span class="s2">&quot;.hash&quot;</span>
+    <span class="n">fhash</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">hash_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">fhash</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">source</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">lib_file</span></div>
+
+
+<div class="viewcode-block" id="get_fn_plan">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fft_callback.get_fn_plan">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fn_plan</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;pycbc_cufft&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Get the IFFT execute and plan functions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">fftsrc</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">input_callback</span><span class="o">=</span><span class="n">callback</span><span class="p">,</span> <span class="n">output_callback</span><span class="o">=</span><span class="n">out_callback</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">lib</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">execute</span>
+    <span class="n">fn</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+    <span class="n">plan</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">create_plan</span>
+    <span class="n">plan</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">plan</span><span class="o">.</span><span class="n">argyptes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">fn</span><span class="p">,</span> <span class="n">plan</span></div>
+
+
+<span class="n">_plans</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="param">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fft_callback.param">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">param</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;htilde&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">)]</span></div>
+
+<span class="n">hparam</span> <span class="o">=</span> <span class="n">param</span><span class="p">()</span>
+
+<div class="viewcode-block" id="c2c_correlate_ifft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fft_callback.c2c_correlate_ifft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">c2c_correlate_ifft</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">outvec</span><span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;cnf&#39;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_plans</span><span class="p">:</span>
+        <span class="n">fn</span><span class="p">,</span> <span class="n">pfn</span> <span class="o">=</span> <span class="n">get_fn_plan</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="n">full_corr</span><span class="p">,</span> <span class="n">parameters</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;void*&quot;</span><span class="p">,</span> <span class="s2">&quot;htilde&quot;</span><span class="p">)])</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">pfn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outvec</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">))</span>
+        <span class="n">_plans</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">plan</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">))</span>
+    <span class="n">fn</span><span class="p">,</span> <span class="n">plan</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_plans</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">hparam</span><span class="o">.</span><span class="n">htilde</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span>
+    <span class="n">fn</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">stilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">outvec</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">hparam</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="param2">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fft_callback.param2">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">param2</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">Structure</span><span class="p">):</span>
+    <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;htilde&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;in_kmax&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;out_kmin&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;out_kmax&quot;</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">)]</span></div>
+
+<span class="n">hparam_zeros</span> <span class="o">=</span> <span class="n">param2</span><span class="p">()</span>
+
+<div class="viewcode-block" id="c2c_half_correlate_ifft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fft_callback.c2c_half_correlate_ifft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">c2c_half_correlate_ifft</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">outvec</span><span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;cn&#39;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_plans</span><span class="p">:</span>
+        <span class="n">fn</span><span class="p">,</span> <span class="n">pfn</span> <span class="o">=</span> <span class="n">get_fn_plan</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="n">zero_corr</span><span class="p">,</span>
+                              <span class="n">parameters</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;void*&quot;</span><span class="p">,</span> <span class="s2">&quot;htilde&quot;</span><span class="p">),</span>
+                                            <span class="p">(</span><span class="s2">&quot;unsigned int&quot;</span><span class="p">,</span> <span class="s2">&quot;in_kmax&quot;</span><span class="p">),</span>
+                                            <span class="p">(</span><span class="s2">&quot;unsigned int&quot;</span><span class="p">,</span> <span class="s2">&quot;out_kmin&quot;</span><span class="p">),</span>
+                                            <span class="p">(</span><span class="s2">&quot;unsigned int&quot;</span><span class="p">,</span> <span class="s2">&quot;out_kmax&quot;</span><span class="p">)],</span>
+                              <span class="n">out_callback</span><span class="o">=</span><span class="n">zero_out</span><span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">pfn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outvec</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">))</span>
+        <span class="n">_plans</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">plan</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">))</span>
+    <span class="n">fn</span><span class="p">,</span> <span class="n">plan</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_plans</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="n">hparam_zeros</span><span class="o">.</span><span class="n">htilde</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span>
+    <span class="n">hparam_zeros</span><span class="o">.</span><span class="n">in_kmax</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">end_idx</span>
+    <span class="n">hparam_zeros</span><span class="o">.</span><span class="n">out_kmin</span> <span class="o">=</span> <span class="n">stilde</span><span class="o">.</span><span class="n">analyze</span><span class="o">.</span><span class="n">start</span>
+    <span class="n">hparam_zeros</span><span class="o">.</span><span class="n">out_kmax</span> <span class="o">=</span> <span class="n">stilde</span><span class="o">.</span><span class="n">analyze</span><span class="o">.</span><span class="n">stop</span>
+    <span class="n">fn</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">stilde</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">outvec</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">gpudata</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">pointer</span><span class="p">(</span><span class="n">hparam_zeros</span><span class="p">))</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

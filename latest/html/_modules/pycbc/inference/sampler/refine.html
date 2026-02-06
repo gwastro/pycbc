@@ -1,0 +1,510 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.refine &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.refine</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.refine</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Sampler that uses kde refinement of an existing posterior estimate.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.random</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">logsumexp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_kde</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">entropy</span> <span class="k">as</span> <span class="n">sentropy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">loadfile</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_output</span><span class="p">,</span> <span class="n">initial_dist_from_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dummy</span><span class="w"> </span><span class="kn">import</span> <span class="n">DummySampler</span>
+
+
+<div class="viewcode-block" id="call_model">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.call_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">call_model</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span><span class="o">.</span><span class="n">logposterior</span><span class="p">,</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span><span class="o">.</span><span class="n">loglikelihood</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="resample_equal">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.resample_equal">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resample_equal</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">logwt</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logwt</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">logwt</span><span class="p">))</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">/</span> <span class="n">N</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">cumulative_sum</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">cumulative_sum</span> <span class="o">/=</span> <span class="n">cumulative_sum</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">positions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">cumulative_sum</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+            <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="c1"># numpy pre-1.17 uses RandomState</span>
+        <span class="c1"># Py27: delete this after we drop python 2.7 support</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="RefineSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RefineSampler</span><span class="p">(</span><span class="n">DummySampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sampler for kde drawn refinement of existing posterior estimate</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Model</span>
+<span class="sd">        An instance of a model from ``pycbc.inference.models``.</span>
+<span class="sd">    num_samples: int</span>
+<span class="sd">        The number of samples to draw from the kde at the conclusion</span>
+<span class="sd">    iterative_kde_samples: int</span>
+<span class="sd">        The number of samples to add to the kde during each iterations</span>
+<span class="sd">    min_refinement_steps: int</span>
+<span class="sd">        The minimum number of iterations to take.</span>
+<span class="sd">    max_refinement_steps: The maximum number of refinment steps to take.</span>
+<span class="sd">    entropy: float</span>
+<span class="sd">        The target entropy between iterative kdes</span>
+<span class="sd">    dlogz: float</span>
+<span class="sd">        The target evidence difference between iterative kde updates</span>
+<span class="sd">    kde: kde</span>
+<span class="sd">        The inital kde to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;refine&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e5</span><span class="p">),</span>
+        <span class="n">iterative_kde_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">),</span>
+        <span class="n">min_refinement_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">max_refinement_steps</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+        <span class="n">offbase_fraction</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">entropy</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">dlogz</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">kde</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">update_groups</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_kde_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">5e4</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kde</span> <span class="o">=</span> <span class="n">kde</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vparam</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iterative_kde_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iterative_kde_samples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_kde_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_kde_samples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_refinement_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_refinement_steps</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_refinement_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_refinement_steps</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offbase_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">offbase_fraction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entropy</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">entropy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dlogz_target</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dlogz</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">update_groups</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">gname</span> <span class="ow">in</span> <span class="n">update_groups</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+                <span class="n">gvalue</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">gname</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">gvalue</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gvalue</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+<div class="viewcode-block" id="RefineSampler.draw_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.draw_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">update_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw new samples within the model priors&quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;getting from kde&quot;</span><span class="p">)</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ksamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">update_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">update_params</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">ksamples</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;checking prior&quot;</span><span class="p">)</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;done checking&quot;</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">keep</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">r</span></div>
+
+
+<div class="viewcode-block" id="RefineSampler.compare_kde">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.compare_kde">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compare_kde</span><span class="p">(</span><span class="n">kde1</span><span class="p">,</span> <span class="n">kde2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate information difference between two kde distributions&quot;&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">kde1</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sentropy</span><span class="p">(</span><span class="n">kde1</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="n">kde2</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">s</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="RefineSampler.converged">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.converged">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">converged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">kde_new</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">logp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that kde is converged by comparing to previous iteration&quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;checking convergence&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;old_logz&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">old_logz</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+        <span class="n">entropy_diff</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">entropy_diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compare_kde</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kde</span><span class="p">,</span> <span class="n">kde_new</span><span class="p">)</span>
+
+        <span class="c1"># Compare how the logz changes when adding new samples</span>
+        <span class="c1"># this is guaranteed to decrease as old samples included</span>
+        <span class="n">logz</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">factor</span><span class="p">))</span>
+        <span class="n">dlogz</span> <span class="o">=</span> <span class="n">logz</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_logz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_logz</span> <span class="o">=</span> <span class="n">logz</span>
+
+        <span class="c1"># compare evidence subsets agree</span>
+        <span class="n">choice2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">logz2</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">choice2</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">choice2</span><span class="p">))</span>
+        <span class="n">choice3</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">logz3</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">choice3</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">choice3</span><span class="p">))</span>
+        <span class="n">dlogz2</span> <span class="o">=</span> <span class="n">logz3</span> <span class="o">-</span> <span class="n">logz2</span>
+
+        <span class="c1"># If kde matches posterior, the weights should be uniform</span>
+        <span class="c1"># check fraction that are significant deviation from peak</span>
+        <span class="n">frac_offbase</span> <span class="o">=</span> <span class="p">(</span><span class="n">logp</span> <span class="o">&lt;</span> <span class="n">logp</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="mf">5.0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">logp</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: dlogz_iter=</span><span class="si">%.4f</span><span class="s2">,&quot;</span>
+            <span class="s2">&quot;dlogz_half=</span><span class="si">%.4f</span><span class="s2">, entropy=</span><span class="si">%.4f</span><span class="s2"> offbase fraction=</span><span class="si">%.4f</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">step</span><span class="p">,</span>
+            <span class="n">dlogz</span><span class="p">,</span>
+            <span class="n">dlogz2</span><span class="p">,</span>
+            <span class="n">entropy_diff</span><span class="p">,</span>
+            <span class="n">frac_offbase</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">entropy_diff</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy</span>
+            <span class="ow">and</span> <span class="n">step</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_refinement_steps</span>
+            <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dlogz</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dlogz2</span><span class="p">))</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dlogz_target</span>
+            <span class="ow">and</span> <span class="n">frac_offbase</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">offbase_fraction</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="RefineSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This should initialize the sampler given a config file.&quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sampler&quot;</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s2">&quot;sampler&quot;</span><span class="p">)}</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_start_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="n">setup_output</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">check_nsamples</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<div class="viewcode-block" id="RefineSampler.set_start_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.set_start_from_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_start_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the initial state of the sampler from config file&quot;&quot;&quot;</span>
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iterative_kde_samples</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;sampler&quot;</span><span class="p">,</span> <span class="s2">&quot;start-file&quot;</span><span class="p">):</span>
+            <span class="n">start_file</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sampler&quot;</span><span class="p">,</span> <span class="s2">&quot;start-file&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using file </span><span class="si">%s</span><span class="s2"> for initial positions&quot;</span><span class="p">,</span> <span class="n">start_file</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">start_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+            <span class="n">fsamples</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_samples</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fsamples</span><span class="p">)</span>
+
+        <span class="n">init_prior</span> <span class="o">=</span> <span class="n">initial_dist_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">static_params</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">init_prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">init_prior</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+
+        <span class="n">ksamples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fsamples</span><span class="p">:</span>
+                <span class="n">ksamples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fsamples</span><span class="p">[</span><span class="n">v</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ksamples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">v</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ksamples</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="RefineSampler.run_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.run_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ksamples</span><span class="p">,</span> <span class="n">update_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iteration</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the likelihoods and weights for a set of samples&quot;&quot;&quot;</span>
+        <span class="c1"># Calculate likelihood for each sample</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;calculating likelihoods...&quot;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ksamples</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">ksamples</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">)}</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">call_model</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;..done with likelihood&quot;</span><span class="p">)</span>
+
+        <span class="n">logp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">])</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">update_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ksamples</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">ksamples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">update_params</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Weights for iteration</span>
+        <span class="k">if</span> <span class="n">iteration</span><span class="p">:</span>
+            <span class="n">logw</span> <span class="o">=</span> <span class="n">logp</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">ksamples</span><span class="p">))</span>
+            <span class="n">logw</span> <span class="o">=</span> <span class="n">logw</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">logw</span><span class="p">)</span>
+
+            <span class="c1"># To avoid single samples dominating the weighting kde before</span>
+            <span class="c1"># we will put a cap on the minimum and maximum logw</span>
+            <span class="n">sort</span> <span class="o">=</span> <span class="n">logw</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+            <span class="n">cap</span> <span class="o">=</span> <span class="n">logw</span><span class="p">[</span><span class="n">sort</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">sort</span><span class="p">)</span> <span class="o">//</span> <span class="mi">5</span><span class="p">]]</span>
+            <span class="n">low</span> <span class="o">=</span> <span class="n">logw</span><span class="p">[</span><span class="n">sort</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">sort</span><span class="p">)</span> <span class="o">//</span> <span class="mi">5</span><span class="p">]]</span>
+            <span class="n">logw</span><span class="p">[</span><span class="n">logw</span> <span class="o">&gt;</span> <span class="n">cap</span><span class="p">]</span> <span class="o">=</span> <span class="n">cap</span>
+            <span class="n">logw</span><span class="p">[</span><span class="n">logw</span> <span class="o">&lt;</span> <span class="n">low</span><span class="p">]</span> <span class="o">=</span> <span class="n">low</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Weights for monte-carlo selection</span>
+            <span class="n">logw</span> <span class="o">=</span> <span class="n">logp</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kde</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">ksamples</span><span class="p">))</span>
+            <span class="n">logw</span> <span class="o">=</span> <span class="n">logw</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">logw</span><span class="p">)</span>
+
+        <span class="n">k</span> <span class="o">=</span> <span class="n">logp</span> <span class="o">!=</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">ksamples</span> <span class="o">=</span> <span class="n">ksamples</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span>
+        <span class="n">logp</span><span class="p">,</span> <span class="n">logl</span><span class="p">,</span> <span class="n">logw</span> <span class="o">=</span> <span class="n">logp</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">logl</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">logw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ksamples</span><span class="p">,</span> <span class="n">logp</span><span class="p">,</span> <span class="n">logl</span><span class="p">,</span> <span class="n">logw</span></div>
+
+
+<div class="viewcode-block" id="RefineSampler.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterative sample from kde and update based on likelihood values&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_kde</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kde</span>
+        <span class="k">for</span> <span class="n">param_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
+            <span class="n">total_samples</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">total_logp</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">total_logw</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">total_logl</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">gsample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_kde</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e5</span><span class="p">))</span>
+            <span class="n">gsample</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">gsample</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">param_group</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gsample</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fixed_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_kde</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;updating: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">param_group</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_refinement_steps</span><span class="p">):</span>
+                <span class="n">ksamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw_samples</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">iterative_kde_samples</span><span class="p">,</span> <span class="n">update_params</span><span class="o">=</span><span class="n">param_group</span>
+                <span class="p">)</span>
+                <span class="n">ksamples</span><span class="p">,</span> <span class="n">logp</span><span class="p">,</span> <span class="n">logl</span><span class="p">,</span> <span class="n">logw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_samples</span><span class="p">(</span>
+                    <span class="n">ksamples</span><span class="p">,</span> <span class="n">update_params</span><span class="o">=</span><span class="n">param_group</span><span class="p">,</span> <span class="n">iteration</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">total_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">total_samples</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">total_samples</span><span class="p">,</span> <span class="n">ksamples</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+                    <span class="p">)</span>
+                    <span class="n">total_logp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">total_logp</span><span class="p">,</span> <span class="n">logp</span><span class="p">])</span>
+                    <span class="n">total_logw</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">total_logw</span><span class="p">,</span> <span class="n">logw</span><span class="p">])</span>
+                    <span class="n">total_logl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">total_logl</span><span class="p">,</span> <span class="n">logl</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">total_samples</span> <span class="o">=</span> <span class="n">ksamples</span>
+                    <span class="n">total_logp</span> <span class="o">=</span> <span class="n">logp</span>
+                    <span class="n">total_logw</span> <span class="o">=</span> <span class="n">logw</span>
+                    <span class="n">total_logl</span> <span class="o">=</span> <span class="n">logl</span>
+
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;setting up next kde iteration..&quot;</span><span class="p">)</span>
+                <span class="n">ntotal_logw</span> <span class="o">=</span> <span class="n">total_logw</span> <span class="o">-</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">total_logw</span><span class="p">)</span>
+                <span class="n">kde_new</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span>
+                    <span class="n">total_samples</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ntotal_logw</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">converged</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">kde_new</span><span class="p">,</span> <span class="n">total_logl</span> <span class="o">+</span> <span class="n">total_logw</span><span class="p">,</span> <span class="n">logp</span><span class="p">):</span>
+                    <span class="k">break</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">kde</span> <span class="o">=</span> <span class="n">kde_new</span>
+
+            <span class="n">full_samples</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">gsample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_kde</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">total_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">param_group</span><span class="p">:</span>
+                    <span class="n">full_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">total_samples</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">full_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gsample</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">group_kde</span> <span class="o">=</span> <span class="n">gaussian_kde</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">full_samples</span><span class="p">))</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Drawing final samples&quot;</span><span class="p">)</span>
+        <span class="n">ksamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calculating final likelihoods&quot;</span><span class="p">)</span>
+        <span class="n">ksamples</span><span class="p">,</span> <span class="n">logp</span><span class="p">,</span> <span class="n">logl</span><span class="p">,</span> <span class="n">logw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_samples</span><span class="p">(</span><span class="n">ksamples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">ksamples</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vparam</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">[</span><span class="s2">&quot;loglikelihood&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">logl</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reweighting to equal samples&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="n">resample_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">,</span> <span class="n">logw</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

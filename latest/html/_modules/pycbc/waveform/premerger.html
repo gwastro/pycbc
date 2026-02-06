@@ -1,0 +1,169 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.premerger &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.premerger</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.premerger</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Waveform approximants for the pre-merger detection of gravitational waves</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="premerger_taylorf2">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.premerger.premerger_taylorf2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">premerger_taylorf2</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate time-shifted TaylorF2&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_fd_waveform</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.spa_tmplt</span><span class="w"> </span><span class="kn">import</span> <span class="n">spa_length_in_time</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fd_taper</span>
+
+    <span class="n">p</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;approximant&#39;</span><span class="p">)</span>
+    <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_fd_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;TaylorF2&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="n">removed</span> <span class="o">=</span> <span class="n">spa_length_in_time</span><span class="p">(</span><span class="n">mass1</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span>
+                                 <span class="n">mass2</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span>
+                                 <span class="n">f_lower</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">],</span>
+                                 <span class="n">phase_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">cyclic_time_shift</span><span class="p">(</span><span class="n">removed</span><span class="p">)</span>
+    <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">removed</span>
+
+    <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">cyclic_time_shift</span><span class="p">(</span><span class="n">removed</span><span class="p">)</span>
+    <span class="n">hc</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">removed</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;PreTaylorF2, m1=</span><span class="si">%.1f</span><span class="s2">, m2=</span><span class="si">%.1f</span><span class="s2">, fmax=</span><span class="si">%.1f</span><span class="s2">, timeshift=</span><span class="si">%.1f</span><span class="s2">&quot;</span><span class="p">,</span>
+                 <span class="n">p</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">],</span> <span class="n">removed</span><span class="p">)</span>
+    <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">])</span>
+    <span class="n">hp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">kmin</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">hc</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">kmin</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="s1">&#39;final_taper&#39;</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">taper_size</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;final_taper&#39;</span><span class="p">]</span>
+        <span class="n">hp</span> <span class="o">=</span> <span class="n">fd_taper</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">taper_size</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">],</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="n">hc</span> <span class="o">=</span> <span class="n">fd_taper</span><span class="p">(</span><span class="n">hc</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">taper_size</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">],</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+
+    <span class="n">hp</span><span class="o">.</span><span class="n">time_offset</span> <span class="o">=</span> <span class="n">removed</span>
+    <span class="n">hc</span><span class="o">.</span><span class="n">time_offset</span> <span class="o">=</span> <span class="n">removed</span>
+
+    <span class="k">return</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

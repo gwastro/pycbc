@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.table_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.table_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.table_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; This module provides functions to generate sortable html tables</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mako.template</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="n">google_table_template</span> <span class="o">=</span> <span class="n">mako</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;script type=&#39;text/javascript&#39; src=&#39;https://www.google.com/jsapi&#39;&gt;&lt;/script&gt;</span>
+<span class="s2">    &lt;script type=&#39;text/javascript&#39;&gt;</span>
+<span class="s2">      google.load(&#39;visualization&#39;, &#39;1&#39;, {packages:[&#39;table&#39;]});</span>
+<span class="s2">      google.setOnLoadCallback(drawTable);</span>
+<span class="s2">      function drawTable() {</span>
+<span class="s2">        var data = new google.visualization.DataTable();</span>
+<span class="s2">        </span><span class="si">% f</span><span class="s2">or type, name in column_descriptions:</span>
+<span class="s2">            data.addColumn(&#39;${str(type)}&#39;, &#39;${str(name)}&#39;);</span>
+<span class="s2">        </span><span class="si">% e</span><span class="s2">ndfor</span>
+<span class="s2">        data.addRows($</span><span class="si">{data}</span><span class="s2">);</span>
+
+<span class="s2">        </span><span class="si">% i</span><span class="s2">f format_strings is not None:</span>
+<span class="s2">            </span><span class="si">% f</span><span class="s2">or i, format_string in enumerate(format_strings):</span>
+<span class="s2">                </span><span class="si">% i</span><span class="s2">f format_string is not None:</span>
+<span class="s2">                    var formatter = new google.visualization.NumberFormat({pattern:&#39;$</span><span class="si">{format_string}</span><span class="s2">&#39;});</span>
+<span class="s2">                    formatter.format(data, $</span><span class="si">{i}</span><span class="s2">);</span>
+<span class="s2">                </span><span class="si">% e</span><span class="s2">ndif</span>
+<span class="s2">            </span><span class="si">% e</span><span class="s2">ndfor</span>
+<span class="s2">        </span><span class="si">% e</span><span class="s2">ndif</span>
+<span class="s2">        var table = new google.visualization.Table(document.getElementById(&#39;$</span><span class="si">{div_id}</span><span class="s2">&#39;));</span>
+<span class="s2">        table.draw(data, {showRowNumber: &#39;true&#39;,</span>
+<span class="s2">                          page: &#39;$</span><span class="si">{page_enable}</span><span class="s2">&#39;,</span>
+<span class="s2">                          allowHtml: &#39;true&#39;,</span>
+<span class="s2">                          pageSize: $</span><span class="si">{page_size}</span><span class="s2">});</span>
+<span class="s2">      }</span>
+<span class="s2">    &lt;/script&gt;</span>
+<span class="s2">    &lt;div id=&#39;$</span><span class="si">{div_id}</span><span class="s2">&#39;&gt;&lt;/div&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="html_table">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.table_utils.html_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">html_table</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">page_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">format_strings</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return an HTML table of this data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    columns : list of numpy arrays</span>
+<span class="sd">    names : list of strings</span>
+<span class="sd">        The list of columns names</span>
+<span class="sd">    page_size : {int, None}, optional</span>
+<span class="sd">        The number of items to show on each page of the table</span>
+<span class="sd">    format_strings : {lists of strings, None}, optional</span>
+<span class="sd">        The ICU format string for this column, None for no formatting.</span>
+<span class="sd">        All columns must have a format string if provided.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    html_table : str</span>
+<span class="sd">        A str containing the html code to display a table of this data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;I need the same number of columns and names, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s1"> instead&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">format_strings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">format_strings</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;I need the same number of columns and format strings, &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s1"> instead&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">({</span><span class="nb">len</span><span class="p">(</span><span class="n">column</span><span class="p">)</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">})</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All columns must have the same length&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">page_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="s1">&#39;disable&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="s1">&#39;enable&#39;</span>
+
+    <span class="n">div_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span>
+
+    <span class="n">column_descriptions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">names</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;iuf&#39;</span><span class="p">:</span>
+            <span class="c1"># signed and unsigned integers and floats</span>
+            <span class="n">ctype</span> <span class="o">=</span> <span class="s1">&#39;number&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># this comprises strings, bools, complex, void, etc</span>
+            <span class="c1"># but we will convert all those to str in a moment</span>
+            <span class="n">ctype</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+        <span class="n">column_descriptions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ctype</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">columns</span><span class="p">):</span>
+        <span class="n">row2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># the explicit conversions here are to make sure the JS code</span>
+        <span class="c1"># sees proper numbers and not something like &#39;np.float64(12)&#39;</span>
+        <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">columns</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">column</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;f&#39;</span><span class="p">:</span>
+                <span class="n">row2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">column</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s1">&#39;iu&#39;</span><span class="p">:</span>
+                <span class="n">row2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">row2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">google_table_template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+        <span class="n">div_id</span><span class="o">=</span><span class="n">div_id</span><span class="p">,</span>
+        <span class="n">page_enable</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+        <span class="n">column_descriptions</span><span class="o">=</span><span class="n">column_descriptions</span><span class="p">,</span>
+        <span class="n">page_size</span><span class="o">=</span><span class="n">page_size</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+        <span class="n">format_strings</span><span class="o">=</span><span class="n">format_strings</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<span class="n">static_table_template</span> <span class="o">=</span> <span class="n">mako</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    &lt;table class=&quot;table&quot;&gt;</span>
+<span class="s2">        </span><span class="si">% f</span><span class="s2">or row in range(n_rows):</span>
+<span class="s2">            </span><span class="si">% i</span><span class="s2">f titles is not None:</span>
+<span class="s2">                &lt;tr&gt;</span>
+<span class="s2">                </span><span class="si">% i</span><span class="s2">f row_labels is not None:</span>
+<span class="s2">                    &lt;td&gt;</span>
+<span class="s2">                    &lt;/td&gt;</span>
+<span class="s2">                </span><span class="si">% e</span><span class="s2">ndif</span>
+<span class="s2">                </span><span class="si">% f</span><span class="s2">or i in range(n_columns):</span>
+<span class="s2">                    &lt;th&gt;</span>
+<span class="s2">                        $</span><span class="si">{titles[row * n_columns + i]}</span>
+<span class="s2">                    &lt;/th&gt;</span>
+<span class="s2">                </span><span class="si">% e</span><span class="s2">ndfor</span>
+<span class="s2">                &lt;/tr&gt;</span>
+<span class="s2">            </span><span class="si">% e</span><span class="s2">ndif</span>
+
+<span class="s2">            </span><span class="si">% f</span><span class="s2">or i in range(len(data)):</span>
+<span class="s2">                &lt;tr&gt;</span>
+<span class="s2">                </span><span class="si">% i</span><span class="s2">f row_labels is not None:</span>
+<span class="s2">                    &lt;td&gt;</span>
+<span class="s2">                        $</span><span class="si">{row_labels[i]}</span>
+<span class="s2">                    &lt;/td&gt;</span>
+<span class="s2">                </span><span class="si">% e</span><span class="s2">ndif</span>
+<span class="s2">                </span><span class="si">% f</span><span class="s2">or j in range(n_columns):</span>
+<span class="s2">                    &lt;td&gt;</span>
+<span class="s2">                        $</span><span class="si">{data[i][row * n_columns + j]}</span>
+<span class="s2">                    &lt;/td&gt;</span>
+<span class="s2">                </span><span class="si">% e</span><span class="s2">ndfor</span>
+<span class="s2">                &lt;/tr&gt;</span>
+<span class="s2">            </span><span class="si">% e</span><span class="s2">ndfor</span>
+<span class="s2">        </span><span class="si">% e</span><span class="s2">ndfor</span>
+<span class="s2">    &lt;/table&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="static_table">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.table_utils.static_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">static_table</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">titles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">row_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return an html table of this data</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : two-dimensional string array</span>
+<span class="sd">        Array containing the cell values</span>
+<span class="sd">    titles : numpy array</span>
+<span class="sd">        Vector str of titles, must be the same length as data</span>
+<span class="sd">    columns_max : integer or None</span>
+<span class="sd">        If given, will restrict the number of columns in the table</span>
+<span class="sd">    row_labels : list of strings</span>
+<span class="sd">        Optional list of row labels to be given as the first cell in</span>
+<span class="sd">        each data row. Does not count towards columns_max</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    html_table : str</span>
+<span class="sd">        A string containing the html table.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">titles</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">titles</span><span class="p">)</span>
+    <span class="n">row_labels</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">row_labels</span><span class="p">)</span>
+    <span class="n">drows</span><span class="p">,</span> <span class="n">dcols</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">)</span> <span class="o">==</span> <span class="n">dcols</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;titles and data lengths do not match&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">row_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">row_labels</span><span class="p">)</span> <span class="o">==</span> <span class="n">drows</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;row_labels must be the same number of rows supplied to data&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">columns_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_rows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">columns_max</span><span class="p">))</span>
+        <span class="n">n_columns</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">columns_max</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">n_rows</span> <span class="o">*</span> <span class="n">n_columns</span><span class="p">:</span>
+            <span class="c1"># Pad the data and titles with empty strings</span>
+            <span class="n">n_missing</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_rows</span> <span class="o">*</span> <span class="n">n_columns</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">n_missing</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U1&#39;</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">titles</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39; &#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_missing</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_rows</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">n_columns</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">static_table_template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+        <span class="n">titles</span><span class="o">=</span><span class="n">titles</span><span class="p">,</span>
+        <span class="n">n_columns</span><span class="o">=</span><span class="n">n_columns</span><span class="p">,</span>
+        <span class="n">n_rows</span><span class="o">=</span><span class="n">n_rows</span><span class="p">,</span>
+        <span class="n">row_labels</span><span class="o">=</span><span class="n">row_labels</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+<map id="inheritance0bf2b603d9" name="inheritance0bf2b603d9">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="17,5,216,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler" target="_top" title="Class to construct a FlowSampler from the nessai package." alt="" coords="5,79,228,104"/>
+</map>

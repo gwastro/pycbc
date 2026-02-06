@@ -1,0 +1,652 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.epsie &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.epsie</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.epsie</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This module provides classes for interacting with epsie samplers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">epsie</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">epsie.samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParallelTemperedSampler</span>
+
+<span class="c1"># we&#39;ll use emcee_pt&#39;s default beta ladder for temperature levels</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">emcee.ptsampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_beta_ladder</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseSampler</span><span class="p">,</span> <span class="n">setup_output</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseMCMC</span><span class="p">,</span> <span class="n">get_optional_arg_from_config</span><span class="p">,</span>
+                        <span class="n">nsamples_in_chain</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_multitemper</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">MultiTemperedSupport</span><span class="p">,</span> <span class="n">compute_acf</span><span class="p">,</span> <span class="n">compute_acl</span><span class="p">,</span>
+                               <span class="n">acl_from_raw_acls</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..burn_in</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiTemperedMCMCBurnInTests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..jump</span><span class="w"> </span><span class="kn">import</span> <span class="n">epsie_proposals_from_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..io</span><span class="w"> </span><span class="kn">import</span> <span class="n">EpsieFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+
+
+<div class="viewcode-block" id="EpsieSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EpsieSampler</span><span class="p">(</span><span class="n">MultiTemperedSupport</span><span class="p">,</span> <span class="n">BaseMCMC</span><span class="p">,</span> <span class="n">BaseSampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs an MCMC sampler using epsie&#39;s parallel-tempered sampler.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : model</span>
+<span class="sd">        A model from ``pycbc.inference.models``.</span>
+<span class="sd">    nchains : int</span>
+<span class="sd">        Number of chains to use in the sampler.</span>
+<span class="sd">    ntemps : int, optional</span>
+<span class="sd">        Number of temperatures to use in the sampler. A geometrically-spaced</span>
+<span class="sd">        temperature ladder with the gievn number of levels will be constructed</span>
+<span class="sd">        based on the number of parameters. If not provided, must provide</span>
+<span class="sd">        ``betas``.</span>
+<span class="sd">    betas : array, optional</span>
+<span class="sd">        An array of inverse temperature values to be used in for the</span>
+<span class="sd">        temperature ladder. If not provided, must provide ``ntemps``.</span>
+<span class="sd">    proposals : list, optional</span>
+<span class="sd">        List of proposals to use. Any parameters that do not have a proposal</span>
+<span class="sd">        provided will use the ``default_propsal``. **Note:** proposals should</span>
+<span class="sd">        be specified for the sampling parameters, not the</span>
+<span class="sd">        variable parameters.</span>
+<span class="sd">    default_proposal : an epsie.Proposal class, optional</span>
+<span class="sd">        The default proposal to use for parameters not in ``proposals``.</span>
+<span class="sd">        Default is :py:class:`epsie.proposals.Normal`.</span>
+<span class="sd">    default_proposal_args : dict, optional</span>
+<span class="sd">        Dictionary of arguments to pass to the default proposal.</span>
+<span class="sd">    swap_interval : int, optional</span>
+<span class="sd">        The number of iterations between temperature swaps. Default is 1.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Seed for epsie&#39;s random number generator. If None provided, will create</span>
+<span class="sd">        one.</span>
+<span class="sd">    checkpoint_interval : int, optional</span>
+<span class="sd">        Specify the number of iterations to do between checkpoints. If not</span>
+<span class="sd">        provided, no checkpointin will be done.</span>
+<span class="sd">    checkpoint_signal : str, optional</span>
+<span class="sd">        Set the signal to use when checkpointing. For example, &#39;USR2&#39;.</span>
+<span class="sd">    loglikelihood_function : str, optional</span>
+<span class="sd">        Set the function to call from the model for the ``loglikelihood``.</span>
+<span class="sd">        Default is ``loglikelihood``.</span>
+<span class="sd">    nprocesses : int, optional</span>
+<span class="sd">        The number of parallel processes to use. Default is 1</span>
+<span class="sd">        (no paralleliztion).</span>
+<span class="sd">    use_mpi : bool, optional</span>
+<span class="sd">        Use MPI for parallelization. Default (False) will use python&#39;s</span>
+<span class="sd">        multiprocessing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;epsie&quot;</span>
+    <span class="n">_io</span> <span class="o">=</span> <span class="n">EpsieFile</span>
+    <span class="n">burn_in_class</span> <span class="o">=</span> <span class="n">MultiTemperedMCMCBurnInTests</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nchains</span><span class="p">,</span> <span class="n">ntemps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">proposals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_proposal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">default_proposal_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">swap_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">checkpoint_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkpoint_signal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">loglikelihood_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="c1"># create the betas if not provided</span>
+        <span class="k">if</span> <span class="n">betas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">default_beta_ladder</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">),</span>
+                                        <span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="c1"># create a wrapper for calling the model</span>
+        <span class="n">model_call</span> <span class="o">=</span> <span class="n">_EpsieCallModel</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">loglikelihood_function</span><span class="p">)</span>
+
+        <span class="c1"># these are used to help paralleize over multiple cores / MPI</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span> <span class="o">=</span> <span class="n">model_call</span>
+        <span class="n">model_call</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">_call_global_model</span>
+
+        <span class="c1"># Set up the pool</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+
+        <span class="c1"># initialize the sampler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">ParallelTemperedSampler</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">,</span> <span class="n">model_call</span><span class="p">,</span> <span class="n">nchains</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
+            <span class="n">swap_interval</span><span class="o">=</span><span class="n">swap_interval</span><span class="p">,</span>
+            <span class="n">proposals</span><span class="o">=</span><span class="n">proposals</span><span class="p">,</span> <span class="n">default_proposal</span><span class="o">=</span><span class="n">default_proposal</span><span class="p">,</span>
+            <span class="n">default_proposal_args</span><span class="o">=</span><span class="n">default_proposal_args</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">)</span>
+        <span class="c1"># set other parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span> <span class="o">=</span> <span class="n">nchains</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ntemps</span> <span class="o">=</span> <span class="n">ntemps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_interval</span> <span class="o">=</span> <span class="n">checkpoint_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_signal</span> <span class="o">=</span> <span class="n">checkpoint_signal</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_io</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">base_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">betas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The inverse temperatures being used.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">betas</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The seed used for epsie&#39;s random bit generator.</span>
+
+<span class="sd">        This is not the same as the seed used for the prior distributions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">seed</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">swap_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of iterations between temperature swaps.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">swap_interval</span>
+
+<div class="viewcode-block" id="EpsieSampler.compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.compute_acf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the autocorrelation function.</span>
+
+<span class="sd">        Calls :py:func:`base_multitemper.compute_acf`; see that</span>
+<span class="sd">        function for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of a samples file to compute ACFs for.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to</span>
+<span class="sd">            :py:func:`base_multitemper.compute_acf`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of arrays giving the ACFs for each parameter. The arrays</span>
+<span class="sd">            will have shape ``ntemps x nchains x niterations``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieSampler.compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.compute_acl">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the autocorrelation length.</span>
+
+<span class="sd">        Calls :py:func:`base_multitemper.compute_acl`; see that</span>
+<span class="sd">        function for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of a samples file to compute ACLs for.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to</span>
+<span class="sd">            :py:func:`base_multitemper.compute_acl`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of ntemps-long arrays of the ACLs of each parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-overridden-method</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The autocorrelation lengths of the chains.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">acl_from_raw_acls</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_acls</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">effective_nsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-overridden-method</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The effective number of samples post burn-in that the sampler has</span>
+<span class="sd">        acquired so far.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">act</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span>
+        <span class="k">if</span> <span class="n">act</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">start_iter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">burn_in_iteration</span>
+        <span class="n">nperchain</span> <span class="o">=</span> <span class="n">nsamples_in_chain</span><span class="p">(</span><span class="n">start_iter</span><span class="p">,</span> <span class="n">act</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># ensure that any chain not burned in has zero samples</span>
+            <span class="n">nperchain</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># and that any chain that is burned in has at least one sample</span>
+            <span class="n">nperchain</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">burn_in</span><span class="o">.</span><span class="n">is_burned_in</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">nperchain</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">nperchain</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dict mapping ``variable_params`` to arrays of samples currently</span>
+<span class="sd">        in memory.</span>
+
+<span class="sd">        The arrays have shape ``ntemps x nchains x niterations``.</span>
+
+<span class="sd">        The dictionary also contains sampling parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">epsie</span><span class="o">.</span><span class="n">array2dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+        <span class="c1"># apply boundary conditions</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span>
+            <span class="o">**</span><span class="n">samples</span><span class="p">)</span>
+        <span class="c1"># apply transforms to go to model&#39;s variable params space</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                <span class="n">samples</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dict mapping the model&#39;s ``default_stats`` to arrays of values.</span>
+
+<span class="sd">        The arrays have shape ``ntemps x nchains x niterations``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">epsie</span><span class="o">.</span><span class="n">array2dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">blobs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EpsieSampler.clear_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.clear_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears the chain and blobs from memory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># store the iteration that the clear is occuring on</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># now clear the sampler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="EpsieSampler.set_state_from_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.set_state_from_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the state of the sampler back to the instance saved in a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># get the numpy state</span>
+            <span class="n">numpy_rstate_group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">,</span>
+                                           <span class="s1">&#39;numpy_random_state&#39;</span><span class="p">])</span>
+            <span class="n">rstate</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_random_state</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">numpy_rstate_group</span><span class="p">)</span>
+            <span class="c1"># set the sampler state for epsie</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">set_state_from_checkpoint</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span>
+        <span class="c1"># set the global numpy random state for pycbc</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">rstate</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieSampler.set_p0">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.set_p0">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_p0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">EpsieSampler</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">set_p0</span><span class="p">(</span><span class="n">samples_file</span><span class="o">=</span><span class="n">samples_file</span><span class="p">,</span>
+                                              <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">start_position</span> <span class="o">=</span> <span class="n">p0</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dictionary of the current chain positions.&quot;&quot;&quot;</span>
+        <span class="c1"># we override BaseMCMC&#39;s pos property because this can be directly</span>
+        <span class="c1"># retrieved from epsie</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">current_positions</span>
+
+<div class="viewcode-block" id="EpsieSampler.run_mcmc">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.run_mcmc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_mcmc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">niterations</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Advance the chains for a number of iterations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        niterations : int</span>
+<span class="sd">            Number of samples to get from sampler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">niterations</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieSampler.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.write_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes samples, model stats, acceptance ratios, and random state</span>
+<span class="sd">        to the given file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The file to write to. The file is opened using the ``io`` class</span>
+<span class="sd">            in an an append state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># write samples</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
+                             <span class="n">parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span>
+                             <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="c1"># write stats</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_stats</span><span class="p">,</span> <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="c1"># write accpetance ratio</span>
+            <span class="n">acceptance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">acceptance</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_acceptance_ratio</span><span class="p">(</span><span class="n">acceptance</span><span class="p">[</span><span class="s1">&#39;acceptance_ratio&#39;</span><span class="p">],</span>
+                                      <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="c1"># write temperature data</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">temp_ar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">temperature_acceptance</span>
+                <span class="n">temp_swaps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">temperature_swaps</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write_temperature_data</span><span class="p">(</span><span class="n">temp_swaps</span><span class="p">,</span> <span class="n">temp_ar</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">swap_interval</span><span class="p">,</span>
+                                          <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="c1"># write numpy&#39;s global state (for the distributions)</span>
+            <span class="n">numpy_rstate_group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">,</span>
+                                           <span class="s1">&#39;numpy_random_state&#39;</span><span class="p">])</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_random_state</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">numpy_rstate_group</span><span class="p">)</span>
+            <span class="c1"># write the sampler&#39;s state</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">checkpoint</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieSampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="EpsieSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads the sampler from the given config file.</span>
+
+<span class="sd">        The following options are retrieved in the ``[sampler]`` section:</span>
+
+<span class="sd">        * ``name`` :</span>
+<span class="sd">            (required) must match the samlper&#39;s name</span>
+<span class="sd">        * ``nchains`` :</span>
+<span class="sd">            (required) the number of chains to use</span>
+<span class="sd">        * ``ntemps`` :</span>
+<span class="sd">            The number of temperatures to use. Either this, or</span>
+<span class="sd">            ``inverse-temperatures-file`` must be provided (but not both).</span>
+<span class="sd">        * ``inverse-temperatures-file`` :</span>
+<span class="sd">            Path to an hdf file containing the inverse temperatures (&quot;betas&quot;)</span>
+<span class="sd">            to use. The betas will be retrieved from the file&#39;s</span>
+<span class="sd">            ``.attrs[&#39;betas&#39;]``. Either this or ``ntemps`` must be provided</span>
+<span class="sd">            (but not both).</span>
+<span class="sd">        * ``niterations`` :</span>
+<span class="sd">            The number of iterations to run the sampler for. Either this or</span>
+<span class="sd">            ``effective-nsamples`` must be provided (but not both).</span>
+<span class="sd">        * ``effective-nsamples`` :</span>
+<span class="sd">            Run the sampler until the given number of effective samples are</span>
+<span class="sd">            obtained. A ``checkpoint-interval`` must also be provided in this</span>
+<span class="sd">            case. Either this or ``niterations`` must be provided (but not</span>
+<span class="sd">            both).</span>
+<span class="sd">        * ``thin-interval`` :</span>
+<span class="sd">            Thin the samples by the given value before saving to disk. May</span>
+<span class="sd">            provide this, or ``max-samples-per-chain``, but not both. If</span>
+<span class="sd">            neither options are provided, will save all samples.</span>
+<span class="sd">        * ``max-samples-per-chain`` :</span>
+<span class="sd">            Thin the samples such that the number of samples per chain per</span>
+<span class="sd">            temperature that are saved to disk never exceeds the given value.</span>
+<span class="sd">            May provide this, or ``thin-interval``, but not both. If neither</span>
+<span class="sd">            options are provided, will save all samples.</span>
+<span class="sd">        * ``checkpoint-interval`` :</span>
+<span class="sd">            Sets the checkpoint interval to use. Must be provided if using</span>
+<span class="sd">            ``effective-nsamples``.</span>
+<span class="sd">        * ``checkpoint-signal`` :</span>
+<span class="sd">            Set the checkpoint signal, e.g., &quot;USR2&quot;. Optional.</span>
+<span class="sd">        * ``seed`` :</span>
+<span class="sd">            The seed to use for epsie&#39;s random number generator. If not</span>
+<span class="sd">            provided, epsie will create one.</span>
+<span class="sd">        * ``logl-function`` :</span>
+<span class="sd">            The attribute of the model to use for the loglikelihood. If</span>
+<span class="sd">            not provided, will default to ``loglikelihood``.</span>
+<span class="sd">        * ``swap-interval`` :</span>
+<span class="sd">            The number of iterations between temperature swaps. Default is 1.</span>
+
+<span class="sd">        Jump proposals must be provided for every sampling</span>
+<span class="sd">        parameter. These are retrieved from subsections</span>
+<span class="sd">        ``[jump_proposal-{params}]``, where params is a</span>
+<span class="sd">        :py:const:`pycbc.VARARGS_DELIM` separated list of parameters the</span>
+<span class="sd">        proposal should be used for. See</span>
+<span class="sd">        :py:func:`inference.jump.epsie_proposals_from_config` for</span>
+<span class="sd">        details.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Jump proposals should be specified for **sampling parameters**,</span>
+<span class="sd">            not **variable parameters**.</span>
+
+<span class="sd">        Settings for burn-in tests are read from ``[sampler-burn_in]``. In</span>
+<span class="sd">        particular, the ``burn-in-test`` option is used to set the burn in</span>
+<span class="sd">        tests to perform. See</span>
+<span class="sd">        :py:func:`MultiTemperedMCMCBurnInTests.from_config` for details. If no</span>
+<span class="sd">        ``burn-in-test`` is provided, no burn in tests will be carried out.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser instance</span>
+<span class="sd">            Config file object to parse.</span>
+<span class="sd">        model : pycbc.inference.model.BaseModel instance</span>
+<span class="sd">            The model to use.</span>
+<span class="sd">        output_file : str, optional</span>
+<span class="sd">            The name of the output file to checkpoint and write results to.</span>
+<span class="sd">        nprocesses : int, optional</span>
+<span class="sd">            The number of parallel processes to use. Default is 1.</span>
+<span class="sd">        use_mpi : bool, optional</span>
+<span class="sd">            Use MPI for parallelization. Default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        EpsiePTSampler :</span>
+<span class="sd">            The sampler instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;sampler&quot;</span>
+        <span class="c1"># check name</span>
+        <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;name in section [sampler] must match mine&quot;</span><span class="p">)</span>
+        <span class="n">nchains</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;nchains&quot;</span><span class="p">))</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;seed&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">ntemps</span><span class="p">,</span> <span class="n">betas</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">betas_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># get the swap interval</span>
+        <span class="n">swap_interval</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span>
+                                                     <span class="s1">&#39;swap-interval&#39;</span><span class="p">,</span>
+                                                     <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">swap_interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">swap_interval</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># get the checkpoint interval, if it&#39;s specified</span>
+        <span class="n">checkpoint_interval</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">checkpoint_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="n">checkpoint_signal</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ckpt_signal_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># get the loglikelihood function</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;logl-function&#39;</span><span class="p">)</span>
+        <span class="c1"># get the proposals</span>
+        <span class="n">proposals</span> <span class="o">=</span> <span class="n">epsie_proposals_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="c1"># check that all of the sampling parameters have a specified</span>
+        <span class="c1"># proposal</span>
+        <span class="n">sampling_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">)</span>
+        <span class="n">proposal_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">param</span> <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">proposals</span>
+                              <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">prop</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="n">sampling_params</span> <span class="o">-</span> <span class="n">proposal_params</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing jump proposals for sampling parameters &quot;</span>
+                             <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)))</span>
+        <span class="c1"># initialize</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nchains</span><span class="p">,</span>
+                  <span class="n">ntemps</span><span class="o">=</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">proposals</span><span class="o">=</span><span class="n">proposals</span><span class="p">,</span>
+                  <span class="n">swap_interval</span><span class="o">=</span><span class="n">swap_interval</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                  <span class="n">checkpoint_interval</span><span class="o">=</span><span class="n">checkpoint_interval</span><span class="p">,</span>
+                  <span class="n">checkpoint_signal</span><span class="o">=</span><span class="n">checkpoint_signal</span><span class="p">,</span>
+                  <span class="n">loglikelihood_function</span><span class="o">=</span><span class="n">logl</span><span class="p">,</span>
+                  <span class="n">nprocesses</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">)</span>
+        <span class="c1"># set target</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_target_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># add burn-in if it&#39;s specified</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_burn_in_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="c1"># set prethin options</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_thin_interval_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># Set up the output file</span>
+        <span class="n">setup_output</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">new_checkpoint</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">set_start_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">resume_from_checkpoint</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+</div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_EpsieCallModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Model wrapper for epsie.</span>
+
+<span class="sd">    Allows model to be called like a function. Returns the loglikelihood</span>
+<span class="sd">    function, logprior, and the model&#39;s default stats.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">loglikelihood_function</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="k">if</span> <span class="n">loglikelihood_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loglikelihood_function</span> <span class="o">=</span> <span class="s1">&#39;loglikelihood&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loglikelihood_function</span> <span class="o">=</span> <span class="n">loglikelihood_function</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calls update, then calls the loglikelihood and logprior.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">logprior</span>
+        <span class="k">if</span> <span class="n">logp</span> <span class="o">==</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+            <span class="c1"># don&#39;t try to call the log likelihood if the prior rules it out</span>
+            <span class="n">logl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nan</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logl</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglikelihood_function</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logl</span><span class="p">,</span> <span class="n">logp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">current_stats</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

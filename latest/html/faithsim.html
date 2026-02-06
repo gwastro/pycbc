@@ -1,0 +1,386 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dag Generator for Doing Faithfulness Comparisons &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Uploading triggers to gracedb" href="upload_to_gracedb.html" />
+    <link rel="prev" title="Calculating the Effectualness (Fitting Factor) of Template Banks" href="banksim.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_offline_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Dag Generator for Doing Faithfulness Comparisons</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-generate-a-workflow">How to generate a workflow</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#creating-a-configuration-ini-file">Creating a configuration (.ini) file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generating-the-workflow">Generating the workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#understanding-the-results">Understanding the results</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example-config-files">Example config files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mock_data_generation.html"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active">Dag Generator for Doing Faithfulness Comparisons</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/faithsim.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dag-generator-for-doing-faithfulness-comparisons">
+<h1>Dag Generator for Doing Faithfulness Comparisons<a class="headerlink" href="#dag-generator-for-doing-faithfulness-comparisons" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This page describes how to use the faithfulness dag generator within
+PyCBC.</p>
+</section>
+<section id="how-to-generate-a-workflow">
+<h2>How to generate a workflow<a class="headerlink" href="#how-to-generate-a-workflow" title="Link to this heading"></a></h2>
+<section id="creating-a-configuration-ini-file">
+<h3>Creating a configuration (.ini) file<a class="headerlink" href="#creating-a-configuration-ini-file" title="Link to this heading"></a></h3>
+<p>All the choices when setting up a faithsim are contained
+in a single configuration file.</p>
+<p>Below is an example.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">inspinj</span><span class="p">]</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mass1</span> <span class="o">=</span>  <span class="mi">1</span> 
+<span class="nb">max</span><span class="o">-</span><span class="n">mass1</span> <span class="o">=</span>  <span class="mi">100</span> 
+<span class="nb">min</span><span class="o">-</span><span class="n">spin1</span> <span class="o">=</span> <span class="mi">0</span> 
+<span class="nb">max</span><span class="o">-</span><span class="n">spin1</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mass2</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mass2</span> <span class="o">=</span> <span class="mi">100</span> 
+<span class="nb">min</span><span class="o">-</span><span class="n">spin2</span> <span class="o">=</span> <span class="mi">0</span> 
+<span class="nb">max</span><span class="o">-</span><span class="n">spin2</span> <span class="o">=</span> <span class="mi">0</span> 
+<span class="nb">max</span><span class="o">-</span><span class="n">mtotal</span> <span class="o">=</span> <span class="mi">25</span> 
+<span class="nb">min</span><span class="o">-</span><span class="n">mtotal</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">f</span><span class="o">-</span><span class="n">lower</span> <span class="o">=</span> <span class="mi">30</span> 
+<span class="n">enable</span><span class="o">-</span><span class="n">spin</span> <span class="o">=</span>
+<span class="n">aligned</span> <span class="o">=</span>
+<span class="n">waveform</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">disable</span><span class="o">-</span><span class="n">milkyway</span> <span class="o">=</span> 
+<span class="n">i</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">uniform</span>
+<span class="n">l</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">random</span> 
+<span class="nb">min</span><span class="o">-</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">1000</span> 
+<span class="n">d</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">uniform</span> 
+<span class="nb">max</span><span class="o">-</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">1000</span> 
+<span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="o">=</span> <span class="mi">1000000000</span> 
+<span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="o">=</span>   <span class="mi">1000001000</span> 
+<span class="n">time</span><span class="o">-</span><span class="n">interval</span> <span class="o">=</span> <span class="mf">0.</span> 
+<span class="n">time</span><span class="o">-</span><span class="n">step</span> <span class="o">=</span> <span class="mf">1.</span> 
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">123434</span> 
+<span class="n">m</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">componentMass</span> 
+
+<span class="p">[</span><span class="n">executables</span><span class="p">]</span>
+<span class="n">faithsim</span> <span class="o">=</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">pc10</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">pycbc_faithsim</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="p">]</span>
+<span class="n">templates</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">job</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">log</span><span class="o">-</span><span class="n">path</span> <span class="o">=</span> <span class="o">/</span><span class="n">usr1</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatIMRC</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomC</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatF2</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">TaylorF2</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">spin</span><span class="o">-</span><span class="n">order</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatSEOBNRv1</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">SEOBNRv1</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="o">=</span> <span class="mi">16384</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatEOBNRv2</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">EOBNRv2</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="o">=</span> <span class="mi">8192</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatEOBNRv2HM</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">EOBNRv2HM</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="o">=</span> <span class="mi">8192</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatT1</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">TaylorT1</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatT2</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">TaylorT2</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatT3</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">TaylorT3</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatTRD</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">PhenSpinTaylorRD</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+
+<span class="p">[</span><span class="n">faithsim</span><span class="o">-</span><span class="n">flatT4</span><span class="p">]</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+<span class="n">waveform1</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">IMRPhenomB</span> 
+<span class="n">waveform1</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span> 
+<span class="n">waveform2</span><span class="o">-</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">TaylorT4</span>
+<span class="n">waveform2</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">14</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">=</span><span class="mi">15</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span><span class="o">=</span><span class="mi">4096</span> 
+<span class="nb">filter</span><span class="o">-</span><span class="n">waveform</span><span class="o">-</span><span class="n">length</span><span class="o">=</span><span class="mi">1024</span>
+</pre></div>
+</div>
+<p>There are four sections that must be present [inspinj], [executables], [workflow], and [faithsim-XXX].</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>inspinj</p>
+<p>This section sets the paramaters of all of the injection waveforms.
+The arguments in the configuration file are fed directly to the
+lalapps_inspinj program to create an injection file.
+The same arguments are available, and the same restrictions apply.
+The number of injections can be set by using the gps start and end time
+options along with the time step.
+Note, however, that the waveform name is required but does not
+determine the actual approximants that will be compared. That is set in the [banksim]
+section.</p>
+</li>
+<li><p>executables</p>
+<p>This section lists the location of the pycbc_faithsim script. Make note
+that the script is copied to the executables folder
+and that is the version that will be used.</p>
+</li>
+<li><p>workflow</p>
+<p>This section has options that configure the workflow.
+The required options are ‘log-path’ and ‘templates-per-job’. The
+‘log-path’ specifies the directory to store
+condor log files. The ‘templates-per-job’ section determines
+how many faithfulness calculations each job will do. The
+injection file is split into smaller portions to match this
+restriction. This option
+is directly proportional to the running time of
+each job.</p>
+<p>Faith simulations running on LDG clusters must include the
+‘accounting-group’ option in the workflow section. The value
+must be choosen according to the
+<a class="reference external" href="https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/">Accounting information web page</a>.</p>
+</li>
+<li><p>faithsim-XXX
+Multiple sections with a a name of the form ‘faithsim-USER_STRING’ can exist.
+The generator will create jobs that correspond to each of these sections
+and each will generate an independent results file
+file labeled with the same USER_STRING.</p>
+<p>These sections corresponds to the arguments sent to the
+banksim executable. The two approximants to compare, along with their
+PN order paramters (if relevant), are set here. Note that
+the option filter-waveform-length must be set to a value
+greater than the duration of the longest generated
+approximant.</p>
+</li>
+</ol>
+</div></blockquote>
+</section>
+<section id="generating-the-workflow">
+<h3>Generating the workflow<a class="headerlink" href="#generating-the-workflow" title="Link to this heading"></a></h3>
+<p>Once a configuration file as been made, create a
+workspace directory and place the file into it.
+Running the following command will generate a dag
+that will submit the required jobs.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_make_faithsim<span class="w"> </span>--conf<span class="w"> </span>YOUR_INI_FILE.ini
+</pre></div>
+</div>
+<p>The workflow can then be submitted by running the
+generated shell script.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sh<span class="w"> </span>submit.sh
+</pre></div>
+</div>
+</section>
+<section id="understanding-the-results">
+<h3>Understanding the results<a class="headerlink" href="#understanding-the-results" title="Link to this heading"></a></h3>
+<p>The main results of the faithsim are result files, one for each
+faithsim section in the file. These are whitespace separated ASCII files.</p>
+<p>Some basic plots are also generated automatically and
+placed into the ‘plots’ folder.</p>
+<p>The pycbc_faithsim_plots script located in the
+scripts folder is an example of
+how to read the results files.</p>
+</section>
+<section id="example-config-files">
+<h3>Example config files<a class="headerlink" href="#example-config-files" title="Link to this heading"></a></h3>
+<p><em>ADD SOME HERE</em></p>
+<p>Contact Alex Nitz for some more detailed examples of configuration files.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="banksim.html" class="btn btn-neutral float-left" title="Calculating the Effectualness (Fitting Factor) of Template Banks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="upload_to_gracedb.html" class="btn btn-neutral float-right" title="Uploading triggers to gracedb" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

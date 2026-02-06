@@ -1,0 +1,363 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.single_template &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.single_template</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.single_template</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018 Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This module provides model classes that assume the noise is Gaussian.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="nb">filter</span> <span class="k">as</span> <span class="n">pyfilter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_fd_waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseGaussianNoise</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistMarg</span>
+
+
+<div class="viewcode-block" id="SingleTemplate">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleTemplate</span><span class="p">(</span><span class="n">DistMarg</span><span class="p">,</span> <span class="n">BaseGaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Model that assumes we know all the intrinsic parameters.</span>
+
+<span class="sd">    This model assumes we know all the intrinsic parameters, and are only</span>
+<span class="sd">    maximizing over the extrinsic ones. We also assume a dominant mode waveform</span>
+<span class="sd">    approximant only and non-precessing.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_params : (tuple of) string(s)</span>
+<span class="sd">        A tuple of parameter names that will be varied.</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        A dictionary of data, in which the keys are the detector names and the</span>
+<span class="sd">        values are the data (assumed to be unwhitened). All data must have the</span>
+<span class="sd">        same frequency resolution.</span>
+<span class="sd">    low_frequency_cutoff : dict</span>
+<span class="sd">        A dictionary of starting frequencies, in which the keys are the</span>
+<span class="sd">        detector names and the values are the starting frequencies for the</span>
+<span class="sd">        respective detectors to be used for computing inner products.</span>
+<span class="sd">    sample_rate : int, optional</span>
+<span class="sd">        The sample rate to use. Default is 32768.</span>
+<span class="sd">    polarization_samples: int, optional</span>
+<span class="sd">        Parameter to specify how finely to marginalize over polarization angle.</span>
+<span class="sd">        If None, then polarization must be a parameter.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to</span>
+<span class="sd">        :py:class:`BaseGaussianNoise`; see that class for details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;single_template&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                 <span class="n">sample_rate</span><span class="o">=</span><span class="mi">32768</span><span class="p">,</span>
+                 <span class="n">marginalize_phase</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">variable_params</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_marginalization</span><span class="p">(</span>
+                                   <span class="n">variable_params</span><span class="p">,</span>
+                                   <span class="n">marginalize_phase</span><span class="o">=</span><span class="n">marginalize_phase</span><span class="p">,</span>
+                                   <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SingleTemplate</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">sample_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span>
+
+        <span class="c1"># Generate template waveforms</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">delta_f</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;REPLACE&#39;</span><span class="p">:</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;distance&#39;</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;distance&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;inclination&#39;</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;inclination&#39;</span><span class="p">)</span>
+
+        <span class="n">hp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_fd_waveform</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inclination</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">p</span><span class="p">)</span>
+
+        <span class="c1"># Extend template to high sample rate</span>
+        <span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">/</span> <span class="n">df</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">flen</span><span class="p">)</span>
+
+        <span class="c1"># Calculate high sample rate SNR time series</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sh</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hh</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">det</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmin</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span>
+            <span class="n">fhigh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmax</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">df</span>
+            <span class="c1"># Extend data to high sample rate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">flen</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="n">snr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">norm</span> <span class="o">=</span> <span class="n">pyfilter</span><span class="o">.</span><span class="n">matched_filter_core</span><span class="p">(</span>
+                <span class="n">hp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                <span class="n">psd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psds</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+                <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">fhigh</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">df</span> <span class="o">*</span> <span class="n">snr</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">snr</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">snr</span> <span class="o">*</span> <span class="n">norm</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">hh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">pyfilter</span><span class="o">.</span><span class="n">sigmasq</span><span class="p">(</span>
+                <span class="n">hp</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psds</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+                <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">fhigh</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform</span> <span class="o">=</span> <span class="n">hp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">htfs</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Waveform phase / distance transformation factors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dts</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Retrict to analyzing around peaks if chosen and choose what</span>
+        <span class="c1"># ifos to draw from</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_peak_lock</span><span class="p">(</span><span class="n">snrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">snr</span><span class="p">,</span>
+                             <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span>
+                             <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_ifos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">snr</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_signal_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; The list of classes that this model supports in a multi-signal</span>
+<span class="sd">        likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if this model *can* be included in a multi-signal model.</span>
+        <span class="c1"># All marginalizations must currently be disabled to work!</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">marginalize_vector_params</span> <span class="ow">or</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_distance</span> <span class="ow">or</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_phase</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cannot use single template model inside of&quot;</span>
+                         <span class="s2">&quot;multi_signal if marginalizations are enabled&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="SingleTemplate.calculate_hihjs">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate.calculate_hihjs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_hihjs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Pre-calculate the hihj inner products on a grid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">h1</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">waveform</span>
+            <span class="n">h2</span> <span class="o">=</span> <span class="n">m2</span><span class="o">.</span><span class="n">waveform</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmin</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span>
+                <span class="n">fhigh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmax</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span>
+                <span class="n">h1h2</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pyfilter</span><span class="o">.</span><span class="n">matched_filter_core</span><span class="p">(</span>
+                <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span>
+                <span class="n">psd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">psds</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+                <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">fhigh</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)][</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">*</span> <span class="n">h1h2</span></div>
+
+
+<div class="viewcode-block" id="SingleTemplate.multi_loglikelihood">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate.multi_loglikelihood">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate a multi-model (signal) likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="n">models</span>
+        <span class="n">loglr</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># handle sum[&lt;d|h_i&gt; - 0.5 &lt;h_i|h_i&gt;]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+            <span class="n">loglr</span> <span class="o">+=</span> <span class="n">m</span><span class="o">.</span><span class="n">loglr</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;hihj&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_hihjs</span><span class="p">(</span><span class="n">models</span><span class="p">)</span>
+
+        <span class="c1"># finally add in the lognl term from this model</span>
+        <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">hihj_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)][</span><span class="n">det</span><span class="p">]</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">dts</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">-</span> <span class="n">m2</span><span class="o">.</span><span class="n">dts</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+</span> <span class="n">hihj_vec</span><span class="o">.</span><span class="n">start_time</span>
+                <span class="k">if</span> <span class="n">dt</span> <span class="o">&lt;</span> <span class="n">hihj_vec</span><span class="o">.</span><span class="n">start_time</span><span class="p">:</span>
+                    <span class="n">dt</span> <span class="o">+=</span> <span class="n">hihj_vec</span><span class="o">.</span><span class="n">duration</span>
+
+                <span class="n">h1h2</span> <span class="o">=</span> <span class="n">hihj_vec</span><span class="o">.</span><span class="n">at_time</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">nearest_sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">h1h2</span> <span class="o">*=</span> <span class="n">m1</span><span class="o">.</span><span class="n">htfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">*</span> <span class="n">m2</span><span class="o">.</span><span class="n">htfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span>
+                <span class="n">loglr</span> <span class="o">+=</span> <span class="o">-</span> <span class="n">h1h2</span><span class="o">.</span><span class="n">real</span> <span class="c1"># This is -0.5 * re(&lt;h1|h2&gt; + &lt;h2|h1&gt;)</span>
+        <span class="k">return</span> <span class="n">loglr</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lognl</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># calculate &lt;d-h|d-h&gt; = &lt;h|h&gt; - 2&lt;h|d&gt; + &lt;d|d&gt; up to a constant</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+
+        <span class="n">phase</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;coa_phase&#39;</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;coa_phase&#39;</span><span class="p">])</span>
+
+        <span class="n">sh_total</span> <span class="o">=</span> <span class="n">hh_total</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">ic</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">])</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">ic</span> <span class="o">*</span> <span class="n">ic</span><span class="p">)</span>
+        <span class="n">pol_phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr_draw</span><span class="p">(</span><span class="n">snrs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">snr</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sh</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">],</span>
+                                                            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dts</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span>
+
+            <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">],</span>
+                                                   <span class="mi">0</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">])</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">fc</span><span class="p">)</span> <span class="o">*</span> <span class="n">pol_phase</span>
+
+            <span class="c1"># Note, this includes complex conjugation already</span>
+            <span class="c1"># as our stored inner products were hp* x data</span>
+            <span class="n">htf</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">real</span> <span class="o">*</span> <span class="n">ip</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">f</span><span class="o">.</span><span class="n">imag</span> <span class="o">*</span> <span class="n">ic</span><span class="p">)</span> <span class="o">/</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">phase</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">htfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">htf</span>
+            <span class="n">sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">at_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dts</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">interpolate</span><span class="o">=</span><span class="s1">&#39;quadratic&#39;</span><span class="p">)</span>
+            <span class="n">sh_total</span> <span class="o">+=</span> <span class="n">sh</span> <span class="o">*</span> <span class="n">htf</span>
+            <span class="n">hh_total</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">htf</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.0</span>
+
+        <span class="n">loglr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loglr</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

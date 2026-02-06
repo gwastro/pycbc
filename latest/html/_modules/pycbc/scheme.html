@@ -1,0 +1,562 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.scheme &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.scheme</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.scheme</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014  Alex Nitz, Andrew Miller</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides python contexts that set the default behavior for PyCBC</span>
+<span class="sd">objects.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ctypes_library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">use_mpi</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.scheme&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_SchemeManager</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">_single</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">_SchemeManager</span><span class="o">.</span><span class="n">_single</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;SchemeManager is a private class&quot;</span><span class="p">)</span>
+        <span class="n">_SchemeManager</span><span class="o">.</span><span class="n">_single</span><span class="o">=</span> <span class="bp">self</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">unlock</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">shift_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">state</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The state is locked, cannot shift schemes&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create the global processing scheme manager</span>
+<span class="n">mgr</span> <span class="o">=</span> <span class="n">_SchemeManager</span><span class="p">()</span>
+<span class="n">DefaultScheme</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">default_context</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="Scheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.Scheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Scheme</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Context that sets PyCBC objects to use CPU processing. &quot;&quot;&quot;</span>
+    <span class="n">_single</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">DefaultScheme</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">Scheme</span><span class="o">.</span><span class="n">_single</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Only one processing scheme can be used&quot;</span><span class="p">)</span>
+        <span class="n">Scheme</span><span class="o">.</span><span class="n">_single</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">mgr</span><span class="o">.</span><span class="n">shift_to</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">mgr</span><span class="o">.</span><span class="n">lock</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="n">mgr</span><span class="o">.</span><span class="n">unlock</span><span class="p">()</span>
+        <span class="n">mgr</span><span class="o">.</span><span class="n">shift_to</span><span class="p">(</span><span class="n">default_context</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">Scheme</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Scheme</span><span class="o">.</span><span class="n">_single</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<span class="n">_cuda_cleanup_list</span><span class="o">=</span><span class="p">[]</span>
+
+<div class="viewcode-block" id="register_clean_cuda">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.register_clean_cuda">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_clean_cuda</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
+    <span class="n">_cuda_cleanup_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">function</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="clean_cuda">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.clean_cuda">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">clean_cuda</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="c1">#Before cuda context is destroyed, all item destructions dependent on cuda</span>
+    <span class="c1"># must take place. This calls all functions that have been registered</span>
+    <span class="c1"># with _register_clean_cuda() in reverse order</span>
+    <span class="c1">#So the last one registered, is the first one cleaned</span>
+    <span class="n">_cuda_cleanup_list</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">_cuda_cleanup_list</span><span class="p">:</span>
+        <span class="n">func</span><span class="p">()</span>
+
+    <span class="n">context</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycuda.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_context_caches</span>
+    <span class="n">clear_context_caches</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CUDAScheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.CUDAScheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CUDAScheme</span><span class="p">(</span><span class="n">Scheme</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Context that sets PyCBC objects to use a CUDA processing scheme. &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_num</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">Scheme</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">HAVE_CUDA</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Install PyCUDA to use CUDA processing&quot;</span><span class="p">)</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pycuda.driver</span>
+        <span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">Device</span><span class="p">(</span><span class="n">device_num</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">make_context</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="n">pycuda</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">ctx_flags</span><span class="o">.</span><span class="n">SCHED_BLOCKING_SYNC</span><span class="p">)</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">atexit</span>
+        <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">clean_cuda</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CUPYScheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.CUPYScheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CUPYScheme</span><span class="p">(</span><span class="n">Scheme</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scheme for using CUPY.</span>
+
+<span class="sd">    Supports using CUPY with MPI. If MPI is enabled, will use all available</span>
+<span class="sd">    devices. The environment variable `CUDA_VISIBLE_DEVICES` can be used to</span>
+<span class="sd">    restrict the devices used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    device_num : int, optional</span>
+<span class="sd">        The device number to use. If not provided, will use the default, 0.</span>
+<span class="sd">        Should not be provided when using MPI to parallelize across devices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_num</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span> <span class="c1"># Fail now if cupy is not there.</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">cupy.cuda</span>
+
+        <span class="n">do_mpi</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">use_mpi</span><span class="p">(</span><span class="n">require_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">device_num</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">do_mpi</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;MPI is enabled, but a device number was provided.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">device_num</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">do_mpi</span><span class="p">:</span>
+            <span class="c1"># Logical device numbers will always be 0, 1, 2, ... etc. irrespective</span>
+            <span class="c1"># of the physical device numbers.</span>
+            <span class="n">device_num</span> <span class="o">=</span> <span class="n">rank</span> <span class="o">%</span> <span class="n">cupy</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">getDeviceCount</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;MPI enabled, using CUDA device </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">device_num</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">device_num</span> <span class="o">=</span> <span class="n">device_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cuda_device</span> <span class="o">=</span> <span class="n">cupy</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">Device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device_num</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cuda_device</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;You are using the CUPY GPU backend for PyCBC. This backend is &quot;</span>
+            <span class="s2">&quot;still only a prototype. It may be useful for your application &quot;</span>
+            <span class="s2">&quot;but it may fail unexpectedly, run slowly, or not give correct &quot;</span>
+            <span class="s2">&quot;output. Please do contribute to the effort to develop this &quot;</span>
+            <span class="s2">&quot;further.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cuda_device</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CPUScheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.CPUScheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CPUScheme</span><span class="p">(</span><span class="n">Scheme</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_threads</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_threads</span><span class="o">=</span><span class="n">num_threads</span>
+        <span class="k">elif</span> <span class="n">num_threads</span> <span class="o">==</span> <span class="s1">&#39;env&#39;</span> <span class="ow">and</span> <span class="s2">&quot;PYCBC_NUM_THREADS&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PYCBC_NUM_THREADS&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">multiprocessing</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_threads</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_libgomp</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Scheme</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_libgomp</span> <span class="o">=</span> <span class="n">get_ctypes_library</span><span class="p">(</span><span class="s2">&quot;gomp&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;gomp&#39;</span><span class="p">],</span>
+                                               <span class="n">mode</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">RTLD_GLOBAL</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c1"># Should we fail or give a warning if we cannot import</span>
+            <span class="c1"># libgomp? Seems to work even for MKL scheme, but</span>
+            <span class="c1"># not entirely sure why...</span>
+            <span class="k">pass</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OMP_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_threads</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgomp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_libgomp</span><span class="o">.</span><span class="n">omp_set_num_threads</span><span class="p">(</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_threads</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;OMP_NUM_THREADS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_libgomp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_libgomp</span><span class="o">.</span><span class="n">omp_set_num_threads</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Scheme</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MKLScheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.MKLScheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MKLScheme</span><span class="p">(</span><span class="n">CPUScheme</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">CPUScheme</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_threads</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">HAVE_MKL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t find MKL libraries&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NumpyScheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.NumpyScheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NumpyScheme</span><span class="p">(</span><span class="n">CPUScheme</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<span class="n">scheme_prefix</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">CUDAScheme</span><span class="p">:</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="n">CPUScheme</span><span class="p">:</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">CUPYScheme</span><span class="p">:</span> <span class="s2">&quot;cupy&quot;</span><span class="p">,</span>
+    <span class="n">MKLScheme</span><span class="p">:</span> <span class="s2">&quot;mkl&quot;</span><span class="p">,</span>
+    <span class="n">NumpyScheme</span><span class="p">:</span> <span class="s2">&quot;numpy&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">_scheme_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">scheme_prefix</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+<span class="n">_default_scheme_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PYCBC_SCHEME&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">_default_scheme_class</span> <span class="o">=</span> <span class="n">_scheme_map</span><span class="p">[</span><span class="n">_default_scheme_prefix</span><span class="p">]</span>
+<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="s2">&quot;PYCBC_SCHEME=</span><span class="si">{!r}</span><span class="s2"> not recognised, please select one of: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">_default_scheme_prefix</span><span class="p">,</span>
+            <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="n">_scheme_map</span><span class="p">)),</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="DefaultScheme">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.DefaultScheme">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DefaultScheme</span><span class="p">(</span><span class="n">_default_scheme_class</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<span class="n">default_context</span> <span class="o">=</span> <span class="n">DefaultScheme</span><span class="p">()</span>
+<span class="n">mgr</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="n">default_context</span>
+<span class="n">scheme_prefix</span><span class="p">[</span><span class="n">DefaultScheme</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_scheme_prefix</span>
+
+<div class="viewcode-block" id="current_prefix">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.current_prefix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">current_prefix</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">scheme_prefix</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="p">)]</span></div>
+
+
+<span class="n">_import_cache</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="viewcode-block" id="schemed">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.schemed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">schemed</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">scheming_function</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_scheming_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_import_cache</span><span class="p">[</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="p">][</span><span class="n">func</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">exc_errors</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">sch</span> <span class="ow">in</span> <span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">backend</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="n">scheme_prefix</span><span class="p">[</span><span class="n">sch</span><span class="p">],</span>
+                                             <span class="n">fromlist</span><span class="o">=</span><span class="p">[</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">])</span>
+                        <span class="n">schemed_fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">exc_errors</span> <span class="o">+=</span> <span class="p">[</span><span class="n">e</span><span class="p">]</span>
+                        <span class="k">continue</span>
+
+                    <span class="k">if</span> <span class="n">mgr</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_import_cache</span><span class="p">:</span>
+                        <span class="n">_import_cache</span><span class="p">[</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+                    <span class="n">_import_cache</span><span class="p">[</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="p">][</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="n">schemed_fn</span>
+
+                    <span class="k">return</span> <span class="n">schemed_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+
+                <span class="n">err</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to find implementation of </span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+                       <span class="sa">f</span><span class="s2">&quot;for </span><span class="si">{</span><span class="n">current_prefix</span><span class="p">()</span><span class="si">}</span><span class="s2"> scheme. &quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">emsg</span> <span class="ow">in</span> <span class="n">exc_errors</span><span class="p">:</span>
+                    <span class="n">err</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">emsg</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_scheming_function</span>
+
+    <span class="k">return</span> <span class="n">scheming_function</span></div>
+
+
+<div class="viewcode-block" id="cpuonly">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.cpuonly">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cpuonly</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cpuonly</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="p">),</span> <span class="n">CPUScheme</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span>
+                            <span class="s2">&quot; can only be called from a CPU processing scheme.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_cpuonly</span></div>
+
+
+<div class="viewcode-block" id="insert_processing_option_group">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.insert_processing_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_processing_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to choose a processing scheme. This should be used</span>
+<span class="sd">    if your program supports the ability to select the processing scheme.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">processing_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Options for selecting the&quot;</span>
+                                   <span class="s2">&quot; processing scheme in this program.&quot;</span><span class="p">)</span>
+    <span class="n">processing_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--processing-scheme&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The choice of processing scheme. &quot;</span>
+                           <span class="s2">&quot;Choices are &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">scheme_prefix</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span> <span class="o">+</span>
+                           <span class="s2">&quot;. (optional for CPU scheme) The number of &quot;</span>
+                           <span class="s2">&quot;execution threads &quot;</span>
+                           <span class="s2">&quot;can be indicated by cpu:NUM_THREADS, &quot;</span>
+                           <span class="s2">&quot;where NUM_THREADS &quot;</span>
+                           <span class="s2">&quot;is an integer. The default is a single thread. &quot;</span>
+                           <span class="s2">&quot;If the scheme is provided as cpu:env, the number &quot;</span>
+                           <span class="s2">&quot;of threads can be provided by the PYCBC_NUM_THREADS &quot;</span>
+                           <span class="s2">&quot;environment variable. If the environment variable &quot;</span>
+                           <span class="s2">&quot;is not set, the number of threads matches the number &quot;</span>
+                           <span class="s2">&quot;of logical cores. &quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+    <span class="n">processing_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--processing-device-id&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(optional) ID of GPU to use for accelerated &quot;</span>
+                           <span class="s2">&quot;processing&quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="from_cli">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the command line options and returns a processing scheme.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt: object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with</span>
+<span class="sd">        the required attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ctx: Scheme</span>
+<span class="sd">        Returns the requested processing scheme.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scheme_str</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">processing_scheme</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">scheme_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running with CUDA support&quot;</span><span class="p">)</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">CUDAScheme</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">processing_device_id</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;mkl&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scheme_str</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">numt</span> <span class="o">=</span> <span class="n">scheme_str</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">numt</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="n">numt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numt</span><span class="p">)</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">MKLScheme</span><span class="p">(</span><span class="n">num_threads</span><span class="o">=</span><span class="n">numt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">MKLScheme</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running with MKL support: </span><span class="si">%s</span><span class="s2"> threads&quot;</span> <span class="o">%</span> <span class="n">ctx</span><span class="o">.</span><span class="n">num_threads</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;cupy&#39;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running with CUPY support&quot;</span><span class="p">)</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">CUPYScheme</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">scheme_str</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">numt</span> <span class="o">=</span> <span class="n">scheme_str</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">numt</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="n">numt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numt</span><span class="p">)</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">CPUScheme</span><span class="p">(</span><span class="n">num_threads</span><span class="o">=</span><span class="n">numt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">CPUScheme</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running with CPU support: </span><span class="si">%s</span><span class="s2"> threads&quot;</span> <span class="o">%</span> <span class="n">ctx</span><span class="o">.</span><span class="n">num_threads</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ctx</span></div>
+
+
+<div class="viewcode-block" id="verify_processing_options">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.verify_processing_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_processing_options</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the  processing scheme options and verifies that they are</span>
+<span class="sd">       reasonable.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes.</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scheme_types</span> <span class="o">=</span> <span class="n">scheme_prefix</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">processing_scheme</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">scheme_types</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;(</span><span class="si">%s</span><span class="s2">) is not a valid scheme type.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChooseBySchemeDict">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.scheme.ChooseBySchemeDict">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ChooseBySchemeDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This class represents a dictionary whose purpose is to chose objects</span>
+<span class="sd">    based on their processing scheme. The keys are intended to be processing</span>
+<span class="sd">    schemes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheme</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">scheme</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

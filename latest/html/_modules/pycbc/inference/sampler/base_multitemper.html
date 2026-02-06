@@ -1,0 +1,568 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.base_multitemper &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.base_multitemper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.base_multitemper</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Provides constructor classes provide support for parallel tempered MCMC</span>
+<span class="sd">samplers.&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">autocorrelation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">loadfile</span>
+
+
+<div class="viewcode-block" id="MultiTemperedSupport">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiTemperedSupport</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides methods for supporting multi-tempered samplers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_ntemps</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ntemps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The number of temeratures that are set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ntemps</span>
+
+<div class="viewcode-block" id="MultiTemperedSupport.betas_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport.betas_from_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">betas_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads number of temperatures or betas from a config file.</span>
+
+<span class="sd">        This looks in the given section for:</span>
+
+<span class="sd">        * ``ntemps`` :</span>
+<span class="sd">            The number of temperatures to use. Either this, or</span>
+<span class="sd">            ``inverse-temperatures-file`` must be provided (but not both).</span>
+<span class="sd">        * ``inverse-temperatures-file`` :</span>
+<span class="sd">            Path to an hdf file containing the inverse temperatures (&quot;betas&quot;)</span>
+<span class="sd">            to use. The betas will be retrieved from the file&#39;s</span>
+<span class="sd">            ``.attrs[&#39;betas&#39;]``. Either this or ``ntemps`` must be provided</span>
+<span class="sd">            (but not both).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser instance</span>
+<span class="sd">            Config file object to parse.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to look in.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ntemps : int or None</span>
+<span class="sd">            The number of temperatures to use, if it was provided.</span>
+<span class="sd">        betas : array</span>
+<span class="sd">            The array of betas to use, if a inverse-temperatures-file was</span>
+<span class="sd">            provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;ntemps&quot;</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;inverse-temperatures-file&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify either ntemps or &quot;</span>
+                             <span class="s2">&quot;inverse-temperatures-file, not both.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;inverse-temperatures-file&quot;</span><span class="p">):</span>
+            <span class="c1"># get the path of the file containing inverse temperatures values.</span>
+            <span class="n">inverse_temperatures_file</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span>
+                                               <span class="s2">&quot;inverse-temperatures-file&quot;</span><span class="p">)</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">read_betas_from_hdf</span><span class="p">(</span><span class="n">inverse_temperatures_file</span><span class="p">)</span>
+            <span class="n">ntemps</span> <span class="o">=</span> <span class="n">betas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># get the number of temperatures</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">ntemps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;ntemps&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ntemps</span><span class="p">,</span> <span class="n">betas</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="read_betas_from_hdf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.read_betas_from_hdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_betas_from_hdf</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads inverse temperatures from the given file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get the path of the file containing inverse temperatures values.</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;betas&#39;</span><span class="p">])</span>
+            <span class="c1"># betas must be in decending order</span>
+            <span class="n">betas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">betas</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No attribute called betas&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">betas</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#              Functions for computing autocorrelation lengths</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.compute_acf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">chains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the autocorrleation function for independent MCMC chains with</span>
+<span class="sd">    parallel tempering.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of a samples file to compute ACFs for.</span>
+<span class="sd">    start_index : int, optional</span>
+<span class="sd">        The start index to compute the acl from. If None (the default),</span>
+<span class="sd">        will try to use the burn in iteration for each chain;</span>
+<span class="sd">        otherwise, will start at the first sample.</span>
+<span class="sd">    end_index : {None, int}</span>
+<span class="sd">        The end index to compute the acl to. If None, will go to the end</span>
+<span class="sd">        of the current iteration.</span>
+<span class="sd">    chains : optional, int or array</span>
+<span class="sd">        Calculate the ACF for only the given chains. If None (the</span>
+<span class="sd">        default) ACFs for all chains will be estimated.</span>
+<span class="sd">    parameters : optional, str or array</span>
+<span class="sd">        Calculate the ACF for only the given parameters. If None (the</span>
+<span class="sd">        default) will calculate the ACF for all of the model params.</span>
+<span class="sd">    temps : optional, (list of) int or &#39;all&#39;</span>
+<span class="sd">        The temperature index (or list of indices) to retrieve. If None</span>
+<span class="sd">        (the default), the ACF will only be computed for the coldest (= 0)</span>
+<span class="sd">        temperature chain. To compute an ACF for all temperates pass &#39;all&#39;,</span>
+<span class="sd">        or a list of all of the temperatures.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary parameter name -&gt; ACF arrays. The arrays have shape</span>
+<span class="sd">        ``ntemps x nchains x niterations``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">acfs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">parameters</span><span class="p">]</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="n">_get_temps_idx</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">temps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chains</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">chains</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">nchains</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="n">subacfs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">tk</span> <span class="ow">in</span> <span class="n">temps</span><span class="p">:</span>
+                <span class="n">subsubacfs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">:</span>
+                    <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                        <span class="n">param</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">thin_end</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="n">ci</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="n">tk</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+                    <span class="n">thisacf</span> <span class="o">=</span> <span class="n">autocorrelation</span><span class="o">.</span><span class="n">calculate_acf</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                    <span class="n">subsubacfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thisacf</span><span class="p">)</span>
+                <span class="c1"># stack the chains</span>
+                <span class="n">subacfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subsubacfs</span><span class="p">)</span>
+            <span class="c1"># stack the temperatures</span>
+            <span class="n">acfs</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">subacfs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">acfs</span></div>
+
+
+
+<div class="viewcode-block" id="compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.compute_acl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">min_nsamples</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the autocorrleation length for independent MCMC chains with</span>
+<span class="sd">    parallel tempering.</span>
+
+<span class="sd">    ACLs are calculated separately for each chain.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of a samples file to compute ACLs for.</span>
+<span class="sd">    start_index : {None, int}</span>
+<span class="sd">        The start index to compute the acl from. If None, will try to use</span>
+<span class="sd">        the number of burn-in iterations in the file; otherwise, will start</span>
+<span class="sd">        at the first sample.</span>
+<span class="sd">    end_index : {None, int}</span>
+<span class="sd">        The end index to compute the acl to. If None, will go to the end</span>
+<span class="sd">        of the current iteration.</span>
+<span class="sd">    min_nsamples : int, optional</span>
+<span class="sd">        Require a minimum number of samples to compute an ACL. If the</span>
+<span class="sd">        number of samples per walker is less than this, will just set to</span>
+<span class="sd">        ``inf``. Default is 10.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary of ntemps x nchains arrays of the ACLs of each</span>
+<span class="sd">        parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># following is a convenience function to calculate the acl for each chain</span>
+    <span class="c1"># defined here so that we can use map for this below</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getacl</span><span class="p">(</span><span class="n">si</span><span class="p">):</span>
+        <span class="c1"># si: the samples loaded for a specific chain; may have nans in it</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="n">si</span><span class="p">[</span><span class="o">~</span><span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">si</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">min_nsamples</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="n">autocorrelation</span><span class="o">.</span><span class="n">calculate_acl</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">acl</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">return</span> <span class="n">acl</span>
+    <span class="n">acls</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="n">tidx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">ntemps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span><span class="p">:</span>
+            <span class="n">these_acls</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">fp</span><span class="o">.</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">fp</span><span class="o">.</span><span class="n">nchains</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">tk</span> <span class="ow">in</span> <span class="n">tidx</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                    <span class="n">param</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">thin_end</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="n">tk</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+                <span class="c1"># flatten out the temperature</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+                <span class="c1"># samples now has shape nchains x maxiters</span>
+                <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">min_nsamples</span><span class="p">:</span>
+                    <span class="n">these_acls</span><span class="p">[</span><span class="n">tk</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">these_acls</span><span class="p">[</span><span class="n">tk</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">_getacl</span><span class="p">,</span> <span class="n">samples</span><span class="p">))</span>
+            <span class="n">acls</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">these_acls</span>
+        <span class="c1"># report the mean ACL: take the max over the temps and parameters</span>
+        <span class="n">act</span> <span class="o">=</span> <span class="n">acl_from_raw_acls</span><span class="p">(</span><span class="n">acls</span><span class="p">)</span><span class="o">*</span><span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">act</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">act</span><span class="p">)]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ACTs: min </span><span class="si">%s</span><span class="s2">, mean (of finite) </span><span class="si">%s</span><span class="s2">, max </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                     <span class="nb">str</span><span class="p">(</span><span class="n">act</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span>
+                     <span class="nb">str</span><span class="p">(</span><span class="n">finite</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span>
+                     <span class="nb">str</span><span class="p">(</span><span class="n">act</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">acls</span></div>
+
+
+
+<div class="viewcode-block" id="acl_from_raw_acls">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.acl_from_raw_acls">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">acl_from_raw_acls</span><span class="p">(</span><span class="n">acls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the ACL for one or more chains from a dictionary of ACLs.</span>
+
+<span class="sd">    This is for parallel tempered MCMCs in which the chains are independent</span>
+<span class="sd">    of each other.</span>
+
+<span class="sd">    The ACL for each chain is maximized over the temperatures and parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    acls : dict</span>
+<span class="sd">        Dictionary of parameter names -&gt; ntemps x nchains arrays of ACLs (the</span>
+<span class="sd">        thing returned by :py:func:`compute_acl`).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    array</span>
+<span class="sd">        The ACL of each chain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">acls</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ensemble_compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.ensemble_compute_acf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensemble_compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">per_walker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">temps</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the autocorrleation function for a parallel tempered, ensemble</span>
+<span class="sd">    MCMC.</span>
+
+<span class="sd">    By default, parameter values are averaged over all walkers at each</span>
+<span class="sd">    iteration. The ACF is then calculated over the averaged chain for each</span>
+<span class="sd">    temperature. An ACF per-walker will be returned instead if</span>
+<span class="sd">    ``per_walker=True``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of a samples file to compute ACFs for.</span>
+<span class="sd">    start_index : int, optional</span>
+<span class="sd">        The start index to compute the acl from. If None (the default), will</span>
+<span class="sd">        try to use the number of burn-in iterations in the file; otherwise,</span>
+<span class="sd">        will start at the first sample.</span>
+<span class="sd">    end_index : int, optional</span>
+<span class="sd">        The end index to compute the acl to. If None (the default), will go to</span>
+<span class="sd">        the end of the current iteration.</span>
+<span class="sd">    per_walker : bool, optional</span>
+<span class="sd">        Return the ACF for each walker separately. Default is False.</span>
+<span class="sd">    walkers : int or array, optional</span>
+<span class="sd">        Calculate the ACF using only the given walkers. If None (the</span>
+<span class="sd">        default) all walkers will be used.</span>
+<span class="sd">    parameters : str or array, optional</span>
+<span class="sd">        Calculate the ACF for only the given parameters. If None (the</span>
+<span class="sd">        default) will calculate the ACF for all of the model params.</span>
+<span class="sd">    temps : (list of) int or &#39;all&#39;, optional</span>
+<span class="sd">        The temperature index (or list of indices) to retrieve. If None</span>
+<span class="sd">        (the default), the ACF will only be computed for the coldest (= 0)</span>
+<span class="sd">        temperature chain. To compute an ACF for all temperates pass &#39;all&#39;,</span>
+<span class="sd">        or a list of all of the temperatures.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of arrays giving the ACFs for each parameter. If</span>
+<span class="sd">        ``per-walker`` is True, the arrays will have shape</span>
+<span class="sd">        ``ntemps x nwalkers x niterations``. Otherwise, the returned array</span>
+<span class="sd">        will have shape ``ntemps x niterations``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">acfs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">parameters</span><span class="p">]</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="n">_get_temps_idx</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">temps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="n">subacfs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">tk</span> <span class="ow">in</span> <span class="n">temps</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">per_walker</span><span class="p">:</span>
+                    <span class="c1"># just call myself with a single walker</span>
+                    <span class="k">if</span> <span class="n">walkers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">walkers</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">nwalkers</span><span class="p">)</span>
+                    <span class="n">arrays</span> <span class="o">=</span> <span class="p">[</span><span class="n">ensemble_compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span>
+                                                   <span class="n">start_index</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
+                                                   <span class="n">end_index</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span>
+                                                   <span class="n">per_walker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                   <span class="n">walkers</span><span class="o">=</span><span class="n">ii</span><span class="p">,</span>
+                                                   <span class="n">parameters</span><span class="o">=</span><span class="n">param</span><span class="p">,</span>
+                                                   <span class="n">temps</span><span class="o">=</span><span class="n">tk</span><span class="p">)[</span><span class="n">param</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+                              <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">walkers</span><span class="p">]</span>
+                    <span class="c1"># we&#39;ll stack all of the walker arrays to make a single</span>
+                    <span class="c1"># nwalkers x niterations array; when these are stacked</span>
+                    <span class="c1"># below, we&#39;ll get a ntemps x nwalkers x niterations</span>
+                    <span class="c1"># array</span>
+                    <span class="n">subacfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">arrays</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                        <span class="n">param</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
+                        <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span>
+                        <span class="n">walkers</span><span class="o">=</span><span class="n">walkers</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="n">tk</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+                    <span class="c1"># contract the walker dimension using the mean, and</span>
+                    <span class="c1"># flatten the (length 1) temp dimension</span>
+                    <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="n">thisacf</span> <span class="o">=</span> <span class="n">autocorrelation</span><span class="o">.</span><span class="n">calculate_acf</span><span class="p">(</span>
+                        <span class="n">samples</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                    <span class="n">subacfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thisacf</span><span class="p">)</span>
+            <span class="c1"># stack the temperatures</span>
+            <span class="n">acfs</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">subacfs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">acfs</span></div>
+
+
+
+<div class="viewcode-block" id="ensemble_compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.ensemble_compute_acl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensemble_compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">min_nsamples</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the autocorrleation length for a parallel tempered, ensemble</span>
+<span class="sd">    MCMC.</span>
+
+<span class="sd">    Parameter values are averaged over all walkers at each iteration and</span>
+<span class="sd">    temperature.  The ACL is then calculated over the averaged chain.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of a samples file to compute ACLs for.</span>
+<span class="sd">    start_index : int, optional</span>
+<span class="sd">        The start index to compute the acl from. If None (the default), will</span>
+<span class="sd">        try to use the number of burn-in iterations in the file; otherwise,</span>
+<span class="sd">        will start at the first sample.</span>
+<span class="sd">    end_index : int, optional</span>
+<span class="sd">        The end index to compute the acl to. If None, will go to the end</span>
+<span class="sd">        of the current iteration.</span>
+<span class="sd">    min_nsamples : int, optional</span>
+<span class="sd">        Require a minimum number of samples to compute an ACL. If the</span>
+<span class="sd">        number of samples per walker is less than this, will just set to</span>
+<span class="sd">        ``inf``. Default is 10.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary of ntemps-long arrays of the ACLs of each parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">acls</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">end_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_index</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">niterations</span>
+        <span class="n">tidx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">ntemps</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span><span class="p">:</span>
+            <span class="n">these_acls</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">ntemps</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">tk</span> <span class="ow">in</span> <span class="n">tidx</span><span class="p">:</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                    <span class="n">param</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">thin_end</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="n">tk</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="n">param</span><span class="p">]</span>
+                <span class="c1"># contract the walker dimension using the mean, and flatten</span>
+                <span class="c1"># the (length 1) temp dimension</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">min_nsamples</span><span class="p">:</span>
+                    <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">acl</span> <span class="o">=</span> <span class="n">autocorrelation</span><span class="o">.</span><span class="n">calculate_acl</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">acl</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+                <span class="n">these_acls</span><span class="p">[</span><span class="n">tk</span><span class="p">]</span> <span class="o">=</span> <span class="n">acl</span>
+            <span class="n">acls</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">these_acls</span>
+        <span class="n">maxacl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">acls</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ACT: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">maxacl</span><span class="o">*</span><span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">acls</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_temps_idx</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">temps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the indices of temperatures to load for computing ACF.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">temps</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="p">[</span><span class="n">temps</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">temps</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">ntemps</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">temps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">temps</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">temps</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,899 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.detector.ground &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.detector.ground</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.detector.ground</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: UTF-8 -*-</span>
+
+<span class="c1"># Copyright (C) 2012  Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;This module provides utilities for calculating detector responses and timing</span>
+<span class="sd">between ground-based observatories.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">lal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">constants</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">units</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.coordinates.matrix_utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">rotation_matrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.units.si</span><span class="w"> </span><span class="kn">import</span> <span class="n">sday</span><span class="p">,</span> <span class="n">meter</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.libutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">InterpolatingConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.time</span><span class="w"> </span><span class="kn">import</span> <span class="n">gmst_accurate</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.detector&#39;</span><span class="p">)</span>
+
+<span class="c1"># Response functions are modelled after those in lalsuite and as also</span>
+<span class="c1"># presented in https://arxiv.org/pdf/gr-qc/0008066.pdf</span>
+
+<div class="viewcode-block" id="get_available_detectors">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.get_available_detectors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_available_detectors</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; List the available detectors &quot;&quot;&quot;</span>
+    <span class="n">dets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_ground_detectors</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">dets</span></div>
+
+
+<div class="viewcode-block" id="get_available_lal_detectors">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.get_available_lal_detectors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_available_lal_detectors</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return list of detectors known in the currently sourced lalsuite.</span>
+<span class="sd">    This function will query lalsuite about which detectors are known to</span>
+<span class="sd">    lalsuite. Detectors are identified by a two character string e.g. &#39;K1&#39;,</span>
+<span class="sd">    but also by a longer, and clearer name, e.g. KAGRA. This function returns</span>
+<span class="sd">    both. As LAL doesn&#39;t really expose this functionality we have to make some</span>
+<span class="sd">    assumptions about how this information is stored in LAL. Therefore while</span>
+<span class="sd">    we hope this function will work correctly, it&#39;s possible it will need</span>
+<span class="sd">    updating in the future. Better if lal would expose this information</span>
+<span class="sd">    properly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ld</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="vm">__dict__</span>
+    <span class="n">known_lal_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">ld</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;DETECTOR_PREFIX&quot;</span> <span class="ow">in</span> <span class="n">j</span><span class="p">]</span>
+    <span class="n">known_prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ld</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">known_lal_names</span><span class="p">]</span>
+    <span class="n">known_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">ld</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;PREFIX&#39;</span><span class="p">,</span> <span class="s1">&#39;NAME&#39;</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">known_lal_names</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">known_prefixes</span><span class="p">,</span> <span class="n">known_names</span><span class="p">))</span></div>
+
+
+<span class="n">_ground_detectors</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="add_detector_on_earth">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.add_detector_on_earth">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_detector_on_earth</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span><span class="p">,</span>
+                          <span class="n">yangle</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">xangle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">xlength</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="n">ylength</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span>
+                          <span class="n">xaltitude</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">yaltitude</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add a new detector on the earth</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    name: str</span>
+<span class="sd">        two-letter name to identify the detector</span>
+<span class="sd">    longitude: float</span>
+<span class="sd">        Longitude in radians using geodetic coordinates of the detector</span>
+<span class="sd">    latitude: float</span>
+<span class="sd">        Latitude in radians using geodetic coordinates of the detector</span>
+<span class="sd">    yangle: float</span>
+<span class="sd">        Azimuthal angle of the y-arm (angle drawn from pointing north)</span>
+<span class="sd">    xangle: float</span>
+<span class="sd">        Azimuthal angle of the x-arm (angle drawn from point north). If not set</span>
+<span class="sd">        we assume a right angle detector following the right-hand rule.</span>
+<span class="sd">    xaltitude: float</span>
+<span class="sd">        The altitude angle of the x-arm measured from the local horizon.</span>
+<span class="sd">    yaltitude: float</span>
+<span class="sd">        The altitude angle of the y-arm measured from the local horizon.</span>
+<span class="sd">    height: float</span>
+<span class="sd">        The height in meters of the detector above the standard</span>
+<span class="sd">        reference ellipsoidal earth</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">xangle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># assume right angle detector if no separate xarm direction given</span>
+        <span class="n">xangle</span> <span class="o">=</span> <span class="n">yangle</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="c1"># baseline response of a single arm pointed in the -X direction</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+    <span class="n">rm2</span> <span class="o">=</span> <span class="n">rotation_matrix</span><span class="p">(</span><span class="o">-</span><span class="n">longitude</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">rad</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)</span>
+    <span class="n">rm1</span> <span class="o">=</span> <span class="n">rotation_matrix</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="n">latitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">rad</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate response in earth centered coordinates</span>
+    <span class="c1"># by rotation of response in coordinates aligned</span>
+    <span class="c1"># with the detector arms</span>
+    <span class="n">resps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">vecs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">angle</span><span class="p">,</span> <span class="n">azi</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">yangle</span><span class="p">,</span> <span class="n">yaltitude</span><span class="p">),</span> <span class="p">(</span><span class="n">xangle</span><span class="p">,</span> <span class="n">xaltitude</span><span class="p">)]:</span>
+        <span class="n">rm0</span> <span class="o">=</span> <span class="n">rotation_matrix</span><span class="p">(</span><span class="n">angle</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">rad</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)</span>
+        <span class="n">rmN</span> <span class="o">=</span> <span class="n">rotation_matrix</span><span class="p">(</span><span class="o">-</span><span class="n">azi</span> <span class="o">*</span>  <span class="n">units</span><span class="o">.</span><span class="n">rad</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
+        <span class="n">rm</span> <span class="o">=</span> <span class="n">rm2</span> <span class="o">@</span> <span class="n">rm1</span> <span class="o">@</span> <span class="n">rm0</span> <span class="o">@</span> <span class="n">rmN</span>
+        <span class="c1"># apply rotation</span>
+        <span class="n">resps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rm</span> <span class="o">@</span> <span class="n">resp</span> <span class="o">@</span> <span class="n">rm</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">vecs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rm</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+
+    <span class="n">full_resp</span> <span class="o">=</span> <span class="p">(</span><span class="n">resps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">resps</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">EarthLocation</span><span class="o">.</span><span class="n">from_geodetic</span><span class="p">(</span><span class="n">longitude</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">rad</span><span class="p">,</span>
+                                                  <span class="n">latitude</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">rad</span><span class="p">,</span>
+                                                  <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">meter</span><span class="p">)</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">loc</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">loc</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">loc</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">value</span><span class="p">])</span>
+    <span class="n">_ground_detectors</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="n">loc</span><span class="p">,</span>
+                               <span class="s1">&#39;response&#39;</span><span class="p">:</span> <span class="n">full_resp</span><span class="p">,</span>
+                               <span class="s1">&#39;xresp&#39;</span><span class="p">:</span> <span class="n">resps</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                               <span class="s1">&#39;yresp&#39;</span><span class="p">:</span> <span class="n">resps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="s1">&#39;xvec&#39;</span><span class="p">:</span> <span class="n">vecs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                               <span class="s1">&#39;yvec&#39;</span><span class="p">:</span> <span class="n">vecs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                               <span class="s1">&#39;yangle&#39;</span><span class="p">:</span> <span class="n">yangle</span><span class="p">,</span>
+                               <span class="s1">&#39;xangle&#39;</span><span class="p">:</span> <span class="n">xangle</span><span class="p">,</span>
+                               <span class="s1">&#39;height&#39;</span><span class="p">:</span> <span class="n">height</span><span class="p">,</span>
+                               <span class="s1">&#39;xaltitude&#39;</span><span class="p">:</span> <span class="n">xaltitude</span><span class="p">,</span>
+                               <span class="s1">&#39;yaltitude&#39;</span><span class="p">:</span> <span class="n">yaltitude</span><span class="p">,</span>
+                               <span class="s1">&#39;ylength&#39;</span><span class="p">:</span> <span class="n">ylength</span><span class="p">,</span>
+                               <span class="s1">&#39;xlength&#39;</span><span class="p">:</span> <span class="n">xlength</span><span class="p">,</span>
+                              <span class="p">}</span></div>
+
+
+<span class="c1"># Notation matches</span>
+<span class="c1"># Eq 4 of https://link.aps.org/accepted/10.1103/PhysRevD.96.084004</span>
+<div class="viewcode-block" id="single_arm_frequency_response">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.single_arm_frequency_response">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">single_arm_frequency_response</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">arm_length</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; The relative amplitude factor of the arm response due to</span>
+<span class="sd">    signal delay. This is relevant where the long-wavelength</span>
+<span class="sd">    approximation no longer applies)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.999</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">)</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">arm_length</span> <span class="o">/</span> <span class="n">constants</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mf">4.0</span> <span class="o">/</span> <span class="n">phase</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">phase</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">n</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">phase</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">phase</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">n</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">c</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span>  <span class="c1"># We&#39;ll make this relative to the static resp</span></div>
+
+
+<div class="viewcode-block" id="load_detector_config">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.load_detector_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_detector_config</span><span class="p">(</span><span class="n">config_files</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add custom detectors from a configuration file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config_files: str or list of strs</span>
+<span class="sd">        The config file(s) which specify new detectors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">methods</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;earth_normal&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">add_detector_on_earth</span><span class="p">,</span>
+                                <span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">,</span> <span class="s1">&#39;latitude&#39;</span><span class="p">])}</span>
+    <span class="n">conf</span> <span class="o">=</span> <span class="n">InterpolatingConfigParser</span><span class="p">(</span><span class="n">config_files</span><span class="p">)</span>
+    <span class="n">dets</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s1">&#39;detector&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">dets</span><span class="p">:</span>
+        <span class="n">kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">conf</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s1">&#39;detector-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">)))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">method</span><span class="p">,</span> <span class="n">arg_names</span> <span class="o">=</span> <span class="n">methods</span><span class="p">[</span><span class="n">kwds</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;method&#39;</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing or unkown method, &quot;</span>
+                             <span class="s2">&quot;options are </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">methods</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">:</span>
+            <span class="n">kwds</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="n">kwds</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">arg_names</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;missing required detector argument&quot;</span>
+                             <span class="s2">&quot; </span><span class="si">{}</span><span class="s2"> are required&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg_names</span><span class="p">))</span>
+        <span class="n">method</span><span class="p">(</span><span class="n">det</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># prepopulate using detectors hardcoded into lalsuite</span>
+<span class="k">for</span> <span class="n">pref</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">get_available_lal_detectors</span><span class="p">():</span>
+    <span class="n">lalsim</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">libutils</span><span class="o">.</span><span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lalsimulation&#39;</span><span class="p">)</span>
+    <span class="n">lal_det</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">DetectorPrefixToLALDetector</span><span class="p">(</span><span class="n">pref</span><span class="p">)</span><span class="o">.</span><span class="n">frDetector</span>
+    <span class="n">add_detector_on_earth</span><span class="p">(</span><span class="n">pref</span><span class="p">,</span>
+                          <span class="n">lal_det</span><span class="o">.</span><span class="n">vertexLongitudeRadians</span><span class="p">,</span>
+                          <span class="n">lal_det</span><span class="o">.</span><span class="n">vertexLatitudeRadians</span><span class="p">,</span>
+                          <span class="n">height</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">vertexElevation</span><span class="p">,</span>
+                          <span class="n">xangle</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">xArmAzimuthRadians</span><span class="p">,</span>
+                          <span class="n">yangle</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">yArmAzimuthRadians</span><span class="p">,</span>
+                          <span class="n">xlength</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">xArmMidpoint</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+                          <span class="n">ylength</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">yArmMidpoint</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+                          <span class="n">xaltitude</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">xArmAltitudeRadians</span><span class="p">,</span>
+                          <span class="n">yaltitude</span><span class="o">=</span><span class="n">lal_det</span><span class="o">.</span><span class="n">yArmAltitudeRadians</span><span class="p">,</span>
+                          <span class="p">)</span>
+
+<span class="c1"># autoload detector config files</span>
+<span class="k">if</span> <span class="s1">&#39;PYCBC_DETECTOR_CONFIG&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="n">load_detector_config</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PYCBC_DETECTOR_CONFIG&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="Detector">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Detector</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A gravitational wave detector</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="o">=</span><span class="mf">1126259462.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Create class representing a gravitational-wave detector</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        detector_name: str</span>
+<span class="sd">            The two-character detector string, i.e. H1, L1, V1, K1, I1</span>
+<span class="sd">        reference_time: float</span>
+<span class="sd">            Default is time of GW150914. In this case, the earth&#39;s rotation</span>
+<span class="sd">        will be estimated from a reference time. If &#39;None&#39;, we will</span>
+<span class="sd">        calculate the time for each gps time requested explicitly</span>
+<span class="sd">        using a slower but higher precision method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span>
+        
+        <span class="n">lal_detectors</span> <span class="o">=</span> <span class="p">[</span><span class="n">pfx</span> <span class="k">for</span> <span class="n">pfx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">get_available_lal_detectors</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="n">detector_name</span> <span class="ow">in</span> <span class="n">_ground_detectors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">_ground_detectors</span><span class="p">[</span><span class="n">detector_name</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;response&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;location&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unkown detector </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector_name</span><span class="p">))</span>
+
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">EarthLocation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                        <span class="n">unit</span><span class="o">=</span><span class="n">meter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span> <span class="o">=</span> <span class="n">loc</span><span class="o">.</span><span class="n">lat</span><span class="o">.</span><span class="n">rad</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">longitude</span> <span class="o">=</span> <span class="n">loc</span><span class="o">.</span><span class="n">lon</span><span class="o">.</span><span class="n">rad</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_time</span> <span class="o">=</span> <span class="n">reference_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sday</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gmst_reference</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="Detector.set_gmst_reference">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.set_gmst_reference">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_gmst_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sday</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sday</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gmst_reference</span> <span class="o">=</span> <span class="n">gmst_accurate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t get accurate sidereal time without GPS &quot;</span>
+                               <span class="s2">&quot;reference time!&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Detector.lal">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.lal">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return lal data type detector instance &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">lal</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">FrDetector</span><span class="p">()</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">vertexLongitudeRadians</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">longitude</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">vertexLatitudeRadians</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">vertexElevation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">]</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">xArmAzimuthRadians</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;xangle&#39;</span><span class="p">]</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">yArmAzimuthRadians</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;yangle&#39;</span><span class="p">]</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">xArmAltitudeRadians</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;xaltitude&#39;</span><span class="p">]</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">yArmAltitudeRadians</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;yaltitude&#39;</span><span class="p">]</span>
+
+        <span class="c1"># This is somewhat abused by lalsimulation at the moment</span>
+        <span class="c1"># to determine a filter kernel size. We set this only so that</span>
+        <span class="c1"># value gets a similar number of samples as other detectors</span>
+        <span class="c1"># it is used for nothing else</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">yArmMidpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;ylength&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">xArmMidpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;xlength&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">Detector</span><span class="p">()</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CreateDetector</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">lal</span><span class="o">.</span><span class="n">LALDETECTORTYPE_IFODIFF</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lal</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="k">return</span> <span class="n">r</span></div>
+
+
+<div class="viewcode-block" id="Detector.gmst_estimate">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.gmst_estimate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gmst_estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gps_time</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">gmst_accurate</span><span class="p">(</span><span class="n">gps_time</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmst_reference</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_gmst_reference</span><span class="p">()</span>
+        <span class="n">dphase</span> <span class="o">=</span> <span class="p">(</span><span class="n">gps_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference_time</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sday</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="n">gmst</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gmst_reference</span> <span class="o">+</span> <span class="n">dphase</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gmst</span></div>
+
+
+<div class="viewcode-block" id="Detector.light_travel_time_to_detector">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.light_travel_time_to_detector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">light_travel_time_to_detector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the light travel time from this detector</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        det: Detector</span>
+<span class="sd">            The other detector to determine the light travel time to.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        time: float</span>
+<span class="sd">            The light travel time in seconds</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">-</span> <span class="n">det</span><span class="o">.</span><span class="n">location</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">/</span> <span class="n">constants</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Detector.antenna_pattern">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.antenna_pattern">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">antenna_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">polarization</span><span class="p">,</span> <span class="n">t_gps</span><span class="p">,</span>
+                        <span class="n">frequency</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">polarization_type</span><span class="o">=</span><span class="s1">&#39;tensor&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the detector response.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        right_ascension: float or numpy.ndarray</span>
+<span class="sd">            The right ascension of the source</span>
+<span class="sd">        declination: float or numpy.ndarray</span>
+<span class="sd">            The declination of the source</span>
+<span class="sd">        polarization: float or numpy.ndarray</span>
+<span class="sd">            The polarization angle of the source</span>
+<span class="sd">        polarization_type: string flag: Tensor, Vector or Scalar</span>
+<span class="sd">            The gravitational wave polarizations. Default: &#39;Tensor&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fplus(default) or fx or fb : float or numpy.ndarray</span>
+<span class="sd">            The plus or vector-x or breathing polarization factor for this sky location / orientation</span>
+<span class="sd">        fcross(default) or fy or fl : float or numpy.ndarray</span>
+<span class="sd">            The cross or vector-y or longitudnal polarization factor for this sky location / orientation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t_gps</span><span class="p">,</span> <span class="n">lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">):</span>
+            <span class="n">t_gps</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">t_gps</span><span class="p">)</span>
+        <span class="n">gha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmst_estimate</span><span class="p">(</span><span class="n">t_gps</span><span class="p">)</span> <span class="o">-</span> <span class="n">right_ascension</span>
+
+        <span class="n">cosgha</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">gha</span><span class="p">)</span>
+        <span class="n">singha</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">gha</span><span class="p">)</span>
+        <span class="n">cosdec</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">declination</span><span class="p">)</span>
+        <span class="n">sindec</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">declination</span><span class="p">)</span>
+        <span class="n">cospsi</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">polarization</span><span class="p">)</span>
+        <span class="n">sinpsi</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">polarization</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">frequency</span><span class="p">:</span>
+            <span class="n">e0</span> <span class="o">=</span> <span class="n">cosdec</span> <span class="o">*</span> <span class="n">cosgha</span>
+            <span class="n">e1</span> <span class="o">=</span> <span class="n">cosdec</span> <span class="o">*</span> <span class="o">-</span><span class="n">singha</span>
+            <span class="n">e2</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">declination</span><span class="p">)</span>
+            <span class="n">nhat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e0</span><span class="p">,</span> <span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+
+            <span class="n">nx</span> <span class="o">=</span> <span class="n">nhat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;xvec&#39;</span><span class="p">])</span>
+            <span class="n">ny</span> <span class="o">=</span> <span class="n">nhat</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;yvec&#39;</span><span class="p">])</span>
+
+            <span class="n">rx</span> <span class="o">=</span> <span class="n">single_arm_frequency_response</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;xlength&#39;</span><span class="p">])</span>
+            <span class="n">ry</span> <span class="o">=</span> <span class="n">single_arm_frequency_response</span><span class="p">(</span><span class="n">frequency</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;ylength&#39;</span><span class="p">])</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="n">ry</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;yresp&#39;</span><span class="p">]</span> <span class="o">-</span>  <span class="n">rx</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;xresp&#39;</span><span class="p">]</span>
+            <span class="n">ttype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">response</span>
+            <span class="n">ttype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+
+        <span class="n">x0</span> <span class="o">=</span> <span class="o">-</span><span class="n">cospsi</span> <span class="o">*</span> <span class="n">singha</span> <span class="o">-</span> <span class="n">sinpsi</span> <span class="o">*</span> <span class="n">cosgha</span> <span class="o">*</span> <span class="n">sindec</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="o">-</span><span class="n">cospsi</span> <span class="o">*</span> <span class="n">cosgha</span> <span class="o">+</span> <span class="n">sinpsi</span> <span class="o">*</span> <span class="n">singha</span> <span class="o">*</span> <span class="n">sindec</span>
+        <span class="n">x2</span> <span class="o">=</span>  <span class="n">sinpsi</span> <span class="o">*</span> <span class="n">cosdec</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">y0</span> <span class="o">=</span>  <span class="n">sinpsi</span> <span class="o">*</span> <span class="n">singha</span> <span class="o">-</span> <span class="n">cospsi</span> <span class="o">*</span> <span class="n">cosgha</span> <span class="o">*</span> <span class="n">sindec</span>
+        <span class="n">y1</span> <span class="o">=</span>  <span class="n">sinpsi</span> <span class="o">*</span> <span class="n">cosgha</span> <span class="o">+</span> <span class="n">cospsi</span> <span class="o">*</span> <span class="n">singha</span> <span class="o">*</span> <span class="n">sindec</span>
+        <span class="n">y2</span> <span class="o">=</span>  <span class="n">cospsi</span> <span class="o">*</span> <span class="n">cosdec</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">y0</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">polarization_type</span> <span class="o">!=</span> <span class="s1">&#39;tensor&#39;</span><span class="p">:</span>
+            <span class="n">z0</span> <span class="o">=</span> <span class="o">-</span><span class="n">cosdec</span> <span class="o">*</span> <span class="n">cosgha</span>
+            <span class="n">z1</span> <span class="o">=</span> <span class="n">cosdec</span> <span class="o">*</span> <span class="n">singha</span>
+            <span class="n">z2</span> <span class="o">=</span> <span class="o">-</span><span class="n">sindec</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">z0</span><span class="p">,</span> <span class="n">z1</span><span class="p">,</span> <span class="n">z2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+            <span class="n">dz</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">polarization_type</span> <span class="o">==</span> <span class="s1">&#39;tensor&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">):</span>
+                <span class="n">fplus</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ttype</span><span class="p">)</span>
+                <span class="n">fcross</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ttype</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fplus</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">-</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">fcross</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">fplus</span><span class="p">,</span> <span class="n">fcross</span>
+
+        <span class="k">elif</span> <span class="n">polarization_type</span> <span class="o">==</span> <span class="s1">&#39;vector&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">):</span>
+                <span class="n">fx</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">x</span> <span class="o">*</span> <span class="n">dz</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ttype</span><span class="p">)</span>
+                <span class="n">fy</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dz</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ttype</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fx</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">x</span> <span class="o">*</span> <span class="n">dz</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">fy</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">dy</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dz</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">fx</span><span class="p">,</span> <span class="n">fy</span>
+
+        <span class="k">elif</span> <span class="n">polarization_type</span> <span class="o">==</span> <span class="s1">&#39;scalar&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">):</span>
+                <span class="n">fb</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">ttype</span><span class="p">)</span>
+                <span class="n">fl</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">dz</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fb</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">fl</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">dz</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">fb</span><span class="p">,</span> <span class="n">fl</span></div>
+
+
+<div class="viewcode-block" id="Detector.time_delay_from_earth_center">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.time_delay_from_earth_center">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_delay_from_earth_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">t_gps</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the time delay from the earth center</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_delay_from_location</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+                                             <span class="n">right_ascension</span><span class="p">,</span>
+                                             <span class="n">declination</span><span class="p">,</span>
+                                             <span class="n">t_gps</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Detector.time_delay_from_location">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.time_delay_from_location">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_delay_from_location</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_location</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span>
+                                 <span class="n">declination</span><span class="p">,</span> <span class="n">t_gps</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the time delay from the given location to detector for</span>
+<span class="sd">        a signal with the given sky location</span>
+<span class="sd">        In other words return `t1 - t2` where `t1` is the</span>
+<span class="sd">        arrival time in this detector and `t2` is the arrival time in the</span>
+<span class="sd">        other location.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_location : numpy.ndarray of coordinates</span>
+<span class="sd">            A detector instance.</span>
+<span class="sd">        right_ascension : float</span>
+<span class="sd">            The right ascension (in rad) of the signal.</span>
+<span class="sd">        declination : float</span>
+<span class="sd">            The declination (in rad) of the signal.</span>
+<span class="sd">        t_gps : float</span>
+<span class="sd">            The GPS time (in s) of the signal.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The arrival time difference between the detectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ra_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmst_estimate</span><span class="p">(</span><span class="n">t_gps</span><span class="p">)</span> <span class="o">-</span> <span class="n">right_ascension</span>
+        <span class="n">cosd</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">declination</span><span class="p">)</span>
+
+        <span class="n">e0</span> <span class="o">=</span> <span class="n">cosd</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">ra_angle</span><span class="p">)</span>
+        <span class="n">e1</span> <span class="o">=</span> <span class="n">cosd</span> <span class="o">*</span> <span class="o">-</span><span class="n">sin</span><span class="p">(</span><span class="n">ra_angle</span><span class="p">)</span>
+        <span class="n">e2</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">declination</span><span class="p">)</span>
+
+        <span class="n">ehat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e0</span><span class="p">,</span> <span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">other_location</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">location</span>
+        <span class="k">return</span> <span class="n">dx</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">ehat</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">/</span> <span class="n">constants</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="Detector.time_delay_from_detector">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.time_delay_from_detector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">time_delay_from_detector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other_detector</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span>
+                                 <span class="n">declination</span><span class="p">,</span> <span class="n">t_gps</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the time delay from the given to detector for a signal with</span>
+<span class="sd">        the given sky location; i.e. return `t1 - t2` where `t1` is the</span>
+<span class="sd">        arrival time in this detector and `t2` is the arrival time in the</span>
+<span class="sd">        other detector. Note that this would return the same value as</span>
+<span class="sd">        `time_delay_from_earth_center` if `other_detector` was geocentric.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other_detector : detector.Detector</span>
+<span class="sd">            A detector instance.</span>
+<span class="sd">        right_ascension : float</span>
+<span class="sd">            The right ascension (in rad) of the signal.</span>
+<span class="sd">        declination : float</span>
+<span class="sd">            The declination (in rad) of the signal.</span>
+<span class="sd">        t_gps : float</span>
+<span class="sd">            The GPS time (in s) of the signal.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The arrival time difference between the detectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_delay_from_location</span><span class="p">(</span><span class="n">other_detector</span><span class="o">.</span><span class="n">location</span><span class="p">,</span>
+                                             <span class="n">right_ascension</span><span class="p">,</span>
+                                             <span class="n">declination</span><span class="p">,</span>
+                                             <span class="n">t_gps</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="Detector.arrival_time">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.arrival_time">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">arrival_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ref_frame</span><span class="o">=</span><span class="s1">&#39;geocentric&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the arrival time in this detector.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ref_tc : {float, lal.LIGOTimeGPS}</span>
+<span class="sd">            The coalescence time to convert, defined in ref_frame</span>
+<span class="sd">        ra : float</span>
+<span class="sd">            Right ascension.</span>
+<span class="sd">        dec : float</span>
+<span class="sd">            Declination.</span>
+<span class="sd">        ref_frame : str (optional)</span>
+<span class="sd">            The detector to convert from, in which ref_tc is sampled. Default</span>
+<span class="sd">            &#39;geocentric&#39;.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float : </span>
+<span class="sd">            The coalescence time converted to the current detector frame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ref_frame</span> <span class="o">==</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">:</span>
+            <span class="c1"># from geocenter</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="n">ref_tc</span> <span class="o">+</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ref_tc</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ref_frame</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="c1"># no time shift; sampling in current det</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="n">ref_tc</span>
+        <span class="k">elif</span> <span class="n">ref_frame</span> <span class="ow">in</span> <span class="n">get_available_detectors</span><span class="p">():</span>
+            <span class="c1"># from sampling det</span>
+            <span class="n">refdet</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">ref_frame</span><span class="p">)</span>
+            <span class="n">tc</span> <span class="o">=</span> <span class="n">ref_tc</span> <span class="o">+</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">time_delay_from_detector</span><span class="p">(</span><span class="n">refdet</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">ref_tc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unrecognized ref_frame argument </span><span class="si">{</span><span class="n">ref_frame</span><span class="si">}</span><span class="s1">. &#39;</span>
+                             <span class="s1">&#39;Accepted arguments are: &quot;geocentric&quot;, &#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">get_available_detectors</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tc</span></div>
+
+
+<div class="viewcode-block" id="Detector.project_wave">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.project_wave">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">project_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">polarization</span><span class="p">,</span>
+                     <span class="n">method</span><span class="o">=</span><span class="s1">&#39;lal&#39;</span><span class="p">,</span>
+                     <span class="n">reference_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the strain of a waveform as measured by the detector.</span>
+<span class="sd">        Apply the time shift for the given detector relative to the assumed</span>
+<span class="sd">        geocentric frame and apply the antenna patterns to the plus and cross</span>
+<span class="sd">        polarizations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hp: pycbc.types.TimeSeries</span>
+<span class="sd">            Plus polarization of the GW</span>
+<span class="sd">        hc: pycbc.types.TimeSeries</span>
+<span class="sd">            Cross polarization of the GW</span>
+<span class="sd">        ra: float</span>
+<span class="sd">            Right ascension of source location</span>
+<span class="sd">        dec: float</span>
+<span class="sd">            Declination of source location</span>
+<span class="sd">        polarization: float</span>
+<span class="sd">            Polarization angle of the source</span>
+<span class="sd">        method: {&#39;lal&#39;, &#39;constant&#39;, &#39;vary_polarization&#39;}</span>
+<span class="sd">            The method to use for projecting the polarizations into the</span>
+<span class="sd">            detector frame. Default is &#39;lal&#39;.</span>
+<span class="sd">        reference_time: float, Optional</span>
+<span class="sd">            The time to use as, a reference for some methods of projection.</span>
+<span class="sd">            Used by &#39;constant&#39; and &#39;vary_polarization&#39; methods. Uses average</span>
+<span class="sd">            time if not provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The robust and most fefature rich method which includes</span>
+        <span class="c1"># time changing antenna patterns and doppler shifts due to the</span>
+        <span class="c1"># earth rotation and orbit</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;lal&#39;</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">lalsimulation</span>
+            <span class="n">h_lal</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">SimDetectorStrainREAL8TimeSeries</span><span class="p">(</span>
+                    <span class="n">hp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">lal</span><span class="p">(),</span> <span class="n">hc</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">lal</span><span class="p">(),</span>
+                    <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">polarization</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lal</span><span class="p">())</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span>
+                    <span class="n">h_lal</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">h_lal</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">h_lal</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># &#39;constant&#39; assume fixed orientation relative to source over the</span>
+        <span class="c1"># duration of the signal, accurate for short duration signals</span>
+        <span class="c1"># &#39;fixed_polarization&#39; applies only time changing orientation</span>
+        <span class="c1"># but no doppler corrections</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="s1">&#39;vary_polarization&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">reference_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">rtime</span> <span class="o">=</span> <span class="n">reference_time</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># In many cases, one should set the reference time if using</span>
+                <span class="c1"># this method as we don&#39;t know where the signal is within</span>
+                <span class="c1"># the given time series. If not provided, we&#39;ll choose</span>
+                <span class="c1"># the midpoint time.</span>
+                <span class="n">rtime</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">start_time</span><span class="p">))</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span>
+                <span class="n">time</span> <span class="o">=</span> <span class="n">rtime</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;vary_polarization&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">)</span> <span class="ow">or</span>
+                   <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hc</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Waveform polarizations must be given&#39;</span>
+                                    <span class="s1">&#39; as time series for this method&#39;</span><span class="p">)</span>
+
+                <span class="c1"># this is more granular than needed, may be optimized later</span>
+                <span class="c1"># assume earth rotation in ~30 ms needed for earth ceneter</span>
+                <span class="c1"># to detector is completely negligible.</span>
+                <span class="n">time</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+            <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">polarization</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">rtime</span><span class="p">)</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">hp</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hc</span>
+            <span class="n">ts</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">+</span> <span class="n">dt</span>
+
+        <span class="c1"># add in only the correction for the time variance in the polarization</span>
+        <span class="c1"># due to the earth&#39;s rotation, no doppler correction applied</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unkown projection method </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="Detector.optimal_orientation">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.optimal_orientation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">optimal_orientation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_gps</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the optimal orientation in right ascension and declination</span>
+<span class="sd">           for a given GPS time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t_gps: float</span>
+<span class="sd">            Time in gps seconds</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ra: float</span>
+<span class="sd">            Right ascension that is optimally oriented for the detector</span>
+<span class="sd">        dec: float</span>
+<span class="sd">            Declination that is optimally oriented for the detector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">longitude</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gmst_estimate</span><span class="p">(</span><span class="n">t_gps</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span>
+        <span class="k">return</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span></div>
+
+
+<div class="viewcode-block" id="Detector.get_icrs_pos">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.get_icrs_pos">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_icrs_pos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Transforms GCRS frame to ICRS frame</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        loc: numpy.ndarray shape (3,1) units: AU</span>
+<span class="sd">             ICRS coordinates in cartesian system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">location</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">SkyCoord</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z</span><span class="o">=</span><span class="n">loc</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">unit</span><span class="o">=</span><span class="n">units</span><span class="o">.</span><span class="n">m</span><span class="p">,</span>
+                <span class="n">frame</span><span class="o">=</span><span class="s1">&#39;gcrs&#39;</span><span class="p">,</span> <span class="n">representation_type</span><span class="o">=</span><span class="s1">&#39;cartesian&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="s1">&#39;icrs&#39;</span><span class="p">)</span>
+        <span class="n">loc</span><span class="o">.</span><span class="n">representation_type</span> <span class="o">=</span> <span class="s1">&#39;cartesian&#39;</span>
+        <span class="n">conv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(((</span><span class="n">loc</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">AU</span><span class="p">)</span><span class="o">.</span><span class="n">decompose</span><span class="p">())</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">loc</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">loc</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">loc</span><span class="o">.</span><span class="n">z</span><span class="p">)])</span><span class="o">*</span><span class="n">conv</span>
+        <span class="k">return</span> <span class="n">loc</span></div>
+
+
+<div class="viewcode-block" id="Detector.effective_distance">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.Detector.effective_distance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">effective_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pol</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">inclination</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Distance scaled to account for amplitude factors</span>
+
+<span class="sd">        The effective distance of the source. This scales the distance so that</span>
+<span class="sd">        the amplitude is equal to a source which is optimally oriented with</span>
+<span class="sd">        respect to the detector. For fixed detector-frame intrinsic parameters</span>
+<span class="sd">        this is a measure of the expected signal strength.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        distance: float</span>
+<span class="sd">            Source luminosity distance in megaparsecs</span>
+<span class="sd">        ra: float</span>
+<span class="sd">            The right ascension in radians</span>
+<span class="sd">        dec: float</span>
+<span class="sd">            The declination in radians</span>
+<span class="sd">        pol: float</span>
+<span class="sd">            Polarization angle of the gravitational wave in radians</span>
+<span class="sd">        time: float</span>
+<span class="sd">            GPS time in seconds</span>
+<span class="sd">        inclination:</span>
+<span class="sd">            The inclination of the binary&#39;s orbital plane</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        eff_dist: float</span>
+<span class="sd">            The effective distance of the source</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pol</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="n">ic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">ic</span> <span class="o">*</span> <span class="n">ic</span><span class="p">)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="p">((</span><span class="n">fp</span> <span class="o">*</span> <span class="n">ip</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">fc</span> <span class="o">*</span> <span class="n">ic</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+        <span class="k">return</span> <span class="n">distance</span> <span class="o">/</span> <span class="n">scale</span></div>
+</div>
+
+
+<div class="viewcode-block" id="overhead_antenna_pattern">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.overhead_antenna_pattern">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">overhead_antenna_pattern</span><span class="p">(</span><span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">polarization</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the antenna pattern factors F+ and Fx as a function of sky</span>
+<span class="sd">    location and polarization angle for a hypothetical interferometer located</span>
+<span class="sd">    at the north pole. Angles are in radians. Declinations of ±π/2 correspond</span>
+<span class="sd">    to the normal to the detector plane (i.e. overhead and underneath) while</span>
+<span class="sd">    the point with zero right ascension and declination is the direction</span>
+<span class="sd">    of one of the interferometer arms.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    right_ascension: float</span>
+<span class="sd">    declination: float</span>
+<span class="sd">    polarization: float</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f_plus: float</span>
+<span class="sd">    f_cros: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># convert from declination coordinate to polar (angle dropped from north axis)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="n">declination</span>
+
+    <span class="n">f_plus</span>  <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span> <span class="o">*</span> \
+                <span class="n">cos</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">right_ascension</span><span class="p">)</span> <span class="o">*</span> <span class="n">cos</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">polarization</span><span class="p">)</span> <span class="o">-</span> \
+                <span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">right_ascension</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">polarization</span><span class="p">)</span>
+
+    <span class="n">f_cross</span> <span class="o">=</span>   <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span> <span class="o">*</span> \
+                <span class="n">cos</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">right_ascension</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span> <span class="n">polarization</span><span class="p">)</span> <span class="o">-</span> \
+                <span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">right_ascension</span><span class="p">)</span> <span class="o">*</span> <span class="n">cos</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">polarization</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">f_plus</span><span class="p">,</span> <span class="n">f_cross</span></div>
+
+
+
+<div class="viewcode-block" id="ppdets">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.ground.ppdets">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ppdets</span><span class="p">(</span><span class="n">ifos</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pretty-print a list (or set) of detectors: return a string listing</span>
+<span class="sd">    the given detectors alphabetically and separated by the given string</span>
+<span class="sd">    (comma by default).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">ifos</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s1">&#39;no detectors&#39;</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;Detector&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;get_available_detectors&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;get_available_lal_detectors&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;add_detector_on_earth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;single_arm_frequency_response&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ppdets&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;overhead_antenna_pattern&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;load_detector_config&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;_ground_detectors&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

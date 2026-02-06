@@ -1,0 +1,647 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;This module contains convenience utilities for manipulating waveforms</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">frexp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="kn">import</span> <span class="n">schemed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span>
+    <span class="n">complex_same_precision_as</span><span class="p">,</span> <span class="n">real_same_precision_as</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">PI</span>
+
+<div class="viewcode-block" id="ceilpow2">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.ceilpow2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ceilpow2</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;convenience function to determine a power-of-2 upper frequency limit&quot;&quot;&quot;</span>
+    <span class="n">signif</span><span class="p">,</span><span class="n">exponent</span> <span class="o">=</span> <span class="n">frexp</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">signif</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">signif</span> <span class="o">==</span> <span class="mf">0.5</span><span class="p">):</span>
+        <span class="n">exponent</span> <span class="o">-=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="n">exponent</span><span class="p">;</span></div>
+
+
+
+<div class="viewcode-block" id="coalign_waveforms">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.coalign_waveforms">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">coalign_waveforms</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">resize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return two time series which are aligned in time and phase.</span>
+
+<span class="sd">    The alignment is only to the nearest sample point and all changes to the</span>
+<span class="sd">    phase are made to the first input waveform. Waveforms should not be split</span>
+<span class="sd">    accross the vector boundary. If it is, please use roll or cyclic time shift</span>
+<span class="sd">    to ensure that the entire signal is contiguous in the time series.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h1: pycbc.types.TimeSeries</span>
+<span class="sd">        The first waveform to align.</span>
+<span class="sd">    h2: pycbc.types.TimeSeries</span>
+<span class="sd">        The second waveform to align.</span>
+<span class="sd">    psd: {None, pycbc.types.FrequencySeries}</span>
+<span class="sd">        A psd to weight the alignment</span>
+<span class="sd">    low_frequency_cutoff: {None, float}</span>
+<span class="sd">        The low frequency cutoff to weight the matching in Hz.</span>
+<span class="sd">    high_frequency_cutoff: {None, float}</span>
+<span class="sd">        The high frequency cutoff to weight the matching in Hz.</span>
+<span class="sd">    resize: Optional, {True, boolean}</span>
+<span class="sd">        If true, the vectors will be resized to match each other. If false,</span>
+<span class="sd">        they must be the same length and even in length</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    h1: pycbc.types.TimeSeries</span>
+<span class="sd">        The shifted waveform to align with h2</span>
+<span class="sd">    h2: pycbc.type.TimeSeries</span>
+<span class="sd">        The resized (if necessary) waveform to align with h1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">matched_filter</span>
+    <span class="n">mlen</span> <span class="o">=</span> <span class="n">ceilpow2</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">h1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">h2</span><span class="p">)))</span>
+
+    <span class="n">h1</span> <span class="o">=</span> <span class="n">h1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">h2</span> <span class="o">=</span> <span class="n">h2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">resize</span><span class="p">:</span>
+        <span class="n">h1</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">mlen</span><span class="p">)</span>
+        <span class="n">h2</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">mlen</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">h2</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">h2</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Time series must be the same size and even if you do &quot;</span>
+                         <span class="s2">&quot;not allow resizing&quot;</span><span class="p">)</span>
+
+    <span class="n">snr</span> <span class="o">=</span> <span class="n">matched_filter</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span>
+                         <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                         <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">l</span> <span class="o">=</span>  <span class="n">snr</span><span class="o">.</span><span class="n">abs_max_loc</span><span class="p">()</span>
+    <span class="n">rotation</span> <span class="o">=</span>  <span class="n">snr</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">snr</span><span class="p">[</span><span class="n">l</span><span class="p">])</span>
+    <span class="n">h1</span> <span class="o">=</span> <span class="p">(</span><span class="n">h1</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span> <span class="o">*</span> <span class="n">rotation</span><span class="p">)</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+    <span class="n">h1</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+
+    <span class="n">h1</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">h2</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">h2</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span></div>
+
+
+<div class="viewcode-block" id="phase_from_frequencyseries">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.phase_from_frequencyseries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">phase_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">remove_start_phase</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the phase from the given frequency-domain waveform. This assumes</span>
+<span class="sd">    that the waveform has been sampled finely enough that the phase cannot</span>
+<span class="sd">    change by more than pi radians between each step.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform to get the phase for; must be a complex frequency series.</span>
+<span class="sd">    remove_start_phase : {True, bool}</span>
+<span class="sd">        Subtract the initial phase before returning.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FrequencySeries</span>
+<span class="sd">        The phase of the waveform as a function of frequency.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">htilde</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">remove_start_phase</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">+=</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="amplitude_from_frequencyseries">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.amplitude_from_frequencyseries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">amplitude_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the amplitude of the given frequency-domain waveform as a</span>
+<span class="sd">    FrequencySeries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform to get the amplitude of.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FrequencySeries</span>
+<span class="sd">        The amplitude of the waveform as a function of frequency.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">htilde</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="time_from_frequencyseries">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.time_from_frequencyseries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">time_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">discont_threshold</span><span class="o">=</span><span class="mf">0.99</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes time as a function of frequency from the given</span>
+<span class="sd">    frequency-domain waveform. This assumes the stationary phase</span>
+<span class="sd">    approximation. Any frequencies lower than the first non-zero value in</span>
+<span class="sd">    htilde are assigned the time at the first non-zero value. Times for any</span>
+<span class="sd">    frequencies above the next-to-last non-zero value in htilde will be</span>
+<span class="sd">    assigned the time of the next-to-last non-zero value.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        Some waveform models (e.g., `SEOBNRv2_ROM_DoubleSpin`) can have</span>
+<span class="sd">        discontinuities in the phase towards the end of the waveform due to</span>
+<span class="sd">        numerical error. We therefore exclude any points that occur after a</span>
+<span class="sd">        discontinuity in the phase, as the time estimate becomes untrustworthy</span>
+<span class="sd">        beyond that point. What determines a discontinuity in the phase is set</span>
+<span class="sd">        by the `discont_threshold`. To turn this feature off, just set</span>
+<span class="sd">        `discont_threshold` to a value larger than pi (due to the unwrapping</span>
+<span class="sd">        of the phase, no two points can have a difference &gt; pi).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform to get the time evolution of; must be complex.</span>
+<span class="sd">    sample_frequencies : {None, array}</span>
+<span class="sd">        The frequencies at which the waveform is sampled. If None, will</span>
+<span class="sd">        retrieve from ``htilde.sample_frequencies``.</span>
+<span class="sd">    discont_threshold : {0.99*pi, float}</span>
+<span class="sd">        If the difference in the phase changes by more than this threshold,</span>
+<span class="sd">        it is considered to be a discontinuity. Default is 0.99*pi.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FrequencySeries</span>
+<span class="sd">        The time evolution of the waveform as a function of frequency.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sample_frequencies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sample_frequencies</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">phase_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">dphi</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="o">-</span><span class="n">dphi</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="p">))</span>
+    <span class="n">nzidx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">htilde</span><span class="o">.</span><span class="n">data</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">kmin</span><span class="p">,</span> <span class="n">kmax</span> <span class="o">=</span> <span class="n">nzidx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nzidx</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="c1"># exclude everything after a discontinuity</span>
+    <span class="n">discont_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dphi</span><span class="p">[</span><span class="n">kmin</span><span class="p">:])</span> <span class="o">&gt;=</span> <span class="n">discont_threshold</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">discont_idx</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">kmin</span> <span class="o">+</span> <span class="n">discont_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">time</span><span class="p">[:</span><span class="n">kmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">kmin</span><span class="p">]</span>
+    <span class="n">time</span><span class="p">[</span><span class="n">kmax</span><span class="p">:]</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">kmax</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">htilde</span><span class="p">)),</span>
+        <span class="n">delta_f</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="phase_from_polarizations">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.phase_from_polarizations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">phase_from_polarizations</span><span class="p">(</span><span class="n">h_plus</span><span class="p">,</span> <span class="n">h_cross</span><span class="p">,</span> <span class="n">remove_start_phase</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return gravitational wave phase</span>
+
+<span class="sd">    Return the gravitation-wave phase from the h_plus and h_cross</span>
+<span class="sd">    polarizations of the waveform. The returned phase is always</span>
+<span class="sd">    positive and increasing with an initial phase of 0.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h_plus : TimeSeries</span>
+<span class="sd">        An PyCBC TmeSeries vector that contains the plus polarization of the</span>
+<span class="sd">        gravitational waveform.</span>
+<span class="sd">    h_cross : TimeSeries</span>
+<span class="sd">        A PyCBC TmeSeries vector that contains the cross polarization of the</span>
+<span class="sd">        gravitational waveform.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GWPhase : TimeSeries</span>
+<span class="sd">        A TimeSeries containing the gravitational wave phase.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------s</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform import get_td_waveform, phase_from_polarizations</span>
+<span class="sd">    &gt;&gt;&gt; hp, hc = get_td_waveform(approximant=&quot;TaylorT4&quot;, mass1=10, mass2=10,</span>
+<span class="sd">                         f_lower=30, delta_t=1.0/4096)</span>
+<span class="sd">    &gt;&gt;&gt; phase = phase_from_polarizations(hp, hc)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">h_cross</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">h_plus</span><span class="o">.</span><span class="n">data</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+        <span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">h_plus</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">remove_start_phase</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">+=</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">h_plus</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">h_plus</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="amplitude_from_polarizations">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.amplitude_from_polarizations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">amplitude_from_polarizations</span><span class="p">(</span><span class="n">h_plus</span><span class="p">,</span> <span class="n">h_cross</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return gravitational wave amplitude</span>
+
+<span class="sd">    Return the gravitation-wave amplitude from the h_plus and h_cross</span>
+<span class="sd">    polarizations of the waveform.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h_plus : TimeSeries</span>
+<span class="sd">        An PyCBC TmeSeries vector that contains the plus polarization of the</span>
+<span class="sd">        gravitational waveform.</span>
+<span class="sd">    h_cross : TimeSeries</span>
+<span class="sd">        A PyCBC TmeSeries vector that contains the cross polarization of the</span>
+<span class="sd">        gravitational waveform.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GWAmplitude : TimeSeries</span>
+<span class="sd">        A TimeSeries containing the gravitational wave amplitude.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform import get_td_waveform, phase_from_polarizations</span>
+<span class="sd">    &gt;&gt;&gt; hp, hc = get_td_waveform(approximant=&quot;TaylorT4&quot;, mass1=10, mass2=10,</span>
+<span class="sd">                         f_lower=30, delta_t=1.0/4096)</span>
+<span class="sd">    &gt;&gt;&gt; amp = amplitude_from_polarizations(hp, hc)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="p">(</span><span class="n">h_plus</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">()</span> <span class="o">+</span> <span class="n">h_cross</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">())</span> <span class="o">**</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">h_plus</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">h_plus</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="frequency_from_polarizations">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.frequency_from_polarizations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">frequency_from_polarizations</span><span class="p">(</span><span class="n">h_plus</span><span class="p">,</span> <span class="n">h_cross</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return gravitational wave frequency</span>
+
+<span class="sd">    Return the gravitation-wave frequency as a function of time</span>
+<span class="sd">    from the h_plus and h_cross polarizations of the waveform.</span>
+<span class="sd">    It is 1 bin shorter than the input vectors and the sample times</span>
+<span class="sd">    are advanced half a bin.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    h_plus : TimeSeries</span>
+<span class="sd">        A PyCBC TimeSeries vector that contains the plus polarization of the</span>
+<span class="sd">        gravitational waveform.</span>
+<span class="sd">    h_cross : TimeSeries</span>
+<span class="sd">        A PyCBC TimeSeries vector that contains the cross polarization of the</span>
+<span class="sd">        gravitational waveform.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    GWFrequency : TimeSeries</span>
+<span class="sd">        A TimeSeries containing the gravitational wave frequency as a function</span>
+<span class="sd">        of time.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform import get_td_waveform, phase_from_polarizations</span>
+<span class="sd">    &gt;&gt;&gt; hp, hc = get_td_waveform(approximant=&quot;TaylorT4&quot;, mass1=10, mass2=10,</span>
+<span class="sd">                         f_lower=30, delta_t=1.0/4096)</span>
+<span class="sd">    &gt;&gt;&gt; freq = frequency_from_polarizations(hp, hc)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">phase_from_polarizations</span><span class="p">(</span><span class="n">h_plus</span><span class="p">,</span> <span class="n">h_cross</span><span class="p">)</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">*</span> <span class="n">phase</span><span class="o">.</span><span class="n">delta_t</span> <span class="p">)</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">phase</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">phase</span><span class="o">.</span><span class="n">delta_t</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">h_plus</span><span class="p">)),</span>
+        <span class="n">delta_t</span><span class="o">=</span><span class="n">phase</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">start_time</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="apply_fseries_time_shift">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.apply_fseries_time_shift">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="s2">&quot;pycbc.waveform.utils_&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_fseries_time_shift</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">kmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shifts a frequency domain waveform in time. The waveform is assumed to</span>
+<span class="sd">    be sampled at equal frequency intervals.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="apply_fd_time_shift">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.apply_fd_time_shift">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_fd_time_shift</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">shifttime</span><span class="p">,</span> <span class="n">kmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fseries</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shifts a frequency domain waveform in time. The shift applied is</span>
+<span class="sd">    shiftime - htilde.epoch.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform frequency series.</span>
+<span class="sd">    shifttime : float</span>
+<span class="sd">        The time to shift the frequency series to.</span>
+<span class="sd">    kmin : {0, int}</span>
+<span class="sd">        The starting index of htilde to apply the time shift. Default is 0.</span>
+<span class="sd">    fseries : {None, numpy array}</span>
+<span class="sd">        The frequencies of each element in htilde. This is only needed if htilde is not</span>
+<span class="sd">        sampled at equal frequency steps.</span>
+<span class="sd">    copy : {True, bool}</span>
+<span class="sd">        Make a copy of htilde before applying the time shift. If False, the time</span>
+<span class="sd">        shift will be applied to htilde&#39;s data.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FrequencySeries</span>
+<span class="sd">        A frequency series with the waveform shifted to the new time. If makecopy</span>
+<span class="sd">        is True, will be a new frequency series; if makecopy is False, will be</span>
+<span class="sd">        the same as htilde.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">shifttime</span> <span class="o">-</span> <span class="n">htilde</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dt</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+        <span class="c1"># no shift to apply, just copy if desired</span>
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="n">htilde</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">*</span> <span class="n">htilde</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">FrequencySeries</span><span class="p">):</span>
+        <span class="c1"># FrequencySeries means equally sampled in frequency, use faster shifting</span>
+        <span class="n">htilde</span> <span class="o">=</span> <span class="n">apply_fseries_time_shift</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">kmin</span><span class="o">=</span><span class="n">kmin</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fseries</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fseries</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="n">j</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">dt</span><span class="o">*</span><span class="n">fseries</span><span class="p">),</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">htilde</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="n">htilde</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">*</span> <span class="n">htilde</span>
+        <span class="n">htilde</span> <span class="o">*=</span> <span class="n">shift</span>
+    <span class="k">return</span> <span class="n">htilde</span></div>
+
+
+<div class="viewcode-block" id="td_taper">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.td_taper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">td_taper</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies a taper to the given TimeSeries.</span>
+
+<span class="sd">    A half-kaiser window is used for the roll-off.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out : TimeSeries</span>
+<span class="sd">        The ``TimeSeries`` to taper.</span>
+<span class="sd">    start : float</span>
+<span class="sd">        The time (in s) to start the taper window.</span>
+
+<span class="sd">    end : float</span>
+<span class="sd">        The time (in s) to end the taper window.</span>
+<span class="sd">    beta : int, optional</span>
+<span class="sd">        The beta parameter to use for the Kaiser window. See</span>
+<span class="sd">        ``scipy.signal.kaiser`` for details. Default is 8.</span>
+<span class="sd">    side : {&#39;left&#39;, &#39;right&#39;}</span>
+<span class="sd">        The side to apply the taper to. If ``&#39;left&#39;`` (``&#39;right&#39;``), the taper</span>
+<span class="sd">        will roll up (down) between ``start`` and ``end``, with all values</span>
+<span class="sd">        before ``start`` (after ``end``) set to zero. Default is ``&#39;left&#39;``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TimeSeries</span>
+<span class="sd">        The tapered time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="n">winlen</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="n">out</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">get_window</span><span class="p">((</span><span class="s1">&#39;kaiser&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="p">),</span> <span class="n">winlen</span><span class="p">))</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">start</span> <span class="o">-</span> <span class="n">out</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="n">out</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">xmin</span> <span class="o">+</span> <span class="n">winlen</span><span class="o">//</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">xmin</span><span class="p">:</span><span class="n">xmax</span><span class="p">]</span> <span class="o">*=</span> <span class="n">window</span><span class="p">[:</span><span class="n">winlen</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">xmin</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[:</span><span class="n">xmin</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">xmin</span><span class="p">:</span><span class="n">xmax</span><span class="p">]</span> <span class="o">*=</span> <span class="n">window</span><span class="p">[</span><span class="n">winlen</span><span class="o">//</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">xmax</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">xmax</span><span class="p">:]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized side argument </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">side</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="fd_taper">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.fd_taper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_taper</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies a taper to the given FrequencySeries.</span>
+
+<span class="sd">    A half-kaiser window is used for the roll-off.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out : FrequencySeries</span>
+<span class="sd">        The ``FrequencySeries`` to taper.</span>
+<span class="sd">    start : float</span>
+<span class="sd">        The frequency (in Hz) to start the taper window.</span>
+<span class="sd">    end : float</span>
+<span class="sd">        The frequency (in Hz) to end the taper window.</span>
+<span class="sd">    beta : int, optional</span>
+<span class="sd">        The beta parameter to use for the Kaiser window. See</span>
+<span class="sd">        ``scipy.signal.kaiser`` for details. Default is 8.</span>
+<span class="sd">    side : {&#39;left&#39;, &#39;right&#39;}</span>
+<span class="sd">        The side to apply the taper to. If ``&#39;left&#39;`` (``&#39;right&#39;``), the taper</span>
+<span class="sd">        will roll up (down) between ``start`` and ``end``, with all values</span>
+<span class="sd">        before ``start`` (after ``end``) set to zero. Default is ``&#39;left&#39;``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FrequencySeries</span>
+<span class="sd">        The tapered frequency series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="n">winlen</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="n">out</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">get_window</span><span class="p">((</span><span class="s1">&#39;kaiser&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="p">),</span> <span class="n">winlen</span><span class="p">))</span>
+    <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span> <span class="o">/</span> <span class="n">out</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="n">kmin</span> <span class="o">+</span> <span class="n">winlen</span><span class="o">//</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="n">window</span><span class="p">[:</span><span class="n">winlen</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">out</span><span class="p">[:</span><span class="n">kmin</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.</span>
+    <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*=</span> <span class="n">window</span><span class="p">[</span><span class="n">winlen</span><span class="o">//</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">kmax</span><span class="p">:]</span> <span class="o">*=</span> <span class="mf">0.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized side argument </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">side</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="fd_to_td">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.utils.fd_to_td">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_to_td</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_window</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+          <span class="n">left_beta</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">right_beta</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a FD waveform to TD.</span>
+
+<span class="sd">    A window can optionally be applied using ``fd_taper`` to the left or right</span>
+<span class="sd">    side of the waveform before being converted to the time domain.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform to convert.</span>
+<span class="sd">    delta_t : float, optional</span>
+<span class="sd">        Make the returned time series have the given ``delta_t``.</span>
+<span class="sd">    left_window : tuple of float, optional</span>
+<span class="sd">        A tuple giving the start and end frequency of the FD taper to apply</span>
+<span class="sd">        on the left side. If None, no taper will be applied on the left.</span>
+<span class="sd">    right_window : tuple of float, optional</span>
+<span class="sd">        A tuple giving the start and end frequency of the FD taper to apply</span>
+<span class="sd">        on the right side. If None, no taper will be applied on the right.</span>
+<span class="sd">    left_beta : int, optional</span>
+<span class="sd">        The beta parameter to use for the left taper. See ``fd_taper`` for</span>
+<span class="sd">        details. Default is 8.</span>
+<span class="sd">    right_beta : int, optional</span>
+<span class="sd">        The beta parameter to use for the right taper. Default is 8.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TimeSeries</span>
+<span class="sd">        The time-series representation of ``htilde``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">left_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">left_window</span>
+        <span class="n">htilde</span> <span class="o">=</span> <span class="n">fd_taper</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">left_beta</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">right_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">right_window</span>
+        <span class="n">htilde</span> <span class="o">=</span> <span class="n">fd_taper</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">right_beta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">htilde</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">(</span><span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.gelman_rubin &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.gelman_rubin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.gelman_rubin</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2017  Christopher M. Biwer</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot; This modules provides functions for evaluating the Gelman-Rubin convergence</span>
+<span class="sd">diagnostic statistic.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+
+<div class="viewcode-block" id="walk">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.gelman_rubin.walk">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="n">chains</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculates Gelman-Rubin conervergence statistic along chains of data.</span>
+<span class="sd">    This function will advance along the chains and calculate the</span>
+<span class="sd">    statistic for each step.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    chains : iterable</span>
+<span class="sd">        An iterable of numpy.array instances that contain the samples</span>
+<span class="sd">        for each chain. Each chain has shape (nparameters, niterations).</span>
+<span class="sd">    start : float</span>
+<span class="sd">        Start index of blocks to calculate all statistics.</span>
+<span class="sd">    end : float</span>
+<span class="sd">        Last index of blocks to calculate statistics.</span>
+<span class="sd">    step : float</span>
+<span class="sd">        Step size to take for next block.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    starts : numpy.array</span>
+<span class="sd">        1-D array of start indexes of calculations.</span>
+<span class="sd">    ends : numpy.array</span>
+<span class="sd">        1-D array of end indexes of caluclations.</span>
+<span class="sd">    stats : numpy.array</span>
+<span class="sd">        Array with convergence statistic. It has</span>
+<span class="sd">        shape (nparameters, ncalculations).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># get number of chains, parameters, and iterations</span>
+    <span class="n">chains</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chains</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">nparameters</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">chains</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># get end index of blocks</span>
+    <span class="n">ends</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nparameters</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ends</span><span class="p">)))</span>
+
+    <span class="c1"># get start index of blocks</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ends</span><span class="p">)</span> <span class="o">*</span> <span class="p">[</span><span class="n">start</span><span class="p">])</span>
+
+    <span class="c1"># loop over end indexes and calculate statistic</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ends</span><span class="p">):</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">chains</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">stats</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gelman_rubin</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">,</span> <span class="n">stats</span></div>
+
+
+
+<div class="viewcode-block" id="gelman_rubin">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.gelman_rubin.gelman_rubin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gelman_rubin</span><span class="p">(</span><span class="n">chains</span><span class="p">,</span> <span class="n">auto_burn_in</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculates the univariate Gelman-Rubin convergence statistic</span>
+<span class="sd">    which compares the evolution of multiple chains in a Markov-Chain Monte</span>
+<span class="sd">    Carlo process and computes their difference to determine their convergence.</span>
+<span class="sd">    The between-chain and within-chain variances are computed for each sampling</span>
+<span class="sd">    parameter, and a weighted combination of the two is used to determine the</span>
+<span class="sd">    convergence. As the chains converge, the point scale reduction factor</span>
+<span class="sd">    should go to 1.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    chains : iterable</span>
+<span class="sd">        An iterable of numpy.array instances that contain the samples</span>
+<span class="sd">        for each chain. Each chain has shape (nparameters, niterations).</span>
+<span class="sd">    auto_burn_in : bool</span>
+<span class="sd">        If True, then only use later half of samples provided.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    psrf : numpy.array</span>
+<span class="sd">        A numpy.array of shape (nparameters) that has the point estimates of</span>
+<span class="sd">        the potential scale reduction factor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># remove first half of samples</span>
+    <span class="c1"># this will have shape (nchains, nparameters, niterations)</span>
+    <span class="k">if</span> <span class="n">auto_burn_in</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">niterations</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chains</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">chains</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">chain</span><span class="p">[:,</span> <span class="n">niterations</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
+                              <span class="k">for</span> <span class="n">chain</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">])</span>
+
+    <span class="c1"># get number of chains, parameters, and iterations</span>
+    <span class="n">chains</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chains</span><span class="p">)</span>
+    <span class="n">nchains</span><span class="p">,</span> <span class="n">nparameters</span><span class="p">,</span> <span class="n">niterations</span> <span class="o">=</span> <span class="n">chains</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># calculate the covariance matrix for each chain</span>
+    <span class="c1"># this will have shape (nchains, nparameters, nparameters)</span>
+    <span class="n">chains_covs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">numpy</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">chain</span><span class="p">)</span> <span class="k">for</span> <span class="n">chain</span> <span class="ow">in</span> <span class="n">chains</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">nparameters</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">chains_covs</span> <span class="o">=</span> <span class="n">chains_covs</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">nchains</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># calculate W the within-chain variance</span>
+    <span class="c1"># this will have shape (nparameters, nparameters)</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">chains_covs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chains_covs</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+            <span class="n">w</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">chains_covs</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">nparameters</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># calculate B the between-chain variance</span>
+    <span class="c1"># this will have shape (nparameters, nparameters)</span>
+    <span class="n">means</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nparameters</span><span class="p">,</span> <span class="n">nchains</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">chain</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chains</span><span class="p">):</span>
+        <span class="n">means</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">chain</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">niterations</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">means</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nparameters</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># get diagonal elements of W and B</span>
+    <span class="c1"># these will have shape (nparameters)</span>
+    <span class="n">w_diag</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">b_diag</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+    <span class="c1"># get variance for each chain</span>
+    <span class="c1"># this will have shape (nparameters, nchains)</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nparameters</span><span class="p">,</span> <span class="n">nchains</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">chain_cov</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chains_covs</span><span class="p">):</span>
+        <span class="n">var</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">chain_cov</span><span class="p">)</span>
+
+    <span class="c1"># get mean of means</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">mu_hat</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">means</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># get variance of variances</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># get V the combined variance of all chains</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="p">((</span><span class="n">niterations</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> <span class="n">w_diag</span> <span class="o">/</span> <span class="n">niterations</span> <span class="o">+</span>
+         <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">nchains</span><span class="p">)</span> <span class="o">*</span> <span class="n">b_diag</span> <span class="o">/</span> <span class="n">niterations</span><span class="p">)</span>
+
+    <span class="c1"># get factors in variance of V calculation</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">b_diag</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">nchains</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">mid_term</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span>
+        <span class="n">var</span><span class="p">,</span> <span class="n">means</span><span class="o">**</span><span class="mi">2</span><span class="p">)[</span><span class="n">nparameters</span><span class="p">:</span><span class="mi">2</span><span class="o">*</span><span class="n">nparameters</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">nparameters</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">end_term</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span>
+        <span class="n">var</span><span class="p">,</span> <span class="n">means</span><span class="p">)[</span><span class="n">nparameters</span><span class="p">:</span><span class="mi">2</span><span class="o">*</span><span class="n">nparameters</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="n">nparameters</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">wb</span> <span class="o">=</span> <span class="n">niterations</span> <span class="o">/</span> <span class="n">nchains</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">mid_term</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">mu_hat</span> <span class="o">*</span> <span class="n">end_term</span><span class="p">)</span>
+
+    <span class="c1"># get variance of V</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">var_v</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">niterations</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">s</span> <span class="o">+</span>
+        <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">nchains</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span>
+        <span class="mf">2.</span> <span class="o">*</span> <span class="p">(</span><span class="n">niterations</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">nchains</span><span class="p">)</span> <span class="o">*</span> <span class="n">wb</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="n">niterations</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="c1"># get degrees of freedom</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">var_v</span>
+
+    <span class="c1"># more degrees of freedom factors</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">df_adj</span> <span class="o">=</span> <span class="p">(</span><span class="n">dof</span> <span class="o">+</span> <span class="mf">3.</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dof</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span>
+
+    <span class="c1"># estimate R</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">r2_fixed</span> <span class="o">=</span> <span class="p">(</span><span class="n">niterations</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">/</span> <span class="n">niterations</span>
+    <span class="n">r2_random</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">nchains</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">niterations</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">b_diag</span> <span class="o">/</span> <span class="n">w_diag</span><span class="p">)</span>
+    <span class="n">r2_estimate</span> <span class="o">=</span> <span class="n">r2_fixed</span> <span class="o">+</span> <span class="n">r2_random</span>
+
+    <span class="c1"># calculate PSRF the potential scale reduction factor</span>
+    <span class="c1"># this will have shape (nparameters)</span>
+    <span class="n">psrf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r2_estimate</span> <span class="o">*</span> <span class="n">df_adj</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">psrf</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

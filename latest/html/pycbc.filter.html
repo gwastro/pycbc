@@ -1,0 +1,1382 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.filter package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.frame package" href="pycbc.frame.html" />
+    <link rel="prev" title="pycbc.fft package" href="pycbc.fft.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.filter package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.filter.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-filter-package">
+<h1>pycbc.filter package<a class="headerlink" href="#pycbc-filter-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.filter.autocorrelation">
+<span id="pycbc-filter-autocorrelation-module"></span><h2>pycbc.filter.autocorrelation module<a class="headerlink" href="#module-pycbc.filter.autocorrelation" title="Link to this heading"></a></h2>
+<p>This modules provides functions for calculating the autocorrelation function
+and length of a data series.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.autocorrelation.calculate_acf">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.autocorrelation.</span></span><span class="sig-name descname"><span class="pre">calculate_acf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unbiased</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/autocorrelation.html#calculate_acf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.autocorrelation.calculate_acf" title="Link to this definition"></a></dt>
+<dd><p>Calculates the one-sided autocorrelation function.</p>
+<p>Calculates the autocorrelation function (ACF) and returns the one-sided
+ACF. The ACF is defined as the autocovariance divided by the variance. The
+ACF can be estimated using</p>
+<div class="math notranslate nohighlight">
+\[\hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right)\]</div>
+<p>Where <span class="math notranslate nohighlight">\(\hat{R}(k)\)</span> is the ACF, <span class="math notranslate nohighlight">\(X_{t}\)</span> is the data series at
+time t, <span class="math notranslate nohighlight">\(\mu\)</span> is the mean of <span class="math notranslate nohighlight">\(X_{t}\)</span>, and <span class="math notranslate nohighlight">\(\sigma^{2}\)</span> is
+the variance of <span class="math notranslate nohighlight">\(X_{t}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><em>numpy.array</em>) – A TimeSeries or numpy.array of data.</p></li>
+<li><p><strong>delta_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The time step of the data series if it is not a TimeSeries instance.</p></li>
+<li><p><strong>unbiased</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If True the normalization of the autocovariance function is n-k
+instead of n. This is called the unbiased estimation of the
+autocovariance. Note that this does not mean the ACF is unbiased.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>acf</strong> – If data is a TimeSeries then acf will be a TimeSeries of the
+one-sided ACF. Else acf is a numpy.array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.autocorrelation.calculate_acl">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.autocorrelation.</span></span><span class="sig-name descname"><span class="pre">calculate_acl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m=5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype=&lt;class</span> <span class="pre">'int'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/autocorrelation.html#calculate_acl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.autocorrelation.calculate_acl" title="Link to this definition"></a></dt>
+<dd><p>Calculates the autocorrelation length (ACL).</p>
+<p>Given a normalized autocorrelation function <span class="math notranslate nohighlight">\(\rho[i]\)</span> (by normalized,
+we mean that <span class="math notranslate nohighlight">\(\rho[0] = 1\)</span>), the ACL <span class="math notranslate nohighlight">\(\tau\)</span> is:</p>
+<div class="math notranslate nohighlight">
+\[\tau = 1 + 2 \sum_{i=1}^{K} \rho[i].\]</div>
+<p>The number of samples used <span class="math notranslate nohighlight">\(K\)</span> is found by using the first point
+such that:</p>
+<div class="math notranslate nohighlight">
+\[m \tau[K] \leq K,\]</div>
+<p>where <span class="math notranslate nohighlight">\(m\)</span> is a tuneable parameter (default = 5). If no such point
+exists, then the given data set it too short to estimate the ACL; in this
+case <code class="docutils literal notranslate"><span class="pre">inf</span></code> is returned.</p>
+<p>This algorithm for computing the ACL is taken from:</p>
+<ol class="upperalpha simple" start="14">
+<li><p>Madras and A.D. Sokal, J. Stat. Phys. 50, 109 (1988).</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><em>array</em>) – A TimeSeries of data.</p></li>
+<li><p><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of autocorrelation lengths to use for determining the window
+size <span class="math notranslate nohighlight">\(K\)</span> (see above).</p></li>
+<li><p><strong>dtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The datatype of the output. If the dtype was set to int, then the
+ceiling is returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>acl</strong> – The autocorrelation length. If the ACL cannot be estimated, returns
+<code class="docutils literal notranslate"><span class="pre">numpy.inf</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a> or <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.filter.matchedfilter">
+<span id="pycbc-filter-matchedfilter-module"></span><h2>pycbc.filter.matchedfilter module<a class="headerlink" href="#module-pycbc.filter.matchedfilter" title="Link to this heading"></a></h2>
+<p>This modules provides functions for matched filtering along with associated
+utilities.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.LiveBatchMatchedFilter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">LiveBatchMatchedFilter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">templates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chisq_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sg_chisq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxelements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">134217728</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_abort_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newsnr_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_triggers_in_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#LiveBatchMatchedFilter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.LiveBatchMatchedFilter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Calculate SNR and signal consistency tests in a batched progression</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.LiveBatchMatchedFilter.combine_results">
+<span class="sig-name descname"><span class="pre">combine_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#LiveBatchMatchedFilter.combine_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.LiveBatchMatchedFilter.combine_results" title="Link to this definition"></a></dt>
+<dd><p>Combine results from different batches of filtering</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.LiveBatchMatchedFilter.process_all">
+<span class="sig-name descname"><span class="pre">process_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#LiveBatchMatchedFilter.process_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.LiveBatchMatchedFilter.process_all" title="Link to this definition"></a></dt>
+<dd><p>Process every batch group and return as single result</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.LiveBatchMatchedFilter.process_data">
+<span class="sig-name descname"><span class="pre">process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_reader</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#LiveBatchMatchedFilter.process_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.LiveBatchMatchedFilter.process_data" title="Link to this definition"></a></dt>
+<dd><p>Process the data for all of the templates</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.LiveBatchMatchedFilter.set_data">
+<span class="sig-name descname"><span class="pre">set_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#LiveBatchMatchedFilter.set_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.LiveBatchMatchedFilter.set_data" title="Link to this definition"></a></dt>
+<dd><p>Set the data reader object to use</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">MatchedFilterControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tlen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsample_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsample_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pruned_fft'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_callback_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'symmetric'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterControl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterControl.full_matched_filter_and_cluster_fc">
+<span class="sig-name descname"><span class="pre">full_matched_filter_and_cluster_fc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterControl.full_matched_filter_and_cluster_fc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterControl.full_matched_filter_and_cluster_fc" title="Link to this definition"></a></dt>
+<dd><p>Returns the complex snr timeseries, normalization of the complex snr,
+the correlation vector frequency series, the list of indices of the
+triggers, and the snr values at the trigger locations. Returns empty
+lists for these for points that are not above the threshold.</p>
+<p>Calculated the matched filter, threshold, and cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segnum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index into the list of segments at MatchedFilterControl construction
+against which to filter.</p></li>
+<li><p><strong>template_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The htilde, template normalization factor.</p></li>
+<li><p><strong>window</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Size of the window over which to cluster triggers, in samples</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr</strong> (<em>TimeSeries</em>) – A time series containing the complex snr.</p></li>
+<li><p><strong>norm</strong> (<em>float</em>) – The normalization of the complex snr.</p></li>
+<li><p><strong>correlation</strong> (<em>FrequencySeries</em>) – A frequency series containing the correlation vector.</p></li>
+<li><p><strong>idx</strong> (<em>Array</em>) – List of indices of the triggers.</p></li>
+<li><p><strong>snrv</strong> (<em>Array</em>) – The snr values at the trigger locations.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterControl.full_matched_filter_and_cluster_symm">
+<span class="sig-name descname"><span class="pre">full_matched_filter_and_cluster_symm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterControl.full_matched_filter_and_cluster_symm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterControl.full_matched_filter_and_cluster_symm" title="Link to this definition"></a></dt>
+<dd><p>Returns the complex snr timeseries, normalization of the complex snr,
+the correlation vector frequency series, the list of indices of the
+triggers, and the snr values at the trigger locations. Returns empty
+lists for these for points that are not above the threshold.</p>
+<p>Calculated the matched filter, threshold, and cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segnum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index into the list of segments at MatchedFilterControl construction
+against which to filter.</p></li>
+<li><p><strong>template_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The htilde, template normalization factor.</p></li>
+<li><p><strong>window</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Size of the window over which to cluster triggers, in samples</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr</strong> (<em>TimeSeries</em>) – A time series containing the complex snr.</p></li>
+<li><p><strong>norm</strong> (<em>float</em>) – The normalization of the complex snr.</p></li>
+<li><p><strong>correlation</strong> (<em>FrequencySeries</em>) – A frequency series containing the correlation vector.</p></li>
+<li><p><strong>idx</strong> (<em>Array</em>) – List of indices of the triggers.</p></li>
+<li><p><strong>snrv</strong> (<em>Array</em>) – The snr values at the trigger locations.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterControl.full_matched_filter_thresh_only">
+<span class="sig-name descname"><span class="pre">full_matched_filter_thresh_only</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterControl.full_matched_filter_thresh_only"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterControl.full_matched_filter_thresh_only" title="Link to this definition"></a></dt>
+<dd><p>Returns the complex snr timeseries, normalization of the complex snr,
+the correlation vector frequency series, the list of indices of the
+triggers, and the snr values at the trigger locations. Returns empty
+lists for these for points that are not above the threshold.</p>
+<p>Calculated the matched filter, threshold, and cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segnum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index into the list of segments at MatchedFilterControl construction
+against which to filter.</p></li>
+<li><p><strong>template_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The htilde, template normalization factor.</p></li>
+<li><p><strong>window</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Size of the window over which to cluster triggers, in samples.
+This is IGNORED by this function, and provided only for API compatibility.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr</strong> (<em>TimeSeries</em>) – A time series containing the complex snr.</p></li>
+<li><p><strong>norm</strong> (<em>float</em>) – The normalization of the complex snr.</p></li>
+<li><p><strong>correlation</strong> (<em>FrequencySeries</em>) – A frequency series containing the correlation vector.</p></li>
+<li><p><strong>idx</strong> (<em>Array</em>) – List of indices of the triggers.</p></li>
+<li><p><strong>snrv</strong> (<em>Array</em>) – The snr values at the trigger locations.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterControl.hierarchical_matched_filter_and_cluster">
+<span class="sig-name descname"><span class="pre">hierarchical_matched_filter_and_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segnum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterControl.hierarchical_matched_filter_and_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterControl.hierarchical_matched_filter_and_cluster" title="Link to this definition"></a></dt>
+<dd><p>Returns the complex snr timeseries, normalization of the complex snr,
+the correlation vector frequency series, the list of indices of the
+triggers, and the snr values at the trigger locations. Returns empty
+lists for these for points that are not above the threshold.</p>
+<p>Calculated the matched filter, threshold, and cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segnum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index into the list of segments at MatchedFilterControl construction</p></li>
+<li><p><strong>template_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The htilde, template normalization factor.</p></li>
+<li><p><strong>window</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Size of the window over which to cluster triggers, in samples</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr</strong> (<em>TimeSeries</em>) – A time series containing the complex snr at the reduced sample rate.</p></li>
+<li><p><strong>norm</strong> (<em>float</em>) – The normalization of the complex snr.</p></li>
+<li><p><strong>correlation</strong> (<em>FrequencySeries</em>) – A frequency series containing the correlation vector.</p></li>
+<li><p><strong>idx</strong> (<em>Array</em>) – List of indices of the triggers.</p></li>
+<li><p><strong>snrv</strong> (<em>Array</em>) – The snr values at the trigger locations.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">MatchedFilterSkyMaxControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tlen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterSkyMaxControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl.full_matched_filter_and_cluster">
+<span class="sig-name descname"><span class="pre">full_matched_filter_and_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hplus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hplus_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcross_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterSkyMaxControl.full_matched_filter_and_cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl.full_matched_filter_and_cluster" title="Link to this definition"></a></dt>
+<dd><p>Return the complex snr and normalization.</p>
+<p>Calculated the matched filter, threshold, and cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h_quantities</strong> (<em>Various</em>) – FILL ME IN</p></li>
+<li><p><strong>stilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain data to be filtered.</p></li>
+<li><p><strong>window</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The size of the cluster window in samples.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr</strong> (<em>TimeSeries</em>) – A time series containing the complex snr.</p></li>
+<li><p><strong>norm</strong> (<em>float</em>) – The normalization of the complex snr.</p></li>
+<li><p><strong>correlation</strong> (<em>FrequencySeries</em>) – A frequency series containing the correlation vector.</p></li>
+<li><p><strong>idx</strong> (<em>Array</em>) – List of indices of the triggers.</p></li>
+<li><p><strong>snrv</strong> (<em>Array</em>) – The snr values at the trigger locations.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.MatchedFilterSkyMaxControlNoPhase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">MatchedFilterSkyMaxControlNoPhase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tlen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#MatchedFilterSkyMaxControlNoPhase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.MatchedFilterSkyMaxControlNoPhase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl" title="pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl"><code class="xref py py-class docutils literal notranslate"><span class="pre">MatchedFilterSkyMaxControl</span></code></a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.compute_followup_snr_series">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">compute_followup_snr_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_reader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trig_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.095</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coinc_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#compute_followup_snr_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.compute_followup_snr_series" title="Link to this definition"></a></dt>
+<dd><p>Given a StrainBuffer, a template frequency series and a trigger time,
+compute a portion of the SNR time series centered on the trigger for its
+rapid sky localization and followup.</p>
+<p>If the trigger time is too close to the boundary of the valid data segment
+the SNR series is calculated anyway and might be slightly contaminated by
+filter and wrap-around effects. For reasonable durations this will only
+affect a small fraction of the triggers and probably in a negligible way.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_reader</strong> (<a class="reference internal" href="pycbc.strain.html#pycbc.strain.strain.StrainBuffer" title="pycbc.strain.strain.StrainBuffer"><em>StrainBuffer</em></a>) – The StrainBuffer object to read strain data from.</p></li>
+<li><p><strong>htilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The frequency series containing the template waveform.</p></li>
+<li><p><strong>trig_time</strong> (<em>{float</em><em>, </em><em>lal.LIGOTimeGPS}</em>) – The trigger time.</p></li>
+<li><p><strong>duration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> (</em><em>optional</em><em>)</em>) – Duration of the computed SNR series in seconds. If omitted, it defaults
+to twice the Earth light travel time plus 10 ms of timing uncertainty.</p></li>
+<li><p><strong>check_state</strong> (<em>boolean</em>) – If True, and the detector was offline or flagged for bad data quality
+at any point during the inspiral, then return (None, None) instead.</p></li>
+<li><p><strong>coinc_window</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> (</em><em>optional</em><em>)</em>) – Maximum possible time between coincident triggers at different
+detectors. This is needed to properly determine data padding.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>snr</strong> – The portion of SNR around the trigger. None if the detector is offline
+or has bad data quality, and check_state is True.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.compute_max_snr_over_sky_loc_stat">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">compute_max_snr_over_sky_loc_stat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hplus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hphccorr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analyse_slice</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#compute_max_snr_over_sky_loc_stat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.compute_max_snr_over_sky_loc_stat" title="Link to this definition"></a></dt>
+<dd><p>Matched filter maximised over polarization and orbital phase.</p>
+<p>This implements the statistic derived in 1603.02444. It is encouraged
+to read that work to understand the limitations and assumptions implicit
+in this statistic before using it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hplus</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – This is the IFFTed complex SNR time series of (h+, data). If not
+normalized, supply the normalization factor so this can be done!
+It is recommended to normalize this before sending through this
+function</p></li>
+<li><p><strong>hcross</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – This is the IFFTed complex SNR time series of (hx, data). If not
+normalized, supply the normalization factor so this can be done!</p></li>
+<li><p><strong>hphccorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The real component of the overlap between the two polarizations
+Re[(h+, hx)]. Note that the imaginary component does not enter the
+detection statistic. This must be normalized and is sign-sensitive.</p></li>
+<li><p><strong>thresh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Used for optimization. If we do not care about the value of SNR
+values below thresh we can calculate a quick statistic that will
+always overestimate SNR and then only calculate the proper, more
+expensive, statistic at points where the quick SNR is above thresh.</p></li>
+<li><p><strong>hpsigmasq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor (h+, h+). Default = None (=1, already
+normalized)</p></li>
+<li><p><strong>hcsigmasq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor (hx, hx). Default = None (=1, already
+normalized)</p></li>
+<li><p><strong>out</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> (</em><em>optional</em><em>, </em><em>default=None</em><em>)</em>) – If given, use this array to store the output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>det_stat</strong> – The SNR maximized over sky location</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.compute_max_snr_over_sky_loc_stat_no_phase">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">compute_max_snr_over_sky_loc_stat_no_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hplus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hphccorr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analyse_slice</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#compute_max_snr_over_sky_loc_stat_no_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.compute_max_snr_over_sky_loc_stat_no_phase" title="Link to this definition"></a></dt>
+<dd><p>Matched filter maximised over polarization phase.</p>
+<p>This implements the statistic derived in 1709.09181. It is encouraged
+to read that work to understand the limitations and assumptions implicit
+in this statistic before using it.</p>
+<p>In contrast to compute_max_snr_over_sky_loc_stat this function
+performs no maximization over orbital phase, treating that as an intrinsic
+parameter. In the case of aligned-spin 2,2-mode only waveforms, this
+collapses to the normal statistic (at twice the computational cost!)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hplus</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – This is the IFFTed complex SNR time series of (h+, data). If not
+normalized, supply the normalization factor so this can be done!
+It is recommended to normalize this before sending through this
+function</p></li>
+<li><p><strong>hcross</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – This is the IFFTed complex SNR time series of (hx, data). If not
+normalized, supply the normalization factor so this can be done!</p></li>
+<li><p><strong>hphccorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The real component of the overlap between the two polarizations
+Re[(h+, hx)]. Note that the imaginary component does not enter the
+detection statistic. This must be normalized and is sign-sensitive.</p></li>
+<li><p><strong>thresh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Used for optimization. If we do not care about the value of SNR
+values below thresh we can calculate a quick statistic that will
+always overestimate SNR and then only calculate the proper, more
+expensive, statistic at points where the quick SNR is above thresh.</p></li>
+<li><p><strong>hpsigmasq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor (h+, h+). Default = None (=1, already
+normalized)</p></li>
+<li><p><strong>hcsigmasq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The normalization factor (hx, hx). Default = None (=1, already
+normalized)</p></li>
+<li><p><strong>out</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> (</em><em>optional</em><em>, </em><em>default=None</em><em>)</em>) – If given, use this array to store the output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>det_stat</strong> – The SNR maximized over sky location</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.compute_u_val_for_sky_loc_stat">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">compute_u_val_for_sky_loc_stat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hplus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hphccorr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#compute_u_val_for_sky_loc_stat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.compute_u_val_for_sky_loc_stat" title="Link to this definition"></a></dt>
+<dd><p>The max-over-sky location detection statistic maximizes over a phase,
+an amplitude and the ratio of F+ and Fx, encoded in a variable called u.
+Here we return the value of u for the given indices.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.compute_u_val_for_sky_loc_stat_no_phase">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">compute_u_val_for_sky_loc_stat_no_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hplus</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcross</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hphccorr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hcnorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#compute_u_val_for_sky_loc_stat_no_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.compute_u_val_for_sky_loc_stat_no_phase" title="Link to this definition"></a></dt>
+<dd><p>The max-over-sky location (no phase) detection statistic maximizes over
+an amplitude and the ratio of F+ and Fx, encoded in a variable called u.
+Here we return the value of u for the given indices.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.correlate">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">correlate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#correlate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.correlate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.followup_event_significance">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">followup_event_significance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_reader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coinc_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coinc_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">150</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.095</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#followup_event_significance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.followup_event_significance" title="Link to this definition"></a></dt>
+<dd><p>Given a detector, a template waveform and a set of candidate event
+times in different detectors, perform an on-source/off-source analysis
+to determine if the SNR in the first detector has a significant peak
+in the on-source window. The significance is given in terms of a
+p-value. See Dal Canton et al. 2021 (<a class="reference external" href="https://arxiv.org/abs/2008.07494">https://arxiv.org/abs/2008.07494</a>)
+for details. A portion of the SNR time series around the on-source window
+is also returned for use in BAYESTAR.</p>
+<p>If the calculation cannot be carried out, for example because <cite>ifo</cite> is
+not in observing mode at the requested time, then None is returned.
+Otherwise, the dict contains the following keys. <cite>snr_series</cite> is a
+TimeSeries object with the SNR time series for BAYESTAR. <cite>peak_time</cite> is the
+time of maximum SNR in the on-source window. <cite>pvalue</cite> is the p-value for
+the maximum on-source SNR compared to the off-source realizations.
+<cite>pvalue_saturated</cite> is a bool indicating whether the p-value is limited by
+the number of off-source realizations, i.e. whether the maximum on-source
+SNR is larger than all the off-source ones. <cite>sigma2</cite> is the SNR
+normalization (squared) for the given template and detector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ifo</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Which detector is being used for the calculation.</p></li>
+<li><p><strong>data_reader</strong> (<a class="reference internal" href="pycbc.strain.html#pycbc.strain.strain.StrainBuffer" title="pycbc.strain.strain.StrainBuffer"><em>StrainBuffer</em></a>) – StrainBuffer object providing the data for the given detector.</p></li>
+<li><p><strong>bank</strong> (<a class="reference internal" href="pycbc.waveform.html#pycbc.waveform.bank.LiveFilterBank" title="pycbc.waveform.bank.LiveFilterBank"><em>LiveFilterBank</em></a>) – Template bank object providing the template related quantities.</p></li>
+<li><p><strong>template_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index of the template in the bank.</p></li>
+<li><p><strong>coinc_times</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary keyed by detector names reporting the coalescence times of
+a candidate measured at the different detectors. Used to define the
+on-source window of the candidate in <cite>ifo</cite>.</p></li>
+<li><p><strong>coinc_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Nominal statistical uncertainty in <cite>coinc_times</cite>; expands the
+on-source window by twice the given amount.</p></li>
+<li><p><strong>lookback</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Nominal amount of time to use for the calculation of the onsource and
+offsource SNR time series. The actual time may be reduced depending on
+the duration of the template and the strain buffer in the data reader
+(if so, a warning is logged).</p></li>
+<li><p><strong>duration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Duration of the SNR time series to be reported to BAYESTAR.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>followup_info</strong> – Results of the followup calculation (see above) or None if <cite>ifo</cite> did
+not have usable data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.get_cutoff_indices">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">get_cutoff_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fhigh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#get_cutoff_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.get_cutoff_indices" title="Link to this definition"></a></dt>
+<dd><p>Gets the indices of a frequency series at which to stop an overlap
+calculation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flow</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency (in Hz) of the lower index.</p></li>
+<li><p><strong>fhigh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency (in Hz) of the upper index.</p></li>
+<li><p><strong>df</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency step (in Hz) of the frequency series.</p></li>
+<li><p><strong>N</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of points in the <strong>time</strong> series. Can be odd
+or even.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>kmin</strong> (<em>int</em>)</p></li>
+<li><p><strong>kmax</strong> (<em>int</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.make_frequency_series">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">make_frequency_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#make_frequency_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.make_frequency_series" title="Link to this definition"></a></dt>
+<dd><p>Return a frequency series of the input vector.</p>
+<p>If the input is a frequency series it is returned, else if the input
+vector is a real time series it is fourier transformed and returned as a
+frequency series.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vector</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Frequency Series</strong> – A frequency domain version of the input vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.match">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vec2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_interpolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.match" title="Link to this definition"></a></dt>
+<dd><p>Return the match between the two TimeSeries or FrequencySeries.</p>
+<p>Return the match between two waveforms. This is equivalent to the overlap
+maximized over time and phase.</p>
+<p>The maximization is only performed with discrete time-shifts,
+or a quadratic interpolation of them if the subsample_interpolation
+option is turned on; for a more precise computation
+of the match between two waveforms, use the optimized_match function.
+The accuracy of this function is guaranteed up to the fourth decimal place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vec1</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>vec2</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>psd</strong> (<em>Frequency Series</em>) – A power spectral density to weight the overlap.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin the match.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop the match.</p></li>
+<li><p><strong>v1_norm</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The normalization of the first waveform. This is equivalent to its
+sigmasq value. If None, it is internally calculated.</p></li>
+<li><p><strong>v2_norm</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The normalization of the second waveform. This is equivalent to its
+sigmasq value. If None, it is internally calculated.</p></li>
+<li><p><strong>subsample_interpolation</strong> (<em>{False</em><em>, </em><em>bool}</em><em>, </em><em>optional</em>) – If True the peak will be interpolated between samples using a simple
+quadratic fit. This can be important if measuring matches very close to
+1 and can cause discontinuities if you don’t use it as matches move
+between discrete samples. If True the index returned will be a float.</p></li>
+<li><p><strong>return_phase</strong> (<em>{False</em><em>, </em><em>bool}</em><em>, </em><em>optional</em>) – If True, also return the phase shift that gives the match.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>match</strong> (<em>float</em>)</p></li>
+<li><p><strong>index</strong> (<em>int</em>) – The number of samples to shift to get the match.</p></li>
+<li><p><strong>phi</strong> (<em>float</em>) – Phase to rotate complex waveform to get the match, if desired.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.matched_filter">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">matched_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigmasq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#matched_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.matched_filter" title="Link to this definition"></a></dt>
+<dd><p>Return the complex snr.</p>
+<p>Return the complex snr, along with its associated normalization of the
+template, matched filtered against the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The template waveform</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain data to be filtered.</p></li>
+<li><p><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The noise weighting of the filter.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin the filter calculation. If None, begin at the
+first frequency after DC.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop the filter calculation. If None, continue to the
+the nyquist frequency.</p></li>
+<li><p><strong>sigmasq</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The template normalization. If none, this value is calculated
+internally.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>snr</strong> – A time series containing the complex snr.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.matched_filter_core">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">matched_filter_core</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corr_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#matched_filter_core"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.matched_filter_core" title="Link to this definition"></a></dt>
+<dd><p>Return the complex snr and normalization.</p>
+<p>Return the complex snr, along with its associated normalization of the template,
+matched filtered against the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The template waveform</p></li>
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain data to be filtered.</p></li>
+<li><p><strong>psd</strong> (<em>{FrequencySeries}</em><em>, </em><em>optional</em>) – The noise weighting of the filter.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin the filter calculation. If None, begin at the
+first frequency after DC.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop the filter calculation. If None, continue to the
+the nyquist frequency.</p></li>
+<li><p><strong>h_norm</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The template normalization. If none, this value is calculated internally.</p></li>
+<li><p><strong>out</strong> (<em>{None</em><em>, </em><em>Array}</em><em>, </em><em>optional</em>) – An array to use as memory for snr storage. If None, memory is allocated
+internally.</p></li>
+<li><p><strong>corr_out</strong> (<em>{None</em><em>, </em><em>Array}</em><em>, </em><em>optional</em>) – An array to use as memory for correlation storage. If None, memory is allocated
+internally. If provided, management of the vector is handled externally by the
+caller. No zero’ing is done internally.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>snr</strong> (<em>TimeSeries</em>) – A time series containing the complex snr.</p></li>
+<li><p><strong>correlation</strong> (<em>FrequencySeries</em>) – A frequency series containing the correlation vector.</p></li>
+<li><p><strong>norm</strong> (<em>float</em>) – The normalization of the complex snr.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.optimized_match">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">optimized_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vec2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v1_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#optimized_match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.optimized_match" title="Link to this definition"></a></dt>
+<dd><p>Given two waveforms (as numpy arrays),
+compute the optimized match between them, making use
+of scipy.minimize_scalar.</p>
+<p>This function computes the same quantities as “match”;
+it is more accurate and slower.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vec1</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>vec2</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – A power spectral density to weight the overlap.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin the match.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop the match.</p></li>
+<li><p><strong>v1_norm</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The normalization of the first waveform. This is equivalent to its
+sigmasq value. If None, it is internally calculated.</p></li>
+<li><p><strong>v2_norm</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The normalization of the second waveform. This is equivalent to its
+sigmasq value. If None, it is internally calculated.</p></li>
+<li><p><strong>return_phase</strong> (<em>{False</em><em>, </em><em>bool}</em><em>, </em><em>optional</em>) – If True, also return the phase shift that gives the match.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>match</strong> (<em>float</em>)</p></li>
+<li><p><strong>index</strong> (<em>int</em>) – The number of samples to shift to get the match.</p></li>
+<li><p><strong>phi</strong> (<em>float</em>) – Phase to rotate complex waveform to get the match, if desired.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.overlap">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vec2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#overlap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.overlap" title="Link to this definition"></a></dt>
+<dd><p>Return the overlap between the two TimeSeries or FrequencySeries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vec1</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>vec2</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>psd</strong> (<em>Frequency Series</em>) – A power spectral density to weight the overlap.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin the overlap.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop the overlap.</p></li>
+<li><p><strong>normalized</strong> (<em>{True</em><em>, </em><em>boolean}</em><em>, </em><em>optional</em>) – Set if the overlap is normalized. If true, it will range from 0 to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>overlap</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.overlap_cplx">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">overlap_cplx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vec2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#overlap_cplx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.overlap_cplx" title="Link to this definition"></a></dt>
+<dd><p>Return the complex overlap between the two TimeSeries or FrequencySeries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vec1</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>vec2</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>psd</strong> (<em>Frequency Series</em>) – A power spectral density to weight the overlap.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin the overlap.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop the overlap.</p></li>
+<li><p><strong>normalized</strong> (<em>{True</em><em>, </em><em>boolean}</em><em>, </em><em>optional</em>) – Set if the overlap is normalized. If true, it will range from 0 to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>overlap</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)">complex</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.sigma">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#sigma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.sigma" title="Link to this definition"></a></dt>
+<dd><p>Return the sigma of the waveform. See sigmasq for more details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>htilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>psd</strong> (<em>{None</em><em>, </em><em>FrequencySeries}</em><em>, </em><em>optional</em>) – The psd used to weight the accumulated power.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin considering waveform power.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop considering waveform power.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sigmasq</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.sigmasq">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">sigmasq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#sigmasq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.sigmasq" title="Link to this definition"></a></dt>
+<dd><p>Return the loudness of the waveform. This is defined (see Duncan
+Brown’s thesis) as the unnormalized matched-filter of the input waveform,
+htilde, with itself. This quantity is usually referred to as (sigma)^2
+and is then used to normalize matched-filters with the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>htilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector containing a waveform.</p></li>
+<li><p><strong>psd</strong> (<em>{None</em><em>, </em><em>FrequencySeries}</em><em>, </em><em>optional</em>) – The psd used to weight the accumulated power.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin considering waveform power.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop considering waveform power.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sigmasq</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter.sigmasq_series">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter.</span></span><span class="sig-name descname"><span class="pre">sigmasq_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter.html#sigmasq_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter.sigmasq_series" title="Link to this definition"></a></dt>
+<dd><p>Return a cumulative sigmasq frequency series.</p>
+<p>Return a frequency series containing the accumulated power in the input
+up to that frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>htilde</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector</p></li>
+<li><p><strong>psd</strong> (<em>{None</em><em>, </em><em>FrequencySeries}</em><em>, </em><em>optional</em>) – The psd used to weight the accumulated power.</p></li>
+<li><p><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to begin accumulating power. If None, start at the beginning
+of the vector.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The frequency to stop considering accumulated power. If None, continue
+until the end of the input vector.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Frequency Series</strong> – A frequency series containing the cumulative sigmasq.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.filter.matchedfilter_cpu">
+<span id="pycbc-filter-matchedfilter-cpu-module"></span><h2>pycbc.filter.matchedfilter_cpu module<a class="headerlink" href="#module-pycbc.filter.matchedfilter_cpu" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cpu.CPUCorrelator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_cpu.</span></span><span class="sig-name descname"><span class="pre">CPUCorrelator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.matchedfilter_cpu.CPUCorrelator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseCorrelator</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cpu.CPUCorrelator.correlate">
+<span class="sig-name descname"><span class="pre">correlate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.matchedfilter_cpu.CPUCorrelator.correlate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cpu.batch_correlate_execute">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_cpu.</span></span><span class="sig-name descname"><span class="pre">batch_correlate_execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.matchedfilter_cpu.batch_correlate_execute" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cpu.correlate">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_cpu.</span></span><span class="sig-name descname"><span class="pre">correlate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.matchedfilter_cpu.correlate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cpu.correlate_numpy">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_cpu.</span></span><span class="sig-name descname"><span class="pre">correlate_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.matchedfilter_cpu.correlate_numpy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.filter.matchedfilter_cupy">
+<span id="pycbc-filter-matchedfilter-cupy-module"></span><h2>pycbc.filter.matchedfilter_cupy module<a class="headerlink" href="#module-pycbc.filter.matchedfilter_cupy" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cupy.CUPYCorrelator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_cupy.</span></span><span class="sig-name descname"><span class="pre">CUPYCorrelator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter_cupy.html#CUPYCorrelator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter_cupy.CUPYCorrelator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseCorrelator</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cupy.CUPYCorrelator.correlate">
+<span class="sig-name descname"><span class="pre">correlate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter_cupy.html#CUPYCorrelator.correlate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter_cupy.CUPYCorrelator.correlate" title="Link to this definition"></a></dt>
+<dd><p>Compute the correlation of the vectors specified at object
+instantiation, writing into the output vector given when the
+object was instantiated. The intention is that this method
+should be called many times, with the contents of those vectors
+changing between invocations, but not their locations in memory
+or length.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_cupy.correlate">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_cupy.</span></span><span class="sig-name descname"><span class="pre">correlate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter_cupy.html#correlate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter_cupy.correlate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.filter.matchedfilter_numpy">
+<span id="pycbc-filter-matchedfilter-numpy-module"></span><h2>pycbc.filter.matchedfilter_numpy module<a class="headerlink" href="#module-pycbc.filter.matchedfilter_numpy" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.matchedfilter_numpy.correlate">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.matchedfilter_numpy.</span></span><span class="sig-name descname"><span class="pre">correlate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/matchedfilter_numpy.html#correlate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.matchedfilter_numpy.correlate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.filter.qtransform">
+<span id="pycbc-filter-qtransform-module"></span><h2>pycbc.filter.qtransform module<a class="headerlink" href="#module-pycbc.filter.qtransform" title="Link to this heading"></a></h2>
+<p>This module retrives a timeseries and then calculates
+the q-transform of that time series</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.qtransform.deltam_f">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.qtransform.</span></span><span class="sig-name descname"><span class="pre">deltam_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mismatch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/qtransform.html#deltam_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.qtransform.deltam_f" title="Link to this definition"></a></dt>
+<dd><p>Fractional mismatch between neighbouring tiles</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mismatch</strong> (<em>'float'</em>) – percentage of desired fractional mismatch</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>type: ‘float’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.qtransform.qplane">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.qtransform.</span></span><span class="sig-name descname"><span class="pre">qplane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qplane_tile_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_complex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/qtransform.html#qplane"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.qtransform.qplane" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Performs q-transform on each tile for each q-plane and selects</dt><dd><p>tile with the maximum energy. Q-transform can then
+be interpolated to a desired frequency and time resolution.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qplane_tile_dict</strong> – Dictionary containing a list of q-tile tupples for each q-plane</p></li>
+<li><p><strong>fseries</strong> (<em>'pycbc FrequencySeries'</em>) – frequency-series data set</p></li>
+<li><p><strong>return_complex</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Return the raw complex series instead of the normalized power.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>q</strong> (<em>float</em>) – The q of the maximum q plane</p></li>
+<li><p><strong>times</strong> (<em>numpy.ndarray</em>) – The time that the qtransform is sampled.</p></li>
+<li><p><strong>freqs</strong> (<em>numpy.ndarray</em>) – The frequencies that the qtransform is samled.</p></li>
+<li><p><strong>qplane</strong> (<em>numpy.ndarray (2d)</em>) – The two dimensional interpolated qtransform of this time series.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.qtransform.qseries">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.qtransform.</span></span><span class="sig-name descname"><span class="pre">qseries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_complex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/qtransform.html#qseries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.qtransform.qseries" title="Link to this definition"></a></dt>
+<dd><p>Calculate the energy ‘TimeSeries’ for the given fseries</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fseries</strong> (<em>'pycbc FrequencySeries'</em>) – frequency-series data set</p></li>
+<li><p><strong>Q</strong> – q value</p></li>
+<li><p><strong>f0</strong> – central frequency</p></li>
+<li><p><strong>return_complex</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Return the raw complex series instead of the normalized power.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>energy</strong> – A ‘TimeSeries’ of the normalized energy from the Q-transform of
+this tile against the data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>‘~pycbc.types.TimeSeries’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.qtransform.qtiling">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.qtransform.</span></span><span class="sig-name descname"><span class="pre">qtiling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qrange</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frange</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mismatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/qtransform.html#qtiling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.qtransform.qtiling" title="Link to this definition"></a></dt>
+<dd><p>Iterable constructor of QTile tuples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fseries</strong> (<em>'pycbc FrequencySeries'</em>) – frequency-series data set</p></li>
+<li><p><strong>qrange</strong> – upper and lower bounds of q range</p></li>
+<li><p><strong>frange</strong> – upper and lower bounds of frequency range</p></li>
+<li><p><strong>mismatch</strong> – percentage of desired fractional mismatch</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>qplane_tile_dict</strong> – dictionary containing Q-tile tuples for a set of Q-planes</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>‘dict’</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.filter.resample">
+<span id="pycbc-filter-resample-module"></span><h2>pycbc.filter.resample module<a class="headerlink" href="#module-pycbc.filter.resample" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.fir_zero_filter">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">fir_zero_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coeff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#fir_zero_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.fir_zero_filter" title="Link to this definition"></a></dt>
+<dd><p>Filter the timeseries with a set of FIR coefficients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coeff</strong> (<em>numpy.ndarray</em>) – FIR coefficients. Should be and odd length and symmetric.</p></li>
+<li><p><strong>timeseries</strong> (<em>pycbc.types.TimeSeries</em>) – Time series to be filtered.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>filtered_series</strong> (<em>pycbc.types.TimeSeries</em>) – Return the filtered timeseries, which has been properly shifted to account</p></li>
+<li><p><em>for the FIR filter delay and the corrupted regions zeroed out.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.highpass">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">highpass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attenuation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#highpass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.highpass" title="Link to this definition"></a></dt>
+<dd><p>Return a new timeseries that is highpassed.</p>
+<p>Return a new time series that is highpassed above the <cite>frequency</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Series</strong> (<em>Time</em>) – The time series to be high-passed.</p></li>
+<li><p><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency below which is suppressed.</p></li>
+<li><p><strong>filter_order</strong> (<em>{8</em><em>, </em><em>int}</em><em>, </em><em>optional</em>) – The order of the filter to use when high-passing the time series.</p></li>
+<li><p><strong>attenuation</strong> (<em>{0.1</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The attenuation of the filter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Time Series</strong> – A  new TimeSeries that has been high-passed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError:</strong> – time_series is not an instance of TimeSeries.</p></li>
+<li><p><strong>TypeError:</strong> – time_series is not real valued</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.highpass_fir">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">highpass_fir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#highpass_fir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.highpass_fir" title="Link to this definition"></a></dt>
+<dd><p>Highpass filter the time series using an FIR filtered generated from
+the ideal response passed through a kaiser window (beta = 5.0)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Series</strong> (<em>Time</em>) – The time series to be high-passed.</p></li>
+<li><p><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency below which is suppressed.</p></li>
+<li><p><strong>order</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of corrupted samples on each side of the time series</p></li>
+<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Beta parameter of the kaiser window that sets the side lobe attenuation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.interpolate_complex_frequency">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">interpolate_complex_frequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeros_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'right'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#interpolate_complex_frequency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.interpolate_complex_frequency" title="Link to this definition"></a></dt>
+<dd><p>Interpolate complex frequency series to desired delta_f.</p>
+<p>Return a new complex frequency series that has been interpolated to the
+desired delta_f.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>series</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – Frequency series to be interpolated.</p></li>
+<li><p><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The desired delta_f of the output</p></li>
+<li><p><strong>zeros_offset</strong> (<em>optional</em><em>, </em><em>{0</em><em>, </em><em>int}</em>) – Number of sample to delay the start of the zero padding</p></li>
+<li><p><strong>side</strong> (<em>optional</em><em>, </em><em>{'right'</em><em>, </em><em>str}</em>) – The side of the vector to zero pad</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>interpolated series</strong> – A new FrequencySeries that has been interpolated.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.lowpass">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">lowpass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attenuation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#lowpass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.lowpass" title="Link to this definition"></a></dt>
+<dd><p>Return a new timeseries that is lowpassed.</p>
+<p>Return a new time series that is lowpassed below the <cite>frequency</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Series</strong> (<em>Time</em>) – The time series to be low-passed.</p></li>
+<li><p><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency above which is suppressed.</p></li>
+<li><p><strong>filter_order</strong> (<em>{8</em><em>, </em><em>int}</em><em>, </em><em>optional</em>) – The order of the filter to use when low-passing the time series.</p></li>
+<li><p><strong>attenuation</strong> (<em>{0.1</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – The attenuation of the filter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Time Series</strong> – A  new TimeSeries that has been low-passed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError:</strong> – time_series is not an instance of TimeSeries.</p></li>
+<li><p><strong>TypeError:</strong> – time_series is not real valued</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.lowpass_fir">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">lowpass_fir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#lowpass_fir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.lowpass_fir" title="Link to this definition"></a></dt>
+<dd><p>Lowpass filter the time series using an FIR filtered generated from
+the ideal response passed through a kaiser window (beta = 5.0)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Series</strong> (<em>Time</em>) – The time series to be low-passed.</p></li>
+<li><p><strong>frequency</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The frequency below which is suppressed.</p></li>
+<li><p><strong>order</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of corrupted samples on each side of the time series</p></li>
+<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Beta parameter of the kaiser window that sets the side lobe attenuation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.notch_fir">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">notch_fir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#notch_fir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.notch_fir" title="Link to this definition"></a></dt>
+<dd><p>notch filter the time series using an FIR filtered generated from
+the ideal response passed through a time-domain kaiser window (beta = 5.0)</p>
+<p>The suppression of the notch filter is related to the bandwidth and
+the number of samples in the filter length. For a few Hz bandwidth,
+a length corresponding to a few seconds is typically
+required to create significant suppression in the notched band.
+To achieve frequency resolution df at sampling frequency fs,
+order should be at least fs/df.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Series</strong> (<em>Time</em>) – The time series to be notched.</p></li>
+<li><p><strong>f1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The start of the frequency suppression.</p></li>
+<li><p><strong>f2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The end of the frequency suppression.</p></li>
+<li><p><strong>order</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of corrupted samples on each side of the time series
+(Extent of the filter on either side of zero)</p></li>
+<li><p><strong>beta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Beta parameter of the kaiser window that sets the side lobe attenuation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.resample.resample_to_delta_t">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.resample.</span></span><span class="sig-name descname"><span class="pre">resample_to_delta_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'butterworth'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/resample.html#resample_to_delta_t"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.resample.resample_to_delta_t" title="Link to this definition"></a></dt>
+<dd><p>Resmple the time_series to delta_t</p>
+<p>Resamples the TimeSeries instance time_series to the given time step,
+delta_t. Only powers of two and real valued time series are supported
+at this time. Additional restrictions may apply to particular filter
+methods.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_series</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The time series to be resampled</p></li>
+<li><p><strong>delta_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The desired time step</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Time Series</strong> – A TimeSeries that has been resampled to delta_t.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError:</strong> – time_series is not an instance of TimeSeries.</p></li>
+<li><p><strong>TypeError:</strong> – time_series is not real valued</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">h_plus_sampled</span> <span class="o">=</span> <span class="n">resample_to_delta_t</span><span class="p">(</span><span class="n">h_plus</span><span class="p">,</span> <span class="mf">1.0</span><span class="o">/</span><span class="mi">2048</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.filter.simd_correlate">
+<span id="pycbc-filter-simd-correlate-module"></span><h2>pycbc.filter.simd_correlate module<a class="headerlink" href="#module-pycbc.filter.simd_correlate" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.simd_correlate.correlate_parallel">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.simd_correlate.</span></span><span class="sig-name descname"><span class="pre">correlate_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ht</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">st</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/simd_correlate.html#correlate_parallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.simd_correlate.correlate_parallel" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.simd_correlate.correlate_simd">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.simd_correlate.</span></span><span class="sig-name descname"><span class="pre">correlate_simd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ht</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">st</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/simd_correlate.html#correlate_simd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.simd_correlate.correlate_simd" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.filter.simd_correlate_cython">
+<span id="pycbc-filter-simd-correlate-cython-module"></span><h2>pycbc.filter.simd_correlate_cython module<a class="headerlink" href="#module-pycbc.filter.simd_correlate_cython" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.simd_correlate_cython.ccorrf_parallel">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.simd_correlate_cython.</span></span><span class="sig-name descname"><span class="pre">ccorrf_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inconj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">innoconj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrlen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segsize</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.simd_correlate_cython.ccorrf_parallel" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.simd_correlate_cython.ccorrf_simd">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.simd_correlate_cython.</span></span><span class="sig-name descname"><span class="pre">ccorrf_simd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inconj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">innoconj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">len</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.filter.simd_correlate_cython.ccorrf_simd" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.filter.zpk">
+<span id="pycbc-filter-zpk-module"></span><h2>pycbc.filter.zpk module<a class="headerlink" href="#module-pycbc.filter.zpk" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.filter.zpk.filter_zpk">
+<span class="sig-prename descclassname"><span class="pre">pycbc.filter.zpk.</span></span><span class="sig-name descname"><span class="pre">filter_zpk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeseries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/filter/zpk.html#filter_zpk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.filter.zpk.filter_zpk" title="Link to this definition"></a></dt>
+<dd><p>Return a new timeseries that was filtered with a zero-pole-gain filter.
+The transfer function in the s-domain looks like:
+.. math::
+frac{H(s) = (s - s_1) * (s - s_3) * … * (s - s_n)}{(s - s_2) * (s - s_4) * … * (s - s_m)}, m &gt;= n</p>
+<p>The zeroes, and poles entered in Hz are converted to angular frequency,
+along the imaginary axis in the s-domain s=i*omega.  Then the zeroes, and
+poles are bilinearly transformed via:
+.. math::
+z(s) = frac{(1 + s*T/2)}{(1 - s*T/2)}</p>
+<p>Where z is the z-domain value, s is the s-domain value, and T is the
+sampling period.  After the poles and zeroes have been bilinearly
+transformed, then the second-order sections are found and filter the data
+using scipy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timeseries</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The TimeSeries instance to be filtered.</p></li>
+<li><p><strong>z</strong> (<em>array</em>) – Array of zeros to include in zero-pole-gain filter design.
+In units of Hz.</p></li>
+<li><p><strong>p</strong> (<em>array</em>) – Array of poles to include in zero-pole-gain filter design.
+In units of Hz.</p></li>
+<li><p><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Gain to include in zero-pole-gain filter design. This gain is a
+constant multiplied to the transfer function.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Time Series</strong> – A  new TimeSeries that has been filtered.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>To apply a 5 zeroes at 100Hz, 5 poles at 1Hz, and a gain of 1e-10 filter
+to a TimeSeries instance, do:
+&gt;&gt;&gt; filtered_data = zpk_filter(timeseries, [100]*5, [1]*5, 1e-10)</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.filter">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.filter" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.fft.html" class="btn btn-neutral float-left" title="pycbc.fft package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.frame.html" class="btn btn-neutral float-right" title="pycbc.frame package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

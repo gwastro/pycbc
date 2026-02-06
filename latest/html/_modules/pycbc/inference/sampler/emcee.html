@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.emcee &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.emcee</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.emcee</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes and functions for using the emcee sampler</span>
+<span class="sd">packages for parameter estimation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">emcee</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseSampler</span><span class="p">,</span> <span class="n">setup_output</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseMCMC</span><span class="p">,</span> <span class="n">EnsembleSupport</span><span class="p">,</span>
+                        <span class="n">ensemble_compute_acf</span><span class="p">,</span> <span class="n">ensemble_compute_acl</span><span class="p">,</span>
+                        <span class="n">raw_samples_to_dict</span><span class="p">,</span>
+                        <span class="n">blob_data_to_dict</span><span class="p">,</span> <span class="n">get_optional_arg_from_config</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..burn_in</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleMCMCBurnInTests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmceeFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Samplers</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="k">if</span> <span class="n">emcee</span><span class="o">.</span><span class="n">__version__</span> <span class="o">&gt;=</span> <span class="s1">&#39;3.0.0&#39;</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EmceeEnsembleSampler</span><span class="p">(</span><span class="n">EnsembleSupport</span><span class="p">,</span> <span class="n">BaseMCMC</span><span class="p">,</span> <span class="n">BaseSampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class is used to construct an MCMC sampler from the emcee</span>
+<span class="sd">    package&#39;s EnsembleSampler.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : model</span>
+<span class="sd">        A model from ``pycbc.inference.models``.</span>
+<span class="sd">    nwalkers : int</span>
+<span class="sd">        Number of walkers to use in sampler.</span>
+<span class="sd">    pool : function with map, Optional</span>
+<span class="sd">        A provider of a map function that allows a function call to be run</span>
+<span class="sd">        over multiple sets of arguments and possibly maps them to</span>
+<span class="sd">        cores/nodes/etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;emcee&quot;</span>
+    <span class="n">_io</span> <span class="o">=</span> <span class="n">EmceeFile</span>
+    <span class="n">burn_in_class</span> <span class="o">=</span> <span class="n">EnsembleMCMCBurnInTests</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span>
+                 <span class="n">checkpoint_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkpoint_signal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">logpost_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="c1"># create a wrapper for calling the model</span>
+        <span class="k">if</span> <span class="n">logpost_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logpost_function</span> <span class="o">=</span> <span class="s1">&#39;logposterior&#39;</span>
+        <span class="n">model_call</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CallModel</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">logpost_function</span><span class="p">)</span>
+
+        <span class="c1"># these are used to help paralleize over multiple cores / MPI</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span> <span class="o">=</span> <span class="n">model_call</span>
+        <span class="n">model_call</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">_call_global_model</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+
+        <span class="c1"># set up emcee</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nwalkers</span> <span class="o">=</span> <span class="n">nwalkers</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">EnsembleSampler</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">ndim</span><span class="p">,</span> <span class="n">model_call</span><span class="p">,</span>
+                                              <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">)</span>
+        <span class="c1"># emcee uses it&#39;s own internal random number generator; we&#39;ll set it</span>
+        <span class="c1"># to have the same state as the numpy generator</span>
+        <span class="n">rstate</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">rstate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_interval</span> <span class="o">=</span> <span class="n">checkpoint_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkpoint_signal</span> <span class="o">=</span> <span class="n">checkpoint_signal</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_io</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">base_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nwalkers</span><span class="p">,)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dict mapping ``variable_params`` to arrays of samples currently</span>
+<span class="sd">        in memory.</span>
+
+<span class="sd">        The arrays have shape ``nwalkers x niterations``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># emcee stores samples to it&#39;s chain attribute as a</span>
+        <span class="c1"># nwalker x niterations x ndim array</span>
+        <span class="n">raw_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">chain</span>
+        <span class="k">return</span> <span class="n">raw_samples_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_samples</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dict mapping the model&#39;s ``default_stats`` to arrays of values.</span>
+
+<span class="sd">        The returned array has shape ``nwalkers x niterations``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">default_stats</span>
+        <span class="k">return</span> <span class="n">blob_data_to_dict</span><span class="p">(</span><span class="n">stats</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">blobs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.clear_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.clear_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears the samples and stats from memory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># store the iteration that the clear is occuring on</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lastclear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_itercounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># now clear the chain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">clear_blobs</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.set_state_from_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.set_state_from_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the state of the sampler back to the instance saved in a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">rstate</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_random_state</span><span class="p">()</span>
+        <span class="c1"># set the numpy random state</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">rstate</span><span class="p">)</span>
+        <span class="c1"># set emcee&#39;s generator to the same state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">rstate</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.run_mcmc">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.run_mcmc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_mcmc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">niterations</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Advance the ensemble for a number of samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        niterations : int</span>
+<span class="sd">            Number of iterations to run the sampler for.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">niterations</span><span class="p">)</span>
+        <span class="n">p</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># update the positions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pos</span> <span class="o">=</span> <span class="n">p</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.write_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes samples, model stats, acceptance fraction, and random state</span>
+<span class="sd">        to the given file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The file to write to. The file is opened using the ``io`` class</span>
+<span class="sd">            in an an append state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># write samples</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
+                             <span class="n">parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">,</span>
+                             <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="c1"># write stats</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_stats</span><span class="p">,</span>
+                             <span class="n">last_iteration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">)</span>
+            <span class="c1"># write accpetance</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_acceptance_fraction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">acceptance_fraction</span><span class="p">)</span>
+            <span class="c1"># write random state</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_random_state</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All data is written by the last checkpoint in the run method, so</span>
+<span class="sd">        this just passes.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.compute_acf">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.compute_acf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the autocorrelation function.</span>
+
+<span class="sd">        Calls :py:func:`base_mcmc.ensemble_compute_acf`; see that</span>
+<span class="sd">        function for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of a samples file to compute ACFs for.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to</span>
+<span class="sd">            :py:func:`base_mcmc.ensemble_compute_acf`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of arrays giving the ACFs for each parameter. If</span>
+<span class="sd">            ``per-walker`` is True, the arrays will have shape</span>
+<span class="sd">            ``nwalkers x niterations``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ensemble_compute_acf</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.compute_acl">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.compute_acl">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the autocorrelation length.</span>
+
+<span class="sd">        Calls :py:func:`base_mcmc.ensemble_compute_acl`; see that</span>
+<span class="sd">        function for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of a samples file to compute ACLs for.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to</span>
+<span class="sd">            :py:func:`base_mcmc.ensemble_compute_acf`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary giving the ACL for each parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ensemble_compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EmceeEnsembleSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads the sampler from the given config file.&quot;&quot;&quot;</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;sampler&quot;</span>
+        <span class="c1"># check name</span>
+        <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;name in section [sampler] must match mine&quot;</span><span class="p">)</span>
+        <span class="c1"># get the number of walkers to use</span>
+        <span class="n">nwalkers</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;nwalkers&quot;</span><span class="p">))</span>
+        <span class="c1"># get the checkpoint interval, if it&#39;s specified</span>
+        <span class="n">checkpoint_interval</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">checkpoint_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="n">checkpoint_signal</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ckpt_signal_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># get the logpost function</span>
+        <span class="n">lnpost</span> <span class="o">=</span> <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;logpost-function&#39;</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span>
+                  <span class="n">checkpoint_interval</span><span class="o">=</span><span class="n">checkpoint_interval</span><span class="p">,</span>
+                  <span class="n">checkpoint_signal</span><span class="o">=</span><span class="n">checkpoint_signal</span><span class="p">,</span>
+                  <span class="n">logpost_function</span><span class="o">=</span><span class="n">lnpost</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">,</span>
+                  <span class="n">use_mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">)</span>
+        <span class="c1"># set target</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_target_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># add burn-in if it&#39;s specified</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_burn_in_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="c1"># set prethin options</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">set_thin_interval_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+        <span class="c1"># Set up the output file</span>
+        <span class="n">setup_output</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">new_checkpoint</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">resume_from_checkpoint</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">set_start_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

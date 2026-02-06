@@ -1,0 +1,664 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.scale_injections &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.scale_injections</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.scale_injections</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">log</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">quad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">WMAP9</span> <span class="k">as</span> <span class="n">cosmo</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">mchirp_from_mass1_mass2</span> <span class="k">as</span> <span class="n">m1m2tomch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+
+<span class="n">_mch_BNS</span> <span class="o">=</span> <span class="mf">1.4</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="mf">.2</span>
+<span class="n">_redshifts</span><span class="p">,</span> <span class="n">_d_lum</span><span class="p">,</span> <span class="n">_I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="p">[],</span> <span class="p">[]</span>
+<span class="n">_save_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">,</span> <span class="s1">&#39;mass2&#39;</span><span class="p">,</span> <span class="s1">&#39;spin1z&#39;</span><span class="p">,</span> <span class="s1">&#39;spin2z&#39;</span><span class="p">,</span> <span class="s1">&#39;spin1y&#39;</span><span class="p">,</span> <span class="s1">&#39;spin2y&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;spin1x&#39;</span><span class="p">,</span> <span class="s1">&#39;spin2x&#39;</span><span class="p">,</span> <span class="s1">&#39;distance&#39;</span><span class="p">,</span> <span class="s1">&#39;end_time&#39;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">zz</span> <span class="ow">in</span> <span class="n">_redshifts</span><span class="p">:</span>
+    <span class="n">_d_lum</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cosmo</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">zz</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="n">_dlum_interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">_d_lum</span><span class="p">,</span> <span class="n">_redshifts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="read_injections">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.read_injections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_injections</span><span class="p">(</span><span class="n">sim_files</span><span class="p">,</span> <span class="n">m_dist</span><span class="p">,</span> <span class="n">s_dist</span><span class="p">,</span> <span class="n">d_dist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Read all the injections from the files in the provided folder.</span>
+<span class="sd">        The files must belong to individual set i.e. no files that combine</span>
+<span class="sd">        all the injections in a run.</span>
+<span class="sd">        Identify injection strategies and finds parameter boundaries.</span>
+<span class="sd">        Collect injection according to GPS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        sim_files: list</span>
+<span class="sd">           List containign names of the simulation files</span>
+<span class="sd">        m_dist: list</span>
+<span class="sd">           The mass distribution used in the simulation runs</span>
+<span class="sd">        s_dist: list</span>
+<span class="sd">           The spin distribution used in the simulation runs</span>
+<span class="sd">        d_dist: list</span>
+<span class="sd">           The distance distribution used in the simulation runs</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        injections: dictionary</span>
+<span class="sd">           Contains the organized information about the injections</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">injections</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">min_d</span><span class="p">,</span> <span class="n">max_d</span> <span class="o">=</span> <span class="mf">1e12</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="n">nf</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sim_files</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nf</span><span class="p">):</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">process_injections</span><span class="p">(</span><span class="n">sim_files</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;file_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sim_files</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;m_dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">m_dist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;s_dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_dist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;d_dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d_dist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span>
+
+        <span class="n">mchirp</span> <span class="o">=</span> <span class="n">m1m2tomch</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;chirp_mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mchirp</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;total_mass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span>
+
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;mtot_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span><span class="p">)]</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;m1_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">mass1</span><span class="p">)]</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;m2_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">mass2</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">mass2</span><span class="p">)]</span>
+        <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;d_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">distance</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">distance</span><span class="p">)]</span>
+
+        <span class="n">min_d</span><span class="p">,</span> <span class="n">max_d</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">min_d</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">distance</span><span class="p">)),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_d</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">distance</span><span class="p">))</span>
+
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;z_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">dlum_to_z</span><span class="p">(</span><span class="n">min_d</span><span class="p">),</span> <span class="n">dlum_to_z</span><span class="p">(</span><span class="n">max_d</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">injections</span></div>
+
+
+<div class="viewcode-block" id="estimate_vt">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.estimate_vt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_vt</span><span class="p">(</span><span class="n">injections</span><span class="p">,</span> <span class="n">mchirp_sampler</span><span class="p">,</span> <span class="n">model_pdf</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1">#Try including ifar threshold</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Based on injection strategy and the desired astro model estimate the injected volume.</span>
+<span class="sd">       Scale injections and estimate sensitive volume.</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       injections: dictionary</span>
+<span class="sd">            Dictionary obtained after reading injections from read_injections</span>
+<span class="sd">       mchirp_sampler: function</span>
+<span class="sd">            Sampler for producing chirp mass samples for the astro model.</span>
+<span class="sd">       model_pdf: function</span>
+<span class="sd">            The PDF for astro model in mass1-mass2-spin1z-spin2z space.</span>
+<span class="sd">            This is easily extendible to include precession</span>
+<span class="sd">       kwargs: key words</span>
+<span class="sd">            Inputs for thresholds and astrophysical models</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       injection_chunks: dictionary</span>
+<span class="sd">        The input dictionary with VT and VT error included with the injections</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">thr_var</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;thr_var&#39;</span><span class="p">)</span>
+    <span class="n">thr_val</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;thr_val&#39;</span><span class="p">)</span>
+
+    <span class="n">nsamples</span> <span class="o">=</span> <span class="mi">1000000</span> <span class="c1">#Used to calculate injected astro volume</span>
+    <span class="n">injections</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">injections</span><span class="p">)</span>
+    <span class="n">min_z</span><span class="p">,</span> <span class="n">max_z</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;z_range&#39;</span><span class="p">]</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">contracted_dVdc</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">max_z</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">z_astro</span> <span class="o">=</span> <span class="n">astro_redshifts</span><span class="p">(</span><span class="n">min_z</span><span class="p">,</span> <span class="n">max_z</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span>
+    <span class="n">astro_lum_dist</span> <span class="o">=</span> <span class="n">cosmo</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">z_astro</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="n">mch_astro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mchirp_sampler</span><span class="p">(</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">nsamples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="n">mch_astro_det</span> <span class="o">=</span> <span class="n">mch_astro</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">z_astro</span><span class="p">)</span>
+    <span class="n">idx_within</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nsamples</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">injections</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;z_range&#39;</span><span class="p">:</span>
+            <span class="c1"># This is repeated down again and is so</span>
+            <span class="k">continue</span>
+
+        <span class="n">mchirp</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;chirp_mass&#39;</span><span class="p">]</span>
+        <span class="n">min_mchirp</span><span class="p">,</span> <span class="n">max_mchirp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mchirp</span><span class="p">),</span>  <span class="nb">max</span><span class="p">(</span><span class="n">mchirp</span><span class="p">)</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;d_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+            <span class="n">d_min</span><span class="p">,</span> <span class="n">d_max</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">distance</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;d_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;dchirp&#39;</span><span class="p">:</span>
+            <span class="n">d_fid_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">distance</span> <span class="o">/</span> <span class="p">(</span><span class="n">mchirp</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">5</span><span class="o">/</span><span class="mf">6.</span><span class="p">))</span>
+            <span class="n">d_fid_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">distance</span> <span class="o">/</span> <span class="p">(</span><span class="n">mchirp</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">5</span><span class="o">/</span><span class="mf">6.</span><span class="p">))</span>
+
+            <span class="n">d_min</span> <span class="o">=</span> <span class="n">d_fid_min</span> <span class="o">*</span> <span class="p">(</span><span class="n">mch_astro_det</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">5</span><span class="o">/</span><span class="mf">6.</span><span class="p">)</span>
+            <span class="n">d_max</span> <span class="o">=</span> <span class="n">d_fid_max</span> <span class="o">*</span> <span class="p">(</span><span class="n">mch_astro_det</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">5</span><span class="o">/</span><span class="mf">6.</span><span class="p">)</span>
+
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">max_mchirp</span><span class="o">-</span><span class="n">mch_astro_det</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mch_astro_det</span><span class="o">-</span><span class="n">min_mchirp</span><span class="p">))</span>
+        <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">d_max</span> <span class="o">-</span> <span class="n">astro_lum_dist</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">astro_lum_dist</span> <span class="o">-</span> <span class="n">d_min</span><span class="p">))</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">idx_within</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">inj_V0</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">V</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_within</span><span class="p">[</span><span class="n">idx_within</span> <span class="o">==</span> <span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">nsamples</span><span class="p">)</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;inj_astro_vol&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inj_V0</span>
+
+    <span class="c1"># Estimate the sensitive volume</span>
+    <span class="n">z_range</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;z_range&#39;</span><span class="p">]</span>
+    <span class="n">V_min</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">contracted_dVdc</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">z_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">V_max</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">contracted_dVdc</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">z_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">thr_falloff</span><span class="p">,</span> <span class="n">i_inj</span><span class="p">,</span> <span class="n">i_det</span><span class="p">,</span> <span class="n">i_det_sq</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="n">gps_min</span><span class="p">,</span> <span class="n">gps_max</span> <span class="o">=</span> <span class="mf">1e15</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="n">injections</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;z_range&#39;</span> <span class="ow">or</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;inj_astro_vol&#39;</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span>
+        <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span>
+        <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+        <span class="n">mchirp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;chirp_mass&#39;</span><span class="p">]</span>
+        <span class="n">gps_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">gps_min</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">]))</span>
+        <span class="n">gps_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">gps_max</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">]))</span>
+
+        <span class="n">z_inj</span> <span class="o">=</span> <span class="n">dlum_to_z</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
+        <span class="n">m1_sc</span><span class="p">,</span> <span class="n">m2_sc</span> <span class="o">=</span> <span class="n">mass1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_inj</span><span class="p">),</span> <span class="n">mass2</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_inj</span><span class="p">)</span>
+        <span class="n">p_out</span> <span class="o">=</span> <span class="n">model_pdf</span><span class="p">(</span><span class="n">m1_sc</span><span class="p">,</span> <span class="n">m2_sc</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">)</span>
+        <span class="n">p_out</span> <span class="o">*=</span> <span class="n">pdf_z_astro</span><span class="p">(</span><span class="n">z_inj</span><span class="p">,</span> <span class="n">V_min</span><span class="p">,</span> <span class="n">V_max</span><span class="p">)</span>
+
+        <span class="n">p_in</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="n">cosmo</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">z_inj</span> <span class="o">+</span> <span class="mf">0.0005</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">J</span> <span class="o">-=</span> <span class="n">cosmo</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">z_inj</span> <span class="o">-</span> <span class="mf">0.0005</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">J</span><span class="p">)</span><span class="o">/</span><span class="mf">0.001</span> <span class="c1"># A quick way to get dD_l/dz</span>
+
+        <span class="c1"># Sum probability of injections from j-th set for all the strategies</span>
+        <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">key2</span> <span class="o">==</span> <span class="s1">&#39;z_range&#39;</span> <span class="ow">or</span> <span class="n">key2</span> <span class="o">==</span> <span class="s1">&#39;inj_astro_vol&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">dt_j</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">key2</span><span class="p">]</span>
+            <span class="n">dist_j</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span>
+            <span class="n">m1_j</span><span class="p">,</span> <span class="n">m2_j</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span>
+            <span class="n">s1x_2</span><span class="p">,</span> <span class="n">s2x_2</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">],</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">]</span>
+            <span class="n">s1y_2</span><span class="p">,</span> <span class="n">s2y_2</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">],</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">]</span>
+            <span class="n">s1z_2</span><span class="p">,</span> <span class="n">s2z_2</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+            <span class="n">s1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">s1x_2</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s1y_2</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s1z_2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">s2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">s2x_2</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s2y_2</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s2z_2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">mch_j</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;chirp_mass&#39;</span><span class="p">]</span>
+
+        <span class="c1">#Get probability density for injections in mass-distance space</span>
+            <span class="k">if</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;m_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;totalMass&#39;</span><span class="p">:</span>
+                <span class="n">lomass</span><span class="p">,</span> <span class="n">himass</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">m1_j</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">m2_j</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">m1_j</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">m2_j</span><span class="p">)))</span>
+                <span class="n">lomass_2</span><span class="p">,</span> <span class="n">himass_2</span> <span class="o">=</span> <span class="n">lomass</span><span class="p">,</span> <span class="n">himass</span>
+            <span class="k">elif</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;m_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;componentMass&#39;</span> <span class="ow">or</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;m_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span>
+                <span class="n">lomass</span><span class="p">,</span> <span class="n">himass</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">m1_j</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">m1_j</span><span class="p">)</span>
+                <span class="n">lomass_2</span><span class="p">,</span> <span class="n">himass_2</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">m2_j</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">m2_j</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;d_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;dchirp&#39;</span><span class="p">:</span>
+                <span class="n">l_dist</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dist_j</span> <span class="o">/</span> <span class="p">(</span><span class="n">mch_j</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">5</span><span class="o">/</span><span class="mf">6.</span><span class="p">))</span>
+                <span class="n">h_dist</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dist_j</span> <span class="o">/</span> <span class="p">(</span><span class="n">mch_j</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">5</span><span class="o">/</span><span class="mf">6.</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;d_dist&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+                <span class="n">l_dist</span><span class="p">,</span> <span class="n">h_dist</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dist_j</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">dist_j</span><span class="p">)</span>
+
+            <span class="n">mdist</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;m_dist&#39;</span><span class="p">]</span>
+            <span class="n">prob_mass</span> <span class="o">=</span> <span class="n">inj_mass_pdf</span><span class="p">(</span><span class="n">mdist</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span>
+                                          <span class="n">lomass</span><span class="p">,</span> <span class="n">himass</span><span class="p">,</span> <span class="n">lomass_2</span><span class="p">,</span> <span class="n">himass_2</span><span class="p">)</span>
+
+            <span class="n">ddist</span> <span class="o">=</span> <span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;d_dist&#39;</span><span class="p">]</span>
+            <span class="n">prob_dist</span> <span class="o">=</span> <span class="n">inj_distance_pdf</span><span class="p">(</span><span class="n">ddist</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">l_dist</span><span class="p">,</span>
+                                                              <span class="n">h_dist</span><span class="p">,</span> <span class="n">mchirp</span><span class="p">)</span>
+
+            <span class="n">hspin1</span><span class="p">,</span> <span class="n">hspin2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">s1</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
+            <span class="n">prob_spin</span> <span class="o">=</span> <span class="n">inj_spin_pdf</span><span class="p">(</span><span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;s_dist&#39;</span><span class="p">],</span> <span class="n">hspin1</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">)</span>
+            <span class="n">prob_spin</span> <span class="o">*=</span> <span class="n">inj_spin_pdf</span><span class="p">(</span><span class="n">dt_j</span><span class="p">[</span><span class="s1">&#39;s_dist&#39;</span><span class="p">],</span> <span class="n">hspin2</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">)</span>
+
+            <span class="n">p_in</span> <span class="o">+=</span> <span class="n">prob_mass</span> <span class="o">*</span> <span class="n">prob_dist</span> <span class="o">*</span> <span class="n">prob_spin</span> <span class="o">*</span> <span class="n">J</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z_inj</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="n">p_in</span><span class="p">[</span><span class="n">p_in</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e12</span>
+        <span class="n">p_out_in</span> <span class="o">=</span> <span class="n">p_out</span><span class="o">/</span><span class="n">p_in</span>
+
+        <span class="n">i_inj</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p_out_in</span><span class="p">)</span>
+        <span class="n">i_det</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">p_out_in</span><span class="p">)[</span><span class="n">data</span><span class="p">[</span><span class="n">thr_var</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thr_val</span><span class="p">])</span>
+        <span class="n">i_det_sq</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">p_out_in</span><span class="p">)[</span><span class="n">data</span><span class="p">[</span><span class="n">thr_var</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thr_val</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">idx_thr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">thr_var</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thr_val</span><span class="p">)</span>
+        <span class="n">thrs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">thr_var</span><span class="p">][</span><span class="n">idx_thr</span><span class="p">]</span>
+        <span class="n">ratios</span> <span class="o">=</span> <span class="n">p_out_in</span><span class="p">[</span><span class="n">idx_thr</span><span class="p">]</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="n">p_out_in</span><span class="p">[</span><span class="n">idx_thr</span><span class="p">])</span>
+        <span class="n">rndn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ratios</span><span class="p">))</span>
+        <span class="n">idx_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ratios</span> <span class="o">&gt;</span> <span class="n">rndn</span><span class="p">)</span>
+        <span class="n">thr_falloff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thrs</span><span class="p">[</span><span class="n">idx_ratio</span><span class="p">])</span>
+
+    <span class="n">inj_V0</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;inj_astro_vol&#39;</span><span class="p">]</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;ninj&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_inj</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;ndet&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_det</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;ndetsq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_det_sq</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;VT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">inj_V0</span><span class="o">*</span><span class="n">i_det</span><span class="o">/</span><span class="n">i_inj</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">gps_max</span> <span class="o">-</span> <span class="n">gps_min</span><span class="p">)</span><span class="o">/</span><span class="mi">31557600</span><span class="p">)</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;VT_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;VT&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">i_det_sq</span><span class="p">)</span><span class="o">/</span><span class="n">i_det</span>
+    <span class="n">injections</span><span class="p">[</span><span class="s1">&#39;thr_falloff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">thr_falloff</span><span class="p">)</span><span class="o">.</span><span class="n">flat</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">injections</span></div>
+
+
+<div class="viewcode-block" id="process_injections">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.process_injections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_injections</span><span class="p">(</span><span class="n">hdffile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to read in the injection file and</span>
+<span class="sd">       extract the found injections and all injections</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       hdffile: hdf file</span>
+<span class="sd">           File for which injections are to be processed</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       data: dictionary</span>
+<span class="sd">           Dictionary containing injection read from the input file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">hdffile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">inp</span><span class="p">:</span>
+        <span class="n">found_index</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="s1">&#39;found_after_vetoes/injection_index&#39;</span><span class="p">][:]</span>
+
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">_save_params</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="s1">&#39;injections/&#39;</span><span class="o">+</span><span class="n">param</span><span class="p">][:]</span>
+
+        <span class="n">ifar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">_save_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="n">ifar</span><span class="p">[</span><span class="n">found_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="s1">&#39;found_after_vetoes/ifar&#39;</span><span class="p">][:]</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ifar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ifar</span>
+
+        <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">_save_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="n">stat</span><span class="p">[</span><span class="n">found_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="s1">&#39;found_after_vetoes/stat&#39;</span><span class="p">][:]</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat</span>
+
+    <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="dlum_to_z">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.dlum_to_z">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dlum_to_z</span><span class="p">(</span><span class="n">dl</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Get the redshift for a luminosity distance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dl: array</span>
+<span class="sd">           The array of luminosity distances</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">           The redshift values corresponding to the luminosity distances</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">return</span> <span class="n">_dlum_interp</span><span class="p">(</span><span class="n">dl</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="astro_redshifts">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.astro_redshifts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">astro_redshifts</span><span class="p">(</span><span class="n">min_z</span><span class="p">,</span> <span class="n">max_z</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Sample the redshifts for sources, with redshift</span>
+<span class="sd">            independent rate, using standard cosmology</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       min_z: float</span>
+<span class="sd">            Minimum redshift</span>
+<span class="sd">       max_z: float</span>
+<span class="sd">            Maximum redshift</span>
+<span class="sd">       nsamples: int</span>
+<span class="sd">            Number of samples</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       z_astro: array</span>
+<span class="sd">            nsamples of redshift, between min_z, max_z, by standard cosmology</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">dz</span><span class="p">,</span> <span class="n">fac</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">3.0</span>
+    <span class="c1"># use interpolation instead of directly estimating all the pdfz for rndz</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">contracted_dVdc</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">max_z</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">zbins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">min_z</span><span class="p">,</span> <span class="n">max_z</span> <span class="o">+</span> <span class="n">dz</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">dz</span><span class="p">)</span>
+    <span class="n">zcenter</span> <span class="o">=</span> <span class="p">(</span><span class="n">zbins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">zbins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">pdfz</span> <span class="o">=</span> <span class="n">cosmo</span><span class="o">.</span><span class="n">differential_comoving_volume</span><span class="p">(</span><span class="n">zcenter</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">zcenter</span><span class="p">)</span><span class="o">/</span><span class="n">V</span>
+
+    <span class="n">int_pdf</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">zcenter</span><span class="p">,</span> <span class="n">pdfz</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">rndz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">min_z</span><span class="p">,</span> <span class="n">max_z</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">fac</span><span class="o">*</span><span class="n">nsamples</span><span class="p">))</span>
+    <span class="n">pdf_zs</span> <span class="o">=</span> <span class="n">int_pdf</span><span class="p">(</span><span class="n">rndz</span><span class="p">)</span>
+    <span class="n">maxpdf</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">pdf_zs</span><span class="p">)</span>
+    <span class="n">rndn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">fac</span><span class="o">*</span><span class="n">nsamples</span><span class="p">))</span> <span class="o">*</span> <span class="n">maxpdf</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">pdf_zs</span> <span class="o">-</span> <span class="n">rndn</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">z_astro</span> <span class="o">=</span> <span class="n">rndz</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">z_astro</span><span class="p">)</span>
+    <span class="n">z_astro</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">nsamples</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">z_astro</span></div>
+
+
+<div class="viewcode-block" id="pdf_z_astro">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.pdf_z_astro">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pdf_z_astro</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">V_min</span><span class="p">,</span> <span class="n">V_max</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Get the probability density for the rate of events</span>
+<span class="sd">        at a redshift assuming standard cosmology</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">contracted_dVdc</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">V_max</span> <span class="o">-</span> <span class="n">V_min</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="contracted_dVdc">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.contracted_dVdc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">contracted_dVdc</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+    <span class="c1">#Return the time-dilated differential comoving volume</span>
+    <span class="k">return</span> <span class="n">cosmo</span><span class="o">.</span><span class="n">differential_comoving_volume</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">z</span><span class="p">)</span></div>
+
+
+<span class="c1">##### Defining current standard strategies used for making injections #####</span>
+
+<div class="viewcode-block" id="inj_mass_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.inj_mass_pdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">inj_mass_pdf</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">lomass</span><span class="p">,</span> <span class="n">himass</span><span class="p">,</span> <span class="n">lomass_2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">himass_2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Estimate the probability density based on the injection strategy</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       key: string</span>
+<span class="sd">          Injection strategy</span>
+<span class="sd">       mass1: array</span>
+<span class="sd">          First mass of the injections</span>
+<span class="sd">       mass2: array</span>
+<span class="sd">          Second mass of the injections</span>
+<span class="sd">       lomass: float</span>
+<span class="sd">          Lower value of the mass distributions</span>
+<span class="sd">       himass: float</span>
+<span class="sd">          higher value of the mass distribution</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       pdf: array</span>
+<span class="sd">          Probability density of the injections</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mass2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;totalMass&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF of mass when total mass is uniformly distributed.</span>
+        <span class="c1"># Both the component masses have the same distribution for this case.</span>
+
+        <span class="c1"># Parameters</span>
+        <span class="c1"># ----------</span>
+        <span class="c1"># lomass: lower component mass</span>
+        <span class="c1"># himass: higher component mass</span>
+
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">lomass</span> <span class="o">+</span> <span class="n">himass</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span><span class="p">))</span>
+        <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">himass</span> <span class="o">-</span> <span class="n">mass1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mass1</span> <span class="o">-</span> <span class="n">lomass</span><span class="p">))</span>
+        <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">himass</span> <span class="o">-</span> <span class="n">mass2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mass2</span> <span class="o">-</span> <span class="n">lomass</span><span class="p">))</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">himass</span> <span class="o">-</span> <span class="n">lomass</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">lomass</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">pdf</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;componentMass&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF of mass when component mass is uniformly</span>
+        <span class="c1"># distributed. Component masses are independent for this case.</span>
+
+        <span class="c1"># Parameters</span>
+        <span class="c1"># ----------</span>
+        <span class="c1"># lomass: lower component mass</span>
+        <span class="c1"># himass: higher component mass</span>
+
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">himass</span> <span class="o">-</span> <span class="n">mass1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mass1</span> <span class="o">-</span> <span class="n">lomass</span><span class="p">))</span>
+        <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">himass_2</span> <span class="o">-</span> <span class="n">mass2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mass2</span> <span class="o">-</span> <span class="n">lomass_2</span><span class="p">))</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">mass1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">himass</span> <span class="o">-</span> <span class="n">lomass</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">himass_2</span> <span class="o">-</span> <span class="n">lomass_2</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">pdf</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF of mass when component mass is uniform in log.</span>
+        <span class="c1"># Component masses are independent for this case.</span>
+
+        <span class="c1"># Parameters</span>
+        <span class="c1"># ----------</span>
+        <span class="c1"># lomass: lower component mass</span>
+        <span class="c1"># himass: higher component mass</span>
+
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">himass</span> <span class="o">-</span> <span class="n">mass1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mass1</span> <span class="o">-</span> <span class="n">lomass</span><span class="p">))</span>
+        <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">himass_2</span> <span class="o">-</span> <span class="n">mass2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">mass2</span> <span class="o">-</span> <span class="n">lomass_2</span><span class="p">))</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">himass</span><span class="p">)</span> <span class="o">-</span> <span class="n">log</span><span class="p">(</span><span class="n">lomass</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">himass_2</span><span class="p">)</span> <span class="o">-</span> <span class="n">log</span><span class="p">(</span><span class="n">lomass_2</span><span class="p">))</span>
+        <span class="n">pdf</span> <span class="o">/=</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">*</span> <span class="n">mass2</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">pdf</span></div>
+
+
+<div class="viewcode-block" id="inj_spin_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.inj_spin_pdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">inj_spin_pdf</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">high_spin</span><span class="p">,</span> <span class="n">spinz</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Estimate the probability density of the</span>
+<span class="sd">           injections for the spin distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key: string</span>
+<span class="sd">          Injections strategy</span>
+<span class="sd">        high_spin: float</span>
+<span class="sd">          Maximum spin used in the strategy</span>
+<span class="sd">        spinz: array</span>
+<span class="sd">          Spin of the injections (for one component)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># If the data comes from disable_spin simulation</span>
+    <span class="k">if</span> <span class="n">spinz</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">spinz</span><span class="p">)</span>
+
+    <span class="n">spinz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spinz</span><span class="p">)</span>
+
+    <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">high_spin</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">spinz</span><span class="p">))</span>
+    <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">spinz</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;precessing&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF of spins when total spin is</span>
+        <span class="c1"># isotropically distributed. Both the component</span>
+        <span class="c1"># masses have the same distribution for this case.</span>
+
+        <span class="n">pdf</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">high_spin</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">spinz</span><span class="p">)))</span><span class="o">/</span><span class="n">high_spin</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">pdf</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;aligned&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF of mass when spins are aligned and uniformly</span>
+        <span class="c1"># distributed. Component spins are independent for this case.</span>
+
+        <span class="n">pdf</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">spinz</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">high_spin</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="n">pdf</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;disable_spin&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns unit array</span>
+
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">spinz</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pdf</span></div>
+
+
+<div class="viewcode-block" id="inj_distance_pdf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.scale_injections.inj_distance_pdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">inj_distance_pdf</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">low_dist</span><span class="p">,</span> <span class="n">high_dist</span><span class="p">,</span> <span class="n">mchirp</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Estimate the probability density of the</span>
+<span class="sd">        injections for the distance distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key: string</span>
+<span class="sd">          Injections strategy</span>
+<span class="sd">        distance: array</span>
+<span class="sd">          Array of distances</span>
+<span class="sd">        low_dist: float</span>
+<span class="sd">          Lower value of distance used in the injection strategy</span>
+<span class="sd">        high_dist: float</span>
+<span class="sd">          Higher value of distance used in the injection strategy</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF at a distance when</span>
+        <span class="c1"># distance is uniformly distributed.</span>
+
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">high_dist</span> <span class="o">-</span> <span class="n">low_dist</span><span class="p">)</span>
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">high_dist</span> <span class="o">-</span> <span class="n">distance</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">distance</span> <span class="o">-</span> <span class="n">low_dist</span><span class="p">))</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">pdf</span>
+
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;dchirp&#39;</span><span class="p">:</span>
+        <span class="c1"># Returns the PDF at a distance when distance is uniformly</span>
+        <span class="c1"># distributed but scaled by the chirp mass</span>
+
+        <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">mchirp</span><span class="o">/</span><span class="n">_mch_BNS</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">5.</span><span class="o">/</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span> <span class="o">/</span> <span class="n">weight</span> <span class="o">/</span> <span class="p">(</span><span class="n">high_dist</span> <span class="o">-</span> <span class="n">low_dist</span><span class="p">)</span>
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">weight</span><span class="o">*</span><span class="n">high_dist</span> <span class="o">-</span> <span class="n">distance</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">distance</span> <span class="o">-</span> <span class="n">weight</span><span class="o">*</span><span class="n">low_dist</span><span class="p">))</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">pdf</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

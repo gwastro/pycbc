@@ -1,0 +1,495 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.io.ligolw &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">pycbc.io</a></li>
+      <li class="breadcrumb-item active">pycbc.io.ligolw</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.io.ligolw</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2020 Leo Singer, 2021 Tito Dal Canton</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+
+<span class="sd">&quot;&quot;&quot;Tools for dealing with LIGOLW XML files.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">lsctables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">ligolw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw.ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGOLWContentHandler</span> <span class="k">as</span> <span class="n">OrigLIGOLWContentHandler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw.lsctables</span><span class="w"> </span><span class="kn">import</span> <span class="n">TableByName</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FormatFunc</span><span class="p">,</span> <span class="n">FromPyType</span><span class="p">,</span> <span class="n">ToPyType</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.version</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pycbc_version</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;default_null_value&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;return_empty_sngl&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;return_search_summary&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;create_process_table&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;legacy_row_id_converter&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;get_table_columns&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LIGOLWContentHandler&#39;</span>
+<span class="p">)</span>
+
+<span class="n">ROWID_PYTYPE</span> <span class="o">=</span> <span class="nb">int</span>
+<span class="n">ROWID_TYPE</span> <span class="o">=</span> <span class="n">FromPyType</span><span class="p">[</span><span class="n">ROWID_PYTYPE</span><span class="p">]</span>
+<span class="n">ROWID_FORMATFUNC</span> <span class="o">=</span> <span class="n">FormatFunc</span><span class="p">[</span><span class="n">ROWID_TYPE</span><span class="p">]</span>
+<span class="n">IDTypes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="sa">u</span><span class="s2">&quot;ilwd:char&quot;</span><span class="p">,</span> <span class="sa">u</span><span class="s2">&quot;ilwd:char_u&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="default_null_value">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.default_null_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_null_value</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">col_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Associate a sensible &quot;null&quot; default value to a given LIGOLW column type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;real_4&#39;</span><span class="p">,</span> <span class="s1">&#39;real_8&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="mf">0.</span>
+    <span class="k">if</span> <span class="n">col_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;int_4s&#39;</span><span class="p">,</span> <span class="s1">&#39;int_8s&#39;</span><span class="p">]:</span>
+        <span class="c1"># this case includes row IDs</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">col_type</span> <span class="o">==</span> <span class="s1">&#39;lstring&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">((</span><span class="s1">&#39;Do not know how to initialize column &#39;</span>
+                               <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> of type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">col_type</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="return_empty_sngl">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.return_empty_sngl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">return_empty_sngl</span><span class="p">(</span><span class="n">nones</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to create a SnglInspiral object where all columns are populated</span>
+<span class="sd">    but all are set to values that test False (ie. strings to &#39;&#39;, floats/ints</span>
+<span class="sd">    to 0, ...). This avoids errors when you try to create a table containing</span>
+<span class="sd">    columns you don&#39;t care about, but which still need populating. NOTE: This</span>
+<span class="sd">    will also produce a process_id and event_id with 0 values. For most</span>
+<span class="sd">    applications these should be set to their correct values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nones : bool (False)</span>
+<span class="sd">        If True, just set all columns to None.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    lsctables.SnglInspiral</span>
+<span class="sd">        The &quot;empty&quot; SnglInspiral object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sngl</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SnglInspiral</span><span class="p">()</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SnglInspiralTable</span><span class="o">.</span><span class="n">validcolumns</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+        <span class="n">col_name</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="n">ColumnName</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">nones</span> <span class="k">else</span> <span class="n">default_null_value</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">cols</span><span class="p">[</span><span class="n">entry</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">sngl</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sngl</span></div>
+
+
+<div class="viewcode-block" id="return_search_summary">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.return_search_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">return_search_summary</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nevents</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to create a SearchSummary object where all columns are populated</span>
+<span class="sd">    but all are set to values that test False (ie. strings to &#39;&#39;, floats/ints</span>
+<span class="sd">    to 0, ...). This avoids errors when you try to create a table containing</span>
+<span class="sd">    columns you don&#39;t care about, but which still need populating. NOTE: This</span>
+<span class="sd">    will also produce a process_id with 0 values. For most applications these</span>
+<span class="sd">    should be set to their correct values.</span>
+
+<span class="sd">    It then populates columns if given them as options.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    lsctables.SeachSummary</span>
+<span class="sd">        The &quot;empty&quot; SearchSummary object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ifos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ifos</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># create an empty search summary</span>
+    <span class="n">search_summary</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SearchSummary</span><span class="p">()</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SearchSummaryTable</span><span class="o">.</span><span class="n">validcolumns</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+        <span class="n">col_name</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="n">ColumnName</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">default_null_value</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">cols</span><span class="p">[</span><span class="n">entry</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">search_summary</span><span class="p">,</span> <span class="n">col_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># fill in columns</span>
+    <span class="k">if</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">instruments</span> <span class="o">=</span> <span class="n">ifos</span>
+    <span class="k">if</span> <span class="n">nevents</span><span class="p">:</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">nevents</span> <span class="o">=</span> <span class="n">nevents</span>
+    <span class="k">if</span> <span class="n">start_time</span> <span class="ow">and</span> <span class="n">end_time</span><span class="p">:</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">in_start_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">in_start_time_ns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">in_end_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">in_end_time_ns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_time</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">out_start_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">out_start_time_ns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">out_end_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+        <span class="n">search_summary</span><span class="o">.</span><span class="n">out_end_time_ns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_time</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">*</span> <span class="mf">1e9</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">search_summary</span></div>
+
+
+<div class="viewcode-block" id="create_process_table">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.create_process_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_process_table</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="n">program_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">comment</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a LIGOLW process table with sane defaults, add it to a LIGOLW</span>
+<span class="sd">    document, and return it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">program_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">program_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># igwn_ligolw does not like `cvs_entry_time` being an empty string</span>
+    <span class="n">cvs_entry_time</span> <span class="o">=</span> <span class="n">pycbc_version</span><span class="o">.</span><span class="n">date</span> <span class="ow">or</span> <span class="kc">None</span>
+
+    <span class="n">opts</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">key_del</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">FromPyType</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">key_del</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key_del</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">key_del</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="n">process</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">register_process</span><span class="p">(</span>
+        <span class="n">program_name</span><span class="p">,</span>
+        <span class="n">opts</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="n">pycbc_version</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+        <span class="n">cvs_repository</span><span class="o">=</span><span class="s1">&#39;pycbc/&#39;</span><span class="o">+</span><span class="n">pycbc_version</span><span class="o">.</span><span class="n">git_branch</span><span class="p">,</span>
+        <span class="n">cvs_entry_time</span><span class="o">=</span><span class="n">cvs_entry_time</span><span class="p">,</span>
+        <span class="n">instruments</span><span class="o">=</span><span class="n">detectors</span><span class="p">,</span>
+        <span class="n">comment</span><span class="o">=</span><span class="n">comment</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">process</span></div>
+
+
+<div class="viewcode-block" id="legacy_row_id_converter">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.legacy_row_id_converter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">legacy_row_id_converter</span><span class="p">(</span><span class="n">ContentHandler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert from old-style to new-style row IDs on the fly.</span>
+
+<span class="sd">    This is loosely adapted from :func:`ligo.lw.utils.ilwd.strip_ilwdchar`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    When building a ContentHandler, this must be the _outermost_ decorator,</span>
+<span class="sd">    outside of :func:`ligo.lw.lsctables.use_in`, :func:`ligo.lw.param.use_in`,</span>
+<span class="sd">    or :func:`ligo.lw.table.use_in`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">endElementNS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri_localname</span><span class="p">,</span> <span class="n">qname</span><span class="p">,</span>
+                     <span class="n">__orig_endElementNS</span><span class="o">=</span><span class="n">ContentHandler</span><span class="o">.</span><span class="n">endElementNS</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert values of &lt;Param&gt; elements from ilwdchar to int.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Param</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">Type</span> <span class="ow">in</span> <span class="n">IDTypes</span><span class="p">:</span>
+            <span class="n">old_type</span> <span class="o">=</span> <span class="n">ToPyType</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">Type</span><span class="p">]</span>
+            <span class="n">old_val</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">old_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">pcdata</span><span class="p">))</span>
+            <span class="n">new_value</span> <span class="o">=</span> <span class="n">ROWID_PYTYPE</span><span class="p">(</span><span class="n">old_val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">ROWID_TYPE</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">pcdata</span> <span class="o">=</span> <span class="n">ROWID_FORMATFUNC</span><span class="p">(</span><span class="n">new_value</span><span class="p">)</span>
+        <span class="n">__orig_endElementNS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri_localname</span><span class="p">,</span> <span class="n">qname</span><span class="p">)</span>
+
+    <span class="n">remapped</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">startColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span>
+                    <span class="n">__orig_startColumn</span><span class="o">=</span><span class="n">ContentHandler</span><span class="o">.</span><span class="n">startColumn</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert types in &lt;Column&gt; elements from ilwdchar to int.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method is adapted from</span>
+<span class="sd">        :func:`ligo.lw.utils.ilwd.strip_ilwdchar`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">__orig_startColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+
+        <span class="c1"># If this is an ilwdchar column, then create a function to convert its</span>
+        <span class="c1"># rows&#39; values for use in the startStream method below.</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">Type</span> <span class="ow">in</span> <span class="n">IDTypes</span><span class="p">:</span>
+            <span class="n">old_type</span> <span class="o">=</span> <span class="n">ToPyType</span><span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">Type</span><span class="p">]</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">converter</span><span class="p">(</span><span class="n">old_value</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">ROWID_PYTYPE</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">old_type</span><span class="p">(</span><span class="n">old_value</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">remapped</span><span class="p">[(</span><span class="nb">id</span><span class="p">(</span><span class="n">parent</span><span class="p">),</span> <span class="n">result</span><span class="o">.</span><span class="n">Name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">converter</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">Type</span> <span class="o">=</span> <span class="n">ROWID_TYPE</span>
+
+        <span class="c1"># If this is an ilwdchar column, then normalize the column name.</span>
+        <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">Name</span> <span class="ow">in</span> <span class="n">TableByName</span><span class="p">:</span>
+            <span class="n">validcolumns</span> <span class="o">=</span> <span class="n">TableByName</span><span class="p">[</span><span class="n">parent</span><span class="o">.</span><span class="n">Name</span><span class="p">]</span><span class="o">.</span><span class="n">validcolumns</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">Name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">validcolumns</span><span class="p">:</span>
+                <span class="n">stripped_column_to_valid_column</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="n">ColumnName</span><span class="p">(</span><span class="n">name</span><span class="p">):</span> <span class="n">name</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">validcolumns</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">Name</span> <span class="ow">in</span> <span class="n">stripped_column_to_valid_column</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">setAttribute</span><span class="p">(</span>
+                        <span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="n">stripped_column_to_valid_column</span><span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">Name</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">startStream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span>
+                    <span class="n">__orig_startStream</span><span class="o">=</span><span class="n">ContentHandler</span><span class="o">.</span><span class="n">startStream</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert values in table &lt;Stream&gt; elements from ilwdchar to int.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method is adapted from</span>
+<span class="sd">        :meth:`ligo.lw.table.TableStream.config`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">__orig_startStream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+            <span class="n">loadcolumns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">columnnames</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">loadcolumns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># FIXME:  convert loadcolumns attributes to sets to</span>
+                <span class="c1"># avoid the conversion.</span>
+                <span class="n">loadcolumns</span> <span class="o">&amp;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">loadcolumns</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">_tokenizer</span><span class="o">.</span><span class="n">set_types</span><span class="p">([</span>
+                <span class="p">(</span><span class="n">remapped</span><span class="o">.</span><span class="n">pop</span><span class="p">((</span><span class="nb">id</span><span class="p">(</span><span class="n">parent</span><span class="p">),</span> <span class="n">colname</span><span class="p">),</span> <span class="n">pytype</span><span class="p">)</span>
+                 <span class="k">if</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">loadcolumns</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">pytype</span><span class="p">,</span> <span class="n">colname</span>
+                <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">columnpytypes</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">columnnames</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="n">ContentHandler</span><span class="o">.</span><span class="n">endElementNS</span> <span class="o">=</span> <span class="n">endElementNS</span>
+    <span class="n">ContentHandler</span><span class="o">.</span><span class="n">startColumn</span> <span class="o">=</span> <span class="n">startColumn</span>
+    <span class="n">ContentHandler</span><span class="o">.</span><span class="n">startStream</span> <span class="o">=</span> <span class="n">startStream</span>
+
+    <span class="k">return</span> <span class="n">ContentHandler</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_series</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">dim_names</span><span class="p">,</span> <span class="n">comment</span><span class="p">,</span> <span class="n">delta_name</span><span class="p">,</span> <span class="n">delta_unit</span><span class="p">):</span>
+    <span class="n">Attributes</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">sax</span><span class="o">.</span><span class="n">xmlreader</span><span class="o">.</span><span class="n">AttributesImpl</span>
+    <span class="n">elem</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">LIGO_LW</span><span class="p">(</span>
+            <span class="n">Attributes</span><span class="p">({</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)}))</span>
+    <span class="k">if</span> <span class="n">comment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">elem</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Comment</span><span class="p">())</span><span class="o">.</span><span class="n">pcdata</span> <span class="o">=</span> <span class="n">comment</span>
+    <span class="n">elem</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Time</span><span class="o">.</span><span class="n">from_gps</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span> <span class="s1">&#39;epoch&#39;</span><span class="p">))</span>
+    <span class="n">elem</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Param</span><span class="o">.</span><span class="n">from_pyvalue</span><span class="p">(</span><span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="n">series</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s^-1&#39;</span><span class="p">))</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">delta_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta</span><span class="p">,</span>
+            <span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">real</span><span class="p">,</span>
+            <span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">imag</span>
+        <span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta</span><span class="p">,</span>
+            <span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">))</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Array</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">dim_names</span><span class="o">=</span><span class="n">dim_names</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">Unit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">sampleUnits</span><span class="p">)</span>
+    <span class="n">dim0</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Dim</span><span class="o">.</span><span class="n">tagName</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dim0</span><span class="o">.</span><span class="n">Unit</span> <span class="o">=</span> <span class="n">delta_unit</span>
+    <span class="n">dim0</span><span class="o">.</span><span class="n">Start</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">f0</span>
+    <span class="n">dim0</span><span class="o">.</span><span class="n">Scale</span> <span class="o">=</span> <span class="n">delta</span>
+    <span class="n">elem</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">elem</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_psd_xmldoc</span><span class="p">(</span><span class="n">psddict</span><span class="p">,</span> <span class="n">xmldoc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a set of PSDs to a LIGOLW XML document. If the document is not</span>
+<span class="sd">    given, a new one is created first.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xmldoc</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Document</span><span class="p">()</span> <span class="k">if</span> <span class="n">xmldoc</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">xmldoc</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># the PSDs must be children of a LIGO_LW with name &quot;psd&quot;</span>
+    <span class="n">root_name</span> <span class="o">=</span> <span class="s1">&#39;psd&#39;</span>
+    <span class="n">Attributes</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">sax</span><span class="o">.</span><span class="n">xmlreader</span><span class="o">.</span><span class="n">AttributesImpl</span>
+    <span class="n">lw</span> <span class="o">=</span> <span class="n">xmldoc</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span>
+        <span class="n">ligolw</span><span class="o">.</span><span class="n">LIGO_LW</span><span class="p">(</span><span class="n">Attributes</span><span class="p">({</span><span class="s1">&#39;Name&#39;</span><span class="p">:</span> <span class="n">root_name</span><span class="p">})))</span>
+
+    <span class="k">for</span> <span class="n">instrument</span><span class="p">,</span> <span class="n">psd</span> <span class="ow">in</span> <span class="n">psddict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">xmlseries</span> <span class="o">=</span> <span class="n">_build_series</span><span class="p">(</span>
+            <span class="n">psd</span><span class="p">,</span>
+            <span class="p">(</span><span class="s1">&#39;Frequency,Real&#39;</span><span class="p">,</span> <span class="s1">&#39;Frequency&#39;</span><span class="p">),</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;deltaF&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;s^-1&#39;</span>
+        <span class="p">)</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">lw</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">xmlseries</span><span class="p">)</span>
+        <span class="n">fs</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Param</span><span class="o">.</span><span class="n">from_pyvalue</span><span class="p">(</span><span class="s1">&#39;instrument&#39;</span><span class="p">,</span> <span class="n">instrument</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">xmldoc</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">snr_series_to_xml</span><span class="p">(</span><span class="n">snr_series</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">sngl_inspiral_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save an SNR time series into an XML document, in a format compatible</span>
+<span class="sd">    with BAYESTAR.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">snr_lal</span> <span class="o">=</span> <span class="n">snr_series</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+    <span class="n">snr_lal</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;snr&#39;</span>
+    <span class="n">snr_lal</span><span class="o">.</span><span class="n">sampleUnits</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">snr_xml</span> <span class="o">=</span> <span class="n">_build_series</span><span class="p">(</span>
+        <span class="n">snr_lal</span><span class="p">,</span>
+        <span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="s1">&#39;Time,Real,Imaginary&#39;</span><span class="p">),</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;deltaT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;s&#39;</span>
+    <span class="p">)</span>
+    <span class="n">snr_node</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">snr_xml</span><span class="p">)</span>
+    <span class="n">eid_param</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Param</span><span class="o">.</span><span class="n">from_pyvalue</span><span class="p">(</span><span class="s1">&#39;event_id&#39;</span><span class="p">,</span> <span class="n">sngl_inspiral_id</span><span class="p">)</span>
+    <span class="n">snr_node</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">eid_param</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_table_columns">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.get_table_columns">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_table_columns</span><span class="p">(</span><span class="n">table</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of columns that are present in the given table, in a</span>
+<span class="sd">    format that can be passed to `igwn_ligolw.Table.new()`.</span>
+
+<span class="sd">    The split on &quot;:&quot; is needed for columns like `process:process_id`, which</span>
+<span class="sd">    must be listed as `process:process_id` in `igwn_ligolw.Table.new()`, but are</span>
+<span class="sd">    listed as just `process_id` in the `columnnames` attribute of the given</span>
+<span class="sd">    table.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">validcolumns</span><span class="p">:</span>
+        <span class="n">att</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">att</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">columnnames</span><span class="p">:</span>
+            <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">columns</span></div>
+
+
+
+<div class="viewcode-block" id="LIGOLWContentHandler">
+<a class="viewcode-back" href="../../../pycbc.io.html#pycbc.io.ligolw.LIGOLWContentHandler">[docs]</a>
+<span class="nd">@legacy_row_id_converter</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LIGOLWContentHandler</span><span class="p">(</span><span class="n">OrigLIGOLWContentHandler</span><span class="p">):</span>
+    <span class="s2">&quot;Dummy class needed for loading LIGOLW files&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

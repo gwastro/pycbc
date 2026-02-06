@@ -1,0 +1,807 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.dynesty &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.dynesty</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.dynesty</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019  Collin Capano, Sumit Kumar, Prayush Kumar</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes and functions for using the dynesty sampler</span>
+<span class="sd">packages for parameter estimation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dynesty</span><span class="o">,</span><span class="w"> </span><span class="nn">dynesty.dynesty</span><span class="o">,</span><span class="w"> </span><span class="nn">dynesty.nestedsamplers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">DynestyFile</span><span class="p">,</span> <span class="n">validate_checkpoint_files</span><span class="p">,</span>
+                                <span class="n">loadfile</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseSampler</span><span class="p">,</span> <span class="n">setup_output</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_optional_arg_from_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_cube</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_calls</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Samplers</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="DynestySampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DynestySampler</span><span class="p">(</span><span class="n">BaseSampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class is used to construct an Dynesty sampler from the dynesty</span>
+<span class="sd">    package.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : model</span>
+<span class="sd">        A model from ``pycbc.inference.models``.</span>
+<span class="sd">    nlive : int</span>
+<span class="sd">        Number of live points to use in sampler.</span>
+<span class="sd">    pool : function with map, Optional</span>
+<span class="sd">        A provider of a map function that allows a function call to be run</span>
+<span class="sd">        over multiple sets of arguments and possibly maps them to</span>
+<span class="sd">        cores/nodes/etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;dynesty&quot;</span>
+    <span class="n">_io</span> <span class="o">=</span> <span class="n">DynestyFile</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">nlive</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">checkpoint_time_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxcall</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">loglikelihood_function</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">no_save_state</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">run_kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">extra_kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">internal_kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_save_state</span> <span class="o">=</span> <span class="n">no_save_state</span>
+        <span class="n">log_likelihood_call</span><span class="p">,</span> <span class="n">prior_call</span> <span class="o">=</span> <span class="n">setup_calls</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">loglikelihood_function</span><span class="o">=</span><span class="n">loglikelihood_function</span><span class="p">,</span>
+            <span class="n">copy_prior</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Set up the pool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxcall</span> <span class="o">=</span> <span class="n">maxcall</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_time_interval</span> <span class="o">=</span> <span class="n">checkpoint_time_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_kwds</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">run_kwds</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">run_kwds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_kwds</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">extra_kwds</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">extra_kwds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">internal_kwds</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">internal_kwds</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">internal_kwds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nlive</span> <span class="o">=</span> <span class="n">nlive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Enable checkpointing if checkpoint_time_interval is set in config</span>
+        <span class="c1"># file in sampler section</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_time_interval</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_with_checkpoint</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxcall</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">maxcall</span> <span class="o">=</span> <span class="mi">5000</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">size</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpointing enabled, will verify every </span><span class="si">%s</span><span class="s2"> calls&quot;</span>
+                         <span class="s2">&quot; and try to checkpoint every </span><span class="si">%s</span><span class="s2"> seconds&quot;</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">maxcall</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_time_interval</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_with_checkpoint</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Check for cyclic boundaries</span>
+        <span class="n">periodic</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cyclic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">cyclic</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">cyclic</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Param: </span><span class="si">%s</span><span class="s1"> will be cyclic&#39;</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+                <span class="n">periodic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">periodic</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">periodic</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Check for reflected boundaries. Dynesty only supports</span>
+        <span class="c1"># reflection on both min and max of boundary.</span>
+        <span class="n">reflective</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">reflect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">well_reflected</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">reflect</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Param: </span><span class="si">%s</span><span class="s2"> will be well reflected&quot;</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+                <span class="n">reflective</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reflective</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">reflective</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;sample&#39;</span> <span class="ow">in</span> <span class="n">extra_kwds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;rwalk2&#39;</span> <span class="ow">in</span> <span class="n">extra_kwds</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]:</span>
+                <span class="n">dynesty</span><span class="o">.</span><span class="n">dynesty</span><span class="o">.</span><span class="n">_SAMPLING</span><span class="p">[</span><span class="s2">&quot;rwalk&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_rwalk_mod</span>
+                <span class="n">dynesty</span><span class="o">.</span><span class="n">nestedsamplers</span><span class="o">.</span><span class="n">_SAMPLING</span><span class="p">[</span><span class="s2">&quot;rwalk&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_rwalk_mod</span>
+                <span class="n">extra_kwds</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;rwalk&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nlive</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Interpret a negative input value for the number of live points</span>
+            <span class="c1"># (which is clearly an invalid input in all senses)</span>
+            <span class="c1"># as the desire to dynamically determine that number</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">dynesty</span><span class="o">.</span><span class="n">DynamicNestedSampler</span><span class="p">(</span><span class="n">log_likelihood_call</span><span class="p">,</span>
+                                                         <span class="n">prior_call</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span>
+                                                         <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">,</span>
+                                                         <span class="n">reflective</span><span class="o">=</span><span class="n">reflective</span><span class="p">,</span>
+                                                         <span class="n">periodic</span><span class="o">=</span><span class="n">periodic</span><span class="p">,</span>
+                                                         <span class="o">**</span><span class="n">extra_kwds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run_with_checkpoint</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpointing not currently supported with&quot;</span>
+                         <span class="s2">&quot;DYNAMIC nested sampler&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">dynesty</span><span class="o">.</span><span class="n">NestedSampler</span><span class="p">(</span><span class="n">log_likelihood_call</span><span class="p">,</span>
+                                                  <span class="n">prior_call</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span>
+                                                  <span class="n">nlive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nlive</span><span class="p">,</span>
+                                                  <span class="n">reflective</span><span class="o">=</span><span class="n">reflective</span><span class="p">,</span>
+                                                  <span class="n">periodic</span><span class="o">=</span><span class="n">periodic</span><span class="p">,</span>
+                                                  <span class="n">pool</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_kwds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">internal_kwds</span><span class="p">)</span>
+
+        <span class="c1"># properties of the internal sampler which should not be pickled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_pickle</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;prior_transform&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;propose_point&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;update_proposal&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;_UPDATE&#39;</span><span class="p">,</span> <span class="s1">&#39;_PROPOSE&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;evolve_point&#39;</span><span class="p">,</span> <span class="s1">&#39;use_pool&#39;</span><span class="p">,</span> <span class="s1">&#39;queue_size&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;use_pool_ptform&#39;</span><span class="p">,</span> <span class="s1">&#39;use_pool_logl&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;use_pool_evolve&#39;</span><span class="p">,</span> <span class="s1">&#39;use_pool_update&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;pool&#39;</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="DynestySampler.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">diff_niter</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_with_checkpoint</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">n_checkpointing</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">it</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">it</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Starting from iteration: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">it</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">diff_niter</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">maxcall</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">maxcall</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">run_kwds</span><span class="p">)</span>
+
+                <span class="n">delta_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+                <span class="n">diff_niter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">it</span> <span class="o">-</span> <span class="n">it</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking if we should checkpoint: </span><span class="si">%.2f</span><span class="s2"> s&quot;</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">delta_t</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_time_interval</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checkpointing N=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_checkpointing</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint</span><span class="p">()</span>
+                    <span class="n">n_checkpointing</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">it</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">it</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">run_kwds</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_io</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">niterations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+
+<div class="viewcode-block" id="DynestySampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">loglikelihood_function</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads the sampler from the given config file. Many options are</span>
+<span class="sd">        directly passed to the underlying dynesty sampler, see the official</span>
+<span class="sd">        dynesty documentation for more details on these.</span>
+
+<span class="sd">        The following options are retrieved in the ``[sampler]`` section:</span>
+
+<span class="sd">        * ``name = STR``:</span>
+<span class="sd">            Required. This must match the sampler&#39;s name.</span>
+<span class="sd">        * ``maxiter = INT``:</span>
+<span class="sd">            The maximum number of iterations to run.</span>
+<span class="sd">        * ``dlogz = FLOAT``:</span>
+<span class="sd">            The target dlogz stopping condition.</span>
+<span class="sd">        * ``logl_max = FLOAT``:</span>
+<span class="sd">            The maximum logl stopping condition.</span>
+<span class="sd">        * ``n_effective = INT``:</span>
+<span class="sd">            Target effective number of samples stopping condition</span>
+<span class="sd">        * ``sample = STR``:</span>
+<span class="sd">            The method to sample the space. Should be one of &#39;uniform&#39;,</span>
+<span class="sd">            &#39;rwalk&#39;, &#39;rwalk2&#39; (a modified version of rwalk), or &#39;slice&#39;.</span>
+<span class="sd">        * ``walk = INT``:</span>
+<span class="sd">            Used for some of the walk methods. Sets the minimum number of</span>
+<span class="sd">            steps to take when evolving a point.</span>
+<span class="sd">        * ``maxmcmc = INT``:</span>
+<span class="sd">            Used for some of the walk methods. Sets the maximum number of steps</span>
+<span class="sd">            to take when evolving a point.</span>
+<span class="sd">        * ``nact = INT``:</span>
+<span class="sd">            used for some of the walk methods. Sets number of autorcorrelation</span>
+<span class="sd">            lengths before terminating evolution of a point.</span>
+<span class="sd">        * ``first_update_min_ncall = INT``:</span>
+<span class="sd">            The minimum number of calls before updating the bounding region</span>
+<span class="sd">            for the first time.</span>
+<span class="sd">        * ``first_update_min_neff = FLOAT``:</span>
+<span class="sd">            Don&#39;t update the the bounding region untill the efficiency drops</span>
+<span class="sd">            below this value.</span>
+<span class="sd">        * ``bound = STR``:</span>
+<span class="sd">            The method of bounding of the prior volume.</span>
+<span class="sd">            Should be one of &#39;single&#39;, &#39;balls&#39;, &#39;cubes&#39;, &#39;multi&#39; or &#39;none&#39;.</span>
+<span class="sd">        * ``update_interval = INT``:</span>
+<span class="sd">            Number of iterations between updating the bounding regions</span>
+<span class="sd">        * ``enlarge = FLOAT``:</span>
+<span class="sd">            Factor to enlarge the bonding region.</span>
+<span class="sd">        * ``bootstrap = INT``:</span>
+<span class="sd">            The number of bootstrap iterations to determine the enlargement</span>
+<span class="sd">            factor.</span>
+<span class="sd">        * ``maxcall = INT``:</span>
+<span class="sd">            The maximum number of calls before checking if we should checkpoint</span>
+<span class="sd">        * ``checkpoint_time_interval``:</span>
+<span class="sd">            Sets the time in seconds between checkpointing.</span>
+<span class="sd">        * ``loglikelihood-function``:</span>
+<span class="sd">            The attribute of the model to use for the loglikelihood. If</span>
+<span class="sd">            not provided, will default to ``loglikelihood``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser instance</span>
+<span class="sd">            Config file object to parse.</span>
+<span class="sd">        model : pycbc.inference.model.BaseModel instance</span>
+<span class="sd">            The model to use.</span>
+<span class="sd">        output_file : str, optional</span>
+<span class="sd">            The name of the output file to checkpoint and write results to.</span>
+<span class="sd">        nprocesses : int, optional</span>
+<span class="sd">            The number of parallel processes to use. Default is 1.</span>
+<span class="sd">        use_mpi : bool, optional</span>
+<span class="sd">            Use MPI for parallelization. Default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DynestySampler :</span>
+<span class="sd">            The sampler instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;sampler&quot;</span>
+        <span class="c1"># check name</span>
+        <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+            <span class="s2">&quot;name in section [sampler] must match mine&quot;</span><span class="p">)</span>
+        <span class="c1"># get the number of live points to use</span>
+        <span class="n">nlive</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;nlive&quot;</span><span class="p">))</span>
+        <span class="n">loglikelihood_function</span> <span class="o">=</span> \
+            <span class="n">get_optional_arg_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="s1">&#39;loglikelihood-function&#39;</span><span class="p">)</span>
+
+        <span class="n">no_save_state</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;no-save-state&#39;</span><span class="p">)</span>
+
+        <span class="c1"># optional run_nested arguments for dynesty</span>
+        <span class="n">rargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="s1">&#39;dlogz&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="s1">&#39;logl_max&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="s1">&#39;n_effective&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="p">}</span>
+
+        <span class="c1"># optional arguments for dynesty</span>
+        <span class="n">cargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;bound&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="s1">&#39;bootstrap&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="s1">&#39;enlarge&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="s1">&#39;update_interval&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="s1">&#39;sample&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="s1">&#39;first_update_min_ncall&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="s1">&#39;first_update_min_eff&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="s1">&#39;walks&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="p">}</span>
+
+        <span class="c1"># optional arguments that must be set internally</span>
+        <span class="n">internal_args</span> <span class="o">=</span> <span class="p">{</span>
+                 <span class="s1">&#39;maxmcmc&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="s1">&#39;nact&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="p">}</span>
+
+        <span class="n">extra</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">run_extra</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">internal_extra</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">args</span><span class="p">,</span> <span class="n">argt</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">extra</span><span class="p">,</span> <span class="n">cargs</span><span class="p">),</span>
+                           <span class="p">(</span><span class="n">run_extra</span><span class="p">,</span> <span class="n">rargs</span><span class="p">),</span>
+                           <span class="p">(</span><span class="n">internal_extra</span><span class="p">,</span> <span class="n">internal_args</span><span class="p">),</span>
+                          <span class="p">]:</span>
+            <span class="k">for</span> <span class="n">karg</span> <span class="ow">in</span> <span class="n">argt</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">karg</span><span class="p">):</span>
+                    <span class="n">args</span><span class="p">[</span><span class="n">karg</span><span class="p">]</span> <span class="o">=</span> <span class="n">argt</span><span class="p">[</span><span class="n">karg</span><span class="p">](</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">karg</span><span class="p">))</span>
+
+        <span class="c1">#This arg needs to be a dict</span>
+        <span class="n">first_update</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="s1">&#39;first_update_min_ncall&#39;</span> <span class="ow">in</span> <span class="n">extra</span><span class="p">:</span>
+            <span class="n">first_update</span><span class="p">[</span><span class="s1">&#39;min_ncall&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;first_update_min_ncall&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;First update: min_ncall:</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+                         <span class="n">first_update</span><span class="p">[</span><span class="s1">&#39;min_ncall&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;first_update_min_eff&#39;</span> <span class="ow">in</span> <span class="n">extra</span><span class="p">:</span>
+            <span class="n">first_update</span><span class="p">[</span><span class="s1">&#39;min_eff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;first_update_min_eff&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;First update: min_eff:</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">first_update</span><span class="p">[</span><span class="s1">&#39;min_eff&#39;</span><span class="p">])</span>
+        <span class="n">extra</span><span class="p">[</span><span class="s1">&#39;first_update&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">first_update</span>
+
+        <span class="c1"># populate options for checkpointing</span>
+        <span class="n">checkpoint_time_interval</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">maxcall</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;checkpoint_time_interval&#39;</span><span class="p">):</span>
+            <span class="n">ck_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;checkpoint_time_interval&#39;</span><span class="p">))</span>
+            <span class="n">checkpoint_time_interval</span> <span class="o">=</span> <span class="n">ck_time</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;maxcall&#39;</span><span class="p">):</span>
+            <span class="n">maxcall</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;maxcall&#39;</span><span class="p">))</span>
+
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nlive</span><span class="o">=</span><span class="n">nlive</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">,</span>
+                  <span class="n">loglikelihood_function</span><span class="o">=</span><span class="n">loglikelihood_function</span><span class="p">,</span>
+                  <span class="n">checkpoint_time_interval</span><span class="o">=</span><span class="n">checkpoint_time_interval</span><span class="p">,</span>
+                  <span class="n">maxcall</span><span class="o">=</span><span class="n">maxcall</span><span class="p">,</span>
+                  <span class="n">no_save_state</span><span class="o">=</span><span class="n">no_save_state</span><span class="p">,</span>
+                  <span class="n">use_mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">run_kwds</span><span class="o">=</span><span class="n">run_extra</span><span class="p">,</span>
+                  <span class="n">extra_kwds</span><span class="o">=</span><span class="n">extra</span><span class="p">,</span>
+                  <span class="n">internal_kwds</span><span class="o">=</span><span class="n">internal_extra</span><span class="p">,)</span>
+        <span class="n">setup_output</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">check_nsamples</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">new_checkpoint</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">resume_from_checkpoint</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<div class="viewcode-block" id="DynestySampler.checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checkpoint function for dynesty sampler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Dynesty has its own __getstate__ which deletes</span>
+        <span class="c1"># random state information and the pool</span>
+        <span class="n">saved</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_pickle</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+                <span class="n">saved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="c1"># Write random state</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write_random_state</span><span class="p">()</span>
+
+                <span class="c1"># Write pickled data</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write_pickled_data_into_checkpoint_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_results</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+
+        <span class="c1"># Restore properties that couldn&#39;t be pickled if we are continuing</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">saved</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">saved</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="DynestySampler.resume_from_checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.resume_from_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume_from_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">sampler</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_pickled_data_from_checkpoint_file</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sampler</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_pickle</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found valid checkpoint file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Failed to load checkpoint file&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DynestySampler.set_state_from_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.set_state_from_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_state_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the state of the sampler back to the instance saved in a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_random_state</span><span class="p">()</span>
+            <span class="c1"># Dynesty handles most randomeness through rstate which is</span>
+            <span class="c1"># pickled along with the class instance</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DynestySampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Finalze and write it to the results file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">logz</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">dlogz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">logzerr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;log Z, dlog Z: </span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">logz</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_save_state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_results</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Validating checkpoint and backup files&quot;</span><span class="p">)</span>
+            <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="n">validate_checkpoint_files</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">,</span> <span class="n">check_nsamples</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">checkpoint_valid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;error writing to checkpoint file&quot;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns raw nested samples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">samples</span>
+        <span class="n">nest_samp</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">):</span>
+            <span class="n">nest_samp</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+        <span class="n">nest_samp</span><span class="p">[</span><span class="s1">&#39;logwt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">logwt</span>
+        <span class="n">nest_samp</span><span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">logl</span>
+        <span class="k">return</span> <span class="n">nest_samp</span>
+
+<div class="viewcode-block" id="DynestySampler.set_initial_conditions">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.set_initial_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_initial_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_distribution</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">samples_file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets up the starting point for the sampler.</span>
+
+<span class="sd">        Should also set the sampler&#39;s random state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DynestySampler.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.write_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes samples, model stats, acceptance fraction, and random state</span>
+<span class="sd">        to the given file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The file to write to. The file is opened using the ``io`` class</span>
+<span class="sd">            in an an append state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># Write nested samples</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">)</span>
+
+            <span class="c1"># Write logz and dlogz</span>
+            <span class="n">logz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">logz</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">dlogz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">logzerr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_logevidence</span><span class="p">(</span><span class="n">logz</span><span class="p">,</span> <span class="n">dlogz</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return bayesian evidence estimated by</span>
+<span class="sd">        dynesty sampler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">logz</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logz_err</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return error in bayesian evidence estimated by</span>
+<span class="sd">        dynesty sampler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">logzerr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:][</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="sample_rwalk_mod">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.sample_rwalk_mod">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_rwalk_mod</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Modified version of dynesty.sampling.sample_rwalk</span>
+
+<span class="sd">        Adapted from version used in bilby/dynesty</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># dynesty &lt;= 1.1</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dynesty.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">unitcheck</span><span class="p">,</span> <span class="n">reflect</span>
+
+        <span class="c1"># Unzipping.</span>
+        <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">loglstar</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span>
+        <span class="n">prior_transform</span><span class="p">,</span> <span class="n">loglikelihood</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="c1"># dynest &gt;= 1.2</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dynesty.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">unitcheck</span><span class="p">,</span> <span class="n">apply_reflect</span> <span class="k">as</span> <span class="n">reflect</span>
+
+        <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">loglstar</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span>
+        <span class="n">prior_transform</span><span class="p">,</span> <span class="n">loglikelihood</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span> <span class="o">=</span> <span class="n">args</span>
+
+    <span class="n">rstate</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span>
+
+    <span class="c1"># Bounds</span>
+    <span class="n">nonbounded</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nonbounded&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">periodic</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;periodic&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">reflective</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;reflective&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># Setup.</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+    <span class="n">walks</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;walks&#39;</span><span class="p">,</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>  <span class="c1"># minimum number of steps</span>
+    <span class="n">maxmcmc</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;maxmcmc&#39;</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>  <span class="c1"># Maximum number of steps</span>
+    <span class="n">nact</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nact&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># Number of ACT</span>
+    <span class="n">old_act</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;old_act&#39;</span><span class="p">,</span> <span class="n">walks</span><span class="p">)</span>
+
+    <span class="c1"># Initialize internal variables</span>
+    <span class="n">accept</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">reject</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nfail</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">act</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">u_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">v_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logl_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">ii</span> <span class="o">&lt;</span> <span class="n">nact</span> <span class="o">*</span> <span class="n">act</span><span class="p">:</span>
+        <span class="n">ii</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Propose a direction on the unit n-sphere.</span>
+        <span class="n">drhat</span> <span class="o">=</span> <span class="n">rstate</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">drhat</span> <span class="o">/=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">drhat</span><span class="p">)</span>
+
+        <span class="c1"># Scale based on dimensionality.</span>
+        <span class="n">dr</span> <span class="o">=</span> <span class="n">drhat</span> <span class="o">*</span> <span class="n">rstate</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># Transform to proposal distribution.</span>
+        <span class="n">du</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">dr</span><span class="p">)</span>
+        <span class="n">u_prop</span> <span class="o">=</span> <span class="n">u</span> <span class="o">+</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">du</span>
+
+        <span class="c1"># Wrap periodic parameters</span>
+        <span class="k">if</span> <span class="n">periodic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">u_prop</span><span class="p">[</span><span class="n">periodic</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">u_prop</span><span class="p">[</span><span class="n">periodic</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Reflect</span>
+        <span class="k">if</span> <span class="n">reflective</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">u_prop</span><span class="p">[</span><span class="n">reflective</span><span class="p">]</span> <span class="o">=</span> <span class="n">reflect</span><span class="p">(</span><span class="n">u_prop</span><span class="p">[</span><span class="n">reflective</span><span class="p">])</span>
+
+        <span class="c1"># Check unit cube constraints.</span>
+        <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="n">unitcheck</span><span class="p">(</span><span class="n">u_prop</span><span class="p">,</span> <span class="n">nonbounded</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nfail</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># Only start appending to the chain once a single jump is made</span>
+            <span class="k">if</span> <span class="n">accept</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">u_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">v_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">logl_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">logl_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Check proposed point.</span>
+        <span class="n">v_prop</span> <span class="o">=</span> <span class="n">prior_transform</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">u_prop</span><span class="p">))</span>
+        <span class="n">logl_prop</span> <span class="o">=</span> <span class="n">loglikelihood</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v_prop</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">logl_prop</span> <span class="o">&gt;</span> <span class="n">loglstar</span><span class="p">:</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">u_prop</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">v_prop</span>
+            <span class="n">logl</span> <span class="o">=</span> <span class="n">logl_prop</span>
+            <span class="n">accept</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">u_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+            <span class="n">v_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">logl_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">logl</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reject</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># Only start appending to the chain once a single jump is made</span>
+            <span class="k">if</span> <span class="n">accept</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">u_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">v_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">logl_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">logl_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># If we&#39;ve taken the minimum number of steps, calculate the ACT</span>
+        <span class="k">if</span> <span class="n">accept</span> <span class="o">+</span> <span class="n">reject</span> <span class="o">&gt;</span> <span class="n">walks</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">estimate_nmcmc</span><span class="p">(</span>
+                <span class="n">accept_ratio</span><span class="o">=</span><span class="n">accept</span> <span class="o">/</span> <span class="p">(</span><span class="n">accept</span> <span class="o">+</span> <span class="n">reject</span> <span class="o">+</span> <span class="n">nfail</span><span class="p">),</span>
+                <span class="n">old_act</span><span class="o">=</span><span class="n">old_act</span><span class="p">,</span> <span class="n">maxmcmc</span><span class="o">=</span><span class="n">maxmcmc</span><span class="p">)</span>
+
+        <span class="c1"># If we&#39;ve taken too many likelihood evaluations then break</span>
+        <span class="k">if</span> <span class="n">accept</span> <span class="o">+</span> <span class="n">reject</span> <span class="o">&gt;</span> <span class="n">maxmcmc</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Hit maximum number of walks </span><span class="si">{}</span><span class="s2"> with accept=</span><span class="si">{}</span><span class="s2">, reject=</span><span class="si">{}</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;and nfail=</span><span class="si">{}</span><span class="s2"> try increasing maxmcmc&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">maxmcmc</span><span class="p">,</span> <span class="n">accept</span><span class="p">,</span> <span class="n">reject</span><span class="p">,</span> <span class="n">nfail</span><span class="p">))</span>
+            <span class="k">break</span>
+
+    <span class="c1"># If the act is finite, pick randomly from within the chain</span>
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">act</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="mf">.5</span> <span class="o">*</span> <span class="n">nact</span> <span class="o">*</span> <span class="n">act</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">u_list</span><span class="p">):</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">.5</span> <span class="o">*</span> <span class="n">nact</span> <span class="o">*</span> <span class="n">act</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">u_list</span><span class="p">))</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">v_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="n">logl_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unable to find a new point using walk: &quot;</span>
+                      <span class="s2">&quot;returning a random point&quot;</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">prior_transform</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="n">loglikelihood</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="n">blob</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;accept&#39;</span><span class="p">:</span> <span class="n">accept</span><span class="p">,</span> <span class="s1">&#39;reject&#39;</span><span class="p">:</span> <span class="n">reject</span><span class="p">,</span> <span class="s1">&#39;fail&#39;</span><span class="p">:</span> <span class="n">nfail</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">:</span> <span class="n">scale</span><span class="p">}</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;old_act&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">act</span>
+
+    <span class="n">ncall</span> <span class="o">=</span> <span class="n">accept</span> <span class="o">+</span> <span class="n">reject</span>
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">logl</span><span class="p">,</span> <span class="n">ncall</span><span class="p">,</span> <span class="n">blob</span></div>
+
+
+
+<div class="viewcode-block" id="estimate_nmcmc">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.estimate_nmcmc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_nmcmc</span><span class="p">(</span><span class="n">accept_ratio</span><span class="p">,</span> <span class="n">old_act</span><span class="p">,</span> <span class="n">maxmcmc</span><span class="p">,</span> <span class="n">safety</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate autocorrelation length of chain using acceptance fraction</span>
+
+<span class="sd">    Using ACL = (2/acc) - 1 multiplied by a safety margin. Code adapated from</span>
+<span class="sd">    CPNest:</span>
+
+<span class="sd">    * https://github.com/johnveitch/cpnest/blob/master/cpnest/sampler.py</span>
+<span class="sd">    * https://github.com/farr/Ensemble.jl</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    accept_ratio: float [0, 1]</span>
+<span class="sd">        Ratio of the number of accepted points to the total number of points</span>
+<span class="sd">    old_act: int</span>
+<span class="sd">        The ACT of the last iteration</span>
+<span class="sd">    maxmcmc: int</span>
+<span class="sd">        The maximum length of the MCMC chain to use</span>
+<span class="sd">    safety: int</span>
+<span class="sd">        A safety factor applied in the calculation</span>
+<span class="sd">    tau: int (optional)</span>
+<span class="sd">        The ACT, if given, otherwise estimated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tau</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">maxmcmc</span> <span class="o">/</span> <span class="n">safety</span>
+
+    <span class="k">if</span> <span class="n">accept_ratio</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">Nmcmc_exact</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">tau</span><span class="p">)</span> <span class="o">*</span> <span class="n">old_act</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Nmcmc_exact</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">tau</span><span class="p">)</span> <span class="o">*</span> <span class="n">old_act</span> <span class="o">+</span>
+            <span class="p">(</span><span class="n">safety</span> <span class="o">/</span> <span class="n">tau</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">/</span> <span class="n">accept_ratio</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">Nmcmc_exact</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">Nmcmc_exact</span><span class="p">,</span> <span class="n">maxmcmc</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">safety</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">Nmcmc_exact</span><span class="p">))</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

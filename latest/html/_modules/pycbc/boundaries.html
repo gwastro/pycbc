@@ -1,0 +1,599 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.boundaries &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.boundaries</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.boundaries</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides utilities for manipulating parameter boundaries. Namely,</span>
+<span class="sd">classes are offered that will map values to a specified domain using either</span>
+<span class="sd">cyclic boundaries or reflected boundaries.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.boundaries&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Bound</span><span class="p">(</span><span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds methods to float for boundary comparisons.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">larger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A function to determine whether or not `other` is larger</span>
+<span class="sd">        than the bound. This raises a NotImplementedError; classes that</span>
+<span class="sd">        inherit from this must define it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;larger function not set&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">smaller</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A function to determine whether or not `other` is smaller</span>
+<span class="sd">        than the bound. This raises a NotImplementedError; classes that</span>
+<span class="sd">        inherit from this must define it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;smaller function not set&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="OpenBound">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.OpenBound">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenBound</span><span class="p">(</span><span class="n">_Bound</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets larger and smaller functions to be `&gt;` and `&lt;`, respectively.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;open&#39;</span>
+
+<div class="viewcode-block" id="OpenBound.larger">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.OpenBound.larger">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">larger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if `other` is `&gt;`, False otherwise&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">&gt;</span> <span class="n">other</span></div>
+
+
+<div class="viewcode-block" id="OpenBound.smaller">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.OpenBound.smaller">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smaller</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns True if `other` is `&lt;`, False otherwise.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">&lt;</span> <span class="n">other</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ClosedBound">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ClosedBound">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClosedBound</span><span class="p">(</span><span class="n">_Bound</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets larger and smaller functions to be `&gt;=` and `&lt;=`, respectively.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;closed&#39;</span>
+
+<div class="viewcode-block" id="ClosedBound.larger">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ClosedBound.larger">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">larger</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">&gt;=</span> <span class="n">other</span></div>
+
+
+<div class="viewcode-block" id="ClosedBound.smaller">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ClosedBound.smaller">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smaller</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">&lt;=</span> <span class="n">other</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ReflectedBound">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ReflectedBound">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReflectedBound</span><span class="p">(</span><span class="n">ClosedBound</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inherits from `ClosedBound`, adding reflection functions.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;reflected&#39;</span>
+
+<div class="viewcode-block" id="ReflectedBound.reflect">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ReflectedBound.reflect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reflect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">2</span><span class="o">*</span><span class="bp">self</span> <span class="o">-</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="ReflectedBound.reflect_left">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ReflectedBound.reflect_left">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reflect_left</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Only reflects the value if is &gt; self.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reflect</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="ReflectedBound.reflect_right">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.ReflectedBound.reflect_right">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reflect_right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Only reflects the value if is &lt; self.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reflect</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+</div>
+
+
+
+<span class="n">boundary_types</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">OpenBound</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">OpenBound</span><span class="p">,</span>
+    <span class="n">ClosedBound</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">ClosedBound</span><span class="p">,</span>
+    <span class="n">ReflectedBound</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">ReflectedBound</span>
+<span class="p">}</span>
+
+
+<span class="c1">#</span>
+<span class="c1">#   Helper functions for applying conditions to boundaries</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="apply_cyclic">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.apply_cyclic">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_cyclic</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a value, applies cyclic boundary conditions between the minimum</span>
+<span class="sd">    and maximum bounds.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : float</span>
+<span class="sd">        The value to apply the cyclic conditions to.</span>
+<span class="sd">    bounds : Bounds instance</span>
+<span class="sd">        Boundaries to use for applying cyclic conditions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The value after the cyclic bounds are applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">bounds</span><span class="o">.</span><span class="n">_min</span><span class="p">)</span> <span class="o">%</span><span class="p">(</span><span class="n">bounds</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="n">bounds</span><span class="o">.</span><span class="n">_min</span><span class="p">)</span> <span class="o">+</span> <span class="n">bounds</span><span class="o">.</span><span class="n">_min</span></div>
+
+
+<div class="viewcode-block" id="reflect_well">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.reflect_well">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reflect_well</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">bounds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Given some boundaries, reflects the value until it falls within both</span>
+<span class="sd">    boundaries. This is done iteratively, reflecting left off of the</span>
+<span class="sd">    `boundaries.max`, then right off of the `boundaries.min`, etc.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : float</span>
+<span class="sd">        The value to apply the reflected boundaries to.</span>
+<span class="sd">    bounds : Bounds instance</span>
+<span class="sd">        Boundaries to reflect between. Both `bounds.min` and `bounds.max` must</span>
+<span class="sd">        be instances of `ReflectedBound`, otherwise an AttributeError is</span>
+<span class="sd">        raised.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The value after being reflected between the two bounds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">_max</span><span class="o">.</span><span class="n">reflect_left</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">bounds</span><span class="o">.</span><span class="n">_min</span><span class="o">.</span><span class="n">reflect_right</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pass</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Just return the given value.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+
+<span class="c1">#</span>
+<span class="c1">#   Bounds class</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="Bounds">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.Bounds">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Bounds</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates and stores bounds using the given values.</span>
+
+<span class="sd">    The type of boundaries used can be set using the `btype_(min|max)`</span>
+<span class="sd">    parameters. These arguments set what kind of boundary is used at the</span>
+<span class="sd">    minimum and maximum bounds. Specifically, if `btype_min` (`btype_max`) is</span>
+<span class="sd">    set to:</span>
+
+<span class="sd">     * &quot;open&quot;: the minimum (maximum) boundary will be an instance of</span>
+<span class="sd">       `OpenBound`. This means that a value must be `&gt;` (`&lt;`) the bound</span>
+<span class="sd">       for it to be considered within the bounds.</span>
+<span class="sd">     * &quot;closed&quot;: the minimum (maximum) boundary will be an instance of</span>
+<span class="sd">       `ClosedBound`. This means that a value must be `&gt;=` (`&lt;=`) the bound</span>
+<span class="sd">       for it to be considered within the bounds.</span>
+<span class="sd">     * &quot;reflected&quot;: the minimum (maximum) boundary will be an isntance of</span>
+<span class="sd">       `ReflectedBound`. This means that a value will be reflected to the</span>
+<span class="sd">       right (left) if `apply_conditions` is used on the value. For more</span>
+<span class="sd">       details see `apply_conditions`.</span>
+
+<span class="sd">    If the `cyclic` keyword is set to True, then `apply_conditions` will cause</span>
+<span class="sd">    values to be wrapped around to the minimum (maximum) bound if the value</span>
+<span class="sd">    is &gt; (&lt;=) the maximum (minimum) bound. For more details see</span>
+<span class="sd">    `apply_conditions`.</span>
+
+<span class="sd">    Values can be checked whether or not they occur within the bounds using</span>
+<span class="sd">    `in`; e.g., `6 in bounds`. This is done without applying any boundary</span>
+<span class="sd">    conditions. To apply conditions, then check whether the value is in</span>
+<span class="sd">    bounds, use the `contains_conditioned` method.</span>
+
+<span class="sd">    The default is for the minimum bound to be &quot;closed&quot; and the maximum bound</span>
+<span class="sd">    to be &quot;open&quot;, i.e., a right-open interval.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    min_bound : {-numpy.inf, float}</span>
+<span class="sd">        The value of the lower bound. Default is `-inf`.</span>
+<span class="sd">    max_bound : {numpy.inf, float}</span>
+<span class="sd">        The value of the upper bound. Default is `inf`.</span>
+<span class="sd">    btype_min : {&#39;closed&#39;, string}</span>
+<span class="sd">        The type of the lower bound; options are &quot;closed&quot;, &quot;open&quot;, or</span>
+<span class="sd">        &quot;reflected&quot;. Default is &quot;closed&quot;.</span>
+<span class="sd">    btype_min : {&#39;open&#39;, string}</span>
+<span class="sd">        The type of the lower bound; options are &quot;closed&quot;, &quot;open&quot;, or</span>
+<span class="sd">        &quot;reflected&quot;. Default is &quot;open&quot;.</span>
+<span class="sd">    cyclic : {False, bool}</span>
+<span class="sd">        Whether or not to make the bounds cyclic; default is False. If True,</span>
+<span class="sd">        both the minimum and maximum bounds must be finite.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Create a right-open interval between -1 and 1 and test whether various</span>
+<span class="sd">    values are within them:</span>
+<span class="sd">    &gt;&gt;&gt; bounds = Bounds(-1., 1.)</span>
+<span class="sd">    &gt;&gt;&gt; -1 in bounds</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; 0 in bounds</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; 1 in bounds</span>
+<span class="sd">    False</span>
+
+<span class="sd">    Create an open interval between -1 and 1 and test the same values:</span>
+<span class="sd">    &gt;&gt;&gt; bounds = Bounds(-1, 1, btype_min=&quot;open&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; -1 in bounds</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; 0 in bounds</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; 1 in bounds</span>
+<span class="sd">    False</span>
+
+<span class="sd">    Create cyclic bounds between -1 and 1 and plot the effect of conditioning</span>
+<span class="sd">    on points between -10 and 10:</span>
+<span class="sd">    &gt;&gt;&gt; bounds = Bounds(-1, 1, cyclic=True)</span>
+<span class="sd">    &gt;&gt;&gt; x = numpy.linspace(-10, 10, num=1000)</span>
+<span class="sd">    &gt;&gt;&gt; conditioned_x = bounds.apply_conditions(x)</span>
+<span class="sd">    &gt;&gt;&gt; fig = pyplot.figure()</span>
+<span class="sd">    &gt;&gt;&gt; ax = fig.add_subplot(111)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(x, x, c=&#39;b&#39;, lw=2, label=&#39;input&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(conditioned_x, x, c=&#39;r&#39;, lw=1)</span>
+<span class="sd">    &gt;&gt;&gt; ax.vlines([-1., 1.], x.min(), x.max(), color=&#39;k&#39;, linestyle=&#39;--&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.set_title(&#39;cyclic bounds between x=-1,1&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; fig.show()</span>
+
+<span class="sd">    Create a reflected bound at -1 and plot the effect of conditioning:</span>
+<span class="sd">    &gt;&gt;&gt; bounds = Bounds(-1, 1, btype_min=&#39;reflected&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; x = numpy.linspace(-10, 10, num=1000)</span>
+<span class="sd">    &gt;&gt;&gt; conditioned_x = bounds.apply_conditions(x)</span>
+<span class="sd">    &gt;&gt;&gt; fig = pyplot.figure()</span>
+<span class="sd">    &gt;&gt;&gt; ax = fig.add_subplot(111)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(x, x, c=&#39;b&#39;, lw=2, label=&#39;input&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(conditioned_x, x, c=&#39;r&#39;, lw=1)</span>
+<span class="sd">    &gt;&gt;&gt; ax.vlines([-1., 1.], x.min(), x.max(), color=&#39;k&#39;, linestyle=&#39;--&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.set_title(&#39;reflected right at x=-1&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; fig.show()</span>
+
+<span class="sd">    Create a reflected bound at 1 and plot the effect of conditioning:</span>
+<span class="sd">    &gt;&gt;&gt; bounds = Bounds(-1, 1, btype_max=&#39;reflected&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; x = numpy.linspace(-10, 10, num=1000)</span>
+<span class="sd">    &gt;&gt;&gt; conditioned_x = bounds.apply_conditions(x)</span>
+<span class="sd">    &gt;&gt;&gt; fig = pyplot.figure()</span>
+<span class="sd">    &gt;&gt;&gt; ax = fig.add_subplot(111)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(x, x, c=&#39;b&#39;, lw=2, label=&#39;input&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(conditioned_x, x, c=&#39;r&#39;, lw=1)</span>
+<span class="sd">    &gt;&gt;&gt; ax.vlines([-1., 1.], x.min(), x.max(), color=&#39;k&#39;, linestyle=&#39;--&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.set_title(&#39;reflected left at x=1&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; fig.show()</span>
+
+<span class="sd">    Create reflected bounds at -1 and 1 and plot the effect of conditioning:</span>
+<span class="sd">    &gt;&gt;&gt; bounds = Bounds(-1, 1, btype_min=&#39;reflected&#39;, btype_max=&#39;reflected&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; x = numpy.linspace(-10, 10, num=1000)</span>
+<span class="sd">    &gt;&gt;&gt; conditioned_x = bounds.apply_conditions(x)</span>
+<span class="sd">    &gt;&gt;&gt; fig = pyplot.figure()</span>
+<span class="sd">    &gt;&gt;&gt; ax = fig.add_subplot(111)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(x, x, c=&#39;b&#39;, lw=2, label=&#39;input&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.plot(conditioned_x, x, c=&#39;r&#39;, lw=1)</span>
+<span class="sd">    &gt;&gt;&gt; ax.vlines([-1., 1.], x.min(), x.max(), color=&#39;k&#39;, linestyle=&#39;--&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ax.set_title(&#39;reflected betewen x=-1,1&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; fig.show()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_bound</span><span class="o">=-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">max_bound</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+            <span class="n">btype_min</span><span class="o">=</span><span class="s1">&#39;closed&#39;</span><span class="p">,</span> <span class="n">btype_max</span><span class="o">=</span><span class="s1">&#39;open&#39;</span><span class="p">,</span> <span class="n">cyclic</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># check boundary values</span>
+        <span class="k">if</span> <span class="n">min_bound</span> <span class="o">&gt;=</span> <span class="n">max_bound</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min_bound must be &lt; max_bound&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cyclic</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">min_bound</span><span class="p">)</span> <span class="ow">and</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">max_bound</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;if using cyclic, min and max bounds must both &quot;</span>
+                <span class="s2">&quot;be finite&quot;</span><span class="p">)</span>
+        <span class="c1"># store bounds</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min</span> <span class="o">=</span> <span class="n">boundary_types</span><span class="p">[</span><span class="n">btype_min</span><span class="p">](</span><span class="n">min_bound</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized btype_min </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">btype_min</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">=</span> <span class="n">boundary_types</span><span class="p">[</span><span class="n">btype_max</span><span class="p">](</span><span class="n">max_bound</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized btype_max </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">btype_max</span><span class="p">))</span>
+        <span class="c1"># store cyclic conditions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cyclic</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">cyclic</span><span class="p">)</span>
+        <span class="c1"># store reflection conditions; we&#39;ll vectorize them here so that they</span>
+        <span class="c1"># can be used with arrays</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;reflected&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;reflected&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reflect</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reflect_well</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflected</span> <span class="o">=</span> <span class="s1">&#39;well&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;reflected&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reflect</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="o">.</span><span class="n">reflect_right</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflected</span> <span class="o">=</span> <span class="s1">&#39;min&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;reflected&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reflect</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max</span><span class="o">.</span><span class="n">reflect_left</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflected</span> <span class="o">=</span> <span class="s1">&#39;max&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reflect</span> <span class="o">=</span> <span class="n">_pass</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reflected</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                   <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span><span class="p">,</span>
+                             <span class="s2">&quot;cyclic&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cyclic</span><span class="p">]))</span> <span class="o">+</span> <span class="s2">&quot;&gt;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;_bounds instance: The minimum bound &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;_bounds instance: The maximum bound &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cyclic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;bool: Whether the bounds are cyclic or not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cyclic</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ii</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ii</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+        <span class="k">elif</span> <span class="n">ii</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;index </span><span class="si">{}</span><span class="s2"> out of range&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="o">.</span><span class="n">smaller</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span><span class="o">.</span><span class="n">larger</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reflect_well</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thin wrapper around `reflect_well` that passes self as the `bounds`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">reflect_well</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_cyclic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thin wrapper around `apply_cyclic` that passes self as the `bounds`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">apply_cyclic</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Bounds.apply_conditions">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.Bounds.apply_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies any boundary conditions to the given value.</span>
+
+<span class="sd">        The value is manipulated according based on the following conditions:</span>
+
+<span class="sd">         * If `self.cyclic` is True then `value` is wrapped around to the</span>
+<span class="sd">           minimum (maximum) bound if `value` is `&gt;= self.max` (`&lt; self.min`)</span>
+<span class="sd">           bound. For example, if the minimum and maximum bounds are `0, 2*pi`</span>
+<span class="sd">           and `value = 5*pi`, then the returned value will be `pi`.</span>
+<span class="sd">         * If `self.min` is a reflected boundary then `value` will be</span>
+<span class="sd">           reflected to the right if it is `&lt; self.min`. For example, if</span>
+<span class="sd">           `self.min = 10` and `value = 3`, then the returned value will be</span>
+<span class="sd">           17.</span>
+<span class="sd">         * If `self.max` is a reflected boundary then `value` will be</span>
+<span class="sd">           reflected to the left if it is `&gt; self.max`. For example, if</span>
+<span class="sd">           `self.max = 20` and `value = 27`, then the returned value will be</span>
+<span class="sd">           13.</span>
+<span class="sd">         * If `self.min` and `self.max` are both reflected boundaries, then</span>
+<span class="sd">           `value` will be reflected between the two boundaries until it</span>
+<span class="sd">           falls within the bounds. The first reflection occurs off of the</span>
+<span class="sd">           maximum boundary. For example, if `self.min = 10`, `self.max =</span>
+<span class="sd">           20`, and `value = 42`, the returned value will be 18 ( the first</span>
+<span class="sd">           reflection yields -2, the second 22, and the last 18).</span>
+<span class="sd">         * If neither bounds are reflected and cyclic is False, then the</span>
+<span class="sd">           value is just returned as-is.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value : float</span>
+<span class="sd">            The value to apply the conditions to.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value after the conditions are applied; see above for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cyclic</span><span class="p">:</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">apply_cyclic</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reflect</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">retval</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">retval</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="n">retval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="n">retval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">retval</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">retval</span></div>
+
+
+<div class="viewcode-block" id="Bounds.contains_conditioned">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.boundaries.Bounds.contains_conditioned">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">contains_conditioned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs `apply_conditions` on the given value before testing whether it</span>
+<span class="sd">        is in bounds. Note that if `cyclic` is True, or both bounds</span>
+<span class="sd">        are reflected, than this will always return True.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        value : float</span>
+<span class="sd">            The value to test.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            Whether or not the value is within the bounds after the boundary</span>
+<span class="sd">            conditions are applied.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

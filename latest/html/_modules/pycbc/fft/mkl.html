@@ -1,0 +1,340 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft.mkl &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.fft.mkl</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.fft.mkl</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span><span class="o">,</span><span class="w"> </span><span class="nn">pycbc.libutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">zeros</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseFFT</span><span class="p">,</span> <span class="n">_BaseIFFT</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_scheme</span>
+
+<span class="n">lib</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">libutils</span><span class="o">.</span><span class="n">get_ctypes_library</span><span class="p">(</span><span class="s1">&#39;mkl_rt&#39;</span><span class="p">,</span> <span class="p">[])</span>
+<span class="k">if</span> <span class="n">lib</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span>
+
+<span class="c1">#MKL constants  taken from mkl_df_defines.h</span>
+<span class="n">DFTI_FORWARD_DOMAIN</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">DFTI_DIMENSION</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">DFTI_LENGTHS</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">DFTI_PRECISION</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">DFTI_FORWARD_SCALE</span>  <span class="o">=</span> <span class="mi">4</span>
+<span class="n">DFTI_BACKWARD_SCALE</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">DFTI_NUMBER_OF_TRANSFORMS</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">DFTI_COMPLEX_STORAGE</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">DFTI_REAL_STORAGE</span> <span class="o">=</span> <span class="mi">9</span>
+<span class="n">DFTI_CONJUGATE_EVEN_STORAGE</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">DFTI_PLACEMENT</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">DFTI_INPUT_STRIDES</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">DFTI_OUTPUT_STRIDES</span> <span class="o">=</span> <span class="mi">13</span>
+<span class="n">DFTI_INPUT_DISTANCE</span> <span class="o">=</span> <span class="mi">14</span>
+<span class="n">DFTI_OUTPUT_DISTANCE</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">DFTI_WORKSPACE</span> <span class="o">=</span> <span class="mi">17</span>
+<span class="n">DFTI_ORDERING</span> <span class="o">=</span> <span class="mi">18</span>
+<span class="n">DFTI_TRANSPOSE</span> <span class="o">=</span> <span class="mi">19</span>
+<span class="n">DFTI_DESCRIPTOR_NAME</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">DFTI_PACKED_FORMAT</span> <span class="o">=</span> <span class="mi">21</span>
+<span class="n">DFTI_COMMIT_STATUS</span> <span class="o">=</span> <span class="mi">22</span>
+<span class="n">DFTI_VERSION</span> <span class="o">=</span> <span class="mi">23</span>
+<span class="n">DFTI_NUMBER_OF_USER_THREADS</span> <span class="o">=</span> <span class="mi">26</span>
+<span class="n">DFTI_THREAD_LIMIT</span> <span class="o">=</span> <span class="mi">27</span>
+<span class="n">DFTI_COMMITTED</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">DFTI_UNCOMMITTED</span> <span class="o">=</span> <span class="mi">31</span>
+<span class="n">DFTI_COMPLEX</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">DFTI_REAL</span> <span class="o">=</span> <span class="mi">33</span>
+<span class="n">DFTI_SINGLE</span> <span class="o">=</span> <span class="mi">35</span>
+<span class="n">DFTI_DOUBLE</span> <span class="o">=</span> <span class="mi">36</span>
+<span class="n">DFTI_COMPLEX_COMPLEX</span> <span class="o">=</span> <span class="mi">39</span>
+<span class="n">DFTI_COMPLEX_REAL</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="n">DFTI_REAL_COMPLEX</span> <span class="o">=</span> <span class="mi">41</span>
+<span class="n">DFTI_REAL_REAL</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="n">DFTI_INPLACE</span> <span class="o">=</span> <span class="mi">43</span>
+<span class="n">DFTI_NOT_INPLACE</span> <span class="o">=</span> <span class="mi">44</span>
+<span class="n">DFTI_ORDERED</span> <span class="o">=</span> <span class="mi">48</span>
+<span class="n">DFTI_BACKWARD_SCRAMBLED</span> <span class="o">=</span> <span class="mi">49</span>
+<span class="n">DFTI_ALLOW</span> <span class="o">=</span> <span class="mi">51</span>
+<span class="n">DFTI_AVOID</span> <span class="o">=</span> <span class="mi">52</span>
+<span class="n">DFTI_NONE</span> <span class="o">=</span> <span class="mi">53</span>
+<span class="n">DFTI_CCS_FORMAT</span> <span class="o">=</span> <span class="mi">54</span>
+<span class="n">DFTI_PACK_FORMAT</span> <span class="o">=</span> <span class="mi">55</span>
+<span class="n">DFTI_PERM_FORMAT</span> <span class="o">=</span> <span class="mi">56</span>
+<span class="n">DFTI_CCE_FORMAT</span> <span class="o">=</span> <span class="mi">57</span>
+
+<span class="n">mkl_domain</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;real&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;complex&#39;</span><span class="p">:</span> <span class="n">DFTI_REAL</span><span class="p">},</span>
+              <span class="s1">&#39;complex&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;real&#39;</span><span class="p">:</span> <span class="n">DFTI_REAL</span><span class="p">,</span>
+                          <span class="s1">&#39;complex&#39;</span><span class="p">:</span><span class="n">DFTI_COMPLEX</span><span class="p">,</span>
+                         <span class="p">}</span>
+             <span class="p">}</span>
+
+<span class="n">mkl_descriptor</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;single&#39;</span><span class="p">:</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiCreateDescriptor_s_1d</span><span class="p">,</span>
+                  <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiCreateDescriptor_d_1d</span><span class="p">,</span>
+                  <span class="p">}</span>
+
+<div class="viewcode-block" id="check_status">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.check_status">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Check the status of a mkl functions and raise a python exeption if</span>
+<span class="sd">    there is an error.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+        <span class="n">lib</span><span class="o">.</span><span class="n">DftiErrorMessage</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiErrorMessage</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_descriptor">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.create_descriptor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_descriptor</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">idtype</span><span class="p">,</span> <span class="n">odtype</span><span class="p">,</span> <span class="n">inplace</span><span class="p">):</span>
+    <span class="n">invec</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">idtype</span><span class="p">)</span>
+    <span class="n">outvec</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">odtype</span><span class="p">)</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">mkl_domain</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">kind</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">outvec</span><span class="o">.</span><span class="n">kind</span><span class="p">)]</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">mkl_descriptor</span><span class="p">[</span><span class="n">invec</span><span class="o">.</span><span class="n">precision</span><span class="p">]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">]</span>
+
+    <span class="n">status</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">desc</span><span class="p">),</span> <span class="n">domain</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+        <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_PLACEMENT</span><span class="p">,</span> <span class="n">DFTI_INPLACE</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_PLACEMENT</span><span class="p">,</span> <span class="n">DFTI_NOT_INPLACE</span><span class="p">)</span>
+
+    <span class="n">nthreads</span> <span class="o">=</span> <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">num_threads</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_THREAD_LIMIT</span><span class="p">,</span> <span class="n">nthreads</span><span class="p">)</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_CONJUGATE_EVEN_STORAGE</span><span class="p">,</span> <span class="n">DFTI_CCS_FORMAT</span><span class="p">)</span>
+    <span class="n">lib</span><span class="o">.</span><span class="n">DftiCommitDescriptor</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">desc</span></div>
+
+
+<div class="viewcode-block" id="fft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.fft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fft</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">prec</span><span class="p">,</span> <span class="n">itype</span><span class="p">,</span> <span class="n">otype</span><span class="p">):</span>
+    <span class="n">descr</span> <span class="o">=</span> <span class="n">create_descriptor</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">invec</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">outvec</span><span class="p">)),</span> <span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                              <span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span> <span class="o">==</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">))</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiComputeForward</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">invec</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">)</span>
+    <span class="n">lib</span><span class="o">.</span><span class="n">DftiFreeDescriptor</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">descr</span><span class="p">))</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ifft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.ifft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ifft</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">prec</span><span class="p">,</span> <span class="n">itype</span><span class="p">,</span> <span class="n">otype</span><span class="p">):</span>
+    <span class="n">descr</span> <span class="o">=</span> <span class="n">create_descriptor</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">invec</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">outvec</span><span class="p">)),</span> <span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                              <span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span> <span class="o">==</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">))</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiComputeBackward</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">invec</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">)</span>
+    <span class="n">lib</span><span class="o">.</span><span class="n">DftiFreeDescriptor</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">descr</span><span class="p">))</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
+
+
+<span class="c1"># Class based API</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_desc</span><span class="p">(</span><span class="n">fftobj</span><span class="p">):</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">mkl_domain</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">kind</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">kind</span><span class="p">)]</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">mkl_descriptor</span><span class="p">[</span><span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">precision</span><span class="p">]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_long</span><span class="p">]</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">desc</span><span class="p">),</span> <span class="n">domain</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+    <span class="c1"># Now we set various things depending on exactly what kind of transform we&#39;re</span>
+    <span class="c1"># performing.</span>
+
+    <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+
+    <span class="c1"># The following only matters if the transform is C2R or R2C</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_CONJUGATE_EVEN_STORAGE</span><span class="p">,</span>
+                              <span class="n">DFTI_COMPLEX_COMPLEX</span><span class="p">)</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="c1"># In-place or out-of-place:</span>
+    <span class="k">if</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">inplace</span><span class="p">:</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_PLACEMENT</span><span class="p">,</span> <span class="n">DFTI_INPLACE</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_PLACEMENT</span><span class="p">,</span> <span class="n">DFTI_NOT_INPLACE</span><span class="p">)</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="c1"># If we are performing a batched transform:</span>
+    <span class="k">if</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">nbatch</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_NUMBER_OF_TRANSFORMS</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">nbatch</span><span class="p">)</span>
+        <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_INPUT_DISTANCE</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">idist</span><span class="p">)</span>
+        <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_OUTPUT_DISTANCE</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">odist</span><span class="p">)</span>
+        <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="c1"># Knowing how many threads will be allowed may help select a better transform</span>
+    <span class="n">nthreads</span> <span class="o">=</span> <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">num_threads</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiSetValue</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">DFTI_THREAD_LIMIT</span><span class="p">,</span> <span class="n">nthreads</span><span class="p">)</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="c1"># Now everything&#39;s ready, so commit</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiCommitDescriptor</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span>
+    <span class="n">check_status</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">desc</span>
+
+<div class="viewcode-block" id="FFT">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.FFT">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FFT</span><span class="p">(</span><span class="n">_BaseFFT</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FFT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiComputeForward</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="n">_get_desc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FFT.execute">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.FFT.execute">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optr</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="IFFT">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.IFFT">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IFFT</span><span class="p">(</span><span class="n">_BaseIFFT</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">IFFT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">DftiComputeBackward</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">desc</span> <span class="o">=</span> <span class="n">_get_desc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IFFT.execute">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.mkl.IFFT.execute">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">desc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optr</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

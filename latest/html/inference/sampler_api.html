@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sampler API &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Inference IO" href="io.html" />
+    <link rel="prev" title="pycbc_make_inference_inj_workflow: A parameter estimation workflow generator for injections" href="../workflow/pycbc_make_inference_inj_workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../inference.html#for-developers">For Developers</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Sampler API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview-guidelines">Overview &amp; Guidelines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-example">Detailed example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#inheritance-diagrams">Inheritance diagrams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-to-add-a-sampler">How to add a sampler</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="io.html">Inference IO</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Sampler API</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/sampler_api.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sampler-api">
+<h1>Sampler API<a class="headerlink" href="#sampler-api" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="../pycbc.inference.sampler.html#module-pycbc.inference.sampler" title="pycbc.inference.sampler"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.inference.sampler</span></code></a> module is the interface between
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> and the sampling engines, such as <code class="docutils literal notranslate"><span class="pre">emcee</span></code>. Below, we
+provide an overview of the general structure of the sampler classes, how it
+interacts with <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>, and how to add support for new samplers. We
+also provide inheritance diagrams for all of the currently supported samplers.</p>
+<section id="overview-guidelines">
+<span id="sampler-api-overview"></span><h2>Overview &amp; Guidelines<a class="headerlink" href="#overview-guidelines" title="Link to this heading"></a></h2>
+<p>The following guidelines apply to the sampler classes:</p>
+<ol class="arabic simple">
+<li><p>All sampler classes must inherit from the <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a> class. This is
+an <a class="reference external" href="https://docs.python.org/3/library/abc.html#module-abc" title="(in Python v3.14)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">abstract</span> <span class="pre">base</span> <span class="pre">class</span></code></a> that defines methods that all
+samplers must implement, as they will be used by <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>. (See
+<a class="reference external" href="https://www.python-course.eu/python3_abstract_classes.php">this tutorial</a>
+for a primer on abstract base classes.)</p></li>
+<li><p>All sampler classes must have a <code class="docutils literal notranslate"><span class="pre">name</span></code> attribute that is unique across
+all sampler classes in <a class="reference internal" href="../pycbc.inference.sampler.html#module-pycbc.inference.sampler" title="pycbc.inference.sampler"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.inference.sampler</span></code></a>. This name is used
+to reference the sampler throughout the code, and is how the user specifies
+which sampler to use in their config file. For example,
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a>’s name is <code class="docutils literal notranslate"><span class="pre">'emcee'</span></code>.</p></li>
+<li><p>Duplicate code should be avoided. If multiple samplers have common methods,
+those methods should be added to one or more support classes that the
+samplers can inherit from, in addition to <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a>. For example, all
+MCMC samplers need to be able to compute an autocorrelation length. That
+functionality is provided for single-temperature MCMCs in the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">MCMCAutocorrSupport</span></code> class. These support classes may themselves be
+abstract base classes which add more required methods to samplers that
+inherit from them.</p></li>
+<li><p>Inheritance is kept to one level. For example, if we have sampler class
+<code class="docutils literal notranslate"><span class="pre">Foo(Bar,</span> <span class="pre">BaseSampler)</span></code>, both <code class="docutils literal notranslate"><span class="pre">Bar</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseSampler</span></code> do not inherit
+from any parent classes, only <code class="docutils literal notranslate"><span class="pre">object</span></code>.</p></li>
+<li><p>To avoid confusion, only inherited abstract methods should be overridden.</p></li>
+<li><p>All sampler classes need a corresponding class in the
+<a class="reference internal" href="../pycbc.inference.io.html#module-pycbc.inference.io" title="pycbc.inference.io"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.inference.io</span></code></a> module for handling reading and writing. See
+<a class="reference internal" href="io.html"><span class="doc">Inference IO</span></a> for more details on IO classes.</p></li>
+</ol>
+<p>As mentioned above, the <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a> class is an abstract base class. It
+defines a collection of abstract methods and properties that all samplers must
+override in order to function properly. These are (click on the names to see
+their documentation):</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.from_config" title="pycbc.inference.sampler.base.BaseSampler.from_config"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_config</span></code></a></p></li>
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.io" title="pycbc.inference.sampler.base.BaseSampler.io"><code class="xref py py-attr docutils literal notranslate"><span class="pre">io</span></code></a></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_initial_conditions</span></code></p></li>
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.run" title="pycbc.inference.sampler.base.BaseSampler.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run</span></code></a></p></li>
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.checkpoint" title="pycbc.inference.sampler.base.BaseSampler.checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">checkpoint</span></code></a></p></li>
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.samples" title="pycbc.inference.sampler.base.BaseSampler.samples"><code class="xref py py-attr docutils literal notranslate"><span class="pre">samples</span></code></a></p></li>
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.model_stats" title="pycbc.inference.sampler.base.BaseSampler.model_stats"><code class="xref py py-attr docutils literal notranslate"><span class="pre">model_stats</span></code></a></p></li>
+<li><p><a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.finalize" title="pycbc.inference.sampler.base.BaseSampler.finalize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">finalize</span></code></a></p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="detailed-example">
+<h2>Detailed example<a class="headerlink" href="#detailed-example" title="Link to this heading"></a></h2>
+<p>Let’s examine the <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a> class to see how these guidelines
+apply in practice. Here is its inheritance structure (click on the names of the
+classes to see their documentation):</p>
+<div class="graphviz"><img src="../_images/inheritance-8276920748f64014b7aa631c03c502281f415da7.png" alt="Inheritance diagram of pycbc.inference.sampler.emcee" usemap="#inheritancef9699c6d9c" class="inheritance graphviz" /></div>
+<map id="inheritancef9699c6d9c" name="inheritancef9699c6d9c">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,148,31"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" target="_top" title="This class is used to construct an MCMC sampler from the emcee" alt="" coords="146,79,378,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="173,5,351,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="375,5,594,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>In addition to <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a>, <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a> inherits from <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a>
+and <code class="xref py py-class docutils literal notranslate"><span class="pre">MCMCAutocorrSupport</span></code>.  Inspecting <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a>, we see that it implements
+several of the methods that <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a> requires: namely,
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">set_initial_conditions</span></code>, <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run</span></code></a>, and <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">checkpoint</span></code></a>.
+This is because the steps taken in these functions are common across MCMC
+samplers. For example, in <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run</span></code></a>, the sampler is run for blocks of
+iterations (specified by <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint_interval" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint_interval"><code class="xref py py-attr docutils literal notranslate"><span class="pre">checkpoint_interval</span></code></a>) until the convergence
+criteria has been met (which is determined by <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.set_target" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.set_target"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_target</span></code></a>). This,
+generally, is what all MCMC samplers do.</p>
+<p><em>How</em> an MCMC sampler is run for some number of iterations is unique to each
+sampling engine. To accommodate this, <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a> adds <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run_mcmc" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.run_mcmc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BaseMCMC.run_mcmc</span></code></a>,
+which it calls from within its <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.run"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run</span></code></a>.  <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.run_mcmc" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.run_mcmc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BaseMCMC.run_mcmc</span></code></a> is an
+abstract method – <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a> is itself an abstract base class. Since
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a> inherits from <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a>, followed by <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a> (see
+<a class="reference internal" href="#python-inheritance-note"><span class="std std-ref">note</span></a>), <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a> fulfils <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a>’s
+requirement that a <code class="docutils literal notranslate"><span class="pre">run</span></code> method be implemented, but replaces it with the
+requirement that the class define a <code class="docutils literal notranslate"><span class="pre">run_mcmc</span></code> method.  As a result,
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a> has its own <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.run_mcmc" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler.run_mcmc"><code class="xref py py-meth docutils literal notranslate"><span class="pre">run_mcmc</span></code></a>; this is
+where the call to the underlying sampling engine (external to pycbc) is made.</p>
+<div class="admonition note" id="python-inheritance-note">
+<p class="admonition-title">Note</p>
+<p>In python, the order of inheritance is determined by the order the parents
+are given in the class definition, from right to left. For example,
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a> is defined as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EmceeEnsembleSampler</span><span class="p">(</span><span class="n">MCMCAutocorrSupport</span><span class="p">,</span> <span class="n">BaseMCMC</span><span class="p">,</span> <span class="n">BaseSampler</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>This means that methods introduced by <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a> will be overridden by
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a>, which in turn will be overridden by <code class="xref py py-class docutils literal notranslate"><span class="pre">MCMCAutocorrSupport</span></code>.  For
+this reason, all sampler class definitions must have <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a> listed
+last.</p>
+</div>
+<p>All MCMC samplers need to be able to compute an autocorrelation function (ACF)
+and length (ACL). This is used to determine how to thin the chains to obtain
+independent samples. Consequently, <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a> also adds abstract base methods
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acf" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acf"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_acf</span></code></a> and <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acl" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acl"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_acl</span></code></a>; these are called by its
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint" title="pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">checkpoint</span></code></a> method.  The <code class="xref py py-class docutils literal notranslate"><span class="pre">MCMCAutocorrSupport</span></code> class provides these
+functions. These functions are provided in a class separate from <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a>
+because not all MCMC samplers estimate ACF/Ls in the same way. For example,
+multi-tempered samplers need to compute ACF/Ls separately for each temperature
+chain. Consequently, there is an equivalent class
+<code class="xref py py-class docutils literal notranslate"><span class="pre">MultiTemperedAutocorrSupport</span></code> that offers the same functions for
+multi-tempered MCMCs. This class is used by, e.g., <code class="xref py py-class docutils literal notranslate"><span class="pre">EmceePTSampler</span></code> (see its
+<a class="reference internal" href="#inheritance-emcee-pt"><span class="std std-ref">inheritance diagram</span></a>, below). By making the
+compute ACF/L functions abstract base methods in <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a>, both single and
+multi-tempered MCMC samplers can inherit from <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" title="pycbc.inference.sampler.base_mcmc.BaseMCMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseMCMC</span></code></a>.</p>
+<p>We see that by separating functionality out into support classes
+and using multiple inheritance, we are able to provide support for all of the
+unique features of different samplers, while keeping the base API that
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> interacts with simple.</p>
+</section>
+<section id="inheritance-diagrams">
+<h2>Inheritance diagrams<a class="headerlink" href="#inheritance-diagrams" title="Link to this heading"></a></h2>
+<p>Here are inheritance diagrams for all of the currently supported samplers:</p>
+<ul class="simple" id="inheritance-cpnest">
+<li><p><code class="docutils literal notranslate"><span class="pre">cpnest</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-285ecc445818d1aeeece3abc3c5c4547e88fac62.png" alt="Inheritance diagram of pycbc.inference.sampler.cpnest.CPNestSampler" usemap="#inheritance8bc1911235" class="inheritance graphviz" /></div>
+<map id="inheritance8bc1911235" name="inheritance8bc1911235">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="19,5,218,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-dummy">
+<li><p><code class="docutils literal notranslate"><span class="pre">dummy</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-194142140183ce5ecc64f61a3dac99da83710ea4.png" alt="Inheritance diagram of pycbc.inference.sampler.dummy.DummySampler" usemap="#inheritanceba7a4aff7f" class="inheritance graphviz" /></div>
+<map id="inheritanceba7a4aff7f" name="inheritanceba7a4aff7f">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-dynesty">
+<li><p><code class="docutils literal notranslate"><span class="pre">dynesty</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-78570aa48e06cb52d7ec24aed7bb46a73945c110.png" alt="Inheritance diagram of pycbc.inference.sampler.dynesty.DynestySampler" usemap="#inheritance7ba9377ebe" class="inheritance graphviz" /></div>
+<map id="inheritance7ba9377ebe" name="inheritance7ba9377ebe">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="26,5,225,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler" target="_top" title="This class is used to construct an Dynesty sampler from the dynesty" alt="" coords="5,79,245,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-emcee">
+<li><p><code class="docutils literal notranslate"><span class="pre">emcee</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-0c4a0e40ac775ec4ce1f562374ca8503d2a3d8bc.png" alt="Inheritance diagram of pycbc.inference.sampler.emcee.EmceeEnsembleSampler" usemap="#inheritanceb6bcb2abed" class="inheritance graphviz" /></div>
+<map id="inheritanceb6bcb2abed" name="inheritanceb6bcb2abed">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,204,31"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" target="_top" title="This class is used to construct an MCMC sampler from the emcee" alt="" coords="201,79,489,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="227,5,462,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="486,5,761,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-emcee-pt">
+<li><p><code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-743b05add17dd9b5254278a435367b6e5139d519.png" alt="Inheritance diagram of pycbc.inference.sampler.emcee_pt.EmceePTSampler" usemap="#inheritance113e3834eb" class="inheritance graphviz" /></div>
+<map id="inheritance113e3834eb" name="inheritance113e3834eb">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="4,4,138,21"/>
+<area shape="rect" id="node5" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee_pt.EmceePTSampler" target="_top" title="This class is used to construct a parallel&#45;tempered MCMC sampler from" alt="" coords="239,53,414,70"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="154,4,312,21"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="328,4,514,21"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport" target="_top" title="Provides methods for supporting multi&#45;tempered samplers." alt="" coords="530,4,764,21"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-epsie">
+<li><p><code class="docutils literal notranslate"><span class="pre">epsie</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-135f539250b007c7cd68a043f4c6a5a395286031.png" alt="Inheritance diagram of pycbc.inference.sampler.epsie.EpsieSampler" usemap="#inheritance244eb49acc" class="inheritance graphviz" /></div>
+<map id="inheritance244eb49acc" name="inheritance244eb49acc">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,187,28"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler" target="_top" title="Constructs an MCMC sampler using epsie&#39;s parallel&#45;tempered sampler." alt="" coords="221,72,411,95"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="208,5,423,28"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport" target="_top" title="Provides methods for supporting multi&#45;tempered samplers." alt="" coords="445,5,763,28"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-games">
+<li><p><code class="docutils literal notranslate"><span class="pre">games</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-e4c293e8a4b89171e731287aab213f1496e34837.png" alt="Inheritance diagram of pycbc.inference.sampler.games.GameSampler" usemap="#inheritancec67a74d38d" class="inheritance graphviz" /></div>
+<map id="inheritancec67a74d38d" name="inheritancec67a74d38d">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler" target="_top" title="Direct importance sampling using a preconstructed parameter space" alt="" coords="14,152,233,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-multinest">
+<li><p><code class="docutils literal notranslate"><span class="pre">multinest</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-6638e2798cac2aaf6f9b72b697ad1d63a472305d.png" alt="Inheritance diagram of pycbc.inference.sampler.multinest.MultinestSampler" usemap="#inheritance23035469da" class="inheritance graphviz" /></div>
+<map id="inheritance23035469da" name="inheritance23035469da">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="35,5,234,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.multinest.MultinestSampler" target="_top" title="This class is used to construct a nested sampler from" alt="" coords="5,79,264,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-nessai">
+<li><p><code class="docutils literal notranslate"><span class="pre">nessai</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-7016cbadcaca2216268e651bc22c6cc468e2c081.png" alt="Inheritance diagram of pycbc.inference.sampler.nessai.NessaiSampler" usemap="#inheritance0bf2b603d9" class="inheritance graphviz" /></div>
+<map id="inheritance0bf2b603d9" name="inheritance0bf2b603d9">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="17,5,216,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler" target="_top" title="Class to construct a FlowSampler from the nessai package." alt="" coords="5,79,228,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-ptemcee">
+<li><p><code class="docutils literal notranslate"><span class="pre">ptemcee</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-17f55d9c515cd42679023ba476ed6c5fdfd14c8e.png" alt="Inheritance diagram of pycbc.inference.sampler.ptemcee.PTEmceeSampler" usemap="#inheritance8008110505" class="inheritance graphviz" /></div>
+<map id="inheritance8008110505" name="inheritance8008110505">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,204,31"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler" target="_top" title="This class is used to construct the parallel&#45;tempered ptemcee sampler." alt="" coords="218,79,471,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="227,5,462,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="486,5,761,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-refine">
+<li><p><code class="docutils literal notranslate"><span class="pre">refine</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-f2176d6359b35b4d27d2748ff99a69262668ba62.png" alt="Inheritance diagram of pycbc.inference.sampler.refine.RefineSampler" usemap="#inheritance8a275fe97a" class="inheritance graphviz" /></div>
+<map id="inheritance8a275fe97a" name="inheritance8a275fe97a">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler" target="_top" title="Sampler for kde drawn refinement of existing posterior estimate" alt="" coords="16,152,231,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-snowline">
+<li><p><code class="docutils literal notranslate"><span class="pre">snowline</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-2dbbdf7af028f87f4d54856f8f0b14e55238af8e.png" alt="Inheritance diagram of pycbc.inference.sampler.snowline.SnowlineSampler" usemap="#inheritance4b476135fb" class="inheritance graphviz" /></div>
+<map id="inheritance4b476135fb" name="inheritance4b476135fb">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="33,5,231,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.snowline.SnowlineSampler" target="_top" title="This class is used to construct an Snowline sampler from the snowline" alt="" coords="5,79,259,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-ultranest">
+<li><p><code class="docutils literal notranslate"><span class="pre">ultranest</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-b45a2a7b4e9089b0aca33e3a71666b42d5efc66b.png" alt="Inheritance diagram of pycbc.inference.sampler.ultranest.UltranestSampler" usemap="#inheritanceea34918a69" class="inheritance graphviz" /></div>
+<map id="inheritanceea34918a69" name="inheritanceea34918a69">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="33,5,232,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler" target="_top" title="This class is used to construct an Ultranest sampler from the ultranest" alt="" coords="5,79,260,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="how-to-add-a-sampler">
+<span id="id1"></span><h2>How to add a sampler<a class="headerlink" href="#how-to-add-a-sampler" title="Link to this heading"></a></h2>
+<p>To add support for a new sampler, do the following:</p>
+<ol class="arabic simple">
+<li><p>Create a file in <code class="docutils literal notranslate"><span class="pre">pycbc/inference/sampler</span></code> for the new sampler’s class.</p></li>
+<li><p>Add the new class definition. The class must inherit from at least
+<a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a>.</p></li>
+<li><p>Give a name attribute to the class that is unique across the supported
+sampler classes.</p></li>
+<li><p><a class="reference internal" href="io.html#how-to-add-a-sampler-io"><span class="std std-ref">Add an IO class</span></a> for the sampler to the
+<a class="reference internal" href="../pycbc.inference.io.html#module-pycbc.inference.io" title="pycbc.inference.io"><code class="xref py py-mod docutils literal notranslate"><span class="pre">inference.io</span></code></a> modules. Set your new class’s
+<code class="docutils literal notranslate"><span class="pre">io</span></code> attribute to point to this new class.</p></li>
+<li><p>Add any other methods you need to satisfy the <a class="reference internal" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" title="pycbc.inference.sampler.base.BaseSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseSampler</span></code></a>’s required
+methods. When doing so, try to follow the guidelines above: do not duplicate
+code, and try to use support classes that offer functionality that you need.
+If you think some of the methods will be useful for more than just your
+sampler, create a new support class and add those methods to it.  However,
+if you’re unsure what is available or you would have to make changes to the
+support classes that may break other samplers, just add the methods you need
+to your new class definition. Fixing code duplication or rearranging support
+classes can be done through the review process when you wish to add your new
+sampler to the main gwastro repository.</p></li>
+<li><p>Add the sampler to the <code class="docutils literal notranslate"><span class="pre">samplers</span></code> dictionary in
+<code class="docutils literal notranslate"><span class="pre">pycbc/inference/sampler/__init__.py</span></code> so that <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> is aware
+of it to use.</p></li>
+<li><p>When you’re satisfied that your new sampler works,
+<a class="reference external" href="https://github.com/gwastro/pycbc/blob/master/CONTRIBUTING.md#open-a-pull-request">file a pull request</a> to get it into the main gwastro repostiory. Thank you for
+your contributions!</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../workflow/pycbc_make_inference_inj_workflow.html" class="btn btn-neutral float-left" title="pycbc_make_inference_inj_workflow: A parameter estimation workflow generator for injections" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="io.html" class="btn btn-neutral float-right" title="Inference IO" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

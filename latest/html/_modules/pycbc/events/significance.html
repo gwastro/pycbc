@@ -1,0 +1,647 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.significance &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.significance</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.significance</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2022 Gareth Cabourn Davies</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License</span>
+<span class="c1"># along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions to calculate the significance</span>
+<span class="sd">through different estimation methods of the background, and functions that</span>
+<span class="sd">read in the associated options to do so.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">trigger_fits</span> <span class="k">as</span> <span class="n">trstats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span> <span class="k">as</span> <span class="n">conv</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.significance&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="count_n_louder">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.count_n_louder">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">count_n_louder</span><span class="p">(</span><span class="n">bstat</span><span class="p">,</span> <span class="n">fstat</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span>
+                   <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculate for each foreground event the number of background events</span>
+<span class="sd">    that are louder than it.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bstat: numpy.ndarray</span>
+<span class="sd">        Array of the background statistic values</span>
+<span class="sd">    fstat: numpy.ndarray or scalar</span>
+<span class="sd">        Array of the foreground statistic values or single value</span>
+<span class="sd">    dec: numpy.ndarray</span>
+<span class="sd">        Array of the decimation factors for the background statistics</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cum_back_num: numpy.ndarray</span>
+<span class="sd">        The cumulative array of background triggers.</span>
+<span class="sd">    fore_n_louder: numpy.ndarray</span>
+<span class="sd">        The number of background triggers above each foreground trigger</span>
+<span class="sd">    {} : (empty) dictionary</span>
+<span class="sd">        Ensure we return the same tuple of objects as n_louder_from_fit()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sort</span> <span class="o">=</span> <span class="n">bstat</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+    <span class="n">bstat</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bstat</span><span class="p">)[</span><span class="n">sort</span><span class="p">]</span>
+    <span class="n">dec</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">dec</span><span class="p">)[</span><span class="n">sort</span><span class="p">]</span>
+
+    <span class="c1"># calculate cumulative number of triggers louder than the trigger in</span>
+    <span class="c1"># a given index. We need to subtract the decimation factor, as the cumsum</span>
+    <span class="c1"># includes itself in the first sum (it is inclusive of the first value)</span>
+    <span class="n">n_louder</span> <span class="o">=</span> <span class="n">dec</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">dec</span>
+
+    <span class="c1"># Determine how many values are louder than the foreground ones</span>
+    <span class="c1"># We need to subtract one from the index, to be consistent with definition</span>
+    <span class="c1"># of n_louder, as here we do want to include the background value at the</span>
+    <span class="c1"># found index</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">bstat</span><span class="p">,</span> <span class="n">fstat</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># If the foreground are *quieter* than the background or at the same value</span>
+    <span class="c1"># then the search sorted algorithm will choose position -1, which does not</span>
+    <span class="c1"># exist. We force it back to zero.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>  <span class="c1"># Case where our input is an array</span>
+        <span class="n">idx</span><span class="p">[</span><span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># Case where our input is just a scalar value</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">fore_n_louder</span> <span class="o">=</span> <span class="n">n_louder</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="n">unsort</span> <span class="o">=</span> <span class="n">sort</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+    <span class="n">back_cum_num</span> <span class="o">=</span> <span class="n">n_louder</span><span class="p">[</span><span class="n">unsort</span><span class="p">]</span>
+
+    <span class="c1"># Empty dictionary to match the return from n_louder_from_fit</span>
+    <span class="k">return</span> <span class="n">back_cum_num</span><span class="p">,</span> <span class="n">fore_n_louder</span><span class="p">,</span> <span class="p">{}</span></div>
+
+
+
+<div class="viewcode-block" id="n_louder_from_fit">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.n_louder_from_fit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">n_louder_from_fit</span><span class="p">(</span><span class="n">back_stat</span><span class="p">,</span> <span class="n">fore_stat</span><span class="p">,</span> <span class="n">dec_facs</span><span class="p">,</span>
+                      <span class="n">fit_function</span><span class="o">=</span><span class="s1">&#39;exponential&#39;</span><span class="p">,</span> <span class="n">fit_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                      <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use a fit to events in back_stat in order to estimate the</span>
+<span class="sd">    distribution for use in recovering the estimate count of louder</span>
+<span class="sd">    background events. Below the fit threshold, use the n_louder</span>
+<span class="sd">    method for these triggers</span>
+
+<span class="sd">    back_stat: numpy.ndarray</span>
+<span class="sd">        Array of the background statistic values</span>
+<span class="sd">    fore_stat: numpy.ndarray or scalar</span>
+<span class="sd">        Array of the foreground statistic values or single value</span>
+<span class="sd">    dec_facs: numpy.ndarray</span>
+<span class="sd">        Array of the decimation factors for the background statistics</span>
+<span class="sd">    fit_function: str</span>
+<span class="sd">        Name of the function to be used for the fit to background</span>
+<span class="sd">        statistic values</span>
+<span class="sd">    fit_threshold: float</span>
+<span class="sd">        Threshold above which triggers use the fitted value, below this</span>
+<span class="sd">        the counted number of louder events will be used</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bg_n_louder: numpy.ndarray</span>
+<span class="sd">        The estimated number of background events louder than each</span>
+<span class="sd">        background event</span>
+<span class="sd">    fg_n_louder: numpy.ndarray</span>
+<span class="sd">        The estimated number of background events louder than each</span>
+<span class="sd">        foreground event</span>
+<span class="sd">    sig_info : a dictionary</span>
+<span class="sd">        Information regarding the significance fit</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Calculate the fitting factor of the ranking statistic distribution</span>
+    <span class="n">alpha</span><span class="p">,</span> <span class="n">sig_alpha</span> <span class="o">=</span> <span class="n">trstats</span><span class="o">.</span><span class="n">fit_above_thresh</span><span class="p">(</span>
+        <span class="n">fit_function</span><span class="p">,</span>
+        <span class="n">back_stat</span><span class="p">,</span>
+        <span class="n">thresh</span><span class="o">=</span><span class="n">fit_threshold</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">dec_facs</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Count background events above threshold as the cum_fit is</span>
+    <span class="c1"># normalised to 1</span>
+    <span class="n">bg_above</span> <span class="o">=</span> <span class="n">back_stat</span> <span class="o">&gt;</span> <span class="n">fit_threshold</span>
+    <span class="n">n_above</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dec_facs</span><span class="p">[</span><span class="n">bg_above</span><span class="p">])</span>
+    <span class="n">fg_above</span> <span class="o">=</span> <span class="n">fore_stat</span> <span class="o">&gt;</span> <span class="n">fit_threshold</span>
+
+    <span class="c1"># These will be overwritten, but just to silence a warning</span>
+    <span class="c1"># in the case where trstats.cum_fit returns zero</span>
+    <span class="n">bg_n_louder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">back_stat</span><span class="p">)</span>
+    <span class="n">fg_n_louder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">fore_stat</span><span class="p">)</span>
+
+    <span class="c1"># Ue the fit above the threshold</span>
+    <span class="n">bg_n_louder</span><span class="p">[</span><span class="n">bg_above</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_above</span> <span class="o">*</span> <span class="n">trstats</span><span class="o">.</span><span class="n">cum_fit</span><span class="p">(</span><span class="n">fit_function</span><span class="p">,</span>
+                                                      <span class="n">back_stat</span><span class="p">[</span><span class="n">bg_above</span><span class="p">],</span>
+                                                      <span class="n">alpha</span><span class="p">,</span>
+                                                      <span class="n">fit_threshold</span><span class="p">)</span>
+    <span class="n">fg_n_louder</span><span class="p">[</span><span class="n">fg_above</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_above</span> <span class="o">*</span> <span class="n">trstats</span><span class="o">.</span><span class="n">cum_fit</span><span class="p">(</span><span class="n">fit_function</span><span class="p">,</span>
+                                                      <span class="n">fore_stat</span><span class="p">[</span><span class="n">fg_above</span><span class="p">],</span>
+                                                      <span class="n">alpha</span><span class="p">,</span>
+                                                      <span class="n">fit_threshold</span><span class="p">)</span>
+
+    <span class="c1"># Below the fit threshold, we expect there to be sufficient events</span>
+    <span class="c1"># to use the count_n_louder method, and the distribution may deviate</span>
+    <span class="c1"># from the fit function</span>
+    <span class="n">fg_below</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">fg_above</span><span class="p">)</span>
+    <span class="n">bg_below</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">bg_above</span><span class="p">)</span>
+
+    <span class="c1"># Count the number of below-threshold background events louder than the</span>
+    <span class="c1"># bg and foreground</span>
+    <span class="n">bg_n_louder</span><span class="p">[</span><span class="n">bg_below</span><span class="p">],</span> <span class="n">fg_n_louder</span><span class="p">[</span><span class="n">fg_below</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">count_n_louder</span><span class="p">(</span>
+        <span class="n">back_stat</span><span class="p">[</span><span class="n">bg_below</span><span class="p">],</span>
+        <span class="n">fore_stat</span><span class="p">[</span><span class="n">fg_below</span><span class="p">],</span>
+        <span class="n">dec_facs</span><span class="p">[</span><span class="n">bg_below</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># As we have only counted the louder below-threshold events, need to</span>
+    <span class="c1"># add the above threshold events, which by definition are louder than</span>
+    <span class="c1"># all the below-threshold events</span>
+    <span class="n">bg_n_louder</span><span class="p">[</span><span class="n">bg_below</span><span class="p">]</span> <span class="o">+=</span> <span class="n">n_above</span>
+    <span class="n">fg_n_louder</span><span class="p">[</span><span class="n">fg_below</span><span class="p">]</span> <span class="o">+=</span> <span class="n">n_above</span>
+
+    <span class="n">sig_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;alpha&#39;</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span> <span class="s1">&#39;sig_alpha&#39;</span><span class="p">:</span> <span class="n">sig_alpha</span><span class="p">,</span> <span class="s1">&#39;n_above&#39;</span><span class="p">:</span> <span class="n">n_above</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">bg_n_louder</span><span class="p">,</span> <span class="n">fg_n_louder</span><span class="p">,</span> <span class="n">sig_info</span></div>
+
+
+
+<span class="n">_significance_meth_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;trigger_fit&#39;</span><span class="p">:</span> <span class="n">n_louder_from_fit</span><span class="p">,</span>
+    <span class="s1">&#39;n_louder&#39;</span><span class="p">:</span> <span class="n">count_n_louder</span>
+<span class="p">}</span>
+
+<span class="n">_default_opt_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;n_louder&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fit_threshold&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">&#39;fit_function&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">&#39;far_limit&#39;</span><span class="p">:</span> <span class="mf">0.</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_n_louder">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.get_n_louder">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_n_louder</span><span class="p">(</span><span class="n">back_stat</span><span class="p">,</span> <span class="n">fore_stat</span><span class="p">,</span> <span class="n">dec_facs</span><span class="p">,</span>
+                 <span class="n">method</span><span class="o">=</span><span class="n">_default_opt_dict</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">],</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper to find the correct n_louder calculation method using standard</span>
+<span class="sd">    inputs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Deal with edge case: we don&#39;t expect nan statistic values but if they</span>
+    <span class="c1"># exist they will ruin the n_louder count, as they are considered larger</span>
+    <span class="c1"># than floats in an argsort.</span>
+    <span class="n">nanmask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">back_stat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">nanmask</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Setting </span><span class="si">%d</span><span class="s2"> NaN background statistic values to inf&quot;</span><span class="p">,</span>
+            <span class="n">nanmask</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+        <span class="p">)</span>
+    <span class="n">back_stat_nonan</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nanmask</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">back_stat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_significance_meth_dict</span><span class="p">[</span><span class="n">method</span><span class="p">](</span>
+        <span class="n">back_stat_nonan</span><span class="p">,</span>
+        <span class="n">fore_stat</span><span class="p">,</span>
+        <span class="n">dec_facs</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_far">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.get_far">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_far</span><span class="p">(</span><span class="n">back_stat</span><span class="p">,</span> <span class="n">fore_stat</span><span class="p">,</span> <span class="n">dec_facs</span><span class="p">,</span>
+            <span class="n">background_time</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="n">_default_opt_dict</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the appropriate FAR given the significance calculation method</span>
+
+<span class="sd">    If the n_louder method is used, find the IFAR according to Eq.17-18</span>
+<span class="sd">    of Usman et al., arXiv:1508.02357. The p-value of a candidate in a</span>
+<span class="sd">    search of duration T, with n_bg louder time shifted events over a</span>
+<span class="sd">    total background time T_bg is</span>
+<span class="sd">    `p = 1 - exp(-T * (n_bg + 1) / T_bg)`</span>
+<span class="sd">    corresponding to an effective false alarm rate of (n_bg + 1) / T_bg.</span>
+
+<span class="sd">    If the trigger_fit method is used, we are extrapolating the background</span>
+<span class="sd">    for the specific aim of FAR not being limited to 1 / T_bg, and so we</span>
+<span class="sd">    do not add 1 to n_bg</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    See description in get_n_louder for most parameters</span>
+
+<span class="sd">    background_time: float</span>
+<span class="sd">       The amount of time to convert the number of louder events into</span>
+<span class="sd">       a FAR</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bg_n_louder</span><span class="p">,</span> <span class="n">fg_n_louder</span><span class="p">,</span> <span class="n">significance_info</span> <span class="o">=</span> <span class="n">get_n_louder</span><span class="p">(</span>
+        <span class="n">back_stat</span><span class="p">,</span>
+        <span class="n">fore_stat</span><span class="p">,</span>
+        <span class="n">dec_facs</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+    <span class="c1"># If we are counting the number of louder events in the background,</span>
+    <span class="c1"># we add one. This is part of the p-value calculation in Usman 2015.</span>
+    <span class="c1"># If we are doing trigger fit extrapolation, this is not needed</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;n_louder&#39;</span><span class="p">:</span>
+        <span class="n">bg_n_louder</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">fg_n_louder</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">bg_far</span> <span class="o">=</span> <span class="n">bg_n_louder</span> <span class="o">/</span> <span class="n">background_time</span>
+    <span class="n">fg_far</span> <span class="o">=</span> <span class="n">fg_n_louder</span> <span class="o">/</span> <span class="n">background_time</span>
+
+    <span class="k">if</span> <span class="s2">&quot;n_above&quot;</span> <span class="ow">in</span> <span class="n">significance_info</span><span class="p">:</span>
+        <span class="n">significance_info</span><span class="p">[</span><span class="s2">&quot;rate_above&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">significance_info</span><span class="p">[</span><span class="s2">&quot;n_above&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">background_time</span>
+
+    <span class="k">return</span> <span class="n">bg_far</span><span class="p">,</span> <span class="n">fg_far</span><span class="p">,</span> <span class="n">significance_info</span></div>
+
+
+
+<div class="viewcode-block" id="insert_significance_option_group">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.insert_significance_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_significance_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add some options for use when a significance is being estimated from</span>
+<span class="sd">    events or event distributions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--far-calculation-method&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Method used for FAR calculation in each &quot;</span>
+                             <span class="s2">&quot;detector combination, given as &quot;</span>
+                             <span class="s2">&quot;combination:method pairs, i.e. &quot;</span>
+                             <span class="s2">&quot;H1:trigger_fit H1L1:n_louder H1L1V1:n_louder &quot;</span>
+                             <span class="s2">&quot;etc. Method options are [&quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_significance_meth_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span>
+                             <span class="s2">&quot;]. Default = n_louder for all not given&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--fit-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Trigger statistic fit thresholds for FAN &quot;</span>
+                             <span class="s2">&quot;estimation, given as combination-value pairs &quot;</span>
+                             <span class="s2">&quot;ex. H1:0 L1:0 V1:-4 for all combinations with &quot;</span>
+                             <span class="s2">&quot;--far-calculation-method = trigger_fit&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fit-function&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Functional form for the statistic slope fit if &quot;</span>
+                             <span class="s2">&quot;--far-calculation-method is &#39;trigger_fit&#39;. &quot;</span>
+                             <span class="s2">&quot;Given as combination:function pairs, i.e. &quot;</span>
+                             <span class="s2">&quot;H1:exponential H1L1:n_louder H1L1V1:n_louder. &quot;</span>
+                             <span class="s2">&quot;Options: [&quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">trstats</span><span class="o">.</span><span class="n">fitalpha_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot;]. &quot;</span>
+                             <span class="s2">&quot;Default = exponential for all&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--limit-ifar&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Impose upper limits on IFAR values (years)&quot;</span>
+                             <span class="s2">&quot;. Given as combination:value pairs, eg &quot;</span>
+                             <span class="s2">&quot;H1L1:10000 L1:1000. Used to avoid under/&quot;</span>
+                             <span class="s2">&quot;overflows for loud signals and injections &quot;</span>
+                             <span class="s2">&quot;using the fit extrapolation method. A value&quot;</span>
+                             <span class="s2">&quot; 0 or no value means unlimited IFAR&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="positive_float">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.positive_float">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">positive_float</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around float conversion which ensures that the float must be</span>
+<span class="sd">    positive or zero</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fl_in</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fl_in</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Value provided to positive_float is less than zero, &quot;</span>
+                       <span class="s2">&quot;this is not allowed&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+    <span class="k">return</span> <span class="n">fl_in</span></div>
+
+
+
+<div class="viewcode-block" id="check_significance_options">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.check_significance_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_significance_options</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check the significance group options</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check that the combo:method/function/threshold are in the</span>
+    <span class="c1"># right format, and are in allowed combinations</span>
+    <span class="n">lists_to_check</span> <span class="o">=</span> <span class="p">[(</span><span class="n">args</span><span class="o">.</span><span class="n">far_calculation_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span>
+                       <span class="n">_significance_meth_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                      <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">fit_function</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span>
+                       <span class="n">trstats</span><span class="o">.</span><span class="n">fitalpha_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                      <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">fit_threshold</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                      <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">limit_ifar</span><span class="p">,</span> <span class="n">positive_float</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span>
+
+    <span class="k">for</span> <span class="n">list_to_check</span><span class="p">,</span> <span class="n">type_to_convert</span><span class="p">,</span> <span class="n">allowed_values</span> <span class="ow">in</span> <span class="n">lists_to_check</span><span class="p">:</span>
+        <span class="n">combo_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">combo_value</span> <span class="ow">in</span> <span class="n">list_to_check</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">combo</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">combo_value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Need combo:value format, got </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">combo_value</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">combo</span> <span class="ow">in</span> <span class="n">combo_list</span><span class="p">:</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Duplicate combo </span><span class="si">%s</span><span class="s2"> in a significance &quot;</span>
+                             <span class="s2">&quot;option&quot;</span> <span class="o">%</span> <span class="n">combo</span><span class="p">)</span>
+            <span class="n">combo_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">combo</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">type_to_convert</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">err_fmat</span> <span class="o">=</span> <span class="s2">&quot;Value </span><span class="si">{}</span><span class="s2"> of combo </span><span class="si">{}</span><span class="s2"> can&#39;t be converted&quot;</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_fmat</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">combo</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">allowed_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> \
+                    <span class="n">type_to_convert</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_values</span><span class="p">:</span>
+                <span class="n">err_fmat</span> <span class="o">=</span> <span class="s2">&quot;Value </span><span class="si">{}</span><span class="s2"> of combo </span><span class="si">{}</span><span class="s2"> is not in allowed values: </span><span class="si">{}</span><span class="s2">&quot;</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_fmat</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">combo</span><span class="p">,</span> <span class="n">allowed_values</span><span class="p">))</span>
+
+    <span class="c1"># Are the functions/thresholds appropriate for the methods given?</span>
+    <span class="n">methods</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># A method has been specified</span>
+    <span class="k">for</span> <span class="n">combo_value</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">far_calculation_method</span><span class="p">:</span>
+        <span class="n">combo</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">combo_value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+        <span class="n">methods</span><span class="p">[</span><span class="n">combo</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># A function or threshold has been specified</span>
+    <span class="n">function_or_thresh_given</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">combo_value</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">fit_function</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">fit_threshold</span><span class="p">:</span>
+        <span class="n">combo</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">combo_value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">combo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+            <span class="c1"># Assign the default method for use in further tests</span>
+            <span class="n">methods</span><span class="p">[</span><span class="n">combo</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_opt_dict</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span>
+        <span class="n">function_or_thresh_given</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">combo</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">combo</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">methods</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="s1">&#39;trigger_fit&#39;</span> <span class="ow">and</span> <span class="n">combo</span> <span class="ow">in</span> <span class="n">function_or_thresh_given</span><span class="p">:</span>
+            <span class="c1"># Function/Threshold given for combo not using trigger_fit method</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;--fit-function and/or --fit-threshold given for &quot;</span>
+                         <span class="o">+</span> <span class="n">combo</span> <span class="o">+</span> <span class="s2">&quot; which has method &quot;</span> <span class="o">+</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;trigger_fit&#39;</span> <span class="ow">and</span> <span class="n">combo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">function_or_thresh_given</span><span class="p">:</span>
+            <span class="c1"># Threshold not given for trigger_fit combo</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Threshold required for combo &quot;</span> <span class="o">+</span> <span class="n">combo</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ifar_opt_to_far_limit">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.ifar_opt_to_far_limit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ifar_opt_to_far_limit</span><span class="p">(</span><span class="n">ifar_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the string of an IFAR limit in years into a</span>
+<span class="sd">    float FAR limit in Hz.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ifar_str: string</span>
+<span class="sd">        Upper limit on IFAR in years. Zero indicates no upper limit</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ifar_float</span> <span class="o">=</span> <span class="n">positive_float</span><span class="p">(</span><span class="n">ifar_str</span><span class="p">)</span>
+    <span class="n">far_hz</span> <span class="o">=</span> <span class="mf">0.</span> <span class="k">if</span> <span class="p">(</span><span class="n">ifar_float</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">)</span> <span class="k">else</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">ifar_float</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">far_hz</span></div>
+
+
+
+<div class="viewcode-block" id="digest_significance_options">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.digest_significance_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">digest_significance_options</span><span class="p">(</span><span class="n">combo_keys</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read in information from the significance option group and ensure</span>
+<span class="sd">    it makes sense before putting into a dictionary</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    combo_keys: list of strings</span>
+<span class="sd">        list of detector combinations for which options are needed</span>
+
+<span class="sd">    args: parsed arguments</span>
+<span class="sd">        from argparse ArgumentParser parse_args()</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    significance_dict: dictionary</span>
+<span class="sd">        Dictionary containing method, threshold and function for trigger fits</span>
+<span class="sd">        as appropriate, and any limit on FAR (Hz)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lists_to_unpack</span> <span class="o">=</span> <span class="p">[(</span><span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">far_calculation_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+                       <span class="p">(</span><span class="s1">&#39;fit_function&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">fit_function</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+                       <span class="p">(</span><span class="s1">&#39;fit_threshold&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">fit_threshold</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+                       <span class="p">(</span><span class="s1">&#39;far_limit&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">limit_ifar</span><span class="p">,</span> <span class="n">ifar_opt_to_far_limit</span><span class="p">)]</span>
+
+    <span class="n">significance_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Set everything as a default to start with:</span>
+    <span class="k">for</span> <span class="n">combo</span> <span class="ow">in</span> <span class="n">combo_keys</span><span class="p">:</span>
+        <span class="n">significance_dict</span><span class="p">[</span><span class="n">combo</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">_default_opt_dict</span><span class="p">)</span>
+
+    <span class="c1"># Unpack everything from the arguments into the dictionary</span>
+    <span class="k">for</span> <span class="n">argument_key</span><span class="p">,</span> <span class="n">arg_to_unpack</span><span class="p">,</span> <span class="n">conv_func</span> <span class="ow">in</span> <span class="n">lists_to_unpack</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">combo_value</span> <span class="ow">in</span> <span class="n">arg_to_unpack</span><span class="p">:</span>
+            <span class="n">combo</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">combo_value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">combo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">significance_dict</span><span class="p">:</span>
+                <span class="c1"># Allow options for detector combos that are not actually</span>
+                <span class="c1"># used/required for a given job. Such options have</span>
+                <span class="c1"># no effect, but emit a warning for (e.g.) diagnostic checks</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Key </span><span class="si">%s</span><span class="s2"> not used by this code, uses </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                               <span class="n">combo</span><span class="p">,</span> <span class="n">combo_keys</span><span class="p">)</span>
+                <span class="n">significance_dict</span><span class="p">[</span><span class="n">combo</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">_default_opt_dict</span><span class="p">)</span>
+            <span class="n">significance_dict</span><span class="p">[</span><span class="n">combo</span><span class="p">][</span><span class="n">argument_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">conv_func</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">significance_dict</span></div>
+
+
+
+<div class="viewcode-block" id="apply_far_limit">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.significance.apply_far_limit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_far_limit</span><span class="p">(</span><span class="n">far</span><span class="p">,</span> <span class="n">significance_dict</span><span class="p">,</span> <span class="n">combo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a FAR limit to events according to command line options.</span>
+
+<span class="sd">    If far_limit in significance_dict is zero, no limit is applied.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    far: numpy array</span>
+<span class="sd">    significance_dict: dictionary</span>
+<span class="sd">        Dictionary containing any limit on FAR (Hz), made by</span>
+<span class="sd">        digest_significance_options</span>
+<span class="sd">    active_combination: numpy.array or string</span>
+<span class="sd">        Array of IFO combinations given as utf-8 encoded strings, or a string</span>
+<span class="sd">        which defines the IFO combination for all events</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    far_out: numpy array</span>
+<span class="sd">        FARs with far limit applied as appropriate</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">far_out</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">far</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">combo</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># Single IFO combo used</span>
+        <span class="k">if</span> <span class="n">significance_dict</span><span class="p">[</span><span class="n">combo</span><span class="p">][</span><span class="s1">&#39;far_limit&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">far_out</span>
+        <span class="n">far_limit_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">significance_dict</span><span class="p">[</span><span class="n">combo</span><span class="p">][</span><span class="s1">&#39;far_limit&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying FAR limit of </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2"> events&quot;</span><span class="p">,</span>
+                    <span class="n">far_limit_str</span><span class="p">,</span> <span class="n">combo</span><span class="p">)</span>
+        <span class="n">far_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">far</span><span class="p">,</span> <span class="n">significance_dict</span><span class="p">[</span><span class="n">combo</span><span class="p">][</span><span class="s1">&#39;far_limit&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># IFO combo supplied as an array, by e.g. pycbc_add_statmap</span>
+        <span class="c1"># Need to check which events are in which IFO combo in order to</span>
+        <span class="c1"># apply the right limit to each</span>
+        <span class="k">for</span> <span class="n">ifo_combo</span> <span class="ow">in</span> <span class="n">significance_dict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">significance_dict</span><span class="p">[</span><span class="n">ifo_combo</span><span class="p">][</span><span class="s1">&#39;far_limit&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">far_limit_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">significance_dict</span><span class="p">[</span><span class="n">ifo_combo</span><span class="p">][</span><span class="s1">&#39;far_limit&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying FAR limit of </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2"> events&quot;</span><span class="p">,</span>
+                        <span class="n">far_limit_str</span><span class="p">,</span> <span class="n">ifo_combo</span><span class="p">)</span>
+            <span class="n">this_combo_idx</span> <span class="o">=</span> <span class="n">combo</span> <span class="o">==</span> <span class="n">ifo_combo</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">far_out</span><span class="p">[</span><span class="n">this_combo_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                <span class="n">far</span><span class="p">[</span><span class="n">this_combo_idx</span><span class="p">],</span>
+                <span class="n">significance_dict</span><span class="p">[</span><span class="n">ifo_combo</span><span class="p">][</span><span class="s1">&#39;far_limit&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">far_out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

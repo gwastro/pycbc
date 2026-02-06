@@ -1,0 +1,756 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.types.optparse &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.types.optparse</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.types.optparse</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2015 Ian Harry, Tito Dal Canton</span>
+<span class="c1">#               2022 Shichao Wu</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules contains extensions for use with argparse</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+
+
+<div class="viewcode-block" id="DictWithDefaultReturn">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.DictWithDefaultReturn">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DictWithDefaultReturn</span><span class="p">(</span><span class="n">defaultdict</span><span class="p">):</span>
+    <span class="n">default_set</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ifo_set</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="c1"># True if any values are explictly set.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;RANDOM_STRING_314324&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Or true if the default value was set</span>
+            <span class="c1"># NOTE: This stores the string RANDOM_STRING_314324 in the dict</span>
+            <span class="c1"># so subsequent calls will be caught in the first test here.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Else false</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># Python 2 and 3 have different conventions for boolean method</span>
+    <span class="n">__nonzero__</span> <span class="o">=</span> <span class="fm">__bool__</span></div>
+
+
+<div class="viewcode-block" id="MultiDetOptionAction">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.MultiDetOptionAction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDetOptionAction</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
+    <span class="c1"># Initialise the same as the standard &#39;append&#39; action</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">option_strings</span><span class="p">,</span>
+                 <span class="n">dest</span><span class="p">,</span>
+                 <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                 <span class="n">const</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="nb">type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">choices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">help</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metavar</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span> <span class="o">=</span> <span class="nb">str</span>
+        <span class="n">new_default</span> <span class="o">=</span> <span class="n">DictWithDefaultReturn</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">default</span><span class="p">)</span>
+        <span class="c1">#new_default.default_value=default</span>
+        <span class="k">if</span> <span class="n">nargs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;nargs for append actions must be &gt; 0; if arg &#39;</span>
+                             <span class="s1">&#39;strings are not supplying the value to append, &#39;</span>
+                             <span class="s1">&#39;the append const action may be more appropriate&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">const</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">nargs</span> <span class="o">!=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">OPTIONAL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;nargs must be </span><span class="si">%r</span><span class="s1"> to supply const&#39;</span>
+                             <span class="o">%</span> <span class="n">argparse</span><span class="o">.</span><span class="n">OPTIONAL</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">option_strings</span><span class="o">=</span><span class="n">option_strings</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
+            <span class="n">nargs</span><span class="o">=</span><span class="n">nargs</span><span class="p">,</span>
+            <span class="n">const</span><span class="o">=</span><span class="n">const</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="n">new_default</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+            <span class="n">choices</span><span class="o">=</span><span class="n">choices</span><span class="p">,</span>
+            <span class="n">required</span><span class="o">=</span><span class="n">required</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">,</span>
+            <span class="n">metavar</span><span class="o">=</span><span class="n">metavar</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Again this is modified from the standard argparse &#39;append&#39; action</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Issue with option: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,)</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Received value: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">),)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">DictWithDefaultReturn</span><span class="p">())</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># &quot;Normal&quot; case, all ifos supplied independently as &quot;H1:VALUE&quot;</span>
+                <span class="k">if</span> <span class="n">items</span><span class="o">.</span><span class="n">default_set</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;If you are supplying a value for all ifos, you &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;cannot also supply values for specific ifos.&quot;</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="n">items</span><span class="p">[</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">ifo_set</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># OR supply only one value and use this for all ifos</span>
+                <span class="k">if</span> <span class="n">items</span><span class="o">.</span><span class="n">default_set</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;If you are supplying a value for all ifos, you &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;must only supply one value.&quot;</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="c1"># Can&#39;t use a global and ifo specific options</span>
+                <span class="k">if</span> <span class="n">items</span><span class="o">.</span><span class="n">ifo_set</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;If you are supplying a value for all ifos, you &quot;</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;cannot also supply values for specific ifos.&quot;</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="c1">#items.default_value = self.internal_type(value[0])</span>
+                <span class="n">new_default</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">default_factory</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">new_default</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">default_set</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;The character &#39;:&#39; is used to deliminate the &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;ifo and the value. Please do not use it more than &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;once.&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiDetOptionActionSpecial">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.MultiDetOptionActionSpecial">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDetOptionActionSpecial</span><span class="p">(</span><span class="n">MultiDetOptionAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class in an extension of the MultiDetOptionAction class to handle</span>
+<span class="sd">    cases where the : is already a special character. For example the channel</span>
+<span class="sd">    name is something like H1:CHANNEL_NAME. Here the channel name *must*</span>
+<span class="sd">    be provided uniquely for each ifo. The dictionary key is set to H1 and the</span>
+<span class="sd">    value to H1:CHANNEL_NAME for this example.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Again this is modified from the standard argparse &#39;append&#39; action</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Issue with option: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,)</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Received value: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">),)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">value_split</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># &quot;Normal&quot; case, all ifos supplied independently as &quot;H1:VALUE&quot;</span>
+                <span class="k">if</span> <span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Multiple values supplied for ifo </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span> \
+                               <span class="o">%</span><span class="p">(</span><span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Already have </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">items</span><span class="p">[</span><span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value_split</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="c1"># This is an unadvertised feature. It is used for cases where I</span>
+                <span class="c1"># want to pretend H1 data is actually L1 (or similar). So if I</span>
+                <span class="c1"># supply --channel-name H1:L1:LDAS-STRAIN I can use L1 data and</span>
+                <span class="c1"># pretend it is H1 internally.</span>
+                <span class="k">if</span> <span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Multiple values supplied for ifo </span><span class="si">%s</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span> \
+                               <span class="o">%</span><span class="p">(</span><span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Already have </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">items</span><span class="p">[</span><span class="n">value_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">value_split</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;The character &#39;:&#39; is used to deliminate the &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;ifo and the value. It must appear exactly &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;once.&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiDetMultiColonOptionAction">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.MultiDetMultiColonOptionAction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDetMultiColonOptionAction</span><span class="p">(</span><span class="n">MultiDetOptionAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A special case of `MultiDetOptionAction` which allows one to use</span>
+<span class="sd">    arguments containing colons, such as `V1:FOOBAR:1`. The first colon is</span>
+<span class="sd">    assumed to be the separator between the detector and the argument.</span>
+<span class="sd">    All subsequent colons are kept as part of the argument. Unlike</span>
+<span class="sd">    `MultiDetOptionAction`, all arguments must be prefixed by the</span>
+<span class="sd">    corresponding detector.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Issue with option: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                   <span class="s1">&#39;Received value: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;:&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;Each argument must contain at least one &#39;:&#39; &quot;</span>
+                            <span class="s2">&quot;character&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+            <span class="n">detector</span><span class="p">,</span> <span class="n">argument</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">detector</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;Multiple values supplied for detector </span><span class="si">{}</span><span class="s1">,</span><span class="se">\n</span><span class="s1">&#39;</span>
+                            <span class="s1">&#39;already have </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="n">err_msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">items</span><span class="p">[</span><span class="n">detector</span><span class="p">])</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+            <span class="n">items</span><span class="p">[</span><span class="n">detector</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">argument</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiDetOptionAppendAction">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.MultiDetOptionAppendAction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDetOptionAppendAction</span><span class="p">(</span><span class="n">MultiDetOptionAction</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Again this is modified from the standard argparse &#39;append&#39; action</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># &quot;Normal&quot; case, all ifos supplied independetly as &quot;H1:VALUE&quot;</span>
+                <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                    <span class="n">items</span><span class="p">[</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">items</span><span class="p">[</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Issue with option: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,)</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Received value: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">),)</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;The character &#39;:&#39; is used to distinguish the &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;ifo and the value. It must be given exactly once &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;for all entries&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DictOptionAction">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.DictOptionAction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DictOptionAction</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
+    <span class="c1"># Initialise the same as the standard &#39;append&#39; action</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">option_strings</span><span class="p">,</span>
+                 <span class="n">dest</span><span class="p">,</span>
+                 <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                 <span class="n">const</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="nb">type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">choices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">help</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">metavar</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span> <span class="o">=</span> <span class="nb">str</span>
+        <span class="n">new_default</span> <span class="o">=</span> <span class="n">DictWithDefaultReturn</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">default</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nargs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;nargs for append actions must be &gt; 0; if arg &#39;</span>
+                             <span class="s1">&#39;strings are not supplying the value to append, &#39;</span>
+                             <span class="s1">&#39;the append const action may be more appropriate&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">const</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">nargs</span> <span class="o">!=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">OPTIONAL</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;nargs must be </span><span class="si">%r</span><span class="s1"> to supply const&#39;</span>
+                             <span class="o">%</span> <span class="n">argparse</span><span class="o">.</span><span class="n">OPTIONAL</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DictOptionAction</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">option_strings</span><span class="o">=</span><span class="n">option_strings</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
+            <span class="n">nargs</span><span class="o">=</span><span class="n">nargs</span><span class="p">,</span>
+            <span class="n">const</span><span class="o">=</span><span class="n">const</span><span class="p">,</span>
+            <span class="n">default</span><span class="o">=</span><span class="n">new_default</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+            <span class="n">choices</span><span class="o">=</span><span class="n">choices</span><span class="p">,</span>
+            <span class="n">required</span><span class="o">=</span><span class="n">required</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="n">help</span><span class="p">,</span>
+            <span class="n">metavar</span><span class="o">=</span><span class="n">metavar</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Again this is modified from the standard argparse &#39;append&#39; action</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Issue with option: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,)</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Received value: </span><span class="si">%s</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">),)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">values</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]:</span>
+                <span class="k">break</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># &quot;Normal&quot; case, all extra arguments supplied independently</span>
+                <span class="c1"># as &quot;param:VALUE&quot;</span>
+                <span class="n">items</span><span class="p">[</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;The character &#39;:&#39; is used to distinguish the &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;parameter name and the value. Please do not &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;use it more than or less than once.&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultiDetDictOptionAction">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.MultiDetDictOptionAction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDetDictOptionAction</span><span class="p">(</span><span class="n">DictOptionAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A special case of `DictOptionAction` which allows one to use</span>
+<span class="sd">    argument containing the detector (channel) name, such as</span>
+<span class="sd">    `DETECTOR:PARAM:VALUE`. The first colon is the name of detector,</span>
+<span class="sd">    the second colon is the name of parameter, the third colon is the value.</span>
+<span class="sd">    Or similar to `DictOptionAction`, all arguments don&#39;t contain the name of</span>
+<span class="sd">    detector, such as `PARAM:VALUE`, this will assume each detector has same</span>
+<span class="sd">    values of those parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Again this is modified from the standard argparse &#39;append&#39; action</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Issue with option: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                   <span class="s1">&#39;Received value: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">))</span>
+        <span class="n">detector_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">values</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">]:</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">detector</span><span class="p">,</span> <span class="n">param_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">param</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">param_value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">detector_args</span><span class="p">:</span>
+                    <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">val</span><span class="p">)}</span>
+                <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">]:</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;Multiple values supplied for the same &quot;</span>
+                                <span class="s2">&quot;parameter </span><span class="si">{}</span><span class="s2"> under detector </span><span class="si">{}</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                <span class="s2">&quot;already have </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                    <span class="n">err_msg</span> <span class="o">=</span> <span class="n">err_msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span>
+                                             <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">][</span><span class="n">param</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">][</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">param</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">detector</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="s1">&#39;instruments&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">detector_args</span><span class="p">:</span>
+                        <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">]</span> <span class="o">=</span> \
+                            <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">val</span><span class="p">)}</span>
+                    <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">]:</span>
+                        <span class="n">err_msg</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;Multiple values supplied for the same &quot;</span>
+                                    <span class="s2">&quot;parameter </span><span class="si">{}</span><span class="s2"> under detector </span><span class="si">{}</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span>
+                                    <span class="s2">&quot;already have </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                        <span class="n">err_msg</span> <span class="o">=</span> <span class="n">err_msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                    <span class="n">param</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span>
+                                    <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">][</span><span class="n">param</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">detector_args</span><span class="p">[</span><span class="n">detector</span><span class="p">][</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> \
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">internal_type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;Use format `DETECTOR:PARAM:VALUE` for each &quot;</span>
+                            <span class="s2">&quot;detector, or use `PARAM:VALUE` for all.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">detector_args</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="required_opts">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.required_opts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">required_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">opt_list</span><span class="p">,</span> <span class="n">required_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that all the opts are defined</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of option parsing</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    opt_list : list of strings</span>
+<span class="sd">    required_by : string, optional</span>
+<span class="sd">        the option that requires these options (if applicable)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">opt_list</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is missing &quot;</span> <span class="o">%</span> <span class="n">name</span>
+            <span class="k">if</span> <span class="n">required_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">err_str</span> <span class="o">+=</span> <span class="s2">&quot;, required by </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">required_by</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="required_opts_multi_ifo">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.required_opts_multi_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">required_opts_multi_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">opt_list</span><span class="p">,</span> <span class="n">required_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that all the opts are defined</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of option parsing</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    ifo : string</span>
+<span class="sd">    opt_list : list of strings</span>
+<span class="sd">    required_by : string, optional</span>
+<span class="sd">        the option that requires these options (if applicable)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">opt_list</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">attr</span><span class="p">)[</span><span class="n">ifo</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">err_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is missing &quot;</span> <span class="o">%</span> <span class="n">name</span>
+            <span class="k">if</span> <span class="n">required_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">err_str</span> <span class="o">+=</span> <span class="s2">&quot;, required by </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">required_by</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ensure_one_opt">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.ensure_one_opt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_one_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">opt_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;  Check that one and only one in the opt_list is defined in opt</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of option parsing</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    opt_list : list of strings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">the_one</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">opt_list</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">the_one</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">the_one</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s</span><span class="s2"> are mutually exculsive&quot;</span> \
+                              <span class="o">%</span> <span class="p">(</span><span class="n">the_one</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">the_one</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;you must supply one of the following </span><span class="si">%s</span><span class="s2">&quot;</span> \
+                      <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opt_list</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="ensure_one_opt_multi_ifo">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.ensure_one_opt_multi_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_one_opt_multi_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">opt_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;  Check that one and only one in the opt_list is defined in opt</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of option parsing</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    opt_list : list of strings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">the_one</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">opt_list</span><span class="p">:</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">attr</span><span class="p">)[</span><span class="n">ifo</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">the_one</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">the_one</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> and </span><span class="si">%s</span><span class="s2"> are mutually exculsive&quot;</span> \
+                              <span class="o">%</span> <span class="p">(</span><span class="n">the_one</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">the_one</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;you must supply one of the following </span><span class="si">%s</span><span class="s2">&quot;</span> \
+                      <span class="o">%</span> <span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opt_list</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="copy_opts_for_single_ifo">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.copy_opts_for_single_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">copy_opts_for_single_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes the namespace object (opt) from the multi-detector interface and</span>
+<span class="sd">    returns a namespace object for a single ifo that can be used with</span>
+<span class="sd">    functions expecting output from the single-detector interface.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">DictWithDefaultReturn</span><span class="p">)</span> <span class="ow">or</span> \
+           <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">val</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">arg</span><span class="p">)[</span><span class="n">ifo</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">opt</span></div>
+
+
+<div class="viewcode-block" id="convert_to_process_params_dict">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.convert_to_process_params_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_to_process_params_dict</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes the namespace object (opt) from the multi-detector interface and</span>
+<span class="sd">    returns a dictionary of command line options that will be handled correctly</span>
+<span class="sd">    by the register_to_process_params ligolw function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">DictWithDefaultReturn</span><span class="p">):</span>
+            <span class="n">new_val</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">new_val</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">new_val</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">])]))</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">new_val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_positive_type</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure argument is positive and convert type to dtype</span>
+
+<span class="sd">    This is for the functions below to wrap to avoid code duplication.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Input must be a positive </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">dtype</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_nonnegative_type</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure argument is positive or zero and convert type to dtype</span>
+
+<span class="sd">    This is for the functions below to wrap to avoid code duplication.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Input must be either a positive or zero </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">dtype</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="positive_float">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.positive_float">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">positive_float</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure argument is a positive real number and return it as float.</span>
+
+<span class="sd">    To be used as type in argparse arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_positive_type</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="nonnegative_float">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.nonnegative_float">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nonnegative_float</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure argument is a positive real number or zero and return it as float.</span>
+
+<span class="sd">    To be used as type in argparse arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_nonnegative_type</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="positive_int">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.positive_int">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">positive_int</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure argument is a positive integer and return it as int.</span>
+
+<span class="sd">    To be used as type in argparse arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_positive_type</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="nonnegative_int">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.nonnegative_int">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nonnegative_int</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure argument is a positive integer or zero and return it as int.</span>
+
+<span class="sd">    To be used as type in argparse arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_nonnegative_type</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="angle_as_radians">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.optparse.angle_as_radians">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">angle_as_radians</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interpret argument as a string defining an angle, which will be converted</span>
+<span class="sd">    to radians and returned as float. The format can be either &quot;&lt;value&gt;&lt;unit&gt;&quot;</span>
+<span class="sd">    (e.g. 12deg, 1rad), &quot;&lt;value&gt; &lt;unit&gt;&quot; (e.g. 12 deg, 1 rad) or just</span>
+<span class="sd">    &quot;&lt;value&gt;&quot;, in which case the unit will be assumed to be radians.</span>
+
+<span class="sd">    Note that the format &quot;&lt;value&gt;&lt;unit&gt;&quot;, with a negative value and no space,</span>
+<span class="sd">    is not parsed correctly by argparse; for more information, see</span>
+<span class="sd">    https://stackoverflow.com/questions/16174992/cant-get-argparse-to-read-quoted-string-with-dashes-in-it</span>
+
+<span class="sd">    Note: when writing angles in workflow configuration files as options to be</span>
+<span class="sd">    passed to executables that rely on this function and require angles in their</span>
+<span class="sd">    command line, the format &quot;&lt;value&gt; &lt;unit&gt;&quot;, with the quotation marks</span>
+<span class="sd">    included, is required due to how Pegasus renders options in .sh files.</span>
+
+<span class="sd">    To be used as type in argparse arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if `s` converts to a float then there is no unit, so assume radians</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Angle units not specified for </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">, assuming radians&#39;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="c1"># looks like we have units, so do some parsing</span>
+    <span class="n">rematch</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;([0-9.e+-]+) *(deg|rad)&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">rematch</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">rematch</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;deg&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;rad&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentTypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown unit </span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

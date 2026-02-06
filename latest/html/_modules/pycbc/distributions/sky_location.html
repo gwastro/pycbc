@@ -1,0 +1,668 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.sky_location &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.sky_location</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.sky_location</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This modules provides classes for evaluating sky distributions in</span>
+<span class="sd">right ascension and declination.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">Rotation</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">angular</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">VARARGS_DELIM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">angle_as_radians</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_optional</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.sky_location&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UniformSky">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformSky">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UniformSky</span><span class="p">(</span><span class="n">angular</span><span class="o">.</span><span class="n">UniformSolidAngle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distribution that is uniform on the sky. This is the same as</span>
+<span class="sd">    UniformSolidAngle, except that the polar angle varies from pi/2 (the north</span>
+<span class="sd">    pole) to -pi/2 (the south pole) instead of 0 to pi. Also, the default</span>
+<span class="sd">    names are &quot;dec&quot; (declination) for the polar angle and &quot;ra&quot; (right</span>
+<span class="sd">    ascension) for the azimuthal angle, instead of &quot;theta&quot; and &quot;phi&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;uniform_sky&#39;</span>
+    <span class="n">_polardistcls</span> <span class="o">=</span> <span class="n">angular</span><span class="o">.</span><span class="n">CosAngle</span>
+    <span class="n">_default_polar_angle</span> <span class="o">=</span> <span class="s1">&#39;dec&#39;</span>
+    <span class="n">_default_azimuthal_angle</span> <span class="o">=</span> <span class="s1">&#39;ra&#39;</span>
+
+<div class="viewcode-block" id="UniformSky.to_uniform_patch">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformSky.to_uniform_patch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_uniform_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coverage</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">coverage</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Attempt to convert UniformSky to a &#39;</span>
+                <span class="s1">&#39;uniform patch assumes 100</span><span class="si">% c</span><span class="s1">overage&#39;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="UniformDiskSky">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformDiskSky">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UniformDiskSky</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distribution that represents a uniform disk on the sky. The declination</span>
+<span class="sd">    varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mean_ra: float or str</span>
+<span class="sd">        RA of the center of the distribution. Use the rad or deg suffix to</span>
+<span class="sd">        specify units, otherwise radians are assumed.</span>
+<span class="sd">    mean_dec: float or str</span>
+<span class="sd">        Declination of the center of the distribution. Use the rad or deg</span>
+<span class="sd">        suffix to specify units, otherwise radians are assumed.</span>
+<span class="sd">    radius: float or str</span>
+<span class="sd">        Radius of the disk. Use the rad or deg suffix to specify units,</span>
+<span class="sd">        otherwise radians are assumed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;uniform_disk_sky&#39;</span>
+    <span class="n">_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="n">mean_ra</span> <span class="o">=</span> <span class="n">angle_as_radians</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_ra&#39;</span><span class="p">])</span>
+        <span class="n">mean_dec</span> <span class="o">=</span> <span class="n">angle_as_radians</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_dec&#39;</span><span class="p">])</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">angle_as_radians</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;radius&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">mean_ra</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">mean_ra</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;The mean RA must be between 0 and 2π, </span><span class="si">{</span><span class="n">mean_ra</span><span class="si">}</span><span class="s1"> rad given&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mean_dec</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">mean_dec</span> <span class="o">&gt;</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The mean declination must be between &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;-π/2 and π/2, </span><span class="si">{</span><span class="n">mean_dec</span><span class="si">}</span><span class="s1"> rad given&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">radius</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">radius</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Radius must be non-negative and smaller than 2π&#39;</span>
+            <span class="p">)</span>
+        <span class="c1"># Prepare a rotation that puts the North Pole at the mean position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_euler</span><span class="p">(</span>
+            <span class="s1">&#39;yz&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">mean_dec</span><span class="p">,</span> <span class="n">mean_ra</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_ra</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_dec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">mean_ra</span><span class="p">,</span> <span class="n">mean_dec</span><span class="p">,</span> <span class="n">radius</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
+
+<div class="viewcode-block" id="UniformDiskSky.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformDiskSky.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+        <span class="n">variable_args</span> <span class="o">=</span> <span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_params</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not all parameters used by this distribution &quot;</span>
+                <span class="s2">&quot;included in tag portion of section name&quot;</span>
+            <span class="p">)</span>
+        <span class="n">mean_ra</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;mean_ra&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">mean_dec</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;mean_dec&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;radius&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">mean_ra</span><span class="o">=</span><span class="n">mean_ra</span><span class="p">,</span>
+            <span class="n">mean_dec</span><span class="o">=</span><span class="n">mean_dec</span><span class="p">,</span>
+            <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UniformDiskSky.get_max_prob_point">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformDiskSky.get_max_prob_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_max_prob_point</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_ra</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_dec</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UniformDiskSky.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformDiskSky.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="c1"># Draw samples from a distribution centered on the North pole</span>
+        <span class="n">np_ra</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">np_dec</span> <span class="o">=</span> <span class="n">angular</span><span class="o">.</span><span class="n">SinAngle</span><span class="p">(</span>
+            <span class="n">polar_bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">))</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="c1"># Convert the samples to intermediate cartesian representation</span>
+        <span class="n">np_cart</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np_ra</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_ra</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+
+        <span class="c1"># Rotate the samples according to our pre-built rotation</span>
+        <span class="n">rot_cart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np_cart</span><span class="p">)</span>
+
+        <span class="c1"># Convert the samples back to spherical coordinates.</span>
+        <span class="c1"># Some unpleasant conditional operations are needed</span>
+        <span class="c1"># to get the correct angle convention.</span>
+        <span class="n">rot_radec</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">)])</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">neg_mask</span> <span class="o">=</span> <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">][</span><span class="n">neg_mask</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">rot_radec</span></div>
+
+
+<div class="viewcode-block" id="UniformDiskSky.to_uniform_patch">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformDiskSky.to_uniform_patch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_uniform_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coverage</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">coverage</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Attempt to convert UniformDiskSky to a &#39;</span>
+                <span class="s1">&#39;uniform patch assumes 100</span><span class="si">% c</span><span class="s1">overage&#39;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FisherSky">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FisherSky</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distribution that returns a random angle drawn from an approximate</span>
+<span class="sd">    `Von_Mises-Fisher distribution`_. Assumes that the Fisher concentration</span>
+<span class="sd">    parameter is large, so that we can draw the samples from a simple</span>
+<span class="sd">    rotationally-invariant distribution centered at the North Pole (which</span>
+<span class="sd">    factors as a uniform distribution for the right ascension, and a Rayleigh</span>
+<span class="sd">    distribution for the declination, as described in</span>
+<span class="sd">    `Fabrycky and Winn 2009 ApJ 696 1230`) and then rotate the samples to be</span>
+<span class="sd">    centered around the specified mean position. As in UniformSky, the</span>
+<span class="sd">    declination varies from π/2 to -π/2 and the right ascension varies from</span>
+<span class="sd">    0 to 2π.</span>
+
+<span class="sd">    .. _Von_Mises-Fisher distribution:</span>
+<span class="sd">        http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution</span>
+
+<span class="sd">    .. _Fabrycky and Winn 2009 ApJ 696 1230:</span>
+<span class="sd">        https://doi.org/10.1088/0004-637X/696/2/1230</span>
+
+<span class="sd">    .. _Briggs et al 1999 ApJS 122 503:</span>
+<span class="sd">        https://doi.org/10.1086/313221</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mean_ra: float or str</span>
+<span class="sd">        RA of the center of the distribution. Use the rad or deg suffix to</span>
+<span class="sd">        specify units, otherwise radians are assumed.</span>
+<span class="sd">    mean_dec: float or str</span>
+<span class="sd">        Declination of the center of the distribution. Use the rad or deg</span>
+<span class="sd">        suffix to specify units, otherwise radians are assumed.</span>
+<span class="sd">    sigma: float or str</span>
+<span class="sd">        Spread of the distribution. For the precise interpretation, see Eq 8</span>
+<span class="sd">        of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than</span>
+<span class="sd">        about 20 deg for the approximation to be valid. Use the rad or deg</span>
+<span class="sd">        suffix to specify units, otherwise radians are assumed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;fisher_sky&#39;</span>
+    <span class="n">_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="n">mean_ra</span> <span class="o">=</span> <span class="n">angle_as_radians</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_ra&#39;</span><span class="p">])</span>
+        <span class="n">mean_dec</span> <span class="o">=</span> <span class="n">angle_as_radians</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_dec&#39;</span><span class="p">])</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">angle_as_radians</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">mean_ra</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">mean_ra</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;The mean RA must be between 0 and 2π, </span><span class="si">{</span><span class="n">mean_ra</span><span class="si">}</span><span class="s1"> rad given&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mean_dec</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">mean_dec</span> <span class="o">&gt;</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The mean declination must be between &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;-π/2 and π/2, </span><span class="si">{</span><span class="n">mean_dec</span><span class="si">}</span><span class="s1"> rad given&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">sigma</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Sigma must be non-negative and smaller than 2π &#39;</span>
+                <span class="s1">&#39;(preferably much smaller)&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sigma</span> <span class="o">&gt;</span> <span class="mf">0.35</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Warning: sigma = </span><span class="si">%s</span><span class="s1"> rad is probably too large for the &#39;</span>
+                <span class="s1">&#39;Fisher approximation to be valid&#39;</span><span class="p">,</span>
+                <span class="n">sigma</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rayleigh_scale</span> <span class="o">=</span> <span class="mf">0.66</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="c1"># Prepare a rotation that puts the North Pole at the mean position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_euler</span><span class="p">(</span>
+            <span class="s1">&#39;yz&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">mean_dec</span><span class="p">,</span> <span class="n">mean_ra</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="c1"># storing center position for `to_uniform_patch()`</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_ra</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_dec</span> <span class="o">=</span> <span class="n">mean_ra</span><span class="p">,</span> <span class="n">mean_dec</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
+
+<div class="viewcode-block" id="FisherSky.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+        <span class="n">variable_args</span> <span class="o">=</span> <span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_params</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not all parameters used by this distribution &quot;</span>
+                <span class="s2">&quot;included in tag portion of section name&quot;</span>
+            <span class="p">)</span>
+        <span class="n">mean_ra</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;mean_ra&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">mean_dec</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;mean_dec&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">mean_ra</span><span class="o">=</span><span class="n">mean_ra</span><span class="p">,</span>
+            <span class="n">mean_dec</span><span class="o">=</span><span class="n">mean_dec</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FisherSky.get_max_prob_point">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky.get_max_prob_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_max_prob_point</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_ra</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_dec</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FisherSky.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="c1"># Draw samples from a distribution centered on the North pole</span>
+        <span class="n">np_ra</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">np_dec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rayleigh</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rayleigh_scale</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+
+        <span class="c1"># Convert the samples to intermediate cartesian representation</span>
+        <span class="n">np_cart</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np_ra</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_ra</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+
+        <span class="c1"># Rotate the samples according to our pre-built rotation</span>
+        <span class="n">rot_cart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np_cart</span><span class="p">)</span>
+
+        <span class="c1"># Convert the samples back to spherical coordinates.</span>
+        <span class="c1"># Some unpleasant conditional operations are needed</span>
+        <span class="c1"># to get the correct angle convention.</span>
+        <span class="n">rot_radec</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">)])</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">neg_mask</span> <span class="o">=</span> <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">][</span><span class="n">neg_mask</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">rot_radec</span></div>
+
+
+<div class="viewcode-block" id="FisherSky.to_uniform_patch">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky.to_uniform_patch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_uniform_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coverage</span><span class="p">):</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rayleigh_scale</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">coverage</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">UniformDiskSky</span><span class="p">(</span><span class="n">mean_ra</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_ra</span><span class="p">,</span> <span class="n">mean_dec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_dec</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="HealpixSky">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HealpixSky</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sky-location distribution given by a HEALPix map from an external file.</span>
+
+<span class="sd">    The declination (delta) varies from π/2 to -π/2 and the right ascension</span>
+<span class="sd">    (alpha) varies from 0 to 2π.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    healpix_file : str</span>
+<span class="sd">        Path to a FITS file containing a probability distribution encoded in a</span>
+<span class="sd">        HEALPix scheme.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;healpix_sky&#39;</span>
+    <span class="n">_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="c1"># Read the map file.</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;healpix_file&#39;</span><span class="p">]</span>
+        <span class="n">mhealpy</span> <span class="o">=</span> <span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;mhealpy&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span> <span class="o">=</span> <span class="n">mhealpy</span><span class="o">.</span><span class="n">HealpixMap</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+
+        <span class="c1"># Get the probabilities at each pixel.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">density</span><span class="p">():</span>
+            <span class="c1"># If the map stores a probability density, then we must convert to</span>
+            <span class="c1"># a probability per pixel.  We assume that the angular variation</span>
+            <span class="c1"># scale of the density function is much larger than the pixel area,</span>
+            <span class="c1"># so that we can just scale the density by the pixel area.</span>
+            <span class="n">pix_areas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">pixarea</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">npix</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span> <span class="o">*</span> <span class="n">pix_areas</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># The map stores directly a probability per pixel.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="c1"># Sanity-check the probabilities, and ensure they are normalized</span>
+        <span class="c1"># correctly (sum to one).</span>
+        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span><span class="p">)</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span>
+        <span class="n">sum_pix_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">sum_pix_probs</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Sum of probs in HEALPix map is </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="si">}</span><span class="s1">, &#39;</span>
+                <span class="s1">&#39;far from 1. Something might be wrong with that map&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span> <span class="o">/=</span> <span class="n">sum_pix_probs</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
+
+<div class="viewcode-block" id="HealpixSky.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+        <span class="n">variable_args</span> <span class="o">=</span> <span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_params</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Not all parameters used by this distribution &quot;</span>
+                <span class="s2">&quot;included in tag portion of section name&quot;</span>
+            <span class="p">)</span>
+        <span class="n">healpix_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;healpix_file&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">healpix_file</span><span class="o">=</span><span class="n">healpix_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HealpixSky.get_max_prob_point">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky.get_max_prob_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_max_prob_point</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">pix2ang</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span><span class="o">.</span><span class="n">max</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">lonlat</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="HealpixSky.pixel_corners">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky.pixel_corners">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pixel_corners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the Cartesian vectors corresponding to the corners of one or</span>
+<span class="sd">        more HEALPix pixels. Dimension 0 is the pixel index, 1 is the Cartesian</span>
+<span class="sd">        coordinate, 2 is the corner index.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">boundaries</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HealpixSky.normalize_azimuth">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky.normalize_azimuth">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalize_azimuth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to ensure the azimuthal coordinate stays within</span>
+<span class="sd">        [0,2π).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phi</span><span class="p">[</span><span class="n">phi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">phi</span><span class="p">[</span><span class="n">phi</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="k">return</span> <span class="n">phi</span></div>
+
+
+<div class="viewcode-block" id="HealpixSky.to_uniform_patch">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky.to_uniform_patch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_uniform_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coverage</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new HealpixSky object that represents a patch of uniform probability,</span>
+<span class="sd">        defined as the region that encloses a given probability in the original map.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">uniform_patch</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">non_zero_ind</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">uniform_patch</span><span class="o">.</span><span class="n">pix_probs</span><span class="p">)</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;prob&#39;</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)])</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">uniform_patch</span><span class="o">.</span><span class="n">pix_probs</span><span class="p">[</span><span class="n">non_zero_ind</span><span class="p">]</span>
+        <span class="n">ind_prob</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">non_zero_ind</span><span class="p">,</span> <span class="n">prob</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">ind_prob_sorted</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">ind_prob</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;prob&#39;</span><span class="p">)</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">prob</span><span class="p">)</span>
+        <span class="n">ind_prob_rev_sorted</span> <span class="o">=</span> <span class="n">ind_prob_sorted</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">list_ind</span> <span class="o">=</span> <span class="p">[(</span><span class="n">ind_prob_rev_sorted</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ind_prob_sorted</span><span class="p">))]</span>
+        <span class="n">cum_sum_prob</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">prob</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">covered_sky</span> <span class="o">=</span> <span class="n">cum_sum_prob</span><span class="p">[</span><span class="n">cum_sum_prob</span><span class="o">&lt;</span><span class="n">coverage</span><span class="p">]</span>
+        <span class="n">uniform_patch</span><span class="o">.</span><span class="n">pix_probs</span><span class="p">[</span><span class="n">list_ind</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">covered_sky</span><span class="p">)]]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">covered_sky</span><span class="p">)</span>
+        <span class="n">uniform_patch</span><span class="o">.</span><span class="n">pix_probs</span><span class="p">[</span><span class="n">uniform_patch</span><span class="o">.</span><span class="n">pix_probs</span><span class="o">!=</span> <span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">covered_sky</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">uniform_patch</span></div>
+
+
+<div class="viewcode-block" id="HealpixSky.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="c1"># First of all, draw a random sample of pixel indices following the</span>
+        <span class="c1"># given probabilities. This is the trivial part of the algorithm.</span>
+        <span class="n">pix_indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">npix</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pix_probs</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Then comes the nasty part of the algorithm. For each selected pixel,</span>
+        <span class="c1"># we need to draw a random point uniformly distributed on the patch of</span>
+        <span class="c1"># the sky defined by that pixel. We cannot skip points, every pixel</span>
+        <span class="c1"># (index) needs precisely one point. We do this via rejection sampling:</span>
+        <span class="c1"># we find the (theta,phi) box that encloses the corners of a pixel,</span>
+        <span class="c1"># then draw a uniform point inside that box and repeat until the point</span>
+        <span class="c1"># falls inside the pixel. The acceptance rate is always around 50% due</span>
+        <span class="c1"># to the orientation of the HEALPix pixels. The result seems correct</span>
+        <span class="c1"># visually and by checking the acceptance rates. This method is</span>
+        <span class="c1"># relatively slow due to the calls to `boundaries()`, which is slow</span>
+        <span class="c1"># especially for MOC maps. For MOC maps, I obtain around one million</span>
+        <span class="c1"># samples per minute.</span>
+
+        <span class="n">boundaries_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_corners</span><span class="p">(</span><span class="n">pix_indices</span><span class="p">)</span>
+
+        <span class="n">boundaries_z_min</span> <span class="o">=</span> <span class="n">boundaries_vec</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">boundaries_z_max</span> <span class="o">=</span> <span class="n">boundaries_vec</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Find ranges of azimuthal angle. `arctan2()` produces angles in the</span>
+        <span class="c1"># range [-π,π] which is not the right convention, so fix that right</span>
+        <span class="c1"># away.</span>
+        <span class="n">boundaries_phi</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span>
+            <span class="n">boundaries_vec</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">boundaries_vec</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:]</span>
+        <span class="p">)</span>
+        <span class="k">del</span> <span class="n">boundaries_vec</span>
+        <span class="n">boundaries_phi</span><span class="p">[</span><span class="n">boundaries_phi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">boundaries_phi_min</span> <span class="o">=</span> <span class="n">boundaries_phi</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">boundaries_phi_max</span> <span class="o">=</span> <span class="n">boundaries_phi</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Pixels that straddle phi = 0 need a special treatment :( Shift them</span>
+        <span class="c1"># by 90 deg so that they are not straddlers for the time being.</span>
+        <span class="c1"># We will shift the corresponding samples back after drawing them.</span>
+        <span class="n">straddler_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">boundaries_phi_max</span> <span class="o">-</span> <span class="n">boundaries_phi_min</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">boundaries_phi</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">,:]</span> <span class="o">-=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">boundaries_phi</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">,:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_azimuth</span><span class="p">(</span>
+            <span class="n">boundaries_phi</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">,:]</span>
+        <span class="p">)</span>
+        <span class="n">boundaries_phi_min</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries_phi</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">,:]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">boundaries_phi_max</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries_phi</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">,:]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">boundaries_phi</span>
+
+        <span class="n">final_thetas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="n">final_phis</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="c1"># Here comes the rejection sampling.</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">pix_indices</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">random_thetas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">boundaries_z_min</span><span class="p">,</span> <span class="n">boundaries_z_max</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">random_phis</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+                <span class="n">boundaries_phi_min</span><span class="p">,</span> <span class="n">boundaries_phi_max</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Now we can undo the shift for the straddlers. Ugly!</span>
+            <span class="n">random_phis</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">]</span> <span class="o">+=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">random_phis</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_azimuth</span><span class="p">(</span>
+                <span class="n">random_phis</span><span class="p">[</span><span class="n">straddler_mask</span><span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Find which points fall inside their pixels.</span>
+            <span class="n">sampled_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">healpix_map</span><span class="o">.</span><span class="n">ang2pix</span><span class="p">(</span>
+                <span class="n">random_thetas</span><span class="p">,</span> <span class="n">random_phis</span>
+            <span class="p">)</span>
+            <span class="n">acceptance_mask</span> <span class="o">=</span> <span class="n">sampled_indices</span> <span class="o">==</span> <span class="n">pix_indices</span>
+            <span class="n">final_thetas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">final_thetas</span><span class="p">,</span> <span class="n">random_thetas</span><span class="p">[</span><span class="n">acceptance_mask</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="n">final_phis</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">final_phis</span><span class="p">,</span> <span class="n">random_phis</span><span class="p">[</span><span class="n">acceptance_mask</span><span class="p">])</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Iterate if we are still missing some pixels.</span>
+            <span class="n">rej_mask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">acceptance_mask</span><span class="p">)</span>
+            <span class="n">pix_indices</span> <span class="o">=</span> <span class="n">pix_indices</span><span class="p">[</span><span class="n">rej_mask</span><span class="p">]</span>
+            <span class="n">boundaries_z_min</span> <span class="o">=</span> <span class="n">boundaries_z_min</span><span class="p">[</span><span class="n">rej_mask</span><span class="p">]</span>
+            <span class="n">boundaries_z_max</span> <span class="o">=</span> <span class="n">boundaries_z_max</span><span class="p">[</span><span class="n">rej_mask</span><span class="p">]</span>
+            <span class="n">boundaries_phi_min</span> <span class="o">=</span> <span class="n">boundaries_phi_min</span><span class="p">[</span><span class="n">rej_mask</span><span class="p">]</span>
+            <span class="n">boundaries_phi_max</span> <span class="o">=</span> <span class="n">boundaries_phi_max</span><span class="p">[</span><span class="n">rej_mask</span><span class="p">]</span>
+            <span class="n">straddler_mask</span> <span class="o">=</span> <span class="n">straddler_mask</span><span class="p">[</span><span class="n">rej_mask</span><span class="p">]</span>
+
+        <span class="c1"># Convert back to the radec convention</span>
+        <span class="n">radec</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">)])</span>
+        <span class="n">radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_phis</span>
+        <span class="n">radec</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">final_thetas</span>
+        <span class="k">return</span> <span class="n">radec</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;UniformSky&#39;</span><span class="p">,</span> <span class="s1">&#39;UniformDiskSky&#39;</span><span class="p">,</span> <span class="s1">&#39;FisherSky&#39;</span><span class="p">,</span> <span class="s1">&#39;HealpixSky&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

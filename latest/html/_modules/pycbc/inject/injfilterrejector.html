@@ -1,0 +1,640 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inject.injfilterrejector &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inject.injfilterrejector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inject.injfilterrejector</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013 Ian Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions to filter injections with only useful templates.</span>
+
+<span class="sd">This module implements a set of checks to test for each segment and template</span>
+<span class="sd">combination whether injections contained within the segment are sufficiently</span>
+<span class="sd">&quot;similar&quot; to the template to require a matched-filter. There are a few ways of</span>
+<span class="sd">testing the &quot;similarity&quot; of templates and injections.</span>
+
+<span class="sd">* A chirp time threshold rejects templates if chirp time difference is large</span>
+<span class="sd">* A coarse match threshold rejects templates if a coarse overlap is small</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="kn">import</span> <span class="n">segmentlist</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">DYN_RANGE_FAC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">match</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pnutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">nearest_larger_binary_number</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pnutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">mass1_mass2_to_tau0_tau3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">zeros</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDetOptionAction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">positive_float</span>
+
+<span class="n">_injfilterrejector_group_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Options that, if injections are present in &quot;</span>
+    <span class="s2">&quot;this run, are responsible for performing pre-checks between injections &quot;</span>
+    <span class="s2">&quot;in the data being filtered and the current search template to determine &quot;</span>
+    <span class="s2">&quot;if the template has any chance of actually detecting the injection. &quot;</span>
+    <span class="s2">&quot;The parameters of this test are given by the various options below. &quot;</span>
+    <span class="s2">&quot;The --injection-filter-rejector-chirp-time-window and &quot;</span>
+    <span class="s2">&quot;--injection-filter-rejector-match-threshold options need to be provided &quot;</span>
+    <span class="s2">&quot;if those tests are desired. Other options will take default values &quot;</span>
+    <span class="s2">&quot;unless overriden. More details on these options follow.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_cthresh_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;If this value is not None and an &quot;</span>
+    <span class="s2">&quot;injection file is given then we will calculate the difference in &quot;</span>
+    <span class="s2">&quot;chirp time (tau_0) between the template and each injection in the &quot;</span>
+    <span class="s2">&quot;analysis segment. If the difference is greate than this threshold for &quot;</span>
+    <span class="s2">&quot;all injections then filtering is not performed. By default this will &quot;</span>
+    <span class="s2">&quot;be None.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_mthresh_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;If this value is not None and an &quot;</span>
+    <span class="s2">&quot;injection file is provided then we will calculate a &#39;coarse match&#39; &quot;</span>
+    <span class="s2">&quot;between the template and each injection in the analysis segment. If the &quot;</span>
+    <span class="s2">&quot;match is less than this threshold for all injections then filtering is &quot;</span>
+    <span class="s2">&quot;not performed. Parameters for the &#39;coarse match&#39; follow. By default &quot;</span>
+    <span class="s2">&quot;this value will be None.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_deltaf_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;If injections are present and a match threshold is &quot;</span>
+    <span class="s2">&quot;provided, this option specifies the frequency spacing that will be used &quot;</span>
+    <span class="s2">&quot;for injections, templates and PSD when computing the &#39;coarse match&#39;. &quot;</span>
+    <span class="s2">&quot;Templates will be generated directly with this spacing. The PSD and &quot;</span>
+    <span class="s2">&quot;injections will be resampled.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_fmax_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;If injections are present and a match threshold is &quot;</span>
+    <span class="s2">&quot;provided, this option specifies the maximum frequency that will be used &quot;</span>
+    <span class="s2">&quot;for injections, templates and PSD when computing the &#39;coarse match&#39;. &quot;</span>
+    <span class="s2">&quot;Templates will be generated directly with this max frequency. The PSD &quot;</span>
+    <span class="s2">&quot;and injections&#39; frequency series will be truncated.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_buffer_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;If injections are present and either a match &quot;</span>
+    <span class="s2">&quot;threshold or a chirp-time window is given, we will determine if &quot;</span>
+    <span class="s2">&quot;injections are &#39;in&#39; the specified analysis chunk by using the end &quot;</span>
+    <span class="s2">&quot;times. If this value is non-zero the analysis chunk is extended on both &quot;</span>
+    <span class="s2">&quot;sides by this amount before determining if injections are within the &quot;</span>
+    <span class="s2">&quot;given window.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_flower_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;If injections are present and either a match &quot;</span>
+    <span class="s2">&quot;threshold or a chirp-time window is given, this value is used to set &quot;</span>
+    <span class="s2">&quot;the lower frequency for determine chirp times or for calculating &quot;</span>
+    <span class="s2">&quot;matches. If this value is None the lower frequency used for the full &quot;</span>
+    <span class="s2">&quot;matched-filter is used. Otherwise this value is used.&quot;</span>
+<span class="p">)</span>
+<span class="n">_injfilterer_trwindow_help</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;After computing triggers, reject triggers that are not within this &quot;</span>
+    <span class="s2">&quot;window of injection times. This avoids doing expensive chi-squared &quot;</span>
+    <span class="s2">&quot;computation on triggers not associated with injections.&quot;</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="insert_injfilterrejector_option_group">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.insert_injfilterrejector_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_injfilterrejector_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add options for injfilterrejector to executable.&quot;&quot;&quot;</span>
+    <span class="n">injfilterrejector_group</span> <span class="o">=</span> \
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">_injfilterrejector_group_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-chirp-time-window&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_cthresh_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-match-threshold&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_mthresh_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-coarsematch-deltaf&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_deltaf_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-coarsematch-fmax&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">256.</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_fmax_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-seg-buffer&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_buffer_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-f-lower&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_flower_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-trigger-window&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span>
+                                         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_trwindow_help</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="insert_injfilterrejector_option_group_multi_ifo">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.insert_injfilterrejector_option_group_multi_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_injfilterrejector_option_group_multi_ifo</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add options for injfilterrejector to executable.&quot;&quot;&quot;</span>
+    <span class="n">injfilterrejector_group</span> <span class="o">=</span> \
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">_injfilterrejector_group_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-chirp-time-window&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_cthresh_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-match-threshold&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_mthresh_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-coarsematch-deltaf&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_deltaf_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-coarsematch-fmax&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">256.</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_fmax_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-seg-buffer&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_buffer_help</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-f-lower&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_flower_help</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+    <span class="n">curr_arg</span> <span class="o">=</span> <span class="s2">&quot;--injection-filter-rejector-trigger-window&quot;</span>
+    <span class="n">injfilterrejector_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="n">curr_arg</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">_injfilterer_trwindow_help</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:VALUE&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="InjFilterRejector">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InjFilterRejector</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for holding parameters for using injection/template pre-filtering.</span>
+
+<span class="sd">    This class is responsible for identifying where a matched-filter operation</span>
+<span class="sd">    between templates and data is unncessary because the injections contained</span>
+<span class="sd">    in the data will not match well with the given template.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">,</span> <span class="n">chirp_time_window</span><span class="p">,</span>
+                 <span class="n">match_threshold</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">coarsematch_deltaf</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                 <span class="n">coarsematch_fmax</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">seg_buffer</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">inj_trigger_window</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise InjFilterRejector instance.&quot;&quot;&quot;</span>
+        <span class="c1"># Determine if InjFilterRejector is to be enabled</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">injection_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">injection_file</span> <span class="o">==</span> <span class="s1">&#39;False&#39;</span> <span class="ow">or</span>
+            <span class="p">(</span>
+                <span class="n">chirp_time_window</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span>
+                <span class="n">match_threshold</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span>
+                <span class="n">inj_trigger_window</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Store parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chirp_time_window</span> <span class="o">=</span> <span class="n">chirp_time_window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_threshold</span> <span class="o">=</span> <span class="n">match_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span> <span class="o">=</span> <span class="n">coarsematch_deltaf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_fmax</span> <span class="o">=</span> <span class="n">coarsematch_fmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seg_buffer</span> <span class="o">=</span> <span class="n">seg_buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f_lower</span> <span class="o">=</span> <span class="n">f_lower</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inj_trigger_window</span> <span class="o">=</span> <span class="n">inj_trigger_window</span>
+        <span class="k">assert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_lower</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># Variables for storing arrays (reduced injections, memory</span>
+        <span class="c1"># for templates, reduced PSDs ...)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_injections</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_mem</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_psd_storage</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_end_times</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_injection_intervals</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="InjFilterRejector.from_cli">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.from_cli">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an InjFilterRejector instance from command-line options.&quot;&quot;&quot;</span>
+        <span class="n">injection_file</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_file</span>
+        <span class="n">chirp_time_window</span> <span class="o">=</span> \
+            <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_chirp_time_window</span>
+        <span class="n">match_threshold</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_match_threshold</span>
+        <span class="n">coarsematch_deltaf</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_coarsematch_deltaf</span>
+        <span class="n">coarsematch_fmax</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_coarsematch_fmax</span>
+        <span class="n">seg_buffer</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_seg_buffer</span>
+        <span class="n">trig_window</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_trigger_window</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_f_lower</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f_lower</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_f_lower</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># NOTE: Uses main low-frequency cutoff as default option. This may</span>
+            <span class="c1">#       need some editing if using this in multi_inspiral, which I</span>
+            <span class="c1">#       leave for future work, or if this is being used in another</span>
+            <span class="c1">#       code which doesn&#39;t have --low-frequency-cutoff</span>
+            <span class="n">f_lower</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">low_frequency_cutoff</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">injection_file</span><span class="p">,</span> <span class="n">chirp_time_window</span><span class="p">,</span> <span class="n">match_threshold</span><span class="p">,</span>
+                   <span class="n">f_lower</span><span class="p">,</span> <span class="n">coarsematch_deltaf</span><span class="o">=</span><span class="n">coarsematch_deltaf</span><span class="p">,</span>
+                   <span class="n">coarsematch_fmax</span><span class="o">=</span><span class="n">coarsematch_fmax</span><span class="p">,</span>
+                   <span class="n">seg_buffer</span><span class="o">=</span><span class="n">seg_buffer</span><span class="p">,</span> <span class="n">inj_trigger_window</span><span class="o">=</span><span class="n">trig_window</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InjFilterRejector.from_cli_single_ifo">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.from_cli_single_ifo">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli_single_ifo</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an InjFilterRejector instance from command-line options.&quot;&quot;&quot;</span>
+        <span class="n">injection_file</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_file</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">chirp_time_window</span> <span class="o">=</span> \
+            <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_chirp_time_window</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">match_threshold</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_match_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">coarsematch_deltaf</span> <span class="o">=</span> \
+            <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_coarsematch_deltaf</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">coarsematch_fmax</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_coarsematch_fmax</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">seg_buffer</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_seg_buffer</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">trig_window</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_trigger_window</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_f_lower</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f_lower</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_filter_rejector_f_lower</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># NOTE: Uses main low-frequency cutoff as default option. This may</span>
+            <span class="c1">#       need some editing if using this in multi_inspiral, which I</span>
+            <span class="c1">#       leave for future work, or if this is being used in another</span>
+            <span class="c1">#       code which doesn&#39;t have --low-frequency-cutoff</span>
+            <span class="n">f_lower</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">low_frequency_cutoff</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">injection_file</span><span class="p">,</span> <span class="n">chirp_time_window</span><span class="p">,</span>
+                   <span class="n">match_threshold</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span>
+                   <span class="n">coarsematch_deltaf</span><span class="p">,</span> <span class="n">coarsematch_fmax</span><span class="p">,</span>
+                   <span class="n">seg_buffer</span><span class="o">=</span><span class="n">seg_buffer</span><span class="p">,</span> <span class="n">inj_trigger_window</span><span class="o">=</span><span class="n">trig_window</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InjFilterRejector.from_cli_multi_ifos">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.from_cli_multi_ifos">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli_multi_ifos</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an InjFilterRejector instance from command-line options.&quot;&quot;&quot;</span>
+        <span class="n">inj_filter_rejectors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">inj_filter_rejectors</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_cli_single_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inj_filter_rejectors</span></div>
+
+
+<div class="viewcode-block" id="InjFilterRejector.get_inj_end_times">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.get_inj_end_times">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_inj_end_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of the sorted injection end times.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injection_params</span><span class="o">.</span><span class="n">end_times</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_end_times</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_times</span></div>
+
+
+    <span class="c1"># Written together with Google Gemini</span>
+<div class="viewcode-block" id="InjFilterRejector.precompute_injection_intervals">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.precompute_injection_intervals">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">precompute_injection_intervals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Precompute and merge windows around the injections to speed up later</span>
+<span class="sd">        determination of whether triggers are within the injection times.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_trigger_window</span>
+        <span class="c1"># This function returns sorted injection times</span>
+        <span class="n">inj_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_inj_end_times</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">inj_times</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="c1"># Create individual intervals</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">inj_times</span> <span class="o">-</span> <span class="n">window</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">inj_times</span> <span class="o">+</span> <span class="n">window</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="n">segmentlist</span><span class="p">([</span><span class="n">segment</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span><span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">)])</span>
+        <span class="n">intervals</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Written together with Google Gemini</span>
+<div class="viewcode-block" id="InjFilterRejector.find_indices_in_injection_intervals">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.find_indices_in_injection_intervals">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_indices_in_injection_intervals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trig_times</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Identify indices within trig_times that corresponds to times within</span>
+<span class="sd">        the injection intervals.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">inj_trigger_window</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="c1"># Pythonic way to say &quot;take all triggers&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injection_intervals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_injection_intervals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precompute_injection_intervals</span><span class="p">()</span>
+
+        <span class="n">merged_intervals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injection_intervals</span>
+        <span class="k">if</span> <span class="n">trig_times</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">merged_intervals</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="c1"># Initialize a boolean array to mark matching elements in trig_times</span>
+        <span class="c1"># This array will be True at positions where trig_times elements</span>
+        <span class="c1"># fall into any interval</span>
+        <span class="n">is_matching</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">trig_times</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="c1"># Iterate through each precomputed merged interval</span>
+        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">merged_intervals</span><span class="p">:</span>
+            <span class="c1"># Perform a vectorized comparison for the current interval</span>
+            <span class="c1"># This finds all elements in trig_times that are &gt;= start AND &lt;= end</span>
+            <span class="n">curr_interval_matches</span> <span class="o">=</span> <span class="p">(</span><span class="n">trig_times</span> <span class="o">&gt;=</span> <span class="n">start</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">trig_times</span> <span class="o">&lt;=</span> <span class="n">end</span><span class="p">)</span>
+
+            <span class="c1"># Use bitwise OR assignment to accumulate the matches.</span>
+            <span class="c1"># If an element in trig_times matches ANY of the intervals,</span>
+            <span class="c1"># its corresponding position in &#39;is_matching&#39; will become True.</span>
+            <span class="n">is_matching</span> <span class="o">|=</span> <span class="n">curr_interval_matches</span>
+
+        <span class="k">return</span> <span class="n">is_matching</span></div>
+
+
+<div class="viewcode-block" id="InjFilterRejector.generate_short_inj_from_inj">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.generate_short_inj_from_inj">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_short_inj_from_inj</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj_waveform</span><span class="p">,</span> <span class="n">simulation_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate and a store a truncated representation of inj_waveform.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_threshold</span><span class="p">:</span>
+            <span class="c1"># Do nothing!</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">simulation_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_injections</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;An injection with simulation id &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">simulation_id</span><span class="p">)</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot; has already been added. This suggests &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;that your injection file contains injections with &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;duplicate simulation_ids. This is not allowed.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="n">curr_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inj_waveform</span><span class="p">)</span>
+        <span class="n">new_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nearest_larger_binary_number</span><span class="p">(</span><span class="n">curr_length</span><span class="p">))</span>
+        <span class="c1"># Don&#39;t want length less than 1/delta_f</span>
+        <span class="k">while</span> <span class="n">new_length</span> <span class="o">*</span> <span class="n">inj_waveform</span><span class="o">.</span><span class="n">delta_t</span> <span class="o">&lt;</span> <span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="p">:</span>
+            <span class="n">new_length</span> <span class="o">=</span> <span class="n">new_length</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">inj_waveform</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">new_length</span><span class="p">)</span>
+        <span class="n">inj_tilde</span> <span class="o">=</span> <span class="n">inj_waveform</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+        <span class="c1"># Dynamic range is important here!</span>
+        <span class="n">inj_tilde_np</span> <span class="o">=</span> <span class="n">inj_tilde</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">*</span> <span class="n">DYN_RANGE_FAC</span>
+        <span class="n">delta_f</span> <span class="o">=</span> <span class="n">inj_tilde</span><span class="o">.</span><span class="n">get_delta_f</span><span class="p">()</span>
+        <span class="n">new_freq_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_fmax</span> <span class="o">/</span> <span class="n">delta_f</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># This shouldn&#39;t be a problem if injections are generated at</span>
+        <span class="c1"># 16384 Hz ... It is only a problem of injection sample rate</span>
+        <span class="c1"># gives a lower Nyquist than the trunc_f_max. If this error is</span>
+        <span class="c1"># ever raised one could consider zero-padding the injection.</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">new_freq_len</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inj_tilde</span><span class="p">))</span>
+        <span class="n">df_ratio</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="o">/</span><span class="n">delta_f</span><span class="p">)</span>
+        <span class="n">inj_tilde_np</span> <span class="o">=</span> <span class="n">inj_tilde_np</span><span class="p">[:</span><span class="n">new_freq_len</span><span class="p">:</span><span class="n">df_ratio</span><span class="p">]</span>
+        <span class="n">new_inj</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">inj_tilde_np</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">,</span>
+                                  <span class="n">delta_f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_injections</span><span class="p">[</span><span class="n">simulation_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_inj</span></div>
+
+
+<div class="viewcode-block" id="InjFilterRejector.template_segment_checker">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.injfilterrejector.InjFilterRejector.template_segment_checker">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">template_segment_checker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bank</span><span class="p">,</span> <span class="n">t_num</span><span class="p">,</span> <span class="n">segment</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test if injections in segment are worth filtering with template.</span>
+
+<span class="sd">        Using the current template, current segment, and injections within that</span>
+<span class="sd">        segment. Test if the injections and sufficiently &quot;similar&quot; to any of</span>
+<span class="sd">        the injections to justify actually performing a matched-filter call.</span>
+<span class="sd">        Ther are two parts to this test: First we check if the chirp time of</span>
+<span class="sd">        the template is within a provided window of any of the injections. If</span>
+<span class="sd">        not then stop here, it is not worth filtering this template, segment</span>
+<span class="sd">        combination for this injection set. If this check passes we compute a</span>
+<span class="sd">        match between a coarse representation of the template and a coarse</span>
+<span class="sd">        representation of each of the injections. If that match is above a</span>
+<span class="sd">        user-provided value for any of the injections then filtering can</span>
+<span class="sd">        proceed. This is currently only available if using frequency-domain</span>
+<span class="sd">        templates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        FIXME</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        FIXME</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+            <span class="c1"># If disabled, always filter (ie. return True)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># Get times covered by segment analyze and add buffer</span>
+        <span class="n">seg_start_time</span> <span class="o">=</span> <span class="n">segment</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">seg_buffer</span>
+        <span class="n">seg_end_time</span> <span class="o">=</span> <span class="n">segment</span><span class="o">.</span><span class="n">end_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">seg_buffer</span>
+
+        <span class="c1"># Chirp time test</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirp_time_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">m1</span> <span class="o">=</span> <span class="n">bank</span><span class="o">.</span><span class="n">table</span><span class="p">[</span><span class="n">t_num</span><span class="p">][</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span>
+            <span class="n">m2</span> <span class="o">=</span> <span class="n">bank</span><span class="o">.</span><span class="n">table</span><span class="p">[</span><span class="n">t_num</span><span class="p">][</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span>
+            <span class="n">tau0_temp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mass1_mass2_to_tau0_tau3</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">inj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_params</span><span class="o">.</span><span class="n">table</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">record</span><span class="p">):</span>
+                    <span class="c1"># hdf format file</span>
+                    <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># must be an xml file originally</span>
+                    <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">geocent_end_time</span> <span class="o">+</span> \
+                        <span class="mf">1E-9</span> <span class="o">*</span> <span class="n">inj</span><span class="o">.</span><span class="n">geocent_end_time_ns</span>
+
+                <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">seg_start_time</span> <span class="o">&lt;=</span> <span class="n">end_time</span> <span class="o">&lt;=</span> <span class="n">seg_end_time</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">tau0_inj</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+                    <span class="n">mass1_mass2_to_tau0_tau3</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">inj</span><span class="o">.</span><span class="n">mass2</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+                <span class="n">tau_diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">tau0_temp</span> <span class="o">-</span> <span class="n">tau0_inj</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">tau_diff</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chirp_time_window</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Get&#39;s here if all injections are outside chirp-time window</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Coarse match test</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_threshold</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_mem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Set the memory for the short templates</span>
+                <span class="n">wav_len</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_fmax</span> <span class="o">/</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_mem</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">wav_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+
+            <span class="c1"># Set the current short PSD to red_psd</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">red_psd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_psd_storage</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">segment</span><span class="o">.</span><span class="n">psd</span><span class="p">)]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="c1"># PSD doesn&#39;t exist yet, so make it!</span>
+                <span class="n">curr_psd</span> <span class="o">=</span> <span class="n">segment</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="n">step_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span> <span class="o">/</span> <span class="n">segment</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+                <span class="n">max_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_fmax</span> <span class="o">/</span> <span class="n">segment</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">red_psd_data</span> <span class="o">=</span> <span class="n">curr_psd</span><span class="p">[:</span><span class="n">max_idx</span><span class="p">:</span><span class="n">step_size</span><span class="p">]</span>
+                <span class="n">red_psd</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">red_psd_data</span><span class="p">,</span> <span class="c1">#copy=False,</span>
+                                          <span class="n">delta_f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_short_psd_storage</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">curr_psd</span><span class="p">)]</span> <span class="o">=</span> <span class="n">red_psd</span>
+
+            <span class="c1"># Set htilde to be the current short template</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">t_num</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_id</span><span class="p">:</span>
+                <span class="c1"># Set the memory for the short templates if unset</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_mem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">wav_len</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_fmax</span> <span class="o">/</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_mem</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">wav_len</span><span class="p">,</span>
+                                                     <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+                <span class="c1"># Generate short waveform</span>
+                <span class="n">htilde</span> <span class="o">=</span> <span class="n">bank</span><span class="o">.</span><span class="n">generate_with_delta_f_and_max_freq</span><span class="p">(</span>
+                    <span class="n">t_num</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_fmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coarsematch_deltaf</span><span class="p">,</span>
+                    <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">bank</span><span class="o">.</span><span class="n">table</span><span class="p">[</span><span class="n">t_num</span><span class="p">]</span><span class="o">.</span><span class="n">f_lower</span><span class="p">,</span>
+                    <span class="n">cached_mem</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_short_template_mem</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_id</span> <span class="o">=</span> <span class="n">t_num</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_wav</span> <span class="o">=</span> <span class="n">htilde</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">htilde</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_template_wav</span>
+
+            <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">inj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injection_params</span><span class="o">.</span><span class="n">table</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">record</span><span class="p">):</span>
+                    <span class="c1"># hdf format file</span>
+                    <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+                    <span class="n">sim_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">injection_ids</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># must be an xml file originally</span>
+                    <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">geocent_end_time</span> <span class="o">+</span> \
+                        <span class="mf">1E-9</span> <span class="o">*</span> <span class="n">inj</span><span class="o">.</span><span class="n">geocent_end_time_ns</span>
+                    <span class="n">sim_id</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">simulation_id</span>
+
+                <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">seg_start_time</span> <span class="o">&lt;</span> <span class="n">end_time</span> <span class="o">&lt;</span> <span class="n">seg_end_time</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">curr_inj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">short_injections</span><span class="p">[</span><span class="n">sim_id</span><span class="p">]</span>
+                <span class="n">o</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">match</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">curr_inj</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">red_psd</span><span class="p">,</span>
+                             <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">o</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_threshold</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Get&#39;s here if all injections are outside match threshold</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.injection &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.injection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.injection</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2015  Ian Harry, Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for setting up the part of a pycbc workflow that</span>
+<span class="sd">will generate the injection files to be used for assessing the workflow&#39;s</span>
+<span class="sd">ability to detect predicted signals.</span>
+<span class="sd">Full documentation for this module can be found here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileList</span><span class="p">,</span> <span class="n">make_analysis_dir</span><span class="p">,</span> <span class="n">Node</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Executable</span><span class="p">,</span> <span class="n">resolve_url_to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.jobsetup</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">PycbcCreateInjectionsExecutable</span><span class="p">,</span> <span class="n">select_generic_executable</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.injection&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="veto_injections">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.veto_injections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">veto_injections</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">,</span> <span class="n">veto_name</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;strip_injections&#39;</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                          <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--segment-name&#39;</span><span class="p">,</span> <span class="n">veto_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--ifos&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="PyCBCOptimalSNRExecutable">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.PyCBCOptimalSNRExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PyCBCOptimalSNRExecutable</span><span class="p">(</span><span class="n">Executable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute optimal SNR for injections&quot;&quot;&quot;</span>
+    <span class="n">current_retention_level</span> <span class="o">=</span> <span class="n">Executable</span><span class="o">.</span><span class="n">ALL_TRIGGERS</span>
+
+<div class="viewcode-block" id="PyCBCOptimalSNRExecutable.create_node">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.PyCBCOptimalSNRExecutable.create_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">precalc_psd_files</span><span class="p">,</span> <span class="n">group_str</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">inj_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--input-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--injection-fraction-range&#39;</span><span class="p">,</span> <span class="n">group_str</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--time-varying-psds&#39;</span><span class="p">,</span> <span class="n">precalc_psd_files</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="n">ext</span><span class="p">,</span>
+                                 <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PyCBCMergeHDFExecutable">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.PyCBCMergeHDFExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PyCBCMergeHDFExecutable</span><span class="p">(</span><span class="n">Executable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge HDF injection files executable class&quot;&quot;&quot;</span>
+    <span class="n">current_retention_level</span> <span class="o">=</span> <span class="n">Executable</span><span class="o">.</span><span class="n">MERGED_TRIGGERS</span>
+
+<div class="viewcode-block" id="PyCBCMergeHDFExecutable.create_node">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.PyCBCMergeHDFExecutable.create_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workflow</span><span class="p">,</span> <span class="n">input_files</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--injection-files&#39;</span><span class="p">,</span> <span class="n">input_files</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">node</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="compute_inj_optimal_snr">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.compute_inj_optimal_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_inj_optimal_snr</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">precalc_psd_files</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                            <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="s2">&quot;Set up a job for computing optimal SNRs of a sim_inspiral file.&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s1">&#39;workflow-optimal-snr&#39;</span><span class="p">,</span>
+                                              <span class="s1">&#39;parallelization-factor&#39;</span><span class="p">,</span>
+                                              <span class="n">tags</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">factor</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># parallelization factor not given - default to single optimal snr job</span>
+        <span class="n">opt_snr_exe</span> <span class="o">=</span> <span class="n">PyCBCOptimalSNRExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;optimal_snr&#39;</span><span class="p">,</span>
+                                                <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                                                <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">opt_snr_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span>
+                                       <span class="n">precalc_psd_files</span><span class="p">,</span> <span class="s1">&#39;0/1&#39;</span><span class="p">)</span>
+        <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+        <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">opt_snr_split_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">factor</span><span class="p">):</span>
+        <span class="n">group_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+        <span class="n">opt_snr_exe</span> <span class="o">=</span> <span class="n">PyCBCOptimalSNRExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;optimal_snr&#39;</span><span class="p">,</span>
+                                                <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                                                <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+                                                <span class="n">tags</span><span class="o">=</span><span class="n">tags</span> <span class="o">+</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span>
+        <span class="n">opt_snr_exe</span><span class="o">.</span><span class="n">update_current_retention_level</span><span class="p">(</span>
+            <span class="n">Executable</span><span class="o">.</span><span class="n">INTERMEDIATE_PRODUCT</span><span class="p">)</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">opt_snr_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">precalc_psd_files</span><span class="p">,</span>
+                                       <span class="n">group_str</span><span class="p">)</span>
+        <span class="n">opt_snr_split_files</span> <span class="o">+=</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="n">hdfcombine_exe</span> <span class="o">=</span> <span class="n">PyCBCMergeHDFExecutable</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span>
+        <span class="s1">&#39;optimal_snr_merge&#39;</span><span class="p">,</span>
+        <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+        <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+    <span class="p">)</span>
+
+    <span class="n">hdfcombine_node</span> <span class="o">=</span> <span class="n">hdfcombine_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="p">,</span>
+        <span class="n">opt_snr_split_files</span>
+    <span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">hdfcombine_node</span>
+
+    <span class="k">return</span> <span class="n">hdfcombine_node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="cut_distant_injections">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.cut_distant_injections">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_distant_injections</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="s2">&quot;Set up a job for removing injections that are too distant to be seen&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;inj_cut&#39;</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                      <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--input&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="inj_to_hdf">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.inj_to_hdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">inj_to_hdf</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Convert injection file to hdf format.</span>
+
+<span class="sd">    If the file is already PyCBC HDF format, this will just make a copy.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;inj2hdf&#39;</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                      <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_file</span></div>
+
+
+<div class="viewcode-block" id="setup_injection_workflow">
+<a class="viewcode-back" href="../../../workflow/injections.html#pycbc.workflow.injection.setup_injection_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_injection_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">inj_section_name</span><span class="o">=</span><span class="s1">&#39;injections&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is the gateway for setting up injection-generation jobs in a</span>
+<span class="sd">    workflow. It should be possible for this function to support a number</span>
+<span class="sd">    of different ways/codes that could be used for doing this, however as this</span>
+<span class="sd">    will presumably stay as a single call to a single code (which need not be</span>
+<span class="sd">    inspinj) there are currently no subfunctions in this moudle.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The Workflow instance that the coincidence jobs will be added to.</span>
+<span class="sd">    output_dir : path</span>
+<span class="sd">        The directory in which injection files will be stored.</span>
+<span class="sd">    inj_section_name : string (optional, default=&#39;injections&#39;)</span>
+<span class="sd">        The string that corresponds to the option describing the exe location</span>
+<span class="sd">        in the [executables] section of the .ini file and that corresponds to</span>
+<span class="sd">        the section (and sub-sections) giving the options that will be given to</span>
+<span class="sd">        the code at run time.</span>
+<span class="sd">    tags : list of strings (optional, default = [])</span>
+<span class="sd">        A list of the tagging strings that will be used for all jobs created</span>
+<span class="sd">        by this call to the workflow. This will be used in output names.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    inj_files : pycbc.workflow.core.FileList</span>
+<span class="sd">        The list of injection files created by this call.</span>
+<span class="sd">    inj_tags : list of strings</span>
+<span class="sd">        The tag corresponding to each injection file and used to uniquely</span>
+<span class="sd">        identify them. The FileList class contains functions to search</span>
+<span class="sd">        based on tags.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Entering injection module.&quot;</span><span class="p">)</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+
+    <span class="c1"># Get full analysis segment for output file naming</span>
+    <span class="n">full_segment</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span>
+
+    <span class="c1"># Identify which injections to do by presence of sub-sections in</span>
+    <span class="c1"># the configuration file</span>
+    <span class="n">inj_tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">inj_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span>  <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="n">inj_section_name</span><span class="p">):</span>
+        <span class="n">inj_tag</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="n">curr_tags</span> <span class="o">=</span> <span class="n">tags</span> <span class="o">+</span> <span class="p">[</span><span class="n">inj_tag</span><span class="p">]</span>
+
+        <span class="c1"># Parse for options in ini file</span>
+        <span class="n">injection_method</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-injections&quot;</span><span class="p">,</span>
+                                                    <span class="s2">&quot;injections-method&quot;</span><span class="p">,</span>
+                                                    <span class="n">curr_tags</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">injection_method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;IN_WORKFLOW&quot;</span><span class="p">,</span> <span class="s2">&quot;AT_RUNTIME&quot;</span><span class="p">]:</span>
+            <span class="n">exe</span> <span class="o">=</span> <span class="n">select_generic_executable</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="s1">&#39;injections&#39;</span><span class="p">)</span>
+            <span class="n">inj_job</span> <span class="o">=</span> <span class="n">exe</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">inj_section_name</span><span class="p">,</span>
+                          <span class="n">out_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="s1">&#39;HL&#39;</span><span class="p">,</span>
+                          <span class="n">tags</span><span class="o">=</span><span class="n">curr_tags</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">exe</span> <span class="ow">is</span> <span class="n">PycbcCreateInjectionsExecutable</span><span class="p">:</span>
+                <span class="n">config_urls</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-injections&#39;</span><span class="p">,</span>
+                                              <span class="n">section</span><span class="o">+</span><span class="s1">&#39;-config-files&#39;</span><span class="p">)</span>
+                <span class="n">config_urls</span> <span class="o">=</span> <span class="n">config_urls</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                <span class="n">config_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([</span><span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">cf</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                                         <span class="k">for</span> <span class="n">cf</span> <span class="ow">in</span> <span class="n">config_urls</span><span class="p">])</span>
+                <span class="n">node</span><span class="p">,</span> <span class="n">inj_file</span> <span class="o">=</span> <span class="n">inj_job</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">config_files</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">node</span> <span class="o">=</span> <span class="n">inj_job</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">full_segment</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">injection_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME&quot;</span><span class="p">:</span>
+                <span class="n">workflow</span><span class="o">.</span><span class="n">execute_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">workflow</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="n">inj_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">inj_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inj_file</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">injection_method</span> <span class="o">==</span> <span class="s2">&quot;PREGENERATED&quot;</span><span class="p">:</span>
+            <span class="n">file_attrs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;ifos&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;HL&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;segs&#39;</span><span class="p">:</span> <span class="n">full_segment</span><span class="p">,</span>
+                <span class="s1">&#39;tags&#39;</span><span class="p">:</span> <span class="n">curr_tags</span>
+            <span class="p">}</span>
+            <span class="n">injection_path</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span>
+                <span class="s2">&quot;workflow-injections&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;injections-pregenerated-file&quot;</span><span class="p">,</span>
+                <span class="n">curr_tags</span>
+            <span class="p">)</span>
+            <span class="n">curr_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">injection_path</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">file_attrs</span><span class="p">)</span>
+            <span class="n">inj_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="s2">&quot;Injection method must be one of IN_WORKFLOW, &quot;</span>
+            <span class="n">err</span> <span class="o">+=</span> <span class="s2">&quot;AT_RUNTIME or PREGENERATED. Got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">injection_method</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+        <span class="n">inj_tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inj_tag</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leaving injection module.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inj_files</span><span class="p">,</span> <span class="n">inj_tags</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

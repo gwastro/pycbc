@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.triggers &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.triggers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.triggers</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2017 Christopher M. Biwer</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot; This modules contains functions for reading single and coincident triggers</span>
+<span class="sd">from the command line.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span><span class="p">,</span> <span class="n">pnutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">coinc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.detector</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.triggers&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="insert_bank_bins_option_group">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.triggers.insert_bank_bins_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_bank_bins_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add options to the optparser object for selecting templates in bins.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bins_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+                                 <span class="s2">&quot;Options for selecting templates in bins.&quot;</span><span class="p">)</span>
+    <span class="n">bins_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--bank-bins&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Ordered list of mass bin upper boundaries. &quot;</span>
+                                 <span class="s2">&quot;An ordered list of type-boundary pairs, &quot;</span>
+                                 <span class="s2">&quot;applied sequentially. Must provide a name &quot;</span>
+                                 <span class="s2">&quot;(can be any unique string for tagging &quot;</span>
+                                 <span class="s2">&quot;purposes), the parameter to bin &quot;</span>
+                                 <span class="s2">&quot;on, and the membership condition via &quot;</span>
+                                 <span class="s2">&quot;&#39;lt&#39; / &#39;gt&#39; operators. &quot;</span>
+                                 <span class="s2">&quot;Ex. name1:component:lt2 name2:total:lt15&quot;</span><span class="p">)</span>
+    <span class="n">bins_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--bank-file&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;HDF format template bank file.&quot;</span><span class="p">)</span>
+    <span class="n">bins_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--f-lower&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Low frequency cutoff in Hz.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bins_group</span></div>
+
+
+
+<div class="viewcode-block" id="bank_bins_from_cli">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.triggers.bank_bins_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bank_bins_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Parses the CLI options related to binning templates in the bank.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser.</span>
+
+<span class="sd">    Results</span>
+<span class="sd">    -------</span>
+<span class="sd">    bins_idx : dict</span>
+<span class="sd">        A dict with bin names as key and an array of their indices as value.</span>
+<span class="sd">    bank : dict</span>
+<span class="sd">        A dict of the datasets from the bank file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bank</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">bank_file</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">fp</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">bank</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">key</span><span class="p">][:]</span>
+    <span class="n">bank</span><span class="p">[</span><span class="s2">&quot;f_lower&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span> <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">f_lower</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">bank_bins</span><span class="p">:</span>
+        <span class="n">bins_idx</span> <span class="o">=</span> <span class="n">coinc</span><span class="o">.</span><span class="n">background_bin_from_string</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">bank_bins</span><span class="p">,</span> <span class="n">bank</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bins_idx</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span> <span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">bank</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]))}</span>
+    <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">bins_idx</span><span class="p">,</span> <span class="n">bank</span></div>
+
+
+
+<div class="viewcode-block" id="get_mass_spin">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.triggers.get_mass_spin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_mass_spin</span><span class="p">(</span><span class="n">bank</span><span class="p">,</span> <span class="n">tid</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bank : h5py File object</span>
+<span class="sd">        Bank parameter file</span>
+<span class="sd">    tid : integer or array of int</span>
+<span class="sd">        Indices of the entries to be returned</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    m1, m2, s1z, s2z : tuple of floats or arrays of floats</span>
+<span class="sd">        Parameter values of the bank entries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m1</span> <span class="o">=</span> <span class="n">bank</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:][</span><span class="n">tid</span><span class="p">]</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">bank</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][:][</span><span class="n">tid</span><span class="p">]</span>
+    <span class="n">s1z</span> <span class="o">=</span> <span class="n">bank</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][:][</span><span class="n">tid</span><span class="p">]</span>
+    <span class="n">s2z</span> <span class="o">=</span> <span class="n">bank</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][:][</span><span class="n">tid</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span></div>
+
+
+
+<div class="viewcode-block" id="get_param">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.triggers.get_param">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_param</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    par : string</span>
+<span class="sd">        Name of parameter to calculate</span>
+<span class="sd">    args : Namespace object returned from ArgumentParser instance</span>
+<span class="sd">        Calling code command line options, used for f_lower value</span>
+<span class="sd">    m1 : float or array of floats</span>
+<span class="sd">        First binary component mass (etc.)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    parvals : float or array of floats</span>
+<span class="sd">        Calculated parameter values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;mchirp&#39;</span><span class="p">:</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;mtotal&#39;</span><span class="p">:</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;eta&#39;</span><span class="p">:</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">eta_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;chi_eff&#39;</span><span class="p">,</span> <span class="s1">&#39;effective_spin&#39;</span><span class="p">]:</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">chi_eff</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;template_duration&#39;</span><span class="p">:</span>
+        <span class="c1"># default to SEOBNRv4 duration function</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s1">&#39;approximant&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">approximant</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">approximant</span> <span class="o">=</span> <span class="s2">&quot;SEOBNRv4&quot;</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">get_imr_duration</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">f_lower</span><span class="p">,</span>
+                                           <span class="n">args</span><span class="o">.</span><span class="n">approximant</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">min_duration</span><span class="p">:</span>
+            <span class="n">parvals</span> <span class="o">+=</span> <span class="n">args</span><span class="o">.</span><span class="n">min_duration</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;tau0&#39;</span><span class="p">:</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">tau0_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="o">==</span> <span class="s1">&#39;tau3&#39;</span><span class="p">:</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">tau3_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">frequency_cutoff_from_name</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># try asking for a LALSimulation frequency function</span>
+        <span class="n">parvals</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">get_freq</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parvals</span></div>
+
+
+
+<div class="viewcode-block" id="get_found_param">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.triggers.get_found_param">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_found_param</span><span class="p">(</span><span class="n">injfile</span><span class="p">,</span> <span class="n">bankfile</span><span class="p">,</span> <span class="n">trigfile</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Translates some popular trigger parameters into functions that calculate</span>
+<span class="sd">    them from an hdf found injection file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    injfile: hdf5 File object</span>
+<span class="sd">        Injection file of format known to ANitz (DOCUMENTME)</span>
+<span class="sd">    bankfile: hdf5 File object or None</span>
+<span class="sd">        Template bank file</span>
+<span class="sd">    trigfile: hdf5 File object or None</span>
+<span class="sd">        Single-detector trigger file</span>
+<span class="sd">    param: string</span>
+<span class="sd">        Parameter to be calculated for the recovered triggers</span>
+<span class="sd">    ifo: string or None</span>
+<span class="sd">        Standard ifo name, ex. &#39;L1&#39;</span>
+<span class="sd">    args : Namespace object returned from ArgumentParser instance</span>
+<span class="sd">        Calling code command line options, used for f_lower value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    [return value]: NumPy array of floats, array of boolean</span>
+<span class="sd">        The calculated parameter values and a Boolean mask indicating which</span>
+<span class="sd">        injections were found in the given ifo (if supplied)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">foundtmp</span> <span class="o">=</span> <span class="n">injfile</span><span class="p">[</span><span class="s2">&quot;found_after_vetoes/template_id&quot;</span><span class="p">][:]</span>
+    <span class="c1"># will record whether inj was found in the given ifo</span>
+    <span class="n">found_in_ifo</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">foundtmp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">trigfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>  <span class="c1"># old 2-ifo behaviour</span>
+            <span class="c1"># get the name of the ifo in the injection file, eg &quot;detector_1&quot;</span>
+            <span class="c1"># and the integer from that name</span>
+            <span class="n">ifolabel</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">injfile</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> \
+                        <span class="s2">&quot;detector&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">==</span> <span class="n">ifo</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">foundtrg</span> <span class="o">=</span> <span class="n">injfile</span><span class="p">[</span><span class="s2">&quot;found_after_vetoes/trigger_id&quot;</span> <span class="o">+</span> <span class="n">ifolabel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>  <span class="c1"># multi-ifo</span>
+            <span class="n">foundtrg</span> <span class="o">=</span> <span class="n">injfile</span><span class="p">[</span><span class="s2">&quot;found_after_vetoes/</span><span class="si">%s</span><span class="s2">/trigger_id&quot;</span> <span class="o">%</span> <span class="n">ifo</span><span class="p">]</span>
+            <span class="c1"># multi-ifo pipeline assigns -1 for inj not found in specific ifo</span>
+            <span class="n">found_in_ifo</span> <span class="o">=</span> <span class="n">foundtrg</span><span class="p">[:]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">bankfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">bankfile</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">bankfile</span><span class="p">[</span><span class="n">param</span><span class="p">][:][</span><span class="n">foundtmp</span><span class="p">],</span> <span class="n">found_in_ifo</span>
+    <span class="k">elif</span> <span class="n">trigfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">trigfile</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">trigfile</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">param</span><span class="p">][:][</span><span class="n">foundtrg</span><span class="p">],</span> <span class="n">found_in_ifo</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">bankfile</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">bankfile</span>
+        <span class="k">return</span> <span class="n">get_param</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">b</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:],</span> <span class="n">b</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][:],</span>
+                         <span class="n">b</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][:],</span> <span class="n">b</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][:])[</span><span class="n">foundtmp</span><span class="p">],</span>\
+               <span class="n">found_in_ifo</span></div>
+
+
+
+<div class="viewcode-block" id="get_inj_param">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.triggers.get_inj_param">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_inj_param</span><span class="p">(</span><span class="n">injfile</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Translates some popular injection parameters into functions that calculate</span>
+<span class="sd">    them from an hdf found injection file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    injfile: hdf5 File object</span>
+<span class="sd">        Injection file of format known to ANitz (DOCUMENTME)</span>
+<span class="sd">    param: string</span>
+<span class="sd">        Parameter to be calculated for the injected signals</span>
+<span class="sd">    ifo: string</span>
+<span class="sd">        Standard detector name, ex. &#39;L1&#39;</span>
+<span class="sd">    args: Namespace object returned from ArgumentParser instance</span>
+<span class="sd">        Calling code command line options, used for f_lower value</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    [return value]: NumPy array of floats</span>
+<span class="sd">        The calculated parameter values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">Detector</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+
+    <span class="n">inj</span> <span class="o">=</span> <span class="n">injfile</span><span class="p">[</span><span class="s2">&quot;injections&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">inj</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">inj</span><span class="p">[</span><span class="n">param</span><span class="p">][:]</span>
+
+    <span class="k">if</span> <span class="n">param</span> <span class="o">==</span> <span class="s2">&quot;end_time_&quot;</span><span class="o">+</span><span class="n">ifo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">][:]</span> <span class="o">+</span> <span class="n">det</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span>
+                                        <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">][:],</span>
+                                        <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">][:],</span>
+                                        <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">][:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_param</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:],</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][:],</span>
+                                     <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][:],</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][:])</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

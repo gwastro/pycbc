@@ -1,0 +1,1180 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.hierarchical &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.hierarchical</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.hierarchical</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2022  Collin Capano</span>
+<span class="c1">#               2023  Alex Nitz &amp; Shichao Wu</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;Hierarchical model definitions.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">transforms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkflowConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                       Hierarhical model definition</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="HierarchicalModel">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HierarchicalModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Model that is a combination of other models.</span>
+
+<span class="sd">    Sub-models are treated as being independent of each other, although</span>
+<span class="sd">    they can share parameters. In other words, the hierarchical likelihood is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p(\mathbf{D}|\mathbf{\vartheta}, \mathbf{H}) =</span>
+<span class="sd">            \prod_{I}^{K} p(\mathbf{d}_I|\mathbf{\vartheta}, H_{I})</span>
+
+<span class="sd">    Submodels are provided as a dictionary upon initialization with a unique</span>
+<span class="sd">    label assigned to each model, e.g., ``{&#39;event1&#39; -&gt; model1, &#39;event2&#39; -&gt;</span>
+<span class="sd">    model2}``. Variable and static parameters that are specific to each</span>
+<span class="sd">    submodel should be prepended with ``{label}__``, where ``{label}__`` is the</span>
+<span class="sd">    label associated with the given submodel. Shared parameters across multiple</span>
+<span class="sd">    models have no labels prepended. To specify shared models over a subset of</span>
+<span class="sd">    models, separate models with an underscore.  For example,</span>
+<span class="sd">    ``event1_event2__foo`` will result in ``foo`` being common between models</span>
+<span class="sd">    ``event1`` and ``event2``. For more details on parameter naming see</span>
+<span class="sd">    :py:class:`HierarchicalParam</span>
+<span class="sd">    &lt;pycbc.inference.models.hierarchical.HierarchicalParam&gt;`.</span>
+
+<span class="sd">    All waveform and sampling transforms, as well as prior evaluation, are</span>
+<span class="sd">    handled by this model, not the sub-models. Parameters created by waveform</span>
+<span class="sd">    transforms should therefore also have sub-model names prepended to them,</span>
+<span class="sd">    to indicate which models they should be provided to for likelihood</span>
+<span class="sd">    evaluation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_params: (tuple of) string(s)</span>
+<span class="sd">        A tuple of parameter names that will be varied.</span>
+<span class="sd">    submodels: dict</span>
+<span class="sd">        Dictionary of model labels -&gt; model instances of all the submodels.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to</span>
+<span class="sd">        :py:class:`BaseModel &lt;pycbc.inference.models.base.BaseModel&gt;`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;hierarchical&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">submodels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># sub models is assumed to be a dict of model labels -&gt; model instances</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span> <span class="o">=</span> <span class="n">submodels</span>
+        <span class="c1"># initialize standard attributes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># store a map of model labels -&gt; parameters for quick look up later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hvariable_params</span><span class="p">)</span>
+        <span class="c1"># add any parameters created by waveform transforms</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">derived_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="n">derived_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">outputs</span>
+                                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">])</span>
+            <span class="c1"># convert to hierarchical params</span>
+            <span class="n">derived_params</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">derived_params</span><span class="p">,</span>
+                                               <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+            <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">pset</span> <span class="ow">in</span> <span class="n">derived_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pset</span><span class="p">)</span>
+        <span class="c1"># make sure the static parameters of all submodels are set correctly</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static_param_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hstatic_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># also create a map of model label -&gt; extra stats created by each model</span>
+        <span class="c1"># stats are prepended with the model label. We&#39;ll include the</span>
+        <span class="c1"># loglikelihood returned by each submodel in the extra stats.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_stats_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__extra_stats</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">static_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">fullname</span><span class="p">]</span>
+                                   <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extra_stats_map</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">map_params</span><span class="p">([</span>
+                <span class="n">HierarchicalParam</span><span class="o">.</span><span class="n">from_subname</span><span class="p">(</span><span class="n">lbl</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_extra_stats</span><span class="o">+</span><span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__extra_stats</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_stats_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span>
+            <span class="c1"># also make sure the model&#39;s sampling transforms and waveform</span>
+            <span class="c1"># transforms are not set, as these are handled by the hierarchical</span>
+            <span class="c1"># model, except for `joint_primary_marginalized` model, because</span>
+            <span class="c1"># this specific model needs to allow its submodels to handle</span>
+            <span class="c1"># transform with prefix on the submodel&#39;s level</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;joint_primary_marginalized&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model </span><span class="si">{}</span><span class="s2"> has sampling transforms &quot;</span>
+                                     <span class="s2">&quot;set; in a hierarchical analysis, &quot;</span>
+                                     <span class="s2">&quot;these are handled by the &quot;</span>
+                                     <span class="s2">&quot;hierarchical model&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lbl</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">waveform_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model </span><span class="si">{}</span><span class="s2"> has waveform transforms &quot;</span>
+                                     <span class="s2">&quot;set; in a hierarchical analysis, &quot;</span>
+                                     <span class="s2">&quot;these are handled by the &quot;</span>
+                                     <span class="s2">&quot;hierarchical model&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lbl</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hvariable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The variable params as a tuple of :py:class:`HierarchicalParam`</span>
+<span class="sd">        instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># converts variable params back to a set of strings before returning</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">fullname</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_params</span><span class="p">)</span>
+
+    <span class="nd">@variable_params</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">):</span>
+        <span class="c1"># overrides BaseModel&#39;s variable params to store the variable params</span>
+        <span class="c1"># as HierarchicalParam instances</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">variable_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable_params</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variable_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">HierarchicalParam</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">)</span>
+                                      <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">variable_params</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hstatic_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The static params with :py:class:`HierarchicalParam` instances used</span>
+<span class="sd">        as dictionary keys.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_static_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># converts the static param keys back to strings</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">fullname</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_static_params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="nd">@static_params</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">static_params</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">static_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">static_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_static_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">HierarchicalParam</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">):</span> <span class="n">val</span>
+                               <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">static_params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">fullname</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__extra_stats</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hextra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The extra stats as :py:class:`HierarchicalParam` instances.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__extra_stats</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># takes the sum of the constitutent models&#39; loglikelihoods</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># update the model with the current params. This is done here</span>
+            <span class="c1"># instead of in `update` because waveform transforms are not</span>
+            <span class="c1"># applied until the loglikelihood function is called</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">fullname</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]})</span>
+            <span class="c1"># now get the loglikelihood from the model</span>
+            <span class="n">sublogl</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">loglikelihood</span>
+            <span class="c1"># store the extra stats</span>
+            <span class="n">mstats</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">current_stats</span>
+            <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_stats_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">mstats</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">subname</span><span class="p">])</span>
+            <span class="c1"># add to the total loglikelihood</span>
+            <span class="n">logl</span> <span class="o">+=</span> <span class="n">sublogl</span>
+        <span class="k">return</span> <span class="n">logl</span>
+
+<div class="viewcode-block" id="HierarchicalModel.write_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel.write_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds data to the metadata that&#39;s written.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.BaseInferenceFile instance</span>
+<span class="sd">            The inference file to write to.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            If provided, the metadata will be written to the attrs specified</span>
+<span class="sd">            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is</span>
+<span class="sd">            written to the top-level attrs (``fp.attrs``).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># write information about self</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="c1"># write information about each submodel into a different group for</span>
+        <span class="c1"># each one</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">group</span><span class="o">+</span><span class="s1">&#39;/&#39;</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">prefix</span><span class="o">+</span><span class="n">lbl</span><span class="p">)</span>
+
+        <span class="c1"># if all submodels support it, write a combined lognl parameter</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sampattrs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">getattrs</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">)</span>
+            <span class="n">lognl</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">lognl</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">]</span>
+            <span class="n">sampattrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">lognl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">lognl</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="HierarchicalModel.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initializes an instance of this class from the given config file.</span>
+
+<span class="sd">        Sub-models are initialized before initializing this class. The model</span>
+<span class="sd">        section must have a ``submodels`` argument that lists the names of all</span>
+<span class="sd">        the submodels to generate as a space-separated list. Each sub-model</span>
+<span class="sd">        should have its own ``[{label}__model]`` section that sets up the</span>
+<span class="sd">        model for that sub-model. For example:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [model]</span>
+<span class="sd">            name = hierarchical</span>
+<span class="sd">            submodels = event1 event2</span>
+
+<span class="sd">            [event1__model]</span>
+<span class="sd">            &lt;event1 model options&gt;</span>
+
+<span class="sd">            [event2__model]</span>
+<span class="sd">            &lt;event2 model options&gt;</span>
+
+<span class="sd">        Similarly, all other sections that are specific to a model should start</span>
+<span class="sd">        with the model&#39;s label. All sections starting with a model&#39;s label will</span>
+<span class="sd">        be passed to that model&#39;s ``from_config`` method with the label removed</span>
+<span class="sd">        from the section name. For example, if a sub-model requires a data</span>
+<span class="sd">        section to be specified, it should be titled ``[{label}__data]``. Upon</span>
+<span class="sd">        initialization, the ``{label}__`` will be stripped from the section</span>
+<span class="sd">        header and passed to the model.</span>
+
+<span class="sd">        No model labels should preceed the ``variable_params``,</span>
+<span class="sd">        ``static_params``, ``waveform_transforms``, or ``sampling_transforms``</span>
+<span class="sd">        sections.  Instead, the parameters specified in these sections should</span>
+<span class="sd">        follow the naming conventions described in :py:class:`HierachicalParam`</span>
+<span class="sd">        to determine which sub-model(s) they belong to. (Sampling parameters</span>
+<span class="sd">        can follow any naming convention, as they are only handled by the</span>
+<span class="sd">        hierarchical model.) This is because the hierarchical model handles</span>
+<span class="sd">        all transforms, communication with the sampler, file IO, and prior</span>
+<span class="sd">        calculation. Only sub-model&#39;s loglikelihood functions are called.</span>
+
+<span class="sd">        Metadata for each sub-model is written to the output hdf file under</span>
+<span class="sd">        groups given by the sub-model label. For example, if we have two</span>
+<span class="sd">        submodels labelled ``event1`` and ``event2``, there will be groups</span>
+<span class="sd">        with the same names in the top level of the output that contain that</span>
+<span class="sd">        model&#39;s subdata. For instance, if event1 used the ``gaussian_noise``</span>
+<span class="sd">        model, the GW data and PSDs will be found in ``event1/data`` and the</span>
+<span class="sd">        low frequency cutoff used for that model will be in the ``attrs`` of</span>
+<span class="sd">        the ``event1`` group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            Config file parser to read.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All additional keyword arguments are passed to the class. Any</span>
+<span class="sd">            provided keyword will override what is in the config file.</span>
+<span class="sd">            Preferencing a keyword argument by ``{submodel}__`` will send</span>
+<span class="sd">            the parameter as a keyword argument to the specified submodel&#39;s</span>
+<span class="sd">            ``from_config`` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># we need the read from config function from the init; to prevent</span>
+        <span class="c1"># circular imports, we import it here</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_from_config</span>
+        <span class="c1"># get the submodels</span>
+        <span class="n">submodel_lbls</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;submodels&#39;</span><span class="p">))</span>
+        <span class="c1"># sort parameters by model</span>
+        <span class="n">vparam_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s1">&#39;variable_params&#39;</span><span class="p">),</span>
+                                       <span class="n">submodel_lbls</span><span class="p">))</span>
+        <span class="n">sparam_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">),</span>
+                                       <span class="n">submodel_lbls</span><span class="p">))</span>
+
+        <span class="c1"># we&#39;ll need any waveform transforms for the initializing sub-models,</span>
+        <span class="c1"># as the underlying models will receive the output of those transforms</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)):</span>
+            <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">read_transforms_from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)</span>
+            <span class="n">wfoutputs</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">outputs</span>
+                                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">waveform_transforms</span><span class="p">])</span>
+            <span class="n">wfparam_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">wfoutputs</span><span class="p">,</span> <span class="n">submodel_lbls</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wfparam_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">lbl</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">submodel_lbls</span><span class="p">}</span>
+        <span class="c1"># initialize the models</span>
+        <span class="n">submodels</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading submodels&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">submodel_lbls</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;============= </span><span class="si">%s</span><span class="s2"> =============&quot;</span><span class="p">,</span> <span class="n">lbl</span><span class="p">)</span>
+            <span class="c1"># create a config parser to pass to the model</span>
+            <span class="n">subcp</span> <span class="o">=</span> <span class="n">WorkflowConfigParser</span><span class="p">()</span>
+            <span class="c1"># copy sections over that start with the model label (this should</span>
+            <span class="c1"># include the [model] section for that model)</span>
+            <span class="n">copy_sections</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">HierarchicalParam</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">submodel_lbls</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">sections</span><span class="p">()</span> <span class="k">if</span> <span class="n">lbl</span> <span class="ow">in</span>
+                <span class="n">sec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">HierarchicalParam</span><span class="o">.</span><span class="n">delim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">copy_sections</span><span class="p">:</span>
+                <span class="c1"># check that the user isn&#39;t trying to set variable or static</span>
+                <span class="c1"># params for the model (we won&#39;t worry about waveform or</span>
+                <span class="c1"># sampling transforms here, since that is checked for in the</span>
+                <span class="c1"># __init__)</span>
+                <span class="k">if</span> <span class="n">sec</span><span class="o">.</span><span class="n">subname</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;variable_params&#39;</span><span class="p">,</span> <span class="s1">&#39;static_params&#39;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Section </span><span class="si">{}</span><span class="s2"> found in the config file; &quot;</span>
+                                     <span class="s2">&quot;[variable_params] and [static_params] &quot;</span>
+                                     <span class="s2">&quot;sections should not include model &quot;</span>
+                                     <span class="s2">&quot;labels. To specify parameters unique to &quot;</span>
+                                     <span class="s2">&quot;one or more sub-models, prepend the &quot;</span>
+                                     <span class="s2">&quot;individual parameter names with the &quot;</span>
+                                     <span class="s2">&quot;model label. See HierarchicalParam for &quot;</span>
+                                     <span class="s2">&quot;details.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sec</span><span class="p">))</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">subname</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">opt</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">sec</span><span class="p">):</span>
+                    <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="c1"># set the static params</span>
+            <span class="n">subcp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">sparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span>
+                          <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">fullname</span><span class="p">))</span>
+            <span class="c1"># set the variable params: for now we&#39;ll just set all the</span>
+            <span class="c1"># variable params as static params</span>
+            <span class="c1"># so that the model doesn&#39;t raise an error looking for</span>
+            <span class="c1"># prior sections. We&#39;ll then manually set the variable</span>
+            <span class="c1"># params after the model is initialized</span>
+
+            <span class="n">subcp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="s1">&#39;variable_params&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">vparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span> <span class="s1">&#39;REPLACE&#39;</span><span class="p">)</span>
+            <span class="c1"># add the outputs from the waveform transforms</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">wfparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span> <span class="s1">&#39;REPLACE&#39;</span><span class="p">)</span>
+
+            <span class="c1"># extra any kwargs to pass</span>
+            <span class="n">subkwargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">kwarg</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">lbl</span><span class="o">+</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                    <span class="n">subkwargs</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">lbl</span><span class="o">+</span><span class="s1">&#39;__&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="c1"># initialize</span>
+            <span class="n">submodel</span> <span class="o">=</span> <span class="n">read_from_config</span><span class="p">(</span><span class="n">subcp</span><span class="p">,</span> <span class="o">**</span><span class="n">subkwargs</span><span class="p">)</span>
+            <span class="c1"># move the static params back to variable</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">vparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="n">submodel</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">)</span>
+            <span class="n">submodel</span><span class="o">.</span><span class="n">variable_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span>
+                                             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">vparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">])</span>
+            <span class="c1"># remove the waveform transform parameters</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">wfparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="n">submodel</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">)</span>
+            <span class="c1"># store</span>
+            <span class="n">submodels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">submodel</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="c1"># now load the model</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading hierarchical model&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">submodels</span><span class="o">=</span><span class="n">submodels</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="HierarchicalParam">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalParam">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HierarchicalParam</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sub-class of str for hierarchical parameter names.</span>
+
+<span class="sd">    This adds attributes that keep track of the model label(s) the parameter</span>
+<span class="sd">    is associated with, along with the name that is passed to the models.</span>
+
+<span class="sd">    The following conventions are used for parsing parameter names:</span>
+
+<span class="sd">      * Model labels and parameter names are separated by the ``delim`` class</span>
+<span class="sd">        attribute, which by default is ``__``, e.g., ``event1__mass``.</span>
+<span class="sd">      * Multiple model labels can be provided by separating the model labels</span>
+<span class="sd">        with the ``model_delim`` class attribute, which by default is ``_``,</span>
+<span class="sd">        e.g., ``event1_event2__mass``. Note that this means that individual</span>
+<span class="sd">        model labels cannot contain ``_``, else they&#39;ll be parsed as separate</span>
+<span class="sd">        models.</span>
+<span class="sd">      * Parameters that have no model labels prepended to them (i.e., there</span>
+<span class="sd">        is no ``__`` in the name) are common to all models.</span>
+
+<span class="sd">    These parsing rules are applied by the :py:meth:`HierarchicalParam.parse`</span>
+<span class="sd">    method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fullname : str</span>
+<span class="sd">        Name of the hierarchical parameter. Should have format</span>
+<span class="sd">        ``{model1}[_{model2}[_{...}]]__{param}``.</span>
+<span class="sd">    possible_models : set of str</span>
+<span class="sd">        The possible sub-models a parameter can belong to. Should a set of</span>
+<span class="sd">        model labels.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fullname : str</span>
+<span class="sd">        The full name of the parameter, including model labels. For example,</span>
+<span class="sd">        ``e1_e2__foo``.</span>
+<span class="sd">    models : set</span>
+<span class="sd">        The model labels the parameter is associated with. For example,</span>
+<span class="sd">        ``e1_e2__foo`` yields models ``e1, e2``.</span>
+<span class="sd">    subname : str</span>
+<span class="sd">        The name of the parameter without the model labels prepended to it.</span>
+<span class="sd">        For example, ``e1_e2__foo`` yields ``foo``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">delim</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span>
+    <span class="n">model_delim</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">possible_models</span><span class="p">):</span>
+        <span class="n">fullname</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fullname</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">fullname</span> <span class="o">=</span> <span class="n">fullname</span>
+        <span class="n">models</span><span class="p">,</span> <span class="n">subp</span> <span class="o">=</span> <span class="n">HierarchicalParam</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fullname</span><span class="p">,</span> <span class="n">possible_models</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">models</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">subname</span> <span class="o">=</span> <span class="n">subp</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+<div class="viewcode-block" id="HierarchicalParam.from_subname">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalParam.from_subname">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_subname</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model_label</span><span class="p">,</span> <span class="n">subname</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a HierarchicalParam from the given subname and model label.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">delim</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">model_label</span><span class="p">,</span> <span class="n">subname</span><span class="p">]),</span> <span class="nb">set</span><span class="p">([</span><span class="n">model_label</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="HierarchicalParam.parse">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalParam.parse">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fullname</span><span class="p">,</span> <span class="n">possible_models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parses the full parameter name into the models the parameter is</span>
+<span class="sd">        associated with and the parameter name that is passed to the models.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fullname : str</span>
+<span class="sd">            The full name of the parameter, which includes both the model</span>
+<span class="sd">            label(s) and the parameter name.</span>
+<span class="sd">        possible_models : set</span>
+<span class="sd">            Set of model labels the parameter can be associated with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        models : list</span>
+<span class="sd">            List of the model labels the parameter is associated with.</span>
+<span class="sd">        subp : str</span>
+<span class="sd">            Parameter name that is passed to the models. This is the parameter</span>
+<span class="sd">            name with the model label(s) stripped from it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># make sure possible models is a set</span>
+        <span class="n">possible_models</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">possible_models</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">fullname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">delim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># is a global fullname, associate with all</span>
+            <span class="n">subp</span> <span class="o">=</span> <span class="n">fullname</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="n">possible_models</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">models</span><span class="p">,</span> <span class="n">subp</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="c1"># convert into set of model label(s)</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">model_delim</span><span class="p">))</span>
+            <span class="c1"># make sure the given labels are in the list of possible models</span>
+            <span class="n">unknown</span> <span class="o">=</span> <span class="n">models</span> <span class="o">-</span> <span class="n">possible_models</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">unknown</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognized model label(s) </span><span class="si">{}</span><span class="s1"> present in &#39;</span>
+                                 <span class="s1">&#39;parameter </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">unknown</span><span class="p">),</span>
+                                                       <span class="n">fullname</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">models</span><span class="p">,</span> <span class="n">subp</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="hpiter">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.hpiter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hpiter</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">possible_models</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Turns a list of parameter strings into a list of HierarchicalParams.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : list of str</span>
+<span class="sd">        List of parameter names.</span>
+<span class="sd">    possible_models : set</span>
+<span class="sd">        Set of model labels the parameters can be associated with.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    iterator :</span>
+<span class="sd">        Iterator of :py:class:`HierarchicalParam` instances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">HierarchicalParam</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">possible_models</span><span class="p">),</span> <span class="n">params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="map_params">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.map_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">map_params</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a map of models -&gt; parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : list of HierarchicalParam instances</span>
+<span class="sd">        The list of hierarchical parameter names to parse.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of model labels -&gt; associated parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">param_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">p</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">p</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">param_map</span></div>
+
+
+
+<div class="viewcode-block" id="MultiSignalModel">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.MultiSignalModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiSignalModel</span><span class="p">(</span><span class="n">HierarchicalModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Model for multiple signals which share data</span>
+
+<span class="sd">    Sub models are treated as if the signals overlap in data. This requires</span>
+<span class="sd">    constituent models to implement a specific method to handle this case.</span>
+<span class="sd">    All models must be of the same type or the specific model is responsible</span>
+<span class="sd">    for implement cross-compatibility with another model. Each model h_i is</span>
+<span class="sd">    responsible for calculating its own loglikelihood ratio for itself, and</span>
+<span class="sd">    must also implement a method to calculate crossterms of the form</span>
+<span class="sd">    &lt;h_i | h_j&gt; which arise from the full calculation of &lt;d - h|d - h&gt;.</span>
+<span class="sd">    This model inherits from the HierarchicalModel so the syntax for</span>
+<span class="sd">    configuration files is the same. The primary model is used to determine</span>
+<span class="sd">    the noise terms &lt;d | d&gt;, which by default will be the first model used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;multi_signal&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">submodels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="n">submodels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Check what models each model supports</span>
+        <span class="n">support</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ctypes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># The set of models we need to completely support</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span>
+
+            <span class="n">ctypes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;multi_signal_support&#39;</span><span class="p">):</span>
+                <span class="n">support</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">multi_signal_support</span><span class="p">)</span>
+
+        <span class="c1"># pick the primary model if it supports the set of constituent models</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">support</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ctypes</span> <span class="o">&lt;=</span> <span class="n">support</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span> <span class="o">=</span> <span class="n">lbl</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;MultiSignalModel: PrimaryModel == </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">lbl</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Oh, no, we don&#39;t support this combo!</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;It looks like the combination of models, </span><span class="si">{}</span><span class="s2">,&quot;</span>
+                               <span class="s2">&quot;for the MultiSignal model isn&#39;t supported by&quot;</span>
+                               <span class="s2">&quot;any of the constituent models.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ctypes</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+<div class="viewcode-block" id="MultiSignalModel.write_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.MultiSignalModel.write_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds metadata to the output files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.BaseInferenceFile instance</span>
+<span class="sd">            The inference file to write to.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            If provided, the metadata will be written to the attrs specified</span>
+<span class="sd">            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is</span>
+<span class="sd">            written to the top-level attrs (``fp.attrs``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">sampattrs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">getattrs</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">)</span>
+        <span class="c1"># if a group is specified, prepend the lognl names with it</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+                <span class="n">prefix</span> <span class="o">+=</span> <span class="s1">&#39;__&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="p">]</span>
+            <span class="n">sampattrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">lognl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">)]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">lognl</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Update the parameters of each</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">fullname</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]})</span>
+
+        <span class="c1"># Calculate the combined loglikelihood</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">multi_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="p">)</span>
+
+        <span class="c1"># store any extra stats from the submodels</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">mstats</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">current_stats</span>
+            <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_stats_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">mstats</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">subname</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">logl</span></div>
+
+
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">JointPrimaryMarginalizedModel</span><span class="p">(</span><span class="n">HierarchicalModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This likelihood model can be used for cases when one of the submodels</span>
+<span class="sd">    can be marginalized to accelerate the total likelihood. This likelihood</span>
+<span class="sd">    model also allows for further acceleration of other models during</span>
+<span class="sd">    marginalization, if some extrinsic parameters can be tightly constrained</span>
+<span class="sd">    by the primary model. More specifically, such as the EM + GW parameter</span>
+<span class="sd">    estimation, the sky localization can be well measured. For LISA + 3G</span>
+<span class="sd">    multiband observation, SOBHB signals&#39; (tc, ra, dec) can be tightly</span>
+<span class="sd">    constrained by 3G network, so this model is also useful for this case.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;joint_primary_marginalized&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">submodels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="n">submodels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># assume the ground-based submodel as the primary model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="p">[</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_lbl</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="c1"># determine whether to accelerate total_loglr</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">str_to_bool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static_margin_params_in_other_models</span> <span class="o">=</span> \
+            <span class="n">str_to_bool</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;static_margin_params_in_other_models&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel.write_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel.write_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds metadata to the output files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.BaseInferenceFile instance</span>
+<span class="sd">            The inference file to write to.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            If provided, the metadata will be written to the attrs specified</span>
+<span class="sd">            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is</span>
+<span class="sd">            written to the top-level attrs (``fp.attrs``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">sampattrs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">getattrs</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">)</span>
+        <span class="c1"># if a group is specified, prepend the lognl names with it</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">group</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+                <span class="n">prefix</span> <span class="o">+=</span> <span class="s1">&#39;__&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">sampattrs</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">lognl&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">__&#39;</span> <span class="o">%</span> <span class="n">lbl</span><span class="p">)</span>
+                          <span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">lognl</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel.total_loglr">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel.total_loglr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the total log likelihood ratio,</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># calculate &lt;d-h|d-h&gt; = &lt;h|h&gt; - 2&lt;h|d&gt; + &lt;d|d&gt; up to a constant</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">sh_primary</span><span class="p">,</span> <span class="n">hh_primary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">loglr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># set logr, otherwise it will store (sh, hh)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;loglr&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_primary</span><span class="p">,</span> <span class="n">hh_primary</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sh_primary</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">nums</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sh_primary</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nums</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">margin_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_margin_params_in_other_models</span><span class="p">:</span>
+            <span class="c1"># Due to the high precision of extrinsic parameters constrined</span>
+            <span class="c1"># by the primary model, the mismatch of wavefroms in others by</span>
+            <span class="c1"># varing those parameters is pretty small, so we can keep them</span>
+            <span class="c1"># static to accelerate total_loglr. Here, we use matched-filering</span>
+            <span class="c1"># SNR instead of lilkelihood, because luminosity distance and</span>
+            <span class="c1"># inclination has a very strong degeneracy, change of inclination</span>
+            <span class="c1"># will change best match distance, so change the amplitude of</span>
+            <span class="c1"># waveform. Using SNR will cancel out the effect of amplitude.err</span>
+            <span class="n">i_max_extrinsic</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sh_primary</span><span class="p">)</span> <span class="o">/</span> <span class="n">hh_primary</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">marginalized_params_name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">p</span><span class="p">],</span>
+                              <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">margin_params</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">i_max_extrinsic</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">margin_params</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># add marginalize_vector_params</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">marginalized_params_name</span><span class="p">:</span>
+                    <span class="n">margin_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c1"># add likelihood contribution from other_models, we</span>
+        <span class="c1"># calculate sh/hh for each marginalized parameter point</span>
+        <span class="n">sh_others</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">nums</span><span class="p">,</span> <span class="mi">0</span> <span class="o">+</span> <span class="mf">0.0</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">hh_others</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nums</span><span class="p">)</span>
+
+        <span class="c1"># update parameters in other_models</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">other_model</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="p">):</span>
+            <span class="c1"># not using self.primary_model.current_params, because others_model</span>
+            <span class="c1"># may have its own static parameters</span>
+            <span class="n">current_params_other</span> <span class="o">=</span> <span class="n">other_model</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_margin_params_in_other_models</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nums</span><span class="p">):</span>
+                    <span class="n">current_params_other</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                        <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                         <span class="k">else</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">margin_params</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+                    <span class="n">other_model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">current_params_other</span><span class="p">)</span>
+                    <span class="n">other_model</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">sh_other</span><span class="p">,</span> <span class="n">hh_other</span> <span class="o">=</span> <span class="n">other_model</span><span class="o">.</span><span class="n">loglr</span>
+                    <span class="n">sh_others</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sh_other</span>
+                    <span class="n">hh_others</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hh_other</span>
+                    <span class="n">other_model</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="c1"># set logr, otherwise it will store (sh, hh)</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">other_model</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;loglr&#39;</span><span class="p">,</span>
+                            <span class="n">other_model</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_other</span><span class="p">,</span> <span class="n">hh_other</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># use one margin point set to approximate all the others</span>
+                <span class="n">current_params_other</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                     <span class="k">else</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">margin_params</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+                <span class="n">other_model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">current_params_other</span><span class="p">)</span>
+                <span class="n">other_model</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">sh_other</span><span class="p">,</span> <span class="n">hh_other</span> <span class="o">=</span> <span class="n">other_model</span><span class="o">.</span><span class="n">loglr</span>
+                <span class="n">other_model</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="c1"># set logr, otherwise it will store (sh, hh)</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">other_model</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="s1">&#39;loglr&#39;</span><span class="p">,</span>
+                        <span class="n">other_model</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_other</span><span class="p">,</span> <span class="n">hh_other</span><span class="p">))</span>
+                <span class="n">sh_others</span> <span class="o">+=</span> <span class="n">sh_other</span>
+                <span class="n">hh_others</span> <span class="o">+=</span> <span class="n">hh_other</span>
+
+        <span class="k">if</span> <span class="n">nums</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># the type of the original sh/hh_others are numpy.array,</span>
+            <span class="c1"># might not the same as sh/hh_primary during reconstruct,</span>
+            <span class="c1"># during reconstruct of distance, sh/hh_others need to be scalar</span>
+            <span class="n">sh_others</span> <span class="o">=</span> <span class="n">sh_others</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">hh_others</span> <span class="o">=</span> <span class="n">hh_others</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sh_total</span> <span class="o">=</span> <span class="n">sh_primary</span> <span class="o">+</span> <span class="n">sh_others</span>
+        <span class="n">hh_total</span> <span class="o">=</span> <span class="n">hh_primary</span> <span class="o">+</span> <span class="n">hh_others</span>
+
+        <span class="n">loglr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">loglr</span></div>
+
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel.others_lognl">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel.others_lognl">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">others_lognl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the combined lognl from all others sub-models.&quot;&quot;&quot;</span>
+        <span class="n">total_others_lognl</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">other_models</span><span class="p">:</span>
+            <span class="n">total_others_lognl</span> <span class="o">+=</span> <span class="n">model</span><span class="o">.</span><span class="n">lognl</span>
+        <span class="k">return</span> <span class="n">total_others_lognl</span></div>
+
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel.update_all_models">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel.update_all_models">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_all_models</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This update method is also useful for loglr checking,</span>
+<span class="sd">        the original update method in base module can&#39;t update</span>
+<span class="sd">        parameters in submodels correctly in loglr checking.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_map</span> <span class="o">!=</span> <span class="p">{}:</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="p">{</span><span class="n">params</span><span class="o">.</span><span class="n">subname</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">fullname</span><span class="p">]</span>
+                     <span class="k">for</span> <span class="n">params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># dummy sampler doesn&#39;t have real variables,</span>
+                <span class="c1"># which means self.param_map is {}</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_all_models</span><span class="p">()</span>
+
+        <span class="c1"># calculate the combined loglikelihood</span>
+        <span class="n">logl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_loglr</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">lognl</span> <span class="o">+</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">others_lognl</span><span class="p">()</span>
+
+        <span class="c1"># store any extra stats from the submodels</span>
+        <span class="k">for</span> <span class="n">lbl</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">mstats</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">current_stats</span>
+            <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_stats_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">mstats</span><span class="p">[</span><span class="n">stat</span><span class="o">.</span><span class="n">subname</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">logl</span>
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initializes an instance of this class from the given config file.</span>
+<span class="sd">        For more details, see `from_config` in `HierarchicalModel`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            Config file parser to read.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All additional keyword arguments are passed to the class. Any</span>
+<span class="sd">            provided keyword will override what is in the config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># we need the read from config function from the init; to prevent</span>
+        <span class="c1"># circular imports, we import it here</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_from_config</span>
+        <span class="c1"># get the submodels</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;primary_model&#39;</span><span class="p">))</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;others_lbls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;other_models&#39;</span><span class="p">))</span>
+        <span class="n">submodel_lbls</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;others_lbls&#39;</span><span class="p">]</span>
+        <span class="c1"># sort parameters by model</span>
+        <span class="n">vparam_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s1">&#39;variable_params&#39;</span><span class="p">),</span>
+                                       <span class="n">submodel_lbls</span><span class="p">))</span>
+        <span class="n">sparam_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">),</span>
+                                       <span class="n">submodel_lbls</span><span class="p">))</span>
+
+        <span class="c1"># get the acceleration label</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;static_margin_params_in_other_models&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;static_margin_params_in_other_models&#39;</span><span class="p">))</span>
+
+        <span class="c1"># we&#39;ll need any waveform transforms for the initializing sub-models,</span>
+        <span class="c1"># as the underlying models will receive the output of those transforms</span>
+
+        <span class="c1"># if `waveform_transforms` section doesn&#39;t have the prefix of</span>
+        <span class="c1"># sub-model&#39;s name, then add this `waveform_transforms` section</span>
+        <span class="c1"># into top level, if not, add it into sub-models&#39; config</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)):</span>
+            <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">read_transforms_from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)</span>
+            <span class="n">wfoutputs</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">outputs</span>
+                                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">waveform_transforms</span><span class="p">])</span>
+            <span class="n">wfparam_map</span> <span class="o">=</span> <span class="n">map_params</span><span class="p">(</span><span class="n">hpiter</span><span class="p">(</span><span class="n">wfoutputs</span><span class="p">,</span> <span class="n">submodel_lbls</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wfparam_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">lbl</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">submodel_lbls</span><span class="p">}</span>
+        <span class="c1"># initialize the models</span>
+        <span class="n">submodels</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading submodels&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">submodel_lbls</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;============= </span><span class="si">%s</span><span class="s2"> =============&quot;</span><span class="p">,</span> <span class="n">lbl</span><span class="p">)</span>
+            <span class="c1"># create a config parser to pass to the model</span>
+            <span class="n">subcp</span> <span class="o">=</span> <span class="n">WorkflowConfigParser</span><span class="p">()</span>
+            <span class="c1"># copy sections over that start with the model label (this should</span>
+            <span class="c1"># include the [model] section for that model)</span>
+            <span class="n">copy_sections</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">HierarchicalParam</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">submodel_lbls</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">sections</span><span class="p">()</span> <span class="k">if</span> <span class="n">lbl</span> <span class="ow">in</span>
+                <span class="n">sec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">HierarchicalParam</span><span class="o">.</span><span class="n">delim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">copy_sections</span><span class="p">:</span>
+                <span class="c1"># check that the user isn&#39;t trying to set variable or static</span>
+                <span class="c1"># params for the model (we won&#39;t worry about waveform or</span>
+                <span class="c1"># sampling transforms here, since that is checked for in the</span>
+                <span class="c1"># __init__)</span>
+                <span class="k">if</span> <span class="n">sec</span><span class="o">.</span><span class="n">subname</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;variable_params&#39;</span><span class="p">,</span> <span class="s1">&#39;static_params&#39;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Section </span><span class="si">{}</span><span class="s2"> found in the config file; &quot;</span>
+                                     <span class="s2">&quot;[variable_params] and [static_params] &quot;</span>
+                                     <span class="s2">&quot;sections should not include model &quot;</span>
+                                     <span class="s2">&quot;labels. To specify parameters unique to &quot;</span>
+                                     <span class="s2">&quot;one or more sub-models, prepend the &quot;</span>
+                                     <span class="s2">&quot;individual parameter names with the &quot;</span>
+                                     <span class="s2">&quot;model label. See HierarchicalParam for &quot;</span>
+                                     <span class="s2">&quot;details.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sec</span><span class="p">))</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">subname</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">opt</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">sec</span><span class="p">):</span>
+                    <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">sec</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="c1"># set the static params</span>
+            <span class="n">subcp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">sparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span>
+                          <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">fullname</span><span class="p">))</span>
+
+            <span class="c1"># set the variable params: different from the standard</span>
+            <span class="c1"># hierarchical model, in this JointPrimaryMarginalizedModel model,</span>
+            <span class="c1"># all sub-models has the same variable parameters, so we don&#39;t</span>
+            <span class="c1"># need to worry about the unique variable issue. Besides,</span>
+            <span class="c1"># the primary model needs to do marginalization, so we must set</span>
+            <span class="c1"># variable_params and prior section before initializing it.</span>
+
+            <span class="n">subcp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="s1">&#39;variable_params&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">vparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">]:</span>
+                    <span class="c1"># set variable_params for the primary model</span>
+                    <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;variable_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span>
+                              <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;variable_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">fullname</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># all variable_params in other models will come</span>
+                    <span class="c1"># from the primary model during sampling</span>
+                    <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span> <span class="s1">&#39;REPLACE&#39;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+                <span class="c1"># the primary model needs prior of marginlized parameters</span>
+                <span class="k">if</span> <span class="s1">&#39;prior-&#39;</span> <span class="ow">in</span> <span class="n">section</span> <span class="ow">and</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">]:</span>
+                    <span class="n">prior_section</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">section</span>
+                    <span class="n">subcp</span><span class="p">[</span><span class="n">prior_section</span><span class="p">]</span> <span class="o">=</span> <span class="n">cp</span><span class="p">[</span><span class="n">prior_section</span><span class="p">]</span>
+
+            <span class="c1"># similar to the standard hierarchical model,</span>
+            <span class="c1"># add the outputs from the waveform transforms if sub-model</span>
+            <span class="c1"># doesn&#39;t need marginalization</span>
+            <span class="k">if</span> <span class="n">lbl</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">wfparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                    <span class="n">subcp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;static_params&#39;</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">subname</span><span class="p">,</span> <span class="s1">&#39;REPLACE&#39;</span><span class="p">)</span>
+
+            <span class="c1"># save the vitual config file to disk for later check</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.ini&#39;</span> <span class="o">%</span> <span class="n">lbl</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">subcp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+            <span class="c1"># initialize</span>
+            <span class="n">submodel</span> <span class="o">=</span> <span class="n">read_from_config</span><span class="p">(</span><span class="n">subcp</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">lbl</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">]:</span>
+                <span class="c1"># similar to the standard hierarchical model,</span>
+                <span class="c1"># move the static params back to variable if sub-model</span>
+                <span class="c1"># doesn&#39;t need marginalization</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">vparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                    <span class="n">submodel</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">)</span>
+                <span class="n">submodel</span><span class="o">.</span><span class="n">variable_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span>
+                                                 <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">vparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">])</span>
+                <span class="c1"># similar to the standard hierarchical model,</span>
+                <span class="c1"># remove the waveform transform parameters if sub-model</span>
+                <span class="c1"># doesn&#39;t need marginalization</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">wfparam_map</span><span class="p">[</span><span class="n">lbl</span><span class="p">]:</span>
+                    <span class="n">submodel</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">subname</span><span class="p">)</span>
+            <span class="n">submodels</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">submodel</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># remove all marginalized parameters from the top-level model&#39;s</span>
+        <span class="c1"># `variable_params` and `prior` sections</span>
+        <span class="c1"># here we ignore `coa_phase`, because if it&#39;s been marginalized,</span>
+        <span class="c1"># it will not be listed in `variable_params` and `prior` sections</span>
+        <span class="n">primary_model</span> <span class="o">=</span> <span class="n">submodels</span><span class="p">[</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">marginalized_params</span> <span class="o">=</span> <span class="n">primary_model</span><span class="o">.</span><span class="n">marginalized_params_name</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">primary_model</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">p_full</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">__</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;primary_lbl&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">p_full</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cp</span><span class="p">[</span><span class="s1">&#39;static_params&#39;</span><span class="p">]:</span>
+                <span class="n">cp</span><span class="p">[</span><span class="s1">&#39;static_params&#39;</span><span class="p">][</span><span class="n">p_full</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> \
+                    <span class="n">primary_model</span><span class="o">.</span><span class="n">static_params</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;prior-&#39;</span> <span class="ow">in</span> <span class="n">section</span><span class="p">:</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">marginalized_params</span><span class="p">:</span>
+                    <span class="n">cp</span><span class="p">[</span><span class="s1">&#39;variable_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                    <span class="n">cp</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+
+        <span class="c1"># save the vitual config file to disk for later check</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;internal_top.ini&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+
+        <span class="c1"># now load the model</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading joint_primary_marginalized model&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">HierarchicalModel</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="n">submodels</span><span class="o">=</span><span class="n">submodels</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="JointPrimaryMarginalizedModel.reconstruct">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel.reconstruct">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reconstruct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Reconstruct marginalized parameters by using the primary</span>
+<span class="sd">        model&#39;s reconstruct method, total_loglr, and others_lognl.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">seed</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">rec</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_loglr</span><span class="p">():</span>
+            <span class="c1"># make sure waveform transforms have been applied in</span>
+            <span class="c1"># the top-level model</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">apply_transforms</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+                    <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_all_models</span><span class="p">(</span><span class="o">**</span><span class="n">rec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_loglr</span><span class="p">()</span>
+
+        <span class="n">rec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_model</span><span class="o">.</span><span class="n">reconstruct</span><span class="p">(</span>
+                <span class="n">rec</span><span class="o">=</span><span class="n">rec</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">set_loglr</span><span class="o">=</span><span class="n">get_loglr</span><span class="p">)</span>
+        <span class="c1"># the primary model&#39;s reconstruct doesn&#39;t know lognl in other models</span>
+        <span class="n">rec</span><span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">others_lognl</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">rec</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

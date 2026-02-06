@@ -1,0 +1,204 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.filter.simd_correlate &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.filter.simd_correlate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.filter.simd_correlate</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Josh Willis</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">float32</span><span class="p">,</span> <span class="n">complex64</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">opt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.simd_correlate_cython</span><span class="w"> </span><span class="kn">import</span> <span class="n">ccorrf_simd</span><span class="p">,</span> <span class="n">ccorrf_parallel</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module interfaces to C functions for multiplying</span>
+<span class="sd">the complex conjugate of one vector by a second vector, writing the output</span>
+<span class="sd">to a third vector. They do this multi-threaded and with SIMD vectorization.</span>
+
+<span class="sd">The code defined here, and the other calling that function,</span>
+<span class="sd">are imported and used in the CPUCorrelator class defined in</span>
+<span class="sd">matchedfilter_cpu.py.</span>
+
+<span class="sd">Two functions are defined in the &#39;support&#39; C/Cython module:</span>
+
+<span class="sd">ccorrf_simd: Runs on a single core, but vectorized</span>
+<span class="sd">ccorrf_parallel: Runs multicore, but not explicitly vectorized.</span>
+<span class="sd">                 Parallelized using OpenMP, and calls ccorrf_simd</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="correlate_simd">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.simd_correlate.correlate_simd">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">correlate_simd</span><span class="p">(</span><span class="n">ht</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">qt</span><span class="p">):</span>
+    <span class="n">htilde</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ht</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">stilde</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">qtilde</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qt</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">arrlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span>
+    <span class="n">ccorrf_simd</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">qtilde</span><span class="p">,</span> <span class="n">arrlen</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># We need a segment size (number of complex elements) such that *three* segments</span>
+<span class="c1"># of that size will fit in the L2 cache. We also want it to be a power of two.</span>
+<span class="c1"># We are dealing with single-precision complex numbers, which each require 8 bytes.</span>
+<span class="c1">#</span>
+<span class="c1"># Our kernel is written to assume a complex correlation of single-precision vectors,</span>
+<span class="c1"># so that&#39;s all we support here.  Note that we are assuming that the correct target</span>
+<span class="c1"># is that the vectors should fit in L2 cache.  Figuring out cache topology dynamically</span>
+<span class="c1"># is a harder problem than we attempt to solve here.</span>
+
+<span class="n">l2_cache_size</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">get_l2_cache_size</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">l2_cache_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># Since we need 3 vectors fitting in L2 cache, divide by 3</span>
+    <span class="c1"># We find the nearest power-of-two that fits, and the length</span>
+    <span class="c1"># of the single-precision complex array that fits into that size.</span>
+    <span class="n">pow2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">l2_cache_size</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">))</span>
+    <span class="n">default_segsize</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">pow2</span><span class="p">)</span> <span class="o">//</span> <span class="n">_np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">_np</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?</span>
+    <span class="n">default_segsize</span> <span class="o">=</span> <span class="mi">8192</span>
+
+<div class="viewcode-block" id="correlate_parallel">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.simd_correlate.correlate_parallel">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">correlate_parallel</span><span class="p">(</span><span class="n">ht</span><span class="p">,</span> <span class="n">st</span><span class="p">,</span> <span class="n">qt</span><span class="p">):</span>
+    <span class="n">htilde</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ht</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">stilde</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">qtilde</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">qt</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">arrlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span>
+    <span class="n">segsize</span> <span class="o">=</span> <span class="n">default_segsize</span>
+    <span class="n">ccorrf_parallel</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">qtilde</span><span class="p">,</span> <span class="n">arrlen</span><span class="p">,</span> <span class="n">segsize</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

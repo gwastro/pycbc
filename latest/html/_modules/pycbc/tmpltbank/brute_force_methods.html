@@ -1,0 +1,655 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.brute_force_methods &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.brute_force_methods</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.brute_force_methods</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank.coord_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_cov_params</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.brute_force_methods&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_physical_covaried_masses">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.brute_force_methods.get_physical_covaried_masses">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_physical_covaried_masses</span><span class="p">(</span><span class="n">xis</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">,</span> <span class="n">bestXis</span><span class="p">,</span> <span class="n">req_match</span><span class="p">,</span>
+                                 <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>
+                                 <span class="n">giveUpThresh</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function takes the position of a point in the xi parameter space and</span>
+<span class="sd">    iteratively finds a close point in the physical coordinate space (masses</span>
+<span class="sd">    and spins).</span>
+<span class="sd"> </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    xis : list or array</span>
+<span class="sd">        Desired position of the point in the xi space. If only N values are</span>
+<span class="sd">        provided and the xi space&#39;s dimension is larger then it is assumed that</span>
+<span class="sd">        *any* value in the remaining xi coordinates is acceptable.</span>
+<span class="sd">    bestMasses : list</span>
+<span class="sd">        Contains [totalMass, eta, spin1z, spin2z]. Is a physical position</span>
+<span class="sd">        mapped to xi coordinates in bestXis that is close to the desired point.</span>
+<span class="sd">        This is aimed to give the code a starting point.</span>
+<span class="sd">    bestXis : list</span>
+<span class="sd">        Contains the position of bestMasses in the xi coordinate system.</span>
+<span class="sd">    req_match : float</span>
+<span class="sd">        Desired maximum mismatch between xis and the obtained point. If a point</span>
+<span class="sd">        is found with mismatch &lt; req_match immediately stop and return that</span>
+<span class="sd">        point. A point with this mismatch will not always be found.</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper that was used when obtaining the xi_i</span>
+<span class="sd">        coordinates. This lets us know how to rotate potential physical points</span>
+<span class="sd">        into the correct xi_i space. This must be a key in metricParams.evals,</span>
+<span class="sd">        metricParams.evecs and metricParams.evecsCV</span>
+<span class="sd">        (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+<span class="sd">    giveUpThresh : int, optional (default = 5000)</span>
+<span class="sd">        The program will try this many iterations. If no close matching point</span>
+<span class="sd">        has been found after this it will give up.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        The heavier mass of the obtained point.</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        The smaller mass of the obtained point</span>
+<span class="sd">    spin1z : float</span>
+<span class="sd">        The heavier bodies spin of the obtained point.</span>
+<span class="sd">    spin2z : float</span>
+<span class="sd">        The smaller bodies spin of the obtained point.</span>
+<span class="sd">    count : int</span>
+<span class="sd">        How many iterations it took to find the point. For debugging.</span>
+<span class="sd">    mismatch : float</span>
+<span class="sd">        The mismatch between the obtained point and the input xis.</span>
+<span class="sd">    new_xis : list</span>
+<span class="sd">        The position of the point in the xi space</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TUNABLE PARAMETERS GO HERE!</span>
+    <span class="c1"># This states how far apart to scatter test points in the first proposal</span>
+    <span class="n">origScaleFactor</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># Set up</span>
+    <span class="n">xi_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xis</span><span class="p">)</span>
+    <span class="n">scaleFactor</span> <span class="o">=</span> <span class="n">origScaleFactor</span>
+    <span class="n">bestChirpmass</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="p">(</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">unFixedCount</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">currDist</span> <span class="o">=</span> <span class="mi">100000000000000000</span>
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># If we are a long way away we use larger jumps</span>
+        <span class="k">if</span> <span class="n">count</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">currDist</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">scaleFactor</span> <span class="o">==</span> <span class="n">origScaleFactor</span><span class="p">:</span>
+                <span class="n">scaleFactor</span> <span class="o">=</span> <span class="n">origScaleFactor</span><span class="o">*</span><span class="mi">10</span>
+        <span class="c1"># Get a set of test points with mass -&gt; xi mappings</span>
+        <span class="n">totmass</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">new_xis</span> <span class="o">=</span> \
+            <span class="n">get_mass_distribution</span><span class="p">([</span><span class="n">bestChirpmass</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                   <span class="n">bestMasses</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+                                  <span class="n">scaleFactor</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span>
+                                  <span class="n">fUpper</span><span class="p">)</span>
+        <span class="n">cDist</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xis</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">xi_size</span><span class="p">):</span>
+            <span class="n">cDist</span> <span class="o">+=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">xis</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">cDist</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">req_match</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">cDist</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+            <span class="n">scaleFactor</span> <span class="o">=</span> <span class="n">origScaleFactor</span>
+            <span class="n">new_xis_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_xis</span><span class="p">[</span><span class="n">ldx</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">ldx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_xis</span><span class="p">))]</span>
+            <span class="k">return</span> <span class="n">mass1</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">mass2</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">spin1z</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">spin2z</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">count</span><span class="p">,</span> \
+                   <span class="n">cDist</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">new_xis_list</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">cDist</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">currDist</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">cDist</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+            <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">totmass</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bestMasses</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin1z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bestMasses</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin2z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">bestChirpmass</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="p">(</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+            <span class="n">currDist</span> <span class="o">=</span> <span class="n">cDist</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">unFixedCount</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">scaleFactor</span> <span class="o">=</span> <span class="n">origScaleFactor</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">unFixedCount</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">unFixedCount</span> <span class="o">&gt;</span> <span class="n">giveUpThresh</span><span class="p">:</span>
+            <span class="c1"># Stop at this point</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span><span class="o">**</span><span class="mf">0.5</span>
+            <span class="n">mass1</span> <span class="o">=</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">diff</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+            <span class="n">mass2</span> <span class="o">=</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">diff</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+            <span class="n">new_xis_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_xis</span><span class="p">[</span><span class="n">ldx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ldx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_xis</span><span class="p">))]</span>
+            <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">count</span><span class="p">,</span> \
+                   <span class="n">currDist</span><span class="p">,</span> <span class="n">new_xis_list</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">unFixedCount</span> <span class="o">%</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">scaleFactor</span> <span class="o">*=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">scaleFactor</span> <span class="o">&gt;</span> <span class="mi">64</span><span class="p">:</span>
+            <span class="n">scaleFactor</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># Shouldn&#39;t be here!</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span></div>
+
+
+<div class="viewcode-block" id="get_mass_distribution">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.brute_force_methods.get_mass_distribution">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_mass_distribution</span><span class="p">(</span><span class="n">bestMasses</span><span class="p">,</span> <span class="n">scaleFactor</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span>
+                          <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>
+                          <span class="n">numJumpPoints</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">chirpMassJumpFac</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
+                          <span class="n">etaJumpFac</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">spin1zJumpFac</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                          <span class="n">spin2zJumpFac</span><span class="o">=</span><span class="mf">0.01</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a set of masses, this function will create a set of points nearby</span>
+<span class="sd">    in the mass space and map these to the xi space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    bestMasses : list</span>
+<span class="sd">        Contains [ChirpMass, eta, spin1z, spin2z]. Points will be placed around</span>
+<span class="sd">        tjos</span>
+<span class="sd">    scaleFactor : float</span>
+<span class="sd">        This parameter describes the radius away from bestMasses that points</span>
+<span class="sd">        will be placed in.</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper that was used when obtaining the xi_i</span>
+<span class="sd">        coordinates. This lets us know how to rotate potential physical points</span>
+<span class="sd">        into the correct xi_i space. This must be a key in metricParams.evals,</span>
+<span class="sd">        metricParams.evecs and metricParams.evecsCV</span>
+<span class="sd">        (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+<span class="sd">    numJumpPoints : int, optional (default = 100)</span>
+<span class="sd">        The number of points that will be generated every iteration</span>
+<span class="sd">    chirpMassJumpFac : float, optional (default=0.0001)</span>
+<span class="sd">        The jump points will be chosen with fractional variation in chirpMass</span>
+<span class="sd">        up to this multiplied by scaleFactor.</span>
+<span class="sd">    etaJumpFac : float, optional (default=0.01)</span>
+<span class="sd">        The jump points will be chosen with fractional variation in eta</span>
+<span class="sd">        up to this multiplied by scaleFactor.</span>
+<span class="sd">    spin1zJumpFac : float, optional (default=0.01)</span>
+<span class="sd">        The jump points will be chosen with absolute variation in spin1z up to</span>
+<span class="sd">        this multiplied by scaleFactor.</span>
+<span class="sd">    spin2zJumpFac : float, optional (default=0.01)</span>
+<span class="sd">        The jump points will be chosen with absolute variation in spin2z up to</span>
+<span class="sd">        this multiplied by scaleFactor.</span>
+
+<span class="sd">    Returns </span>
+<span class="sd">    --------</span>
+<span class="sd">    Totmass : numpy.array</span>
+<span class="sd">        Total mass of the resulting points</span>
+<span class="sd">    Eta : numpy.array</span>
+<span class="sd">        Symmetric mass ratio of the resulting points</span>
+<span class="sd">    Spin1z : numpy.array</span>
+<span class="sd">        Spin of the heavier body of the resulting points</span>
+<span class="sd">    Spin2z : numpy.array</span>
+<span class="sd">        Spin of the smaller body of the resulting points</span>
+<span class="sd">    Diff : numpy.array</span>
+<span class="sd">        Mass1 - Mass2 of the resulting points</span>
+<span class="sd">    Mass1 : numpy.array</span>
+<span class="sd">        Mass1 (mass of heavier body) of the resulting points</span>
+<span class="sd">    Mass2 : numpy.array</span>
+<span class="sd">        Mass2 (mass of smaller body) of the resulting points</span>
+<span class="sd">    new_xis : list of numpy.array</span>
+<span class="sd">        Position of points in the xi coordinates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># FIXME: It would be better if rejected values could be drawn from the </span>
+    <span class="c1"># full possible mass/spin distribution. However speed in this function is</span>
+    <span class="c1"># a major factor and must be considered.</span>
+    <span class="n">bestChirpmass</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">bestEta</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">bestSpin1z</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">bestSpin2z</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="c1"># Firstly choose a set of values for masses and spins</span>
+    <span class="n">chirpmass</span> <span class="o">=</span> <span class="n">bestChirpmass</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="p">)</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> \
+                                       <span class="o">*</span> <span class="n">chirpMassJumpFac</span> <span class="o">*</span> <span class="n">scaleFactor</span> <span class="p">)</span>
+    <span class="n">etaRange</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxEta</span> <span class="o">-</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minEta</span>
+    <span class="n">currJumpFac</span> <span class="o">=</span> <span class="n">etaJumpFac</span> <span class="o">*</span> <span class="n">scaleFactor</span>
+    <span class="k">if</span> <span class="n">currJumpFac</span> <span class="o">&gt;</span> <span class="n">etaRange</span><span class="p">:</span>
+        <span class="n">currJumpFac</span> <span class="o">=</span> <span class="n">etaRange</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">bestEta</span> <span class="o">*</span> <span class="p">(</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> \
+                           <span class="o">*</span> <span class="n">currJumpFac</span><span class="p">)</span>
+
+    <span class="n">maxSpinMag</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="p">)</span>
+    <span class="n">minSpinMag</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="p">)</span>
+    <span class="c1"># Note that these two are cranged by spinxzFac, *not* spinxzFac/spinxz</span>
+    <span class="n">currJumpFac</span> <span class="o">=</span> <span class="n">spin1zJumpFac</span> <span class="o">*</span> <span class="n">scaleFactor</span>
+    <span class="k">if</span> <span class="n">currJumpFac</span> <span class="o">&gt;</span> <span class="n">maxSpinMag</span><span class="p">:</span>
+        <span class="n">currJumpFac</span> <span class="o">=</span> <span class="n">maxSpinMag</span>
+
+    <span class="c1"># Actually set the new spin trial points</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">nsbhFlag</span> <span class="ow">or</span> <span class="p">(</span><span class="n">maxSpinMag</span> <span class="o">==</span> <span class="n">minSpinMag</span><span class="p">):</span>
+        <span class="n">curr_spin_1z_jump_fac</span> <span class="o">=</span> <span class="n">currJumpFac</span>
+        <span class="n">curr_spin_2z_jump_fac</span> <span class="o">=</span> <span class="n">currJumpFac</span>
+        <span class="c1"># Check spins aren&#39;t going to be unphysical</span>
+        <span class="k">if</span> <span class="n">currJumpFac</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="p">:</span>
+            <span class="n">curr_spin_1z_jump_fac</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span>
+        <span class="k">if</span> <span class="n">currJumpFac</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="p">:</span>
+            <span class="n">curr_spin_2z_jump_fac</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="n">bestSpin1z</span> <span class="o">+</span> <span class="p">(</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> \
+                            <span class="o">*</span> <span class="n">curr_spin_1z_jump_fac</span><span class="p">)</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="n">bestSpin2z</span> <span class="o">+</span> <span class="p">(</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> \
+                            <span class="o">*</span> <span class="n">curr_spin_2z_jump_fac</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If maxNSSpinMag is very low (0) and maxBHSpinMag is high we can</span>
+        <span class="c1"># find it hard to place any points. So mix these when</span>
+        <span class="c1"># masses are swapping between the NS and BH.</span>
+        <span class="n">curr_spin_bh_jump_fac</span> <span class="o">=</span> <span class="n">currJumpFac</span>
+        <span class="n">curr_spin_ns_jump_fac</span> <span class="o">=</span> <span class="n">currJumpFac</span>
+        <span class="c1"># Check spins aren&#39;t going to be unphysical</span>
+        <span class="k">if</span> <span class="n">currJumpFac</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="p">:</span>
+            <span class="n">curr_spin_bh_jump_fac</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span>
+        <span class="k">if</span> <span class="n">currJumpFac</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="p">:</span>
+            <span class="n">curr_spin_ns_jump_fac</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">split_point</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># So set the first half to be at least within the BH range and the</span>
+        <span class="c1"># second half to be at least within the NS range</span>
+        <span class="n">spin1z</span><span class="p">[:</span><span class="n">split_point</span><span class="p">]</span> <span class="o">=</span> <span class="n">bestSpin1z</span> <span class="o">+</span> \
+                            <span class="p">(</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">split_point</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>\
+                              <span class="o">*</span> <span class="n">curr_spin_bh_jump_fac</span><span class="p">)</span>
+        <span class="n">spin1z</span><span class="p">[</span><span class="n">split_point</span><span class="p">:]</span> <span class="o">=</span> <span class="n">bestSpin1z</span> <span class="o">+</span> \
+                      <span class="p">(</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="o">-</span><span class="n">split_point</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>\
+                        <span class="o">*</span> <span class="n">curr_spin_ns_jump_fac</span><span class="p">)</span>
+        <span class="n">spin2z</span><span class="p">[:</span><span class="n">split_point</span><span class="p">]</span> <span class="o">=</span> <span class="n">bestSpin2z</span> <span class="o">+</span> \
+                            <span class="p">(</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">split_point</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>\
+                              <span class="o">*</span> <span class="n">curr_spin_bh_jump_fac</span><span class="p">)</span>
+        <span class="n">spin2z</span><span class="p">[</span><span class="n">split_point</span><span class="p">:]</span> <span class="o">=</span> <span class="n">bestSpin2z</span> <span class="o">+</span> \
+                      <span class="p">(</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numJumpPoints</span><span class="o">-</span><span class="n">split_point</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>\
+                        <span class="o">*</span> <span class="n">curr_spin_ns_jump_fac</span><span class="p">)</span>
+
+    <span class="c1"># Point[0] is always set to the original point</span>
+    <span class="n">chirpmass</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bestChirpmass</span>
+    <span class="n">eta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bestEta</span>
+    <span class="n">spin1z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bestSpin1z</span>
+    <span class="n">spin2z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">bestSpin2z</span>
+
+    <span class="c1"># Remove points where eta becomes unphysical</span>
+    <span class="n">eta</span><span class="p">[</span><span class="n">eta</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxEta</span><span class="p">]</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxEta</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minEta</span><span class="p">:</span>
+        <span class="n">eta</span><span class="p">[</span><span class="n">eta</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minEta</span><span class="p">]</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minEta</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">eta</span><span class="p">[</span><span class="n">eta</span> <span class="o">&lt;</span> <span class="mf">0.0001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+
+    <span class="c1"># Total mass, masses and mass diff</span>
+    <span class="n">totmass</span> <span class="o">=</span> <span class="n">chirpmass</span> <span class="o">/</span> <span class="p">(</span><span class="n">eta</span><span class="o">**</span><span class="p">(</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">))</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">totmass</span><span class="o">*</span><span class="n">totmass</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">eta</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="p">(</span><span class="n">totmass</span> <span class="o">+</span> <span class="n">diff</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="p">(</span><span class="n">totmass</span> <span class="o">-</span> <span class="n">diff</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+
+    <span class="c1"># Check the validity of the spin values</span>
+    <span class="c1"># Do the first spin</span>
+
+    <span class="k">if</span> <span class="n">maxSpinMag</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Shortcut if non-spinning</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">nsbhFlag</span> <span class="ow">or</span> <span class="p">(</span><span class="n">maxSpinMag</span> <span class="o">==</span> <span class="n">minSpinMag</span><span class="p">):</span>
+        <span class="c1"># Simple case where I don&#39;t have to worry about correlation with mass</span>
+        <span class="n">numploga</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">spin1z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span>
+        <span class="n">spin1z</span><span class="p">[</span><span class="n">numploga</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Do have to consider masses</span>
+        <span class="n">boundary_mass</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span>
+        <span class="n">numploga1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mass1</span> <span class="o">&gt;=</span> <span class="n">boundary_mass</span><span class="p">,</span>
+                                   <span class="nb">abs</span><span class="p">(</span><span class="n">spin1z</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="p">)</span>
+        <span class="n">numploga2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">boundary_mass</span><span class="p">,</span>
+                                   <span class="nb">abs</span><span class="p">(</span><span class="n">spin1z</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="p">)</span>
+        <span class="n">numploga</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">numploga1</span><span class="p">,</span> <span class="n">numploga2</span><span class="p">)</span>
+        <span class="n">numploga</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">numploga</span><span class="p">)</span>
+        <span class="n">spin1z</span><span class="p">[</span><span class="n">numploga</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Same for the second spin</span>
+
+    <span class="k">if</span> <span class="n">maxSpinMag</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># Shortcut if non-spinning</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">nsbhFlag</span> <span class="ow">or</span> <span class="p">(</span><span class="n">maxSpinMag</span> <span class="o">==</span> <span class="n">minSpinMag</span><span class="p">):</span>
+        <span class="n">numplogb</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">spin2z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span>
+        <span class="n">spin2z</span><span class="p">[</span><span class="n">numplogb</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Do have to consider masses</span>
+        <span class="n">boundary_mass</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span>
+        <span class="n">numplogb1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mass2</span> <span class="o">&gt;=</span> <span class="n">boundary_mass</span><span class="p">,</span>
+                                   <span class="nb">abs</span><span class="p">(</span><span class="n">spin2z</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span><span class="p">)</span>
+        <span class="n">numplogb2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">boundary_mass</span><span class="p">,</span>
+                                   <span class="nb">abs</span><span class="p">(</span><span class="n">spin2z</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span><span class="p">)</span>
+        <span class="n">numplogb</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">numplogb1</span><span class="p">,</span> <span class="n">numplogb2</span><span class="p">)</span>
+        <span class="n">numplogb</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">numplogb</span><span class="p">)</span>
+        <span class="n">spin2z</span><span class="p">[</span><span class="n">numplogb</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">maxSpinMag</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">numploga</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">numplogb</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot remove the guide point!&quot;</span><span class="p">)</span>
+
+    <span class="c1"># And remove points where the individual masses are outside of the physical</span>
+    <span class="c1"># range. Or the total masses are.</span>
+    <span class="c1"># These &quot;removed&quot; points will have metric distances that will be much, much</span>
+    <span class="c1"># larger than any thresholds used in the functions in brute_force_utils.py</span>
+    <span class="c1"># and will always be rejected. An unphysical value cannot be used as it</span>
+    <span class="c1"># would result in unphysical metric distances and cause failures.</span>
+    <span class="n">totmass</span><span class="p">[</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minMass1</span><span class="o">*</span><span class="mf">0.9999</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="n">totmass</span><span class="p">[</span><span class="n">mass1</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxMass1</span><span class="o">*</span><span class="mf">1.0001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="n">totmass</span><span class="p">[</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minMass2</span><span class="o">*</span><span class="mf">0.9999</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="n">totmass</span><span class="p">[</span><span class="n">mass2</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxMass2</span><span class="o">*</span><span class="mf">1.0001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="c1"># There is some numerical error which can push this a bit higher. We do</span>
+    <span class="c1"># *not* want to reject the initial guide point. This error comes from</span>
+    <span class="c1"># Masses -&gt; totmass, eta -&gt; masses conversion, we will have points pushing</span>
+    <span class="c1"># onto the boudaries of the space.</span>
+    <span class="n">totmass</span><span class="p">[</span><span class="n">totmass</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxTotMass</span><span class="o">*</span><span class="mf">1.0001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="n">totmass</span><span class="p">[</span><span class="n">totmass</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minTotMass</span><span class="o">*</span><span class="mf">0.9999</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">:</span>
+        <span class="n">totmass</span><span class="p">[</span><span class="n">chirpmass</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="o">*</span><span class="mf">1.0001</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">:</span>
+        <span class="n">totmass</span><span class="p">[</span><span class="n">chirpmass</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="o">*</span><span class="mf">0.9999</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+
+    <span class="k">if</span> <span class="n">totmass</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.00011</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot remove the guide point!&quot;</span><span class="p">)</span>
+
+    <span class="n">mass1</span><span class="p">[</span><span class="n">totmass</span> <span class="o">&lt;</span> <span class="mf">0.00011</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+    <span class="n">mass2</span><span class="p">[</span><span class="n">totmass</span> <span class="o">&lt;</span> <span class="mf">0.00011</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0001</span>
+
+    <span class="c1"># Then map to xis</span>
+    <span class="n">new_xis</span> <span class="o">=</span> <span class="n">get_cov_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+                             <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">totmass</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">new_xis</span></div>
+
+
+<div class="viewcode-block" id="stack_xi_direction_brute">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.brute_force_methods.stack_xi_direction_brute">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stack_xi_direction_brute</span><span class="p">(</span><span class="n">xis</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">,</span> <span class="n">bestXis</span><span class="p">,</span> <span class="n">direction_num</span><span class="p">,</span>
+                             <span class="n">req_match</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>
+                             <span class="n">scaleFactor</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">numIterations</span><span class="o">=</span><span class="mi">3000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to assess the depth of the xi_space in a specified</span>
+<span class="sd">    dimension at a specified point in the higher dimensions. It does this by</span>
+<span class="sd">    iteratively throwing points at the space to find maxima and minima.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+
+<span class="sd">    xis : list or array</span>
+<span class="sd">        Position in the xi space at which to assess the depth. This can be only</span>
+<span class="sd">        a subset of the higher dimensions than that being sampled.</span>
+<span class="sd">    bestMasses : list</span>
+<span class="sd">        Contains [totalMass, eta, spin1z, spin2z]. Is a physical position</span>
+<span class="sd">        mapped to xi coordinates in bestXis that is close to the xis point.</span>
+<span class="sd">        This is aimed to give the code a starting point.</span>
+<span class="sd">    bestXis : list</span>
+<span class="sd">        Contains the position of bestMasses in the xi coordinate system.</span>
+<span class="sd">    direction_num : int</span>
+<span class="sd">        The dimension that you want to assess the depth of (0 = 1, 1 = 2 ...)</span>
+<span class="sd">    req_match : float</span>
+<span class="sd">        When considering points to assess the depth with, only consider points</span>
+<span class="sd">        with a mismatch that is smaller than this with xis.</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper that was used when obtaining the xi_i</span>
+<span class="sd">        coordinates. This lets us know how to rotate potential physical points</span>
+<span class="sd">        into the correct xi_i space. This must be a key in metricParams.evals,</span>
+<span class="sd">        metricParams.evecs and metricParams.evecsCV</span>
+<span class="sd">        (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+<span class="sd">    scaleFactor : float, optional (default = 0.8)</span>
+<span class="sd">        The value of the scale factor that is used when calling</span>
+<span class="sd">        pycbc.tmpltbank.get_mass_distribution.</span>
+<span class="sd">    numIterations : int, optional (default = 3000)</span>
+<span class="sd">        The number of times to make calls to get_mass_distribution when</span>
+<span class="sd">        assessing the maximum/minimum of this parameter space. Making this</span>
+<span class="sd">        smaller makes the code faster, but at the cost of accuracy.   </span>
+<span class="sd"> </span>
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    xi_min : float</span>
+<span class="sd">        The minimal value of the specified dimension at the specified point in</span>
+<span class="sd">        parameter space.</span>
+<span class="sd">    xi_max : float</span>
+<span class="sd">       The maximal value of the specified dimension at the specified point in</span>
+<span class="sd">        parameter space.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Find minimum</span>
+    <span class="n">ximin</span> <span class="o">=</span> <span class="n">find_xi_extrema_brute</span><span class="p">(</span><span class="n">xis</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">,</span> <span class="n">bestXis</span><span class="p">,</span> <span class="n">direction_num</span><span class="p">,</span> \
+                                  <span class="n">req_match</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> \
+                                  <span class="n">fUpper</span><span class="p">,</span> <span class="n">find_minimum</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> \
+                                  <span class="n">scaleFactor</span><span class="o">=</span><span class="n">scaleFactor</span><span class="p">,</span> \
+                                  <span class="n">numIterations</span><span class="o">=</span><span class="n">numIterations</span><span class="p">)</span>
+ 
+    <span class="c1"># Find maximum</span>
+    <span class="n">ximax</span> <span class="o">=</span> <span class="n">find_xi_extrema_brute</span><span class="p">(</span><span class="n">xis</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">,</span> <span class="n">bestXis</span><span class="p">,</span> <span class="n">direction_num</span><span class="p">,</span> \
+                                  <span class="n">req_match</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> \
+                                  <span class="n">fUpper</span><span class="p">,</span> <span class="n">find_minimum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> \
+                                  <span class="n">scaleFactor</span><span class="o">=</span><span class="n">scaleFactor</span><span class="p">,</span> \
+                                  <span class="n">numIterations</span><span class="o">=</span><span class="n">numIterations</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ximin</span><span class="p">,</span> <span class="n">ximax</span></div>
+
+
+<div class="viewcode-block" id="find_xi_extrema_brute">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.brute_force_methods.find_xi_extrema_brute">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_xi_extrema_brute</span><span class="p">(</span><span class="n">xis</span><span class="p">,</span> <span class="n">bestMasses</span><span class="p">,</span> <span class="n">bestXis</span><span class="p">,</span> <span class="n">direction_num</span><span class="p">,</span> <span class="n">req_match</span><span class="p">,</span> \
+                          <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span> \
+                          <span class="n">find_minimum</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scaleFactor</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> \
+                          <span class="n">numIterations</span><span class="o">=</span><span class="mi">3000</span><span class="p">):</span>   
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to find the largest or smallest value of the xi</span>
+<span class="sd">    space in a specified</span>
+<span class="sd">    dimension at a specified point in the higher dimensions. It does this by</span>
+<span class="sd">    iteratively throwing points at the space to find extrema.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+
+<span class="sd">    xis : list or array</span>
+<span class="sd">        Position in the xi space at which to assess the depth. This can be only</span>
+<span class="sd">        a subset of the higher dimensions than that being sampled.</span>
+<span class="sd">    bestMasses : list</span>
+<span class="sd">        Contains [totalMass, eta, spin1z, spin2z]. Is a physical position</span>
+<span class="sd">        mapped to xi coordinates in bestXis that is close to the xis point.</span>
+<span class="sd">        This is aimed to give the code a starting point.</span>
+<span class="sd">    bestXis : list</span>
+<span class="sd">        Contains the position of bestMasses in the xi coordinate system.</span>
+<span class="sd">    direction_num : int</span>
+<span class="sd">        The dimension that you want to assess the depth of (0 = 1, 1 = 2 ...)</span>
+<span class="sd">    req_match : float</span>
+<span class="sd">        When considering points to assess the depth with, only consider points</span>
+<span class="sd">        with a mismatch that is smaller than this with xis.</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper that was used when obtaining the xi_i</span>
+<span class="sd">        coordinates. This lets us know how to rotate potential physical points</span>
+<span class="sd">        into the correct xi_i space. This must be a key in metricParams.evals,</span>
+<span class="sd">        metricParams.evecs and metricParams.evecsCV</span>
+<span class="sd">        (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+<span class="sd">    find_minimum : boolean, optional (default = False)</span>
+<span class="sd">        If True, find the minimum value of the xi direction. If False find the</span>
+<span class="sd">        maximum value.</span>
+<span class="sd">    scaleFactor : float, optional (default = 0.8)</span>
+<span class="sd">        The value of the scale factor that is used when calling</span>
+<span class="sd">        pycbc.tmpltbank.get_mass_distribution.</span>
+<span class="sd">    numIterations : int, optional (default = 3000)</span>
+<span class="sd">        The number of times to make calls to get_mass_distribution when</span>
+<span class="sd">        assessing the maximum/minimum of this parameter space. Making this</span>
+<span class="sd">        smaller makes the code faster, but at the cost of accuracy.   </span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    xi_extent : float</span>
+<span class="sd">        The extremal value of the specified dimension at the specified point in</span>
+<span class="sd">        parameter space.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Setup</span>
+    <span class="n">xi_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xis</span><span class="p">)</span>
+    <span class="n">bestChirpmass</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="p">(</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">find_minimum</span><span class="p">:</span>
+        <span class="n">xiextrema</span> <span class="o">=</span> <span class="mi">10000000000</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xiextrema</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100000000000</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numIterations</span><span class="p">):</span>
+        <span class="c1"># Evaluate extrema of the xi direction specified</span>
+        <span class="n">totmass</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">new_xis</span> <span class="o">=</span> \
+            <span class="n">get_mass_distribution</span><span class="p">([</span><span class="n">bestChirpmass</span><span class="p">,</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                                   <span class="n">bestMasses</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+                                  <span class="n">scaleFactor</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span>
+                                  <span class="n">fUpper</span><span class="p">)</span>
+        <span class="n">cDist</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">xis</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">xi_size</span><span class="p">):</span>
+            <span class="n">cDist</span> <span class="o">+=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">xis</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">redCDist</span> <span class="o">=</span> <span class="n">cDist</span><span class="p">[</span><span class="n">cDist</span> <span class="o">&lt;</span> <span class="n">req_match</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">redCDist</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">find_minimum</span><span class="p">:</span>
+                <span class="n">new_xis</span><span class="p">[</span><span class="n">direction_num</span><span class="p">][</span><span class="n">cDist</span> <span class="o">&gt;</span> <span class="n">req_match</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10000000</span>
+                <span class="n">currXiExtrema</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="n">direction_num</span><span class="p">])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="n">direction_num</span><span class="p">])</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_xis</span><span class="p">[</span><span class="n">direction_num</span><span class="p">][</span><span class="n">cDist</span> <span class="o">&gt;</span> <span class="n">req_match</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10000000</span>
+                <span class="n">currXiExtrema</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="n">direction_num</span><span class="p">])</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_xis</span><span class="p">[</span><span class="n">direction_num</span><span class="p">])</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="p">((</span><span class="ow">not</span> <span class="n">find_minimum</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">currXiExtrema</span> <span class="o">&gt;</span> <span class="n">xiextrema</span><span class="p">))</span> <span class="ow">or</span> \
+                         <span class="p">(</span><span class="n">find_minimum</span> <span class="ow">and</span> <span class="p">(</span><span class="n">currXiExtrema</span> <span class="o">&lt;</span> <span class="n">xiextrema</span><span class="p">))</span> <span class="p">):</span>
+                <span class="n">xiextrema</span> <span class="o">=</span> <span class="n">currXiExtrema</span>
+                <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">totmass</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">bestMasses</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin1z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">bestMasses</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin2z</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="n">bestChirpmass</span> <span class="o">=</span> <span class="n">bestMasses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">bestMasses</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="p">(</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">xiextrema</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

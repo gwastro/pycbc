@@ -1,0 +1,873 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow: the inspiral analysis workflow generator (pycbc.workflow) &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Pycbc’s workflow module configuration file(s) and command line interface" href="workflow/initialization.html" />
+    <link rel="prev" title="HDF files within the PyCBC workflow" href="formats/hdf_format.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#workflow-module-documentation">Workflow module documentation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generating-segments">Generating segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#template-bank">Template bank</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#method-documentation">Method documentation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="devs.html">Documentation for Developers</a></li>
+      <li class="breadcrumb-item active">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="workflow-the-inspiral-analysis-workflow-generator-pycbc-workflow">
+<span id="workflowhomepage"></span><h1>Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)<a class="headerlink" href="#workflow-the-inspiral-analysis-workflow-generator-pycbc-workflow" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>Pycbc’s workflow module is a tool used to create the workflows needed to perform coincident analyses of gravitational-wave data searching for compact-binary-coalescences using matched-filtering.</p>
+<p>The pycbc workflow runs through a number of stages, which are designed to be as independent of each other as possible, while also allowing an integrated end-to-end workflow to be constructed.</p>
+<p>Documentation of the workflow module and how to run it can be found below.</p>
+<p>Please see the <a class="reference external" href="https://dcc.ligo.org/LIGO-G1400223">following poster</a>, presentied at the March LVC meeting, 2014, for an introduction to the workflow module (referred to as “ahope”). Especially see the following top-level workflow generation model.</p>
+<a class="reference internal image-reference" href="_images/workflow_planning.png"><img alt="_images/workflow_planning.png" src="_images/workflow_planning.png" style="width: 100%;" />
+</a>
+</section>
+<section id="workflow-module-documentation">
+<h2>Workflow module documentation<a class="headerlink" href="#workflow-module-documentation" title="Link to this heading"></a></h2>
+<p>The following contains a list of the sub-modules in pycbc’s workflow module, a bried description of what each does, and a link to documentation on how to use each module. Collectively these pages should provide complete details on how to set up a workflow from scratch.</p>
+<section id="basics-and-overview">
+<h3>Basics and overview<a class="headerlink" href="#basics-and-overview" title="Link to this heading"></a></h3>
+<p>The following page gives a description of how the workflow module expects
+configuration files to be layed out and how the basic command-line interface
+functions. If writing a workflow for the first time we recommend you read
+through this page!</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/initialization.html">Pycbc’s workflow module configuration file(s) and command line interface</a></li>
+</ul>
+</div>
+</section>
+<section id="generating-segments">
+<h3>Generating segments<a class="headerlink" href="#generating-segments" title="Link to this heading"></a></h3>
+<p>Obtain the science segments and data-quality segments from making queries to a segment database.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/segments.html">The workflow segment generation module</a></li>
+</ul>
+</div>
+</section>
+<section id="obtaining-data">
+<h3>Obtaining data<a class="headerlink" href="#obtaining-data" title="Link to this heading"></a></h3>
+<p>Run queries to the datafind server to find the needed frames and test these for
+consistency if desired</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/datafind.html">The workflow datafind and validation module</a></li>
+</ul>
+</div>
+</section>
+<section id="injection-generation">
+<h3>Injection generation<a class="headerlink" href="#injection-generation" title="Link to this heading"></a></h3>
+<p>Generate injection files for use later in the analysis</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/injections.html">The workflow injection generation module</a></li>
+</ul>
+</div>
+</section>
+<section id="template-bank">
+<h3>Template bank<a class="headerlink" href="#template-bank" title="Link to this heading"></a></h3>
+<p>Construct a template bank, or banks, of CBC waveforms that will be used to matched-filter the data with.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/template_bank.html">The workflow template bank generation module</a></li>
+</ul>
+</div>
+</section>
+<section id="split-table">
+<h3>Split table<a class="headerlink" href="#split-table" title="Link to this heading"></a></h3>
+<p>Split an output file into numerous parts to allow parallel analysis. Normally used to split the template bank up to allow matched-filtering in parallel</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/splittable.html">The workflow table splitting module</a></li>
+</ul>
+</div>
+</section>
+<section id="matched-filtering">
+<h3>Matched-filtering<a class="headerlink" href="#matched-filtering" title="Link to this heading"></a></h3>
+<p>Perform the matched-filters and calculate any signal-based consistency tests that should be calculated.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/matched_filter.html">The workflow matched-filter module</a></li>
+</ul>
+</div>
+</section>
+<section id="coincidence">
+<h3>Coincidence<a class="headerlink" href="#coincidence" title="Link to this heading"></a></h3>
+<p>Determine if “triggers” seen in one detector are also seen in other detectors. Also check for coincidence between time-slid triggers for background evaluation</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/hdf_coincidence.html">HDF5 Based Coincidence Code</a></li>
+</ul>
+</div>
+</section>
+</section>
+<section id="method-documentation">
+<h2>Method documentation<a class="headerlink" href="#method-documentation" title="Link to this heading"></a></h2>
+<p>The documentation for all functions/modules within pycbc.workflow follows, unless you are looking for a specific function, it might be easier to navigate through the section links above.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.coincidence">pycbc.workflow.coincidence module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.CensorForeground"><code class="docutils literal notranslate"><span class="pre">CensorForeground</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.CensorForeground.current_retention_level"><code class="docutils literal notranslate"><span class="pre">CensorForeground.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.MergeExecutable"><code class="docutils literal notranslate"><span class="pre">MergeExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.MergeExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">MergeExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCAddStatmap"><code class="docutils literal notranslate"><span class="pre">PyCBCAddStatmap</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCAddStatmap.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCAddStatmap.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCAddStatmap.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCAddStatmap.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCBank2HDFExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCBank2HDFExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCBank2HDFExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCBank2HDFExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCBank2HDFExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCBank2HDFExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCCombineStatmap"><code class="docutils literal notranslate"><span class="pre">PyCBCCombineStatmap</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCCombineStatmap.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCCombineStatmap.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCCombineStatmap.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCCombineStatmap.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCDistributeBackgroundBins"><code class="docutils literal notranslate"><span class="pre">PyCBCDistributeBackgroundBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCDistributeBackgroundBins.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCDistributeBackgroundBins.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCDistributeBackgroundBins.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCDistributeBackgroundBins.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCExcludeZerolag"><code class="docutils literal notranslate"><span class="pre">PyCBCExcludeZerolag</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCExcludeZerolag.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCExcludeZerolag.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCExcludeZerolag.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCExcludeZerolag.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindCoincExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCFindCoincExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindCoincExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCFindCoincExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindCoincExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCFindCoincExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindSnglsExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCFindSnglsExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindSnglsExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCFindSnglsExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindSnglsExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCFindSnglsExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFindSnglsExecutable.file_input_options"><code class="docutils literal notranslate"><span class="pre">PyCBCFindSnglsExecutable.file_input_options</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFitByTemplateExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCFitByTemplateExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFitByTemplateExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCFitByTemplateExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFitByTemplateExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCFitByTemplateExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFitOverParamExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCFitOverParamExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFitOverParamExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCFitOverParamExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCFitOverParamExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCFitOverParamExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCHDFInjFindExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCHDFInjFindExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCHDFInjFindExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCHDFInjFindExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCHDFInjFindExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCHDFInjFindExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCSnglsStatMapExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCSnglsStatMapExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCSnglsStatMapExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCSnglsStatMapExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCSnglsStatMapExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCSnglsStatMapExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCSnglsStatMapInjExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCSnglsStatMapInjExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCSnglsStatMapInjExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCSnglsStatMapInjExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCSnglsStatMapInjExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCSnglsStatMapInjExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCStatMapExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCStatMapExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCStatMapExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCStatMapExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCStatMapExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCStatMapExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCStatMapInjExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCStatMapInjExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCStatMapInjExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCStatMapInjExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCStatMapInjExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCStatMapInjExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCTrig2HDFExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCTrig2HDFExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCTrig2HDFExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCTrig2HDFExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.PyCBCTrig2HDFExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCTrig2HDFExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.convert_bank_to_hdf"><code class="docutils literal notranslate"><span class="pre">convert_bank_to_hdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.convert_trig_to_hdf"><code class="docutils literal notranslate"><span class="pre">convert_trig_to_hdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.find_injections_in_hdf_coinc"><code class="docutils literal notranslate"><span class="pre">find_injections_in_hdf_coinc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.get_ordered_ifo_list"><code class="docutils literal notranslate"><span class="pre">get_ordered_ifo_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.make_foreground_censored_veto"><code class="docutils literal notranslate"><span class="pre">make_foreground_censored_veto()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.merge_single_detector_hdf_files"><code class="docutils literal notranslate"><span class="pre">merge_single_detector_hdf_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.rerank_coinc_followup"><code class="docutils literal notranslate"><span class="pre">rerank_coinc_followup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.select_files_by_ifo_combination"><code class="docutils literal notranslate"><span class="pre">select_files_by_ifo_combination()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_combine_statmap"><code class="docutils literal notranslate"><span class="pre">setup_combine_statmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_exclude_zerolag"><code class="docutils literal notranslate"><span class="pre">setup_exclude_zerolag()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_interval_coinc"><code class="docutils literal notranslate"><span class="pre">setup_interval_coinc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_interval_coinc_inj"><code class="docutils literal notranslate"><span class="pre">setup_interval_coinc_inj()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_sngls"><code class="docutils literal notranslate"><span class="pre">setup_sngls()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_sngls_inj"><code class="docutils literal notranslate"><span class="pre">setup_sngls_inj()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_sngls_statmap"><code class="docutils literal notranslate"><span class="pre">setup_sngls_statmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_sngls_statmap_inj"><code class="docutils literal notranslate"><span class="pre">setup_sngls_statmap_inj()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_statmap"><code class="docutils literal notranslate"><span class="pre">setup_statmap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_statmap_inj"><code class="docutils literal notranslate"><span class="pre">setup_statmap_inj()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.coincidence.setup_trigger_fitting"><code class="docutils literal notranslate"><span class="pre">setup_trigger_fitting()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.configparser_test">pycbc.workflow.configparser_test module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.add_options_to_section"><code class="docutils literal notranslate"><span class="pre">add_options_to_section()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.check_duplicate_options"><code class="docutils literal notranslate"><span class="pre">check_duplicate_options()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.interpolate_string"><code class="docutils literal notranslate"><span class="pre">interpolate_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.parse_workflow_ini_file"><code class="docutils literal notranslate"><span class="pre">parse_workflow_ini_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.perform_extended_interpolation"><code class="docutils literal notranslate"><span class="pre">perform_extended_interpolation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.read_ini_file"><code class="docutils literal notranslate"><span class="pre">read_ini_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.sanity_check_subsections"><code class="docutils literal notranslate"><span class="pre">sanity_check_subsections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configparser_test.split_multi_sections"><code class="docutils literal notranslate"><span class="pre">split_multi_sections()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.configuration">pycbc.workflow.configuration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser.get_cli_option"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser.get_cli_option()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser.interpolate_exe"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser.interpolate_exe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser.perform_exe_expansion"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser.perform_exe_expansion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser.resolve_file_url"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser.resolve_file_url()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser.resolve_urls"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser.resolve_urls()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser.section_to_cli"><code class="docutils literal notranslate"><span class="pre">WorkflowConfigParser.section_to_cli()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.add_workflow_command_line_group"><code class="docutils literal notranslate"><span class="pre">add_workflow_command_line_group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.hash_compare"><code class="docutils literal notranslate"><span class="pre">hash_compare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.resolve_url"><code class="docutils literal notranslate"><span class="pre">resolve_url()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.resolve_url_http"><code class="docutils literal notranslate"><span class="pre">resolve_url_http()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.core">pycbc.workflow.core module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.CalledProcessErrorMod"><code class="docutils literal notranslate"><span class="pre">CalledProcessErrorMod</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable"><code class="docutils literal notranslate"><span class="pre">Executable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.ALL_TRIGGERS"><code class="docutils literal notranslate"><span class="pre">Executable.ALL_TRIGGERS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.DO_NOT_KEEP"><code class="docutils literal notranslate"><span class="pre">Executable.DO_NOT_KEEP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.FINAL_RESULT"><code class="docutils literal notranslate"><span class="pre">Executable.FINAL_RESULT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.INTERMEDIATE_PRODUCT"><code class="docutils literal notranslate"><span class="pre">Executable.INTERMEDIATE_PRODUCT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.KEEP_BUT_RAISE_WARNING"><code class="docutils literal notranslate"><span class="pre">Executable.KEEP_BUT_RAISE_WARNING</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.MERGED_TRIGGERS"><code class="docutils literal notranslate"><span class="pre">Executable.MERGED_TRIGGERS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.add_ini_profile"><code class="docutils literal notranslate"><span class="pre">Executable.add_ini_profile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.add_opt"><code class="docutils literal notranslate"><span class="pre">Executable.add_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.create_node"><code class="docutils literal notranslate"><span class="pre">Executable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">Executable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.file_input_options"><code class="docutils literal notranslate"><span class="pre">Executable.file_input_options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.get_opt"><code class="docutils literal notranslate"><span class="pre">Executable.get_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.get_transformation"><code class="docutils literal notranslate"><span class="pre">Executable.get_transformation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.has_opt"><code class="docutils literal notranslate"><span class="pre">Executable.has_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.ifo"><code class="docutils literal notranslate"><span class="pre">Executable.ifo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.time_dependent_options"><code class="docutils literal notranslate"><span class="pre">Executable.time_dependent_options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.update_current_retention_level"><code class="docutils literal notranslate"><span class="pre">Executable.update_current_retention_level()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.update_current_tags"><code class="docutils literal notranslate"><span class="pre">Executable.update_current_tags()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Executable.update_output_directory"><code class="docutils literal notranslate"><span class="pre">Executable.update_output_directory()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.File"><code class="docutils literal notranslate"><span class="pre">File</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.File.add_metadata"><code class="docutils literal notranslate"><span class="pre">File.add_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.File.cache_entry"><code class="docutils literal notranslate"><span class="pre">File.cache_entry</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.File.from_path"><code class="docutils literal notranslate"><span class="pre">File.from_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.File.ifo"><code class="docutils literal notranslate"><span class="pre">File.ifo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.File.segment"><code class="docutils literal notranslate"><span class="pre">File.segment</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList"><code class="docutils literal notranslate"><span class="pre">FileList</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.categorize_by_attr"><code class="docutils literal notranslate"><span class="pre">FileList.categorize_by_attr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.convert_to_lal_cache"><code class="docutils literal notranslate"><span class="pre">FileList.convert_to_lal_cache()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.dump"><code class="docutils literal notranslate"><span class="pre">FileList.dump()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.entry_class"><code class="docutils literal notranslate"><span class="pre">FileList.entry_class</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_all_output_in_range"><code class="docutils literal notranslate"><span class="pre">FileList.find_all_output_in_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_output"><code class="docutils literal notranslate"><span class="pre">FileList.find_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_output_at_time"><code class="docutils literal notranslate"><span class="pre">FileList.find_output_at_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_output_in_range"><code class="docutils literal notranslate"><span class="pre">FileList.find_output_in_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_output_with_ifo"><code class="docutils literal notranslate"><span class="pre">FileList.find_output_with_ifo()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_output_with_tag"><code class="docutils literal notranslate"><span class="pre">FileList.find_output_with_tag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_output_without_tag"><code class="docutils literal notranslate"><span class="pre">FileList.find_output_without_tag()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.find_outputs_in_range"><code class="docutils literal notranslate"><span class="pre">FileList.find_outputs_in_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.get_times_covered_by_files"><code class="docutils literal notranslate"><span class="pre">FileList.get_times_covered_by_files()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.load"><code class="docutils literal notranslate"><span class="pre">FileList.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.FileList.to_file_object"><code class="docutils literal notranslate"><span class="pre">FileList.to_file_object()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.add_multiifo_input_list_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_multiifo_input_list_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.add_multiifo_output_list_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_multiifo_output_list_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.get_command_line"><code class="docutils literal notranslate"><span class="pre">Node.get_command_line()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.new_multiifo_output_list_opt"><code class="docutils literal notranslate"><span class="pre">Node.new_multiifo_output_list_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.new_output_file_opt"><code class="docutils literal notranslate"><span class="pre">Node.new_output_file_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.output_file"><code class="docutils literal notranslate"><span class="pre">Node.output_file</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.output_files"><code class="docutils literal notranslate"><span class="pre">Node.output_files</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Node.resolve_td_options"><code class="docutils literal notranslate"><span class="pre">Node.resolve_td_options()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile"><code class="docutils literal notranslate"><span class="pre">SegFile</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.from_multi_segment_list"><code class="docutils literal notranslate"><span class="pre">SegFile.from_multi_segment_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.from_segment_list"><code class="docutils literal notranslate"><span class="pre">SegFile.from_segment_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.from_segment_list_dict"><code class="docutils literal notranslate"><span class="pre">SegFile.from_segment_list_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.from_segment_xml"><code class="docutils literal notranslate"><span class="pre">SegFile.from_segment_xml()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.parse_segdict_key"><code class="docutils literal notranslate"><span class="pre">SegFile.parse_segdict_key()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.remove_short_sci_segs"><code class="docutils literal notranslate"><span class="pre">SegFile.remove_short_sci_segs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.return_union_seglist"><code class="docutils literal notranslate"><span class="pre">SegFile.return_union_seglist()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.SegFile.to_segment_xml"><code class="docutils literal notranslate"><span class="pre">SegFile.to_segment_xml()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow"><code class="docutils literal notranslate"><span class="pre">Workflow</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.exec_sites_str"><code class="docutils literal notranslate"><span class="pre">Workflow.exec_sites_str</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.execute_node"><code class="docutils literal notranslate"><span class="pre">Workflow.execute_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.get_ifo_combinations"><code class="docutils literal notranslate"><span class="pre">Workflow.get_ifo_combinations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.output_map"><code class="docutils literal notranslate"><span class="pre">Workflow.output_map</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.save"><code class="docutils literal notranslate"><span class="pre">Workflow.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.save_config"><code class="docutils literal notranslate"><span class="pre">Workflow.save_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.sites"><code class="docutils literal notranslate"><span class="pre">Workflow.sites</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.staging_site"><code class="docutils literal notranslate"><span class="pre">Workflow.staging_site</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.Workflow.staging_site_str"><code class="docutils literal notranslate"><span class="pre">Workflow.staging_site_str</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.add_workflow_settings_cli"><code class="docutils literal notranslate"><span class="pre">add_workflow_settings_cli()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.configparser_value_to_file"><code class="docutils literal notranslate"><span class="pre">configparser_value_to_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.get_full_analysis_chunk"><code class="docutils literal notranslate"><span class="pre">get_full_analysis_chunk()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.get_random_label"><code class="docutils literal notranslate"><span class="pre">get_random_label()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.make_analysis_dir"><code class="docutils literal notranslate"><span class="pre">make_analysis_dir()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.make_external_call"><code class="docutils literal notranslate"><span class="pre">make_external_call()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.resolve_td_option"><code class="docutils literal notranslate"><span class="pre">resolve_td_option()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.core.resolve_url_to_file"><code class="docutils literal notranslate"><span class="pre">resolve_url_to_file()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.datafind">pycbc.workflow.datafind module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.convert_cachelist_to_filelist"><code class="docutils literal notranslate"><span class="pre">convert_cachelist_to_filelist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.datafind_keep_unique_backups"><code class="docutils literal notranslate"><span class="pre">datafind_keep_unique_backups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.get_missing_segs_from_frame_file_cache"><code class="docutils literal notranslate"><span class="pre">get_missing_segs_from_frame_file_cache()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.get_science_segs_from_datafind_outs"><code class="docutils literal notranslate"><span class="pre">get_science_segs_from_datafind_outs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.get_segment_summary_times"><code class="docutils literal notranslate"><span class="pre">get_segment_summary_times()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.log_datafind_command"><code class="docutils literal notranslate"><span class="pre">log_datafind_command()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.run_datafind_instance"><code class="docutils literal notranslate"><span class="pre">run_datafind_instance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.setup_datafind_from_pregenerated_lcf_files"><code class="docutils literal notranslate"><span class="pre">setup_datafind_from_pregenerated_lcf_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.setup_datafind_runtime_cache_multi_calls_perifo"><code class="docutils literal notranslate"><span class="pre">setup_datafind_runtime_cache_multi_calls_perifo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.setup_datafind_runtime_cache_single_call_perifo"><code class="docutils literal notranslate"><span class="pre">setup_datafind_runtime_cache_single_call_perifo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.setup_datafind_runtime_frames_multi_calls_perifo"><code class="docutils literal notranslate"><span class="pre">setup_datafind_runtime_frames_multi_calls_perifo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.setup_datafind_runtime_frames_single_call_perifo"><code class="docutils literal notranslate"><span class="pre">setup_datafind_runtime_frames_single_call_perifo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.datafind.setup_datafind_workflow"><code class="docutils literal notranslate"><span class="pre">setup_datafind_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.dq">pycbc.workflow.dq module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.PyCBCBinTemplatesDQExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCBinTemplatesDQExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.PyCBCBinTemplatesDQExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCBinTemplatesDQExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.PyCBCBinTemplatesDQExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCBinTemplatesDQExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.PyCBCBinTriggerRatesDQExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCBinTriggerRatesDQExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.PyCBCBinTriggerRatesDQExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCBinTriggerRatesDQExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.PyCBCBinTriggerRatesDQExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCBinTriggerRatesDQExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.dq.setup_dq_reranking"><code class="docutils literal notranslate"><span class="pre">setup_dq_reranking()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.grb_utils">pycbc.workflow.grb_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbInjFinderExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcGrbInjFinderExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbInjFinderExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcGrbInjFinderExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbInjFinderExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcGrbInjFinderExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigClusterExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcGrbTrigClusterExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigClusterExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcGrbTrigClusterExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigClusterExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcGrbTrigClusterExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigCombinerExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcGrbTrigCombinerExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigCombinerExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcGrbTrigCombinerExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.PycbcGrbTrigCombinerExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcGrbTrigCombinerExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.build_segment_filelist"><code class="docutils literal notranslate"><span class="pre">build_segment_filelist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.fermi_core_tail_model"><code class="docutils literal notranslate"><span class="pre">fermi_core_tail_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.generate_tc_prior"><code class="docutils literal notranslate"><span class="pre">generate_tc_prior()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.get_sky_grid_scale"><code class="docutils literal notranslate"><span class="pre">get_sky_grid_scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_gating_node"><code class="docutils literal notranslate"><span class="pre">make_gating_node()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_pygrb_info_table"><code class="docutils literal notranslate"><span class="pre">make_pygrb_info_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_pygrb_injs_tables"><code class="docutils literal notranslate"><span class="pre">make_pygrb_injs_tables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_pygrb_plot"><code class="docutils literal notranslate"><span class="pre">make_pygrb_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_skygrid_node"><code class="docutils literal notranslate"><span class="pre">make_skygrid_node()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.set_grb_start_end"><code class="docutils literal notranslate"><span class="pre">set_grb_start_end()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.setup_pygrb_minifollowups"><code class="docutils literal notranslate"><span class="pre">setup_pygrb_minifollowups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.setup_pygrb_pp_workflow"><code class="docutils literal notranslate"><span class="pre">setup_pygrb_pp_workflow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.grb_utils.setup_pygrb_results_workflow"><code class="docutils literal notranslate"><span class="pre">setup_pygrb_results_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.inference_followups">pycbc.workflow.inference_followups module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.create_fits_file"><code class="docutils literal notranslate"><span class="pre">create_fits_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.create_posterior_files"><code class="docutils literal notranslate"><span class="pre">create_posterior_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.get_diagnostic_plots"><code class="docutils literal notranslate"><span class="pre">get_diagnostic_plots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.get_plot_group"><code class="docutils literal notranslate"><span class="pre">get_plot_group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_diagnostic_plots"><code class="docutils literal notranslate"><span class="pre">make_diagnostic_plots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_acceptance_rate_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_acceptance_rate_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_dynesty_run_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_dynesty_run_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_dynesty_trace_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_dynesty_trace_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_inj_recovery_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_inj_recovery_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_plot_mcmc_history"><code class="docutils literal notranslate"><span class="pre">make_inference_plot_mcmc_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_posterior_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_posterior_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_pp_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_pp_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_pp_table"><code class="docutils literal notranslate"><span class="pre">make_inference_pp_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_prior_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_prior_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_samples_plot"><code class="docutils literal notranslate"><span class="pre">make_inference_samples_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_skymap"><code class="docutils literal notranslate"><span class="pre">make_inference_skymap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_summary_table"><code class="docutils literal notranslate"><span class="pre">make_inference_summary_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_posterior_workflow"><code class="docutils literal notranslate"><span class="pre">make_posterior_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.injection">pycbc.workflow.injection module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.PyCBCMergeHDFExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCMergeHDFExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.PyCBCMergeHDFExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCMergeHDFExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.PyCBCMergeHDFExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCMergeHDFExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.PyCBCOptimalSNRExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCOptimalSNRExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.PyCBCOptimalSNRExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCOptimalSNRExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.PyCBCOptimalSNRExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCOptimalSNRExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.compute_inj_optimal_snr"><code class="docutils literal notranslate"><span class="pre">compute_inj_optimal_snr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.cut_distant_injections"><code class="docutils literal notranslate"><span class="pre">cut_distant_injections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.inj_to_hdf"><code class="docutils literal notranslate"><span class="pre">inj_to_hdf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.setup_injection_workflow"><code class="docutils literal notranslate"><span class="pre">setup_injection_workflow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.injection.veto_injections"><code class="docutils literal notranslate"><span class="pre">veto_injections()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.jobsetup">pycbc.workflow.jobsetup module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.JobSegmenter"><code class="docutils literal notranslate"><span class="pre">JobSegmenter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.JobSegmenter.get_data_times_for_job"><code class="docutils literal notranslate"><span class="pre">JobSegmenter.get_data_times_for_job()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.JobSegmenter.get_valid_times_for_job"><code class="docutils literal notranslate"><span class="pre">JobSegmenter.get_valid_times_for_job()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.JobSegmenter.pick_tile_size"><code class="docutils literal notranslate"><span class="pre">JobSegmenter.pick_tile_size()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LalappsInspinjExecutable"><code class="docutils literal notranslate"><span class="pre">LalappsInspinjExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LalappsInspinjExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">LalappsInspinjExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LalappsInspinjExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">LalappsInspinjExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LalappsInspinjExecutable.extension"><code class="docutils literal notranslate"><span class="pre">LalappsInspinjExecutable.extension</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LigolwAddExecutable"><code class="docutils literal notranslate"><span class="pre">LigolwAddExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LigolwAddExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">LigolwAddExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.LigolwAddExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">LigolwAddExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCInspiralExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCInspiralExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCInspiralExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCInspiralExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCInspiralExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCInspiralExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCInspiralExecutable.get_valid_times"><code class="docutils literal notranslate"><span class="pre">PyCBCInspiralExecutable.get_valid_times()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCInspiralExecutable.time_dependent_options"><code class="docutils literal notranslate"><span class="pre">PyCBCInspiralExecutable.time_dependent_options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCInspiralExecutable.zero_pad_data_extend"><code class="docutils literal notranslate"><span class="pre">PyCBCInspiralExecutable.zero_pad_data_extend()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCMultiInspiralExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCMultiInspiralExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCMultiInspiralExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCMultiInspiralExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCMultiInspiralExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCMultiInspiralExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCMultiInspiralExecutable.file_input_options"><code class="docutils literal notranslate"><span class="pre">PyCBCMultiInspiralExecutable.file_input_options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCMultiInspiralExecutable.get_valid_times"><code class="docutils literal notranslate"><span class="pre">PyCBCMultiInspiralExecutable.get_valid_times()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCTmpltbankExecutable"><code class="docutils literal notranslate"><span class="pre">PyCBCTmpltbankExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCTmpltbankExecutable.create_nodata_node"><code class="docutils literal notranslate"><span class="pre">PyCBCTmpltbankExecutable.create_nodata_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCTmpltbankExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PyCBCTmpltbankExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCTmpltbankExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PyCBCTmpltbankExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PyCBCTmpltbankExecutable.get_valid_times"><code class="docutils literal notranslate"><span class="pre">PyCBCTmpltbankExecutable.get_valid_times()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcConditionStrainExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcConditionStrainExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcConditionStrainExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcConditionStrainExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcConditionStrainExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcConditionStrainExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcCreateInjectionsExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcCreateInjectionsExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcCreateInjectionsExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcCreateInjectionsExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcCreateInjectionsExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcCreateInjectionsExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcCreateInjectionsExecutable.extension"><code class="docutils literal notranslate"><span class="pre">PycbcCreateInjectionsExecutable.extension</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcHDFSplitInjExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcHDFSplitInjExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcHDFSplitInjExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcHDFSplitInjExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcHDFSplitInjExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcHDFSplitInjExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcInferenceExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcInferenceExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcInferenceExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcInferenceExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcInferenceExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcInferenceExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitBankExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcSplitBankExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitBankExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcSplitBankExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitBankExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcSplitBankExecutable.current_retention_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitBankExecutable.extension"><code class="docutils literal notranslate"><span class="pre">PycbcSplitBankExecutable.extension</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitBankXmlExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcSplitBankXmlExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitBankXmlExecutable.extension"><code class="docutils literal notranslate"><span class="pre">PycbcSplitBankXmlExecutable.extension</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitInspinjExecutable"><code class="docutils literal notranslate"><span class="pre">PycbcSplitInspinjExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitInspinjExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PycbcSplitInspinjExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.PycbcSplitInspinjExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PycbcSplitInspinjExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.identify_needed_data"><code class="docutils literal notranslate"><span class="pre">identify_needed_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.int_gps_time_to_str"><code class="docutils literal notranslate"><span class="pre">int_gps_time_to_str()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.multi_ifo_coherent_job_setup"><code class="docutils literal notranslate"><span class="pre">multi_ifo_coherent_job_setup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.select_generic_executable"><code class="docutils literal notranslate"><span class="pre">select_generic_executable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.select_matchedfilter_class"><code class="docutils literal notranslate"><span class="pre">select_matchedfilter_class()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.select_tmpltbank_class"><code class="docutils literal notranslate"><span class="pre">select_tmpltbank_class()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.jobsetup.sngl_ifo_job_setup"><code class="docutils literal notranslate"><span class="pre">sngl_ifo_job_setup()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.matched_filter">pycbc.workflow.matched_filter module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.matched_filter.setup_matchedfltr_dax_generated"><code class="docutils literal notranslate"><span class="pre">setup_matchedfltr_dax_generated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.matched_filter.setup_matchedfltr_dax_generated_multi"><code class="docutils literal notranslate"><span class="pre">setup_matchedfltr_dax_generated_multi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.matched_filter.setup_matchedfltr_workflow"><code class="docutils literal notranslate"><span class="pre">setup_matchedfltr_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.minifollowups">pycbc.workflow.minifollowups module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.PlotQScanExecutable"><code class="docutils literal notranslate"><span class="pre">PlotQScanExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.PlotQScanExecutable.time_dependent_options"><code class="docutils literal notranslate"><span class="pre">PlotQScanExecutable.time_dependent_options</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.SingleTemplateExecutable"><code class="docutils literal notranslate"><span class="pre">SingleTemplateExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.SingleTemplateExecutable.time_dependent_options"><code class="docutils literal notranslate"><span class="pre">SingleTemplateExecutable.time_dependent_options</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.SingleTimeFreqExecutable"><code class="docutils literal notranslate"><span class="pre">SingleTimeFreqExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.SingleTimeFreqExecutable.time_dependent_options"><code class="docutils literal notranslate"><span class="pre">SingleTimeFreqExecutable.time_dependent_options</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.get_single_template_params"><code class="docutils literal notranslate"><span class="pre">get_single_template_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.grouper"><code class="docutils literal notranslate"><span class="pre">grouper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_coinc_info"><code class="docutils literal notranslate"><span class="pre">make_coinc_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_inj_info"><code class="docutils literal notranslate"><span class="pre">make_inj_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_plot_waveform_plot"><code class="docutils literal notranslate"><span class="pre">make_plot_waveform_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_qscan_plot"><code class="docutils literal notranslate"><span class="pre">make_qscan_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_single_template_files"><code class="docutils literal notranslate"><span class="pre">make_single_template_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_single_template_plots"><code class="docutils literal notranslate"><span class="pre">make_single_template_plots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_singles_timefreq"><code class="docutils literal notranslate"><span class="pre">make_singles_timefreq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_skipped_html"><code class="docutils literal notranslate"><span class="pre">make_skipped_html()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_sngl_ifo"><code class="docutils literal notranslate"><span class="pre">make_sngl_ifo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_trigger_timeseries"><code class="docutils literal notranslate"><span class="pre">make_trigger_timeseries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_upload_files"><code class="docutils literal notranslate"><span class="pre">make_upload_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.setup_foreground_minifollowups"><code class="docutils literal notranslate"><span class="pre">setup_foreground_minifollowups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.setup_injection_minifollowups"><code class="docutils literal notranslate"><span class="pre">setup_injection_minifollowups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.setup_single_det_minifollowups"><code class="docutils literal notranslate"><span class="pre">setup_single_det_minifollowups()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.minifollowups.setup_upload_prep_minifollowups"><code class="docutils literal notranslate"><span class="pre">setup_upload_prep_minifollowups()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.pegasus_sites">pycbc.workflow.pegasus_sites module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_condorpool_copy_site"><code class="docutils literal notranslate"><span class="pre">add_condorpool_copy_site()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_condorpool_shared_site"><code class="docutils literal notranslate"><span class="pre">add_condorpool_shared_site()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_condorpool_symlink_site"><code class="docutils literal notranslate"><span class="pre">add_condorpool_symlink_site()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_ini_site_profile"><code class="docutils literal notranslate"><span class="pre">add_ini_site_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_local_site"><code class="docutils literal notranslate"><span class="pre">add_local_site()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_osg_site"><code class="docutils literal notranslate"><span class="pre">add_osg_site()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_site"><code class="docutils literal notranslate"><span class="pre">add_site()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_site_pegasus_profile"><code class="docutils literal notranslate"><span class="pre">add_site_pegasus_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_sites.make_catalog"><code class="docutils literal notranslate"><span class="pre">make_catalog()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.pegasus_workflow">pycbc.workflow.pegasus_workflow module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Executable"><code class="docutils literal notranslate"><span class="pre">Executable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Executable.add_profile"><code class="docutils literal notranslate"><span class="pre">Executable.add_profile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Executable.create_transformation"><code class="docutils literal notranslate"><span class="pre">Executable.create_transformation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Executable.id"><code class="docutils literal notranslate"><span class="pre">Executable.id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File"><code class="docutils literal notranslate"><span class="pre">File</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File.add_pfn"><code class="docutils literal notranslate"><span class="pre">File.add_pfn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File.dax_repr"><code class="docutils literal notranslate"><span class="pre">File.dax_repr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File.from_path"><code class="docutils literal notranslate"><span class="pre">File.from_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File.has_pfn"><code class="docutils literal notranslate"><span class="pre">File.has_pfn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File.insert_into_dax"><code class="docutils literal notranslate"><span class="pre">File.insert_into_dax()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.File.output_map_str"><code class="docutils literal notranslate"><span class="pre">File.output_map_str()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_arg"><code class="docutils literal notranslate"><span class="pre">Node.add_arg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input"><code class="docutils literal notranslate"><span class="pre">Node.add_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input_arg"><code class="docutils literal notranslate"><span class="pre">Node.add_input_arg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input_list_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_input_list_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_input_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_list_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_list_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output"><code class="docutils literal notranslate"><span class="pre">Node.add_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output_arg"><code class="docutils literal notranslate"><span class="pre">Node.add_output_arg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output_list_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_output_list_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output_opt"><code class="docutils literal notranslate"><span class="pre">Node.add_output_opt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_profile"><code class="docutils literal notranslate"><span class="pre">Node.add_profile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_raw_arg"><code class="docutils literal notranslate"><span class="pre">Node.add_raw_arg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.new_output_file_opt"><code class="docutils literal notranslate"><span class="pre">Node.new_output_file_opt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_category"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_category()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_execution_site"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_execution_site()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_memory"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_memory()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_num_cpus"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_num_cpus()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_num_retries"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_num_retries()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_priority"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_priority()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_storage"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_storage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.ProfileShortcuts.set_universe"><code class="docutils literal notranslate"><span class="pre">ProfileShortcuts.set_universe()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.SubWorkflow"><code class="docutils literal notranslate"><span class="pre">SubWorkflow</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.SubWorkflow.add_into_workflow"><code class="docutils literal notranslate"><span class="pre">SubWorkflow.add_into_workflow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.SubWorkflow.add_planner_arg"><code class="docutils literal notranslate"><span class="pre">SubWorkflow.add_planner_arg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.SubWorkflow.set_subworkflow_properties"><code class="docutils literal notranslate"><span class="pre">SubWorkflow.set_subworkflow_properties()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Transformation"><code class="docutils literal notranslate"><span class="pre">Transformation</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Transformation.is_same_as"><code class="docutils literal notranslate"><span class="pre">Transformation.is_same_as()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow"><code class="docutils literal notranslate"><span class="pre">Workflow</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_container"><code class="docutils literal notranslate"><span class="pre">Workflow.add_container()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_explicit_dependancy"><code class="docutils literal notranslate"><span class="pre">Workflow.add_explicit_dependancy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_node"><code class="docutils literal notranslate"><span class="pre">Workflow.add_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_subworkflow_dependancy"><code class="docutils literal notranslate"><span class="pre">Workflow.add_subworkflow_dependancy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_transformation"><code class="docutils literal notranslate"><span class="pre">Workflow.add_transformation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_workflow"><code class="docutils literal notranslate"><span class="pre">Workflow.add_workflow()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.plan_and_submit"><code class="docutils literal notranslate"><span class="pre">Workflow.plan_and_submit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.save"><code class="docutils literal notranslate"><span class="pre">Workflow.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.traverse_workflow_io"><code class="docutils literal notranslate"><span class="pre">Workflow.traverse_workflow_io()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.plotting">pycbc.workflow.plotting module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.PlotExecutable"><code class="docutils literal notranslate"><span class="pre">PlotExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.PlotExecutable.create_node"><code class="docutils literal notranslate"><span class="pre">PlotExecutable.create_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.PlotExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">PlotExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.excludestr"><code class="docutils literal notranslate"><span class="pre">excludestr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_bank_compression_plots"><code class="docutils literal notranslate"><span class="pre">make_bank_compression_plots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_binned_hist"><code class="docutils literal notranslate"><span class="pre">make_binned_hist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_coinc_snrchi_plot"><code class="docutils literal notranslate"><span class="pre">make_coinc_snrchi_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_dq_flag_trigger_rate_plot"><code class="docutils literal notranslate"><span class="pre">make_dq_flag_trigger_rate_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_dq_segment_table"><code class="docutils literal notranslate"><span class="pre">make_dq_segment_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_farstat_plot"><code class="docutils literal notranslate"><span class="pre">make_farstat_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_foreground_table"><code class="docutils literal notranslate"><span class="pre">make_foreground_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_foundmissed_plot"><code class="docutils literal notranslate"><span class="pre">make_foundmissed_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_gating_plot"><code class="docutils literal notranslate"><span class="pre">make_gating_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_ifar_plot"><code class="docutils literal notranslate"><span class="pre">make_ifar_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_inj_table"><code class="docutils literal notranslate"><span class="pre">make_inj_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_range_plot"><code class="docutils literal notranslate"><span class="pre">make_range_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_results_web_page"><code class="docutils literal notranslate"><span class="pre">make_results_web_page()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_seg_plot"><code class="docutils literal notranslate"><span class="pre">make_seg_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_seg_table"><code class="docutils literal notranslate"><span class="pre">make_seg_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_segments_plot"><code class="docutils literal notranslate"><span class="pre">make_segments_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_sensitivity_plot"><code class="docutils literal notranslate"><span class="pre">make_sensitivity_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_single_hist"><code class="docutils literal notranslate"><span class="pre">make_single_hist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_singles_plot"><code class="docutils literal notranslate"><span class="pre">make_singles_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_snrchi_plot"><code class="docutils literal notranslate"><span class="pre">make_snrchi_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_snrifar_plot"><code class="docutils literal notranslate"><span class="pre">make_snrifar_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_snrratehist_plot"><code class="docutils literal notranslate"><span class="pre">make_snrratehist_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_spectrum_plot"><code class="docutils literal notranslate"><span class="pre">make_spectrum_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_template_bin_table"><code class="docutils literal notranslate"><span class="pre">make_template_bin_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_template_plot"><code class="docutils literal notranslate"><span class="pre">make_template_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_throughput_plot"><code class="docutils literal notranslate"><span class="pre">make_throughput_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.make_veto_table"><code class="docutils literal notranslate"><span class="pre">make_veto_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.plotting.requirestr"><code class="docutils literal notranslate"><span class="pre">requirestr()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.psd">pycbc.workflow.psd module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.psd.make_average_psd"><code class="docutils literal notranslate"><span class="pre">make_average_psd()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.psd.make_psd_file"><code class="docutils literal notranslate"><span class="pre">make_psd_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.psd.merge_psds"><code class="docutils literal notranslate"><span class="pre">merge_psds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.psd.setup_psd_calculate"><code class="docutils literal notranslate"><span class="pre">setup_psd_calculate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.psdfiles">pycbc.workflow.psdfiles module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.psdfiles.setup_psd_pregenerated"><code class="docutils literal notranslate"><span class="pre">setup_psd_pregenerated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.psdfiles.setup_psd_workflow"><code class="docutils literal notranslate"><span class="pre">setup_psd_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.segment">pycbc.workflow.segment module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.segment.generate_triggered_segment"><code class="docutils literal notranslate"><span class="pre">generate_triggered_segment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.segment.get_flag_segments_file"><code class="docutils literal notranslate"><span class="pre">get_flag_segments_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.segment.get_segments_file"><code class="docutils literal notranslate"><span class="pre">get_segments_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.segment.get_triggered_coherent_segment"><code class="docutils literal notranslate"><span class="pre">get_triggered_coherent_segment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.segment.save_veto_definer"><code class="docutils literal notranslate"><span class="pre">save_veto_definer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.splittable">pycbc.workflow.splittable module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.splittable.select_splitfilejob_instance"><code class="docutils literal notranslate"><span class="pre">select_splitfilejob_instance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.splittable.setup_splittable_dax_generated"><code class="docutils literal notranslate"><span class="pre">setup_splittable_dax_generated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.splittable.setup_splittable_workflow"><code class="docutils literal notranslate"><span class="pre">setup_splittable_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.tmpltbank">pycbc.workflow.tmpltbank module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.tmpltbank.make_combine_split_banks"><code class="docutils literal notranslate"><span class="pre">make_combine_split_banks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.tmpltbank.make_compress_split_banks"><code class="docutils literal notranslate"><span class="pre">make_compress_split_banks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.tmpltbank.setup_tmpltbank_dax_generated"><code class="docutils literal notranslate"><span class="pre">setup_tmpltbank_dax_generated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.tmpltbank.setup_tmpltbank_pregenerated"><code class="docutils literal notranslate"><span class="pre">setup_tmpltbank_pregenerated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.tmpltbank.setup_tmpltbank_without_frames"><code class="docutils literal notranslate"><span class="pre">setup_tmpltbank_without_frames()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.tmpltbank.setup_tmpltbank_workflow"><code class="docutils literal notranslate"><span class="pre">setup_tmpltbank_workflow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.versioning">pycbc.workflow.versioning module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.versioning.VersioningExecutable"><code class="docutils literal notranslate"><span class="pre">VersioningExecutable</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.versioning.VersioningExecutable.current_retention_level"><code class="docutils literal notranslate"><span class="pre">VersioningExecutable.current_retention_level</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.versioning.make_versioning_page"><code class="docutils literal notranslate"><span class="pre">make_versioning_page()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="formats/hdf_format.html" class="btn btn-neutral float-left" title="HDF files within the PyCBC workflow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="workflow/initialization.html" class="btn btn-neutral float-right" title="Pycbc’s workflow module configuration file(s) and command line interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

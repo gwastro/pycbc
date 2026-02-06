@@ -1,0 +1,344 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marginalized time model &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Using the single template model" href="single.html" />
+    <link rel="prev" title="GW150914 example with gaussian noise model" href="gw150914.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Marginalized time model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-with-gw150914">Example with GW150914</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Marginalized time model</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/margtime.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="marginalized-time-model">
+<span id="marginalized-time-example"></span><h1>Marginalized time model<a class="headerlink" href="#marginalized-time-model" title="Link to this heading"></a></h1>
+<section id="example-with-gw150914">
+<h2>Example with GW150914<a class="headerlink" href="#example-with-gw150914" title="Link to this heading"></a></h2>
+<p>The marginalized time model can handle a broad array of waveform models which
+it generates at full resolution like the <code class="docutils literal notranslate"><span class="pre">gaussian_noise</span></code> model. However,
+it is optimized to enable marginalization of time in addition to marginalization
+over sky location, polarization, and overall phase (valid if the waveform
+approximant is dominant mode only).</p>
+<p>This example demonstrates using the <code class="docutils literal notranslate"><span class="pre">marginalized_time</span></code> model with the
+<code class="docutils literal notranslate"><span class="pre">dynesty</span></code> sampler in a configuration designed to run in couple minutes on a
+laptop. Actual sampling will only occur over the component masses and
+inclination. The remaining parameters are marginalized over, but will
+be reconstructed after running the parameter estimation by a follow-up
+script.</p>
+<p>First, we create the following configuration file:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Configuration File</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">marginalized_time</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30.0</span>
+
+<span class="c1"># This is the sample rate used for the model and marginalization</span>
+<span class="na">sample_rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4096</span>
+
+<span class="na">marginalize_vector_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">tc, ra, dec, polarization</span>
+<span class="na">marginalize_vector_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2000</span>
+
+<span class="c1">; You shouldn&#39;t use phase marginalization if the approximant has</span>
+<span class="c1">; higher-order modes</span>
+<span class="na">marginalize_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+
+<span class="na">marginalize_distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">marginalize_distance_param</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">distance</span>
+<span class="na">marginalize_distance_interpolator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">marginalize_distance_snr_range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5, 50</span>
+<span class="na">marginalize_distance_density</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100, 100</span>
+<span class="na">marginalize_distance_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.43</span>
+<span class="c1">; See the documentation at</span>
+<span class="c1">; http://pycbc.org/pycbc/latest/html/inference.html#simulated-bbh-example</span>
+<span class="c1">; for details on the following settings:</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-6</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median-mean</span>
+<span class="na">psd-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-256</span>
+<span class="na">psd-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">256</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4</span>
+<span class="c1">; The frame files must be downloaded from GWOSC before running. Here, we</span>
+<span class="c1">; assume that the files have been downloaded to the same directory. Adjust</span>
+<span class="c1">; the file path as necessary if not.</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:GWOSC-4KHZ_R1_STRAIN L1:GWOSC-4KHZ_R1_STRAIN</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+<span class="c1">; We&#39;ll use a high-pass filter so as not to get numerical errors from the large</span>
+<span class="c1">; amplitude low frequency noise. Here we use 15 Hz, which is safely below the</span>
+<span class="c1">; low frequency cutoff of our likelihood integral (20 Hz)</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="c1">; The pad-data argument is for the high-pass filter: 8s are added to the</span>
+<span class="c1">; beginning/end of the analysis/psd times when the data is loaded. After the</span>
+<span class="c1">; high pass filter is applied, the additional time is discarded. This pad is</span>
+<span class="c1">; *in addition to* the time added to the analysis start/end time for the PSD</span>
+<span class="c1">; inverse length. Since it is discarded before the data is transformed for the</span>
+<span class="c1">; likelihood integral, it has little affect on the run time.</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">dlogz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.0</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">500</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomD</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+
+<span class="k">[prior-mass1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">max-mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">50</span>
+
+<span class="k">[prior-mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">max-mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">50</span>
+
+<span class="k">[prior-ra]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">cos_angle</span>
+
+<span class="k">[prior-tc]</span>
+<span class="c1">#; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.35</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.45</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">#; following gives a uniform in volume</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="k">[prior-polarization]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+</pre></div>
+</div>
+<p class="sd-card-text"><a class="reference download internal" download="" href="../../_downloads/1a99a1fe8ff20313709e6b638df8abb1/margtime.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</div>
+</details><p>For this example, we’ll need to download gravitational-wave data for GW150914:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="w"> </span>-e
+
+<span class="k">for</span><span class="w"> </span>ifo<span class="w"> </span><span class="k">in</span><span class="w"> </span>H-H1<span class="w"> </span>L-L1
+<span class="k">do</span>
+<span class="w">    </span><span class="nv">file</span><span class="o">=</span><span class="si">${</span><span class="nv">ifo</span><span class="si">}</span>_GWOSC_4KHZ_R1-1126257415-4096.gwf
+<span class="w">    </span><span class="nb">test</span><span class="w"> </span>-f<span class="w"> </span><span class="si">${</span><span class="nv">file</span><span class="si">}</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">continue</span>
+<span class="w">    </span>curl<span class="w"> </span>-O<span class="w"> </span>-L<span class="w"> </span>--show-error<span class="w"> </span>--silent<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/<span class="si">${</span><span class="nv">file</span><span class="si">}</span>
+<span class="k">done</span>
+</pre></div>
+</div>
+<p>By setting the model name to <code class="docutils literal notranslate"><span class="pre">marginalized_time</span></code> we are using
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">MarginalizedTime</span></code></a>.</p>
+<p>Now run the following script. Note that after the parameter inference is run, we reconstruct
+the marginalized parameters by using the <cite>pycbc_inference_model_stats</cite> script with the options
+as follows.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-file<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/margtime.ini<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--processing-scheme<span class="w"> </span>mkl<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>marg_150914.hdf<span class="w"> </span><span class="se">\</span>
+--seed<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+
+<span class="c1"># This reconstructs any marginalized parameters</span>
+<span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>pycbc_inference_model_stats<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>marg_150914.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>demarg_150914.hdf<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--reconstruct-parameters<span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+
+pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>demarg_150914.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>demarg_150914.png<span class="w"> </span><span class="se">\</span>
+--parameters<span class="w"> </span><span class="se">\</span>
+<span class="w"> </span><span class="s2">&quot;primary_mass(mass1, mass2) / (1 + redshift(distance)):srcmass1&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w"> </span><span class="s2">&quot;secondary_mass(mass1, mass2) / (1 + redshift(distance)):srcmass2&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w"> </span>ra<span class="w"> </span>dec<span class="w"> </span>tc<span class="w"> </span>inclination<span class="w"> </span>coa_phase<span class="w"> </span>polarization<span class="w"> </span>distance<span class="w"> </span><span class="se">\</span>
+--vmin<span class="w"> </span><span class="m">23</span>.2<span class="w"> </span><span class="se">\</span>
+--z-arg<span class="w"> </span>snr
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/98de0a772d36c2bd0875e57ad394a322/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will run the <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> sampler. When it is done, you will have a file called
+<code class="docutils literal notranslate"><span class="pre">demarg_150914.hdf</span></code> which contains the results. It should take just a few minutes to run.</p>
+<p>This will create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/demarg_150914.png"><img alt="../../_images/demarg_150914.png" class="align-center" src="../../_images/demarg_150914.png" style="width: 400px;" />
+</a>
+<p>The scatter points show position of different posterior samples.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gw150914.html" class="btn btn-neutral float-left" title="GW150914 example with gaussian noise model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="single.html" class="btn btn-neutral float-right" title="Using the single template model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

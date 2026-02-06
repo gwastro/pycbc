@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.libutils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.libutils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.libutils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Josh Willis</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 2 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a simple interface for loading a shared library via ctypes,</span>
+<span class="sd">allowing it to be specified in an OS-independent way and searched for preferentially</span>
+<span class="sd">according to the paths that pkg-config specifies.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">fnmatch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ctypes.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">subprocess</span><span class="w"> </span><span class="kn">import</span> <span class="n">getoutput</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.libutils&#39;</span><span class="p">)</span>
+
+<span class="c1"># Be careful setting the mode for opening libraries! Some libraries (e.g.</span>
+<span class="c1"># libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when</span>
+<span class="c1"># MKL is also present) require that os.RTLD_DEEPBIND is used. If seeing</span>
+<span class="c1"># segfaults around this code, play about this this!</span>
+<span class="n">DEFAULT_RTLD_MODE</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">DEFAULT_MODE</span>
+
+
+<div class="viewcode-block" id="pkg_config">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.pkg_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pkg_config</span><span class="p">(</span><span class="n">pkg_libraries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use pkg-config to query for the location of libraries, library directories,</span>
+<span class="sd">       and header directories</span>
+
+<span class="sd">       Arguments:</span>
+<span class="sd">           pkg_libries(list): A list of packages as strings</span>
+
+<span class="sd">       Returns:</span>
+<span class="sd">           libraries(list), library_dirs(list), include_dirs(list)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">libraries</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">library_dirs</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">include_dirs</span><span class="o">=</span><span class="p">[]</span>
+
+    <span class="c1"># Check that we have the packages</span>
+    <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="n">pkg_libraries</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;pkg-config --exists </span><span class="si">%s</span><span class="s1"> 2&gt;/dev/null&#39;</span> <span class="o">%</span> <span class="n">pkg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not find library </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pkg</span><span class="p">))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Get the pck-config flags</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pkg_libraries</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="p">:</span>
+        <span class="c1"># PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.</span>
+        <span class="c1"># On system-wide LAL installs, this is needed for swig to find lalswig.i</span>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">getoutput</span><span class="p">(</span><span class="s2">&quot;PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pkg_libraries</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;-l&quot;</span><span class="p">):</span>
+                <span class="n">libraries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+            <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;-L&quot;</span><span class="p">):</span>
+                <span class="n">library_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+            <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;-I&quot;</span><span class="p">):</span>
+                <span class="n">include_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+
+    <span class="k">return</span> <span class="n">libraries</span><span class="p">,</span> <span class="n">library_dirs</span><span class="p">,</span> <span class="n">include_dirs</span></div>
+
+
+<div class="viewcode-block" id="pkg_config_header_strings">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.pkg_config_header_strings">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pkg_config_header_strings</span><span class="p">(</span><span class="n">pkg_libraries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Returns a list of header strings that could be passed to a compiler</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">header_dirs</span> <span class="o">=</span> <span class="n">pkg_config</span><span class="p">(</span><span class="n">pkg_libraries</span><span class="p">)</span>
+
+    <span class="n">header_strings</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">header_dir</span> <span class="ow">in</span> <span class="n">header_dirs</span><span class="p">:</span>
+        <span class="n">header_strings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-I&quot;</span> <span class="o">+</span> <span class="n">header_dir</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">header_strings</span></div>
+
+
+<div class="viewcode-block" id="pkg_config_check_exists">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.pkg_config_check_exists">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pkg_config_check_exists</span><span class="p">(</span><span class="n">package</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;pkg-config --exists </span><span class="si">{0}</span><span class="s1"> 2&gt;/dev/null&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">package</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pkg_config_libdirs">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.pkg_config_libdirs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pkg_config_libdirs</span><span class="p">(</span><span class="n">packages</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of all library paths that pkg-config says should be included when</span>
+<span class="sd">    linking against the list of packages given as &#39;packages&#39;. An empty return list means</span>
+<span class="sd">    that the package may be found in the standard system locations, irrespective of</span>
+<span class="sd">    pkg-config.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># don&#39;t try calling pkg-config if NO_PKGCONFIG is set in environment</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;NO_PKGCONFIG&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># if calling pkg-config failes, don&#39;t continue and don&#39;t try again.</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">FNULL</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s2">&quot;pkg-config&quot;</span><span class="p">,</span> <span class="s2">&quot;--version&quot;</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">FNULL</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;PyCBC.libutils: pkg-config call failed, &quot;</span>
+                <span class="s2">&quot;setting NO_PKGCONFIG=1&quot;</span><span class="p">,</span>
+                <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;NO_PKGCONFIG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="c1"># First, check that we can call pkg-config on each package in the list</span>
+    <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pkg_config_check_exists</span><span class="p">(</span><span class="n">pkg</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Package </span><span class="si">{0}</span><span class="s2"> cannot be found on the pkg-config search path&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pkg</span><span class="p">))</span>
+
+    <span class="n">libdirs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">getoutput</span><span class="p">(</span><span class="s2">&quot;PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">packages</span><span class="p">)))</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;-L&quot;</span><span class="p">):</span>
+            <span class="n">libdirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="n">libdirs</span></div>
+
+
+<div class="viewcode-block" id="get_libpath_from_dirlist">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.get_libpath_from_dirlist">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_libpath_from_dirlist</span><span class="p">(</span><span class="n">libname</span><span class="p">,</span> <span class="n">dirs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function tries to find the architecture-independent library given by libname in the first</span>
+<span class="sd">    available directory in the list dirs. &#39;Architecture-independent&#39; means omitting any prefix such</span>
+<span class="sd">    as &#39;lib&#39; or suffix such as &#39;so&#39; or &#39;dylib&#39; or version number.  Within the first directory in which</span>
+<span class="sd">    a matching pattern can be found, the lexicographically first such file is returned, as a string</span>
+<span class="sd">    giving the full path name.  The only supported OSes at the moment are posix and mac, and this</span>
+<span class="sd">    function does not attempt to determine which is being run.  So if for some reason your directory</span>
+<span class="sd">    has both &#39;.so&#39; and &#39;.dylib&#39; libraries, who knows what will happen.  If the library cannot be found,</span>
+<span class="sd">    None is returned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dirqueue</span> <span class="o">=</span> <span class="n">deque</span><span class="p">(</span><span class="n">dirs</span><span class="p">)</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dirqueue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">nextdir</span> <span class="o">=</span> <span class="n">dirqueue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+        <span class="n">possible</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Our directory might be no good, so try/except</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">libfile</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">nextdir</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">libfile</span><span class="p">,</span><span class="s1">&#39;lib&#39;</span><span class="o">+</span><span class="n">libname</span><span class="o">+</span><span class="s1">&#39;.so*&#39;</span><span class="p">)</span> <span class="ow">or</span> \
+                        <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">libfile</span><span class="p">,</span><span class="s1">&#39;lib&#39;</span><span class="o">+</span><span class="n">libname</span><span class="o">+</span><span class="s1">&#39;.dylib*&#39;</span><span class="p">)</span> <span class="ow">or</span> \
+                        <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">libfile</span><span class="p">,</span><span class="s1">&#39;lib&#39;</span><span class="o">+</span><span class="n">libname</span><span class="o">+</span><span class="s1">&#39;.*.dylib*&#39;</span><span class="p">)</span> <span class="ow">or</span> \
+                        <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">libfile</span><span class="p">,</span><span class="n">libname</span><span class="o">+</span><span class="s1">&#39;.dll&#39;</span><span class="p">)</span> <span class="ow">or</span> \
+                        <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">libfile</span><span class="p">,</span><span class="s1">&#39;cyg&#39;</span><span class="o">+</span><span class="n">libname</span><span class="o">+</span><span class="s1">&#39;-*.dll&#39;</span><span class="p">):</span>
+                    <span class="n">possible</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">libfile</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="c1"># There might be more than one library found, we want the highest-numbered</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">possible</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">possible</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nextdir</span><span class="p">,</span><span class="n">possible</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># If we get here, we didn&#39;t find it...</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="get_ctypes_library">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.get_ctypes_library">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_ctypes_library</span><span class="p">(</span><span class="n">libname</span><span class="p">,</span> <span class="n">packages</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">DEFAULT_RTLD_MODE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function takes a library name, specified in architecture-independent fashion (i.e.</span>
+<span class="sd">    omitting any prefix such as &#39;lib&#39; or suffix such as &#39;so&#39; or &#39;dylib&#39; or version number) and</span>
+<span class="sd">    a list of packages that may provide that library, and according first to LD_LIBRARY_PATH,</span>
+<span class="sd">    then the results of pkg-config, and falling back to the system search path, will try to</span>
+<span class="sd">    return a CDLL ctypes object.  If &#39;mode&#39; is given it will be used when loading the library.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">libdirs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># First try to get from LD_LIBRARY_PATH</span>
+    <span class="k">if</span> <span class="s2">&quot;LD_LIBRARY_PATH&quot;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+        <span class="n">libdirs</span> <span class="o">+=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LD_LIBRARY_PATH&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+    <span class="c1"># Next try to append via pkg_config</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">libdirs</span> <span class="o">+=</span> <span class="n">pkg_config_libdirs</span><span class="p">(</span><span class="n">packages</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="c1"># We might be using conda/pip/virtualenv or some combination. This can</span>
+    <span class="c1"># leave lib files in a directory that LD_LIBRARY_PATH or pkg_config</span>
+    <span class="c1"># can miss.</span>
+    <span class="n">libdirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span> <span class="s2">&quot;lib&quot;</span><span class="p">))</span>
+
+    <span class="c1"># Note that the function below can accept an empty list for libdirs, in</span>
+    <span class="c1"># which case it will return None</span>
+    <span class="n">fullpath</span> <span class="o">=</span> <span class="n">get_libpath_from_dirlist</span><span class="p">(</span><span class="n">libname</span><span class="p">,</span> <span class="n">libdirs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fullpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># This won&#39;t actually return a full-path, but it should be something</span>
+        <span class="c1"># that can be found by CDLL</span>
+        <span class="n">fullpath</span> <span class="o">=</span> <span class="n">find_library</span><span class="p">(</span><span class="n">libname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fullpath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># We got nothin&#39;</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">fullpath</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">fullpath</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="import_optional">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.libutils.import_optional">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_optional</span><span class="p">(</span><span class="n">library_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Try to import library but and return stub if not found</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    library_name: str</span>
+<span class="sd">        The name of the python library to import</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    library: library or stub</span>
+<span class="sd">        Either returns the library if importing is sucessful or it returns</span>
+<span class="sd">        a stub which raises an import error and message when accessed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">library_name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="c1"># module wasn&#39;t found so let&#39;s return a stub instead to inform</span>
+        <span class="c1"># the user what has happened when they try to use related functions</span>
+        <span class="k">class</span><span class="w"> </span><span class="nc">no_module</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">library</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">library</span> <span class="o">=</span> <span class="n">library</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s1">&#39;library&#39;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+                <span class="n">lib</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">library</span>
+
+                <span class="n">curframe</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+                <span class="n">calframe</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getouterframes</span><span class="p">(</span><span class="n">curframe</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">fun</span> <span class="o">=</span> <span class="n">calframe</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">msg</span> <span class="o">=</span><span class="s2">&quot;&quot;&quot; The function </span><span class="si">{}</span><span class="s2"> tried to access</span>
+<span class="s2">                         &#39;</span><span class="si">{}</span><span class="s2">&#39; of library &#39;</span><span class="si">{}</span><span class="s2">&#39;, however,</span>
+<span class="s2">                        &#39;</span><span class="si">{}</span><span class="s2">&#39; is not currently installed. To enable this</span>
+<span class="s2">                        functionality install &#39;</span><span class="si">{}</span><span class="s2">&#39; (e.g. through pip</span>
+<span class="s2">                        / conda / system packages / source).</span>
+<span class="s2">                      &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="n">lib</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">cleandoc</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">no_module</span><span class="p">(</span><span class="n">library_name</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

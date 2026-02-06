@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.live.supervision &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.live.supervision</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.live.supervision</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 Arthur Tolley, Gareth Cabourn Davies</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for supervising codes to run regularly</span>
+<span class="sd">during pycbc_live production, taking input from the search and returning</span>
+<span class="sd">files which can be used in the search.</span>
+<span class="sd">This module is primarily used in the pycbc_live_supervise_* programs.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dateutil.relativedelta</span><span class="w"> </span><span class="kn">import</span> <span class="n">relativedelta</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.live.supervision&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="symlink">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.supervision.symlink">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">symlink</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">link_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a symbolic link replacing the destination and checking for</span>
+<span class="sd">    errors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure that the target and link name are absolute paths</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+    <span class="n">link_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">link_name</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Linking </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">link_name</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">&#39;ln&#39;</span><span class="p">,</span> <span class="s1">&#39;-sf&#39;</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">link_name</span><span class="p">],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">sub_err</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Could not link </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">link_name</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">sub_err</span></div>
+
+
+
+<div class="viewcode-block" id="dict_to_args">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.supervision.dict_to_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_to_args</span><span class="p">(</span><span class="n">opts_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert an option dictionary into a list to be used by subprocess.run</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dargs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">opts_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;--&#39;</span> <span class="o">+</span> <span class="n">option</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="c1"># option is a flag, do nothing</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># value is a list, append individually</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>
+                <span class="n">dargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Single value option - append once</span>
+            <span class="n">dargs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dargs</span></div>
+
+
+
+<div class="viewcode-block" id="mail_volunteers_error">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.supervision.mail_volunteers_error">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mail_volunteers_error</span><span class="p">(</span><span class="n">controls</span><span class="p">,</span> <span class="n">mail_body_lines</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Email a list of people, defined by mail-volunteers-file</span>
+<span class="sd">    To be used for errors or unusual occurences</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">controls</span><span class="p">[</span><span class="s1">&#39;mail-volunteers-file&#39;</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mail_volunteers_file</span><span class="p">:</span>
+        <span class="n">volunteers</span> <span class="o">=</span> <span class="p">[</span><span class="n">volunteer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">volunteer</span> <span class="ow">in</span>
+                      <span class="n">mail_volunteers_file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Emailing </span><span class="si">%s</span><span class="s2"> with warnings&quot;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">volunteers</span><span class="p">))</span>
+    <span class="n">mail_command</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;mail&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;-s&#39;</span><span class="p">,</span>
+        <span class="n">subject</span>
+    <span class="p">]</span>
+    <span class="n">mail_command</span> <span class="o">+=</span> <span class="n">volunteers</span>
+    <span class="n">mail_body</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">mail_body_lines</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">mail_command</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="n">mail_body</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">sub_err</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Could not send mail on error&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">sub_err</span></div>
+
+
+
+<div class="viewcode-block" id="run_and_error">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.supervision.run_and_error">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_and_error</span><span class="p">(</span><span class="n">command_arguments</span><span class="p">,</span> <span class="n">controls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around subprocess.run to catch errors and send emails if required</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">command_arguments</span><span class="p">))</span>
+    <span class="n">command_output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="n">command_arguments</span><span class="p">,</span>
+        <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">command_output</span><span class="o">.</span><span class="n">returncode</span><span class="p">:</span>
+        <span class="n">error_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">command_arguments</span><span class="p">),</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>
+                          <span class="n">command_output</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="s1">&#39;mail-volunteers-file&#39;</span> <span class="ow">in</span> <span class="n">controls</span><span class="p">:</span>
+            <span class="n">mail_volunteers_error</span><span class="p">(</span>
+                <span class="n">controls</span><span class="p">,</span>
+                <span class="n">error_contents</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;PyCBC live could not run </span><span class="si">{</span><span class="n">command_arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Could not run </span><span class="si">{</span><span class="n">command_arguments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">error_contents</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="wait_for_utc_time">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.supervision.wait_for_utc_time">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wait_for_utc_time</span><span class="p">(</span><span class="n">target_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wait until the UTC time is as given by `target_str`, in HH:MM:SS format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target_hour</span><span class="p">,</span> <span class="n">target_minute</span><span class="p">,</span> <span class="n">target_second</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">target_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+    <span class="c1"># for today&#39;s target, take now and replace the time</span>
+    <span class="n">target_today</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="n">relativedelta</span><span class="p">(</span>
+        <span class="n">hour</span><span class="o">=</span><span class="n">target_hour</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="n">target_minute</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="n">target_second</span>
+    <span class="p">)</span>
+    <span class="c1"># for tomorrow&#39;s target, take now, add one day, and replace the time</span>
+    <span class="n">target_tomorrow</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="n">relativedelta</span><span class="p">(</span>
+        <span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">hour</span><span class="o">=</span><span class="n">target_hour</span><span class="p">,</span> <span class="n">minute</span><span class="o">=</span><span class="n">target_minute</span><span class="p">,</span> <span class="n">second</span><span class="o">=</span><span class="n">target_second</span>
+    <span class="p">)</span>
+    <span class="n">next_target</span> <span class="o">=</span> <span class="n">target_today</span> <span class="k">if</span> <span class="n">now</span> <span class="o">&lt;=</span> <span class="n">target_today</span> <span class="k">else</span> <span class="n">target_tomorrow</span>
+    <span class="n">sleep_seconds</span> <span class="o">=</span> <span class="p">(</span><span class="n">next_target</span> <span class="o">-</span> <span class="n">now</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Waiting </span><span class="si">%.0f</span><span class="s1"> s&#39;</span><span class="p">,</span> <span class="n">sleep_seconds</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">sleep_seconds</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ensure_directories">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.supervision.ensure_directories">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_directories</span><span class="p">(</span><span class="n">control_values</span><span class="p">,</span> <span class="n">day_str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure that the required directories exist</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">control_values</span><span class="p">[</span><span class="s1">&#39;output-directory&#39;</span><span class="p">],</span>
+        <span class="n">day_str</span>
+    <span class="p">)</span>
+    <span class="n">pycbc</span><span class="o">.</span><span class="n">makedir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;public-dir&#39;</span> <span class="ow">in</span> <span class="n">control_values</span><span class="p">:</span>
+        <span class="c1"># The public directory wil be in subdirectories for the year, month,</span>
+        <span class="c1"># day, e.g. 2024_04_12 will be in 2024/04/12.</span>
+        <span class="n">public_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">control_values</span><span class="p">[</span><span class="s1">&#39;public-dir&#39;</span><span class="p">],</span>
+            <span class="o">*</span><span class="n">day_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">pycbc</span><span class="o">.</span><span class="n">makedir</span><span class="p">(</span><span class="n">public_dir</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

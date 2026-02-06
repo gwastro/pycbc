@@ -1,0 +1,1385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.strain package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.tmpltbank package" href="pycbc.tmpltbank.html" />
+    <link rel="prev" title="pycbc.results package" href="pycbc.results.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.strain package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.strain.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-strain-package">
+<h1>pycbc.strain package<a class="headerlink" href="#pycbc-strain-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.strain.calibration">
+<span id="pycbc-strain-calibration-module"></span><h2>pycbc.strain.calibration module<a class="headerlink" href="#module-pycbc.strain.calibration" title="Link to this heading"></a></h2>
+<p>Functions for adding calibration factors to waveform templates.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.CubicSpline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.calibration.</span></span><span class="sig-name descname"><span class="pre">CubicSpline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/calibration.html#CubicSpline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.calibration.CubicSpline" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.strain.calibration.Recalibrate" title="pycbc.strain.calibration.Recalibrate"><code class="xref py py-class docutils literal notranslate"><span class="pre">Recalibrate</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.CubicSpline.apply_calibration">
+<span class="sig-name descname"><span class="pre">apply_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/calibration.html#CubicSpline.apply_calibration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.calibration.CubicSpline.apply_calibration" title="Link to this definition"></a></dt>
+<dd><p>Apply calibration model</p>
+<p>This applies cubic spline calibration to the strain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.CubicSpline.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cubic_spline'</span></em><a class="headerlink" href="#pycbc.strain.calibration.CubicSpline.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.Recalibrate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.calibration.</span></span><span class="sig-name descname"><span class="pre">Recalibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifo_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/calibration.html#Recalibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.calibration.Recalibrate" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.Recalibrate.apply_calibration">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">apply_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/calibration.html#Recalibrate.apply_calibration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.calibration.Recalibrate.apply_calibration" title="Link to this definition"></a></dt>
+<dd><p>Apply calibration model</p>
+<p>This method should be overwritten by subclasses</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.Recalibrate.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/calibration.html#Recalibrate.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.calibration.Recalibrate.from_config" title="Link to this definition"></a></dt>
+<dd><p>Read a config file to get calibration options and transfer
+functions which will be used to intialize the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser" title="pycbc.workflow.configuration.WorkflowConfigParser"><em>WorkflowConfigParser</em></a>) – An open config file.</p></li>
+<li><p><strong>ifo</strong> (<em>string</em>) – The detector (H1, L1) for which the calibration model will
+be loaded.</p></li>
+<li><p><strong>section</strong> (<em>string</em>) – The section name in the config file from which to retrieve
+the calibration options.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.Recalibrate.map_to_adjust">
+<span class="sig-name descname"><span class="pre">map_to_adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'recalib_'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/calibration.html#Recalibrate.map_to_adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.calibration.Recalibrate.map_to_adjust" title="Link to this definition"></a></dt>
+<dd><p>Map an input dictionary of sampling parameters to the
+adjust_strain function by filtering the dictionary for the
+calibration parameters, then calling adjust_strain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p></li>
+<li><p><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Prefix for calibration parameter names</p></li>
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of sampling parameters which includes
+calibration parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.strain.calibration.Recalibrate.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pycbc.strain.calibration.Recalibrate.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.strain.gate">
+<span id="pycbc-strain-gate-module"></span><h2>pycbc.strain.gate module<a class="headerlink" href="#module-pycbc.strain.gate" title="Link to this heading"></a></h2>
+<p>Functions for applying gates to data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.gate.add_gate_option_group">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.gate.</span></span><span class="sig-name descname"><span class="pre">add_gate_option_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/gate.html#add_gate_option_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.gate.add_gate_option_group" title="Link to this definition"></a></dt>
+<dd><p>Adds the options needed to apply gates to data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – ArgumentParser instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.gate.apply_gates_to_fd">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.gate.</span></span><span class="sig-name descname"><span class="pre">apply_gates_to_fd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stilde_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gates</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/gate.html#apply_gates_to_fd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.gate.apply_gates_to_fd" title="Link to this definition"></a></dt>
+<dd><p>Applies the given dictionary of gates to the given dictionary of
+strain in the frequency domain.</p>
+<p>Gates are applied by IFFT-ing the strain data to the time domain, applying
+the gate, then FFT-ing back to the frequency domain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stilde_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of frequency-domain strain, keyed by the ifos.</p></li>
+<li><p><strong>gates</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of gates. Keys should be the ifo to apply the data to,
+values are a tuple giving the central time of the gate, the half
+duration, and the taper duration.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of frequency-domain strain with the gates applied.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.gate.apply_gates_to_td">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.gate.</span></span><span class="sig-name descname"><span class="pre">apply_gates_to_td</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gates</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/gate.html#apply_gates_to_td"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.gate.apply_gates_to_td" title="Link to this definition"></a></dt>
+<dd><p>Applies the given dictionary of gates to the given dictionary of
+strain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of time-domain strain, keyed by the ifos.</p></li>
+<li><p><strong>gates</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of gates. Keys should be the ifo to apply the data to,
+values are a tuple giving the central time of the gate, the half
+duration, and the taper duration.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of time-domain strain with the gates applied.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.gate.gate_and_paint">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.gate.</span></span><span class="sig-name descname"><span class="pre">gate_and_paint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lindex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rindex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invpsd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/gate.html#gate_and_paint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.gate.gate_and_paint" title="Link to this definition"></a></dt>
+<dd><p>Gates and in-paints data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The data to gate.</p></li>
+<li><p><strong>lindex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The start index of the gate.</p></li>
+<li><p><strong>rindex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The end index of the gate.</p></li>
+<li><p><strong>invpsd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The inverse of the PSD.</p></li>
+<li><p><strong>copy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Copy the data before applying the gate. Otherwise, the gate will
+be applied in-place. Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The gated and in-painted time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.gate.gates_from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.gate.</span></span><span class="sig-name descname"><span class="pre">gates_from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/gate.html#gates_from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.gate.gates_from_cli" title="Link to this definition"></a></dt>
+<dd><p>Parses the –gate option into something understandable by
+<cite>strain.gate_data</cite>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.gate.psd_gates_from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.gate.</span></span><span class="sig-name descname"><span class="pre">psd_gates_from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/gate.html#psd_gates_from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.gate.psd_gates_from_cli" title="Link to this definition"></a></dt>
+<dd><p>Parses the –psd-gate option into something understandable by
+<cite>strain.gate_data</cite>.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.strain.lines">
+<span id="pycbc-strain-lines-module"></span><h2>pycbc.strain.lines module<a class="headerlink" href="#module-pycbc.strain.lines" title="Link to this heading"></a></h2>
+<p>Functions for removing frequency lines from real data.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.lines.avg_inner_product">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.lines.</span></span><span class="sig-name descname"><span class="pre">avg_inner_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/lines.html#avg_inner_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.lines.avg_inner_product" title="Link to this definition"></a></dt>
+<dd><p>Calculate the time-domain inner product averaged over bins.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data1</strong> (<em>pycbc.types.TimeSeries</em>) – First data set.</p></li>
+<li><p><strong>data2</strong> (<em>pycbc.types.TimeSeries</em>) – Second data set, with same duration and sample rate as data1.</p></li>
+<li><p><strong>bin_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Duration of the bins the data will be divided into to calculate
+the inner product.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>inner_prod</strong> (<em>list</em>) – The (complex) inner product of data1 and data2 obtained in each bin.</p></li>
+<li><p><strong>amp</strong> (<em>float</em>) – The absolute value of the median of the inner product.</p></li>
+<li><p><strong>phi</strong> (<em>float</em>) – The angle of the median of the inner product.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.lines.calibration_lines">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.lines.</span></span><span class="sig-name descname"><span class="pre">calibration_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/lines.html#calibration_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.lines.calibration_lines" title="Link to this definition"></a></dt>
+<dd><p>Extract the calibration lines from strain data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freqs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List containing the frequencies of the calibration lines.</p></li>
+<li><p><strong>data</strong> (<em>pycbc.types.TimeSeries</em>) – Strain data to extract the calibration lines from.</p></li>
+<li><p><strong>tref</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Reference time for the line. If None, will use data.start_time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> – The strain data with the calibration lines removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.types.TimeSeries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.lines.clean_data">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.lines.</span></span><span class="sig-name descname"><span class="pre">clean_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_bin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/lines.html#clean_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.lines.clean_data" title="Link to this definition"></a></dt>
+<dd><p>Extract time-varying (wandering) lines from strain data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freqs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List containing the frequencies of the wandering lines.</p></li>
+<li><p><strong>data</strong> (<em>pycbc.types.TimeSeries</em>) – Strain data to extract the wandering lines from.</p></li>
+<li><p><strong>chunk</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Duration of the chunks the data will be divided into to account
+for the time variation of the wandering lines. Should be smaller
+than data.duration, and allow for at least a few chunks.</p></li>
+<li><p><strong>avg_bin</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Duration of the bins each chunk will be divided into for averaging
+the inner product when measuring the parameters of the line. Should
+be smaller than chunk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> – The strain data with the wandering lines removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.types.TimeSeries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.lines.complex_median">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.lines.</span></span><span class="sig-name descname"><span class="pre">complex_median</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">complex_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/lines.html#complex_median"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.lines.complex_median" title="Link to this definition"></a></dt>
+<dd><p>Get the median value of a list of complex numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>complex_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of complex numbers to calculate the median.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>a + 1.j*b</strong> – The median of the real and imaginary parts.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>complex number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.lines.line_model">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.lines.</span></span><span class="sig-name descname"><span class="pre">line_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/lines.html#line_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.lines.line_model" title="Link to this definition"></a></dt>
+<dd><p>Simple time-domain model for a frequency line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Frequency of the line.</p></li>
+<li><p><strong>data</strong> (<em>pycbc.types.TimeSeries</em>) – Reference data, to get delta_t, start_time, duration and sample_times.</p></li>
+<li><p><strong>tref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Reference time for the line model.</p></li>
+<li><p><strong>amp</strong> (<em>{1.</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Amplitude of the frequency line.</p></li>
+<li><p><strong>phi</strong> (<em>{0. float}</em><em>, </em><em>optional</em>) – Phase of the frequency line (radians).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>freq_line</strong> – A timeseries of the line model with frequency ‘freq’. The returned
+data are complex to allow measuring the amplitude and phase of the
+corresponding frequency line in the strain data. For extraction, use
+only the real part of the data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.types.TimeSeries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.lines.matching_line">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.lines.</span></span><span class="sig-name descname"><span class="pre">matching_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/lines.html#matching_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.lines.matching_line" title="Link to this definition"></a></dt>
+<dd><p>Find the parameter of the line with frequency ‘freq’ in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Frequency of the line to find in the data.</p></li>
+<li><p><strong>data</strong> (<em>pycbc.types.TimeSeries</em>) – Data from which the line wants to be measured.</p></li>
+<li><p><strong>tref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Reference time for the frequency line.</p></li>
+<li><p><strong>bin_size</strong> (<em>{1</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Duration of the bins the data will be divided into for averaging.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>line_model</strong> – A timeseries containing the frequency line with the amplitude
+and phase measured from the data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.types.TimeSeries</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.strain.recalibrate">
+<span id="pycbc-strain-recalibrate-module"></span><h2>pycbc.strain.recalibrate module<a class="headerlink" href="#module-pycbc.strain.recalibrate" title="Link to this heading"></a></h2>
+<p>Classes and functions for adjusting strain data.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.CubicSpline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.recalibrate.</span></span><span class="sig-name descname"><span class="pre">CubicSpline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minimum_frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#CubicSpline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.CubicSpline" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.strain.recalibrate.Recalibrate" title="pycbc.strain.recalibrate.Recalibrate"><code class="xref py py-class docutils literal notranslate"><span class="pre">Recalibrate</span></code></a></p>
+<p>Cubic spline recalibration</p>
+<p>see <a class="reference external" href="https://dcc.ligo.org/LIGO-T1400682/public">https://dcc.ligo.org/LIGO-T1400682/public</a></p>
+<p>This assumes the spline points follow
+np.logspace(np.log(minimum_frequency), np.log(maximum_frequency),
+n_points)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>minimum_frequency</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>points</strong> (<em>number</em><em> of </em><em>spline</em>)</p></li>
+<li><p><strong>maximum_frequency</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>)</p></li>
+<li><p><strong>points</strong></p></li>
+<li><p><strong>n_points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
+<li><p><strong>points</strong></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.CubicSpline.apply_calibration">
+<span class="sig-name descname"><span class="pre">apply_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#CubicSpline.apply_calibration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.CubicSpline.apply_calibration" title="Link to this definition"></a></dt>
+<dd><p>Apply calibration model</p>
+<p>This applies cubic spline calibration to the strain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.CubicSpline.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cubic_spline'</span></em><a class="headerlink" href="#pycbc.strain.recalibrate.CubicSpline.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.recalibrate.</span></span><span class="sig-name descname"><span class="pre">PhysicalModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fc0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_tst0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_pu0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinv0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for adjusting time-varying calibration parameters of given
+strain data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be adjusted.</p></li>
+<li><p><strong>freq</strong> (<em>array</em>) – The frequencies corresponding to the values of c0, d0, a0 in Hertz.</p></li>
+<li><p><strong>fc0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Coupled-cavity (CC) pole at time t0, when c0=c(t0) and a0=a(t0) are
+measured.</p></li>
+<li><p><strong>c0</strong> (<em>array</em>) – Initial sensing function at t0 for the frequencies.</p></li>
+<li><p><strong>d0</strong> (<em>array</em>) – Digital filter for the frequencies.</p></li>
+<li><p><strong>a_tst0</strong> (<em>array</em>) – Initial actuation function for the test mass at t0 for the
+frequencies.</p></li>
+<li><p><strong>a_pu0</strong> (<em>array</em>) – Initial actuation function for the penultimate mass at t0 for the
+frequencies.</p></li>
+<li><p><strong>fs0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Initial spring frequency at t0 for the signal recycling cavity.</p></li>
+<li><p><strong>qinv0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Initial inverse quality factor at t0 for the signal recycling
+cavity.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.adjust_strain">
+<span class="sig-name descname"><span class="pre">adjust_strain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_qinv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_fc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_tst_re</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_tst_im</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_pu_re</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_pu_im</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.adjust_strain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.adjust_strain" title="Link to this definition"></a></dt>
+<dd><p>Adjust the FrequencySeries strain by changing the time-dependent
+calibration parameters kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain data to be adjusted.</p></li>
+<li><p><strong>delta_fc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Change in coupled-cavity (CC) pole at time t.</p></li>
+<li><p><strong>kappa_c</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Scalar correction factor for sensing function c0 at time t.</p></li>
+<li><p><strong>kappa_tst_re</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Real part of scalar correction factor for actuation function
+A_{tst0} at time t.</p></li>
+<li><p><strong>kappa_tst_im</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Imaginary part of scalar correction factor for actuation function
+A_tst0 at time t.</p></li>
+<li><p><strong>kappa_pu_re</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Real part of scalar correction factor for actuation function
+A_{pu0} at time t.</p></li>
+<li><p><strong>kappa_pu_im</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Imaginary part of scalar correction factor for actuation function
+A_{pu0} at time t.</p></li>
+<li><p><strong>fs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Spring frequency for signal recycling cavity.</p></li>
+<li><p><strong>qinv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inverse quality factor for signal recycling cavity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The adjusted strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.from_config" title="Link to this definition"></a></dt>
+<dd><p>Read a config file to get calibration options and transfer
+functions which will be used to intialize the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser" title="pycbc.workflow.configuration.WorkflowConfigParser"><em>WorkflowConfigParser</em></a>) – An open config file.</p></li>
+<li><p><strong>ifo</strong> (<em>string</em>) – The detector (H1, L1) for which the calibration model will
+be loaded.</p></li>
+<li><p><strong>section</strong> (<em>string</em>) – The section name in the config file from which to retrieve
+the calibration options.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the Recalibrate class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.map_to_adjust">
+<span class="sig-name descname"><span class="pre">map_to_adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.map_to_adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.map_to_adjust" title="Link to this definition"></a></dt>
+<dd><p>Map an input dictionary of sampling parameters to the
+adjust_strain function by filtering the dictionary for the
+calibration parameters, then calling adjust_strain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p></li>
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of sampling parameters which includes
+calibration parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'physical_model'</span></em><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.tf_from_file">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tf_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delimiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'</span> <span class="pre">'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.tf_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.tf_from_file" title="Link to this definition"></a></dt>
+<dd><p>Convert the contents of a file with the columns
+[freq, real(h), imag(h)] to a numpy.array with columns
+[freq, real(h)+j*imag(h)].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>)</p></li>
+<li><p><strong>delimiter</strong> (<em>{&quot; &quot;</em><em>, </em><em>string}</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.update_c">
+<span class="sig-name descname"><span class="pre">update_c</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.update_c"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.update_c" title="Link to this definition"></a></dt>
+<dd><p>Calculate the sensing function c(f,t) given the new parameters
+kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Coupled-cavity (CC) pole at time t.</p></li>
+<li><p><strong>kappa_c</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Scalar correction factor for sensing function at time t.</p></li>
+<li><p><strong>fs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Spring frequency for signal recycling cavity.</p></li>
+<li><p><strong>qinv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inverse quality factor for signal recycling cavity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>c</strong> – The new sensing function c(f,t).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.update_g">
+<span class="sig-name descname"><span class="pre">update_g</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_tst_re</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_tst_im</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_pu_re</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_pu_im</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.update_g"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.update_g" title="Link to this definition"></a></dt>
+<dd><p>Calculate the open loop gain g(f,t) given the new parameters
+kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Coupled-cavity (CC) pole at time t.</p></li>
+<li><p><strong>kappa_c</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Scalar correction factor for sensing function c at time t.</p></li>
+<li><p><strong>kappa_tst_re</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Real part of scalar correction factor for actuation function
+a_tst0 at time t.</p></li>
+<li><p><strong>kappa_pu_re</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Real part of scalar correction factor for actuation function
+a_pu0 at time t.</p></li>
+<li><p><strong>kappa_tst_im</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Imaginary part of scalar correction factor for actuation function
+a_tst0 at time t.</p></li>
+<li><p><strong>kappa_pu_im</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Imaginary part of scalar correction factor for actuation function
+a_pu0 at time t.</p></li>
+<li><p><strong>fs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Spring frequency for signal recycling cavity.</p></li>
+<li><p><strong>qinv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inverse quality factor for signal recycling cavity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>g</strong> – The new open loop gain g(f,t).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.PhysicalModel.update_r">
+<span class="sig-name descname"><span class="pre">update_r</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qinv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_tst_re</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_tst_im</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_pu_re</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa_pu_im</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#PhysicalModel.update_r"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.PhysicalModel.update_r" title="Link to this definition"></a></dt>
+<dd><p>Calculate the response function R(f,t) given the new parameters
+kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Coupled-cavity (CC) pole at time t.</p></li>
+<li><p><strong>kappa_c</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Scalar correction factor for sensing function c at time t.</p></li>
+<li><p><strong>kappa_tst_re</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Real part of scalar correction factor for actuation function
+a_tst0 at time t.</p></li>
+<li><p><strong>kappa_pu_re</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Real part of scalar correction factor for actuation function
+a_pu0 at time t.</p></li>
+<li><p><strong>kappa_tst_im</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Imaginary part of scalar correction factor for actuation function
+a_tst0 at time t.</p></li>
+<li><p><strong>kappa_pu_im</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Imaginary part of scalar correction factor for actuation function
+a_pu0 at time t.</p></li>
+<li><p><strong>fs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Spring frequency for signal recycling cavity.</p></li>
+<li><p><strong>qinv</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inverse quality factor for signal recycling cavity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>r</strong> – The new response function r(f,t).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.Recalibrate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.recalibrate.</span></span><span class="sig-name descname"><span class="pre">Recalibrate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifo_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#Recalibrate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.Recalibrate" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base class for modifying calibration</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.Recalibrate.apply_calibration">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">apply_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#Recalibrate.apply_calibration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.Recalibrate.apply_calibration" title="Link to this definition"></a></dt>
+<dd><p>Apply calibration model</p>
+<p>This method should be overwritten by subclasses</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.Recalibrate.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#Recalibrate.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.Recalibrate.from_config" title="Link to this definition"></a></dt>
+<dd><p>Read a config file to get calibration options and transfer
+functions which will be used to intialize the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser" title="pycbc.workflow.configuration.WorkflowConfigParser"><em>WorkflowConfigParser</em></a>) – An open config file.</p></li>
+<li><p><strong>ifo</strong> (<em>string</em>) – The detector (H1, L1) for which the calibration model will
+be loaded.</p></li>
+<li><p><strong>section</strong> (<em>string</em>) – The section name in the config file from which to retrieve
+the calibration options.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.Recalibrate.map_to_adjust">
+<span class="sig-name descname"><span class="pre">map_to_adjust</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'recalib_'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#Recalibrate.map_to_adjust"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.Recalibrate.map_to_adjust" title="Link to this definition"></a></dt>
+<dd><p>Map an input dictionary of sampling parameters to the
+adjust_strain function by filtering the dictionary for the
+calibration parameters, then calling adjust_strain.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The strain to be recalibrated.</p></li>
+<li><p><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Prefix for calibration parameter names</p></li>
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of sampling parameters which includes
+calibration parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain_adjusted</strong> – The recalibrated strain.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.Recalibrate.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pycbc.strain.recalibrate.Recalibrate.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.get_calibration_files_O1_O2_O3">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.recalibrate.</span></span><span class="sig-name descname"><span class="pre">get_calibration_files_O1_O2_O3</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gps_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calibration_file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#get_calibration_files_O1_O2_O3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.get_calibration_files_O1_O2_O3" title="Link to this definition"></a></dt>
+<dd><p>This function provides a dictionary of calibration envelop files
+for each IFO around a given GPS time for O1, O2, and O3 observation
+run.</p>
+<dl class="simple">
+<dt>Input:</dt><dd><p>ifos: List of detectors in the network
+gps_time: GPS time around which the calibration envelop is required
+calibration_file_path: Top level directory of locally downloaded calibration envelopes</p>
+</dd>
+<dt>Output:</dt><dd><p>A dictionary of calibration envelop file path for each IFO.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.recalibrate.read_calibration_envelop_file">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.recalibrate.</span></span><span class="sig-name descname"><span class="pre">read_calibration_envelop_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibration_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">correction_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximum_frequency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/recalibrate.html#read_calibration_envelop_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.recalibrate.read_calibration_envelop_file" title="Link to this definition"></a></dt>
+<dd><p>This function reads the calibration envelop file and provide arrays
+needed to construct cubic splines</p>
+<dl class="simple">
+<dt>Input:</dt><dd><p>calibration_file: Calibration envelop file
+correction_type: Specify the correction type between ‘data’ and ‘template’
+minimum_frequency: Lower cut-off frequency to apply calibration
+maximum_frequency: Upper cut-off frequency to apply calibration
+n_nodes: Nodal points for cubic-splines</p>
+</dd>
+<dt>Output:</dt><dd><p>log_nodes: Values of log-frequency for nodal points
+amplitude_median_nodes: Median values of Amplitude correction at frequency nodal points
+amplitude_sigma_nodes: Standard deviation values of Amplitude correction at frequency nodal points
+phase_median_nodes: Median values of Phase correction at frequency nodal points
+phase_sigma_nodes: Standard deviation values of Phase correction at frequency nodal points</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.strain.strain">
+<span id="pycbc-strain-strain-module"></span><h2>pycbc.strain.strain module<a class="headerlink" href="#module-pycbc.strain.strain" title="Link to this heading"></a></h2>
+<p>This modules contains functions reading, generating, and segmenting strain data</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">StrainBuffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_buffer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_frequency_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">highpass_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">highpass_reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">highpass_bandwidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_segment_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_inverse_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim_padding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_cluster</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_taper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_psd_segment_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autogating_psd_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_quality_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idq_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idq_state_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idq_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dyn_range_fac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.902958103587057e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_abort_difference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_recalculate_difference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_update_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">increment_update_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analyze_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_quality_flags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dq_padding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="pycbc.frame.html#pycbc.frame.frame.DataBuffer" title="pycbc.frame.frame.DataBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataBuffer</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.add_hard_count">
+<span class="sig-name descname"><span class="pre">add_hard_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.add_hard_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.add_hard_count" title="Link to this definition"></a></dt>
+<dd><p>Reset the countdown timer, so that we don’t analyze data long enough
+to generate a new PSD.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.advance">
+<span class="sig-name descname"><span class="pre">advance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocksize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.advance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.advance" title="Link to this definition"></a></dt>
+<dd><p>Advanced buffer blocksize seconds.</p>
+<p>Add blocksize seconds more to the buffer, push blocksize seconds
+from the beginning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>blocksize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of seconds to attempt to read from the channel</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>status</strong> – Returns True if this block is analyzable.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.check_psd_dist">
+<span class="sig-name descname"><span class="pre">check_psd_dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.check_psd_dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.check_psd_dist" title="Link to this definition"></a></dt>
+<dd><p>Check that the horizon distance of a detector is within a required
+range. If so, return True, otherwise log a warning and return False.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.end_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end_time</span></span><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.end_time" title="Link to this definition"></a></dt>
+<dd><p>Return the end time of the current valid segment of data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.from_cli">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.from_cli" title="Link to this definition"></a></dt>
+<dd><p>Initialize a StrainBuffer object (data reader) for a particular
+detector.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.invalidate_psd">
+<span class="sig-name descname"><span class="pre">invalidate_psd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.invalidate_psd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.invalidate_psd" title="Link to this definition"></a></dt>
+<dd><p>Make the current PSD invalid. A new one will be generated when
+it is next required</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.near_hwinj">
+<span class="sig-name descname"><span class="pre">near_hwinj</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.near_hwinj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.near_hwinj" title="Link to this definition"></a></dt>
+<dd><p>Check that the current set of triggers could be influenced by
+a hardware injection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.null_advance_strain">
+<span class="sig-name descname"><span class="pre">null_advance_strain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocksize</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.null_advance_strain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.null_advance_strain" title="Link to this definition"></a></dt>
+<dd><p>Advance and insert zeros</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>blocksize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The number of seconds to attempt to read from the channel</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.overwhitened_data">
+<span class="sig-name descname"><span class="pre">overwhitened_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_f</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.overwhitened_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.overwhitened_data" title="Link to this definition"></a></dt>
+<dd><p>Return overwhitened data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The sample step to generate overwhitened frequency domain data for</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>htilde</strong> – Overwhited strain data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.recalculate_psd">
+<span class="sig-name descname"><span class="pre">recalculate_psd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainBuffer.recalculate_psd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.recalculate_psd" title="Link to this definition"></a></dt>
+<dd><p>Recalculate the psd</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainBuffer.start_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#pycbc.strain.strain.StrainBuffer.start_time" title="Link to this definition"></a></dt>
+<dd><p>Return the start time of the current valid segment of data</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">StrainSegments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_start_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_end_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigger_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigger_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_inj_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injection_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_zero_padding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class for managing manipulation of strain data for the purpose of
+matched filtering. This includes methods for segmenting and
+conditioning.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.fourier_segments">
+<span class="sig-name descname"><span class="pre">fourier_segments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.fourier_segments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.fourier_segments" title="Link to this definition"></a></dt>
+<dd><p>Return a list of the FFT’d segments.
+Return the list of FrequencySeries. Additional properties are
+added that describe the strain segment. The property ‘analyze’
+is a slice corresponding to the portion of the time domain equivalent
+of the segment to analyze for triggers. The value ‘cumulative_index’
+indexes from the beginning of the original strain series.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.from_cli">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.from_cli" title="Link to this definition"></a></dt>
+<dd><p>Calculate the segmentation of the strain data for analysis from
+the command line options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.from_cli_multi_ifos">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli_multi_ifos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.from_cli_multi_ifos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.from_cli_multi_ifos" title="Link to this definition"></a></dt>
+<dd><p>Calculate the segmentation of the strain data for analysis from
+the command line options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.from_cli_single_ifo">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_cli_single_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.from_cli_single_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.from_cli_single_ifo" title="Link to this definition"></a></dt>
+<dd><p>Calculate the segmentation of the strain data for analysis from
+the command line options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.insert_segment_option_group">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">insert_segment_option_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.insert_segment_option_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.insert_segment_option_group" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.insert_segment_option_group_multi_ifo">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">insert_segment_option_group_multi_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.insert_segment_option_group_multi_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.insert_segment_option_group_multi_ifo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.required_opts_list">
+<span class="sig-name descname"><span class="pre">required_opts_list</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['--segment-length',</span> <span class="pre">'--segment-start-pad',</span> <span class="pre">'--segment-end-pad']</span></em><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.required_opts_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.verify_segment_options">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">verify_segment_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.verify_segment_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.verify_segment_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.strain.strain.StrainSegments.verify_segment_options_multi_ifo">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">verify_segment_options_multi_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#StrainSegments.verify_segment_options_multi_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.StrainSegments.verify_segment_options_multi_ifo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.create_memory_and_engine_for_class_based_fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">create_memory_and_engine_for_class_based_fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">npoints_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta_t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#create_memory_and_engine_for_class_based_fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.create_memory_and_engine_for_class_based_fft" title="Link to this definition"></a></dt>
+<dd><p>Create memory and engine for class-based FFT/IFFT</p>
+<p>Currently only supports R2C FFT / C2R IFFTs, but this could be expanded
+if use-cases arise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>npoints_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of time samples of the real input vector (or real output vector
+if doing an IFFT).</p></li>
+<li><p><strong>dtype</strong> (<em>np.dtype</em>) – The dtype for the real input vector (or real output vector if doing an
+IFFT). np.float32 or np.float64 I think in all cases.</p></li>
+<li><p><strong>delta_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> (</em><em>default: 1</em><em>)</em>) – delta_t of the real vector. If not given this will be set to 1, and we
+will assume it is not needed in the returned TimeSeries/FrequencySeries</p></li>
+<li><p><strong>ifft</strong> (<em>boolean</em><em> (</em><em>default: False</em><em>)</em>) – By default will use the FFT class, set to true to use IFFT.</p></li>
+<li><p><strong>uid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default: 0</em><em>)</em>) – Provide a unique identifier. This is used to provide a separate set
+of memory in the cache, for instance if calling this from different
+codes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.detect_loud_glitches">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">detect_loud_glitches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psd_avg_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'median'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low_freq_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corrupt_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high_freq_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_intermediates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#detect_loud_glitches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.detect_loud_glitches" title="Link to this definition"></a></dt>
+<dd><p>Automatic identification of loud transients for gating purposes.</p>
+<p>This function first estimates the PSD of the input time series using the
+FindChirp Welch method. Then it whitens the time series using that
+estimate. Finally, it computes the magnitude of the whitened series,
+thresholds it and applies the FindChirp clustering over time to the
+surviving samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Input strain time series to detect glitches over.</p></li>
+<li><p><strong>psd_duration</strong> (<em>{float</em><em>, </em><em>4}</em>) – Duration of the segments for PSD estimation in seconds.</p></li>
+<li><p><strong>psd_stride</strong> (<em>{float</em><em>, </em><em>2}</em>) – Separation between PSD estimation segments in seconds.</p></li>
+<li><p><strong>psd_avg_method</strong> (<em>{string</em><em>, </em><em>'median'}</em>) – Method for averaging PSD estimation segments.</p></li>
+<li><p><strong>low_freq_cutoff</strong> (<em>{float</em><em>, </em><em>30}</em>) – Minimum frequency to include in the whitened strain.</p></li>
+<li><p><strong>threshold</strong> (<em>{float</em><em>, </em><em>50}</em>) – Minimum magnitude of whitened strain for considering a transient to
+be present.</p></li>
+<li><p><strong>cluster_window</strong> (<em>{float</em><em>, </em><em>5}</em>) – Length of time window to cluster surviving samples over, in seconds.</p></li>
+<li><p><strong>corrupt_time</strong> (<em>{float</em><em>, </em><em>4}</em>) – Amount of time to be discarded at the beginning and end of the input
+time series.</p></li>
+<li><p><strong>high_frequency_cutoff</strong> (<em>{float</em><em>, </em><em>None}</em>) – Maximum frequency to include in the whitened strain. If given, the
+input series is downsampled accordingly. If omitted, the Nyquist
+frequency is used.</p></li>
+<li><p><strong>output_intermediates</strong> (<em>{bool</em><em>, </em><em>False}</em>) – Save intermediate time series for debugging.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.execute_cached_fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">execute_cached_fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_by_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#execute_cached_fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.execute_cached_fft" title="Link to this definition"></a></dt>
+<dd><p>Executes a cached FFT</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec_data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a>) – Array which will be used as input when fft_class is executed.</p></li>
+<li><p><strong>normalize_by_rate</strong> (<em>boolean</em><em> (</em><em>optional</em><em>, </em><em>default:False</em><em>)</em>) – If True, then normalize by delta_t (for an FFT) or delta_f (for an
+IFFT).</p></li>
+<li><p><strong>ifft</strong> (<em>boolean</em><em> (</em><em>optional</em><em>, </em><em>default:False</em><em>)</em>) – If true assume this is an IFFT and multiply by delta_f not delta_t.
+Will do nothing if normalize_by_rate is False.</p></li>
+<li><p><strong>copy_output</strong> (<em>boolean</em><em> (</em><em>optional</em><em>, </em><em>default:True</em><em>)</em>) – If True we will copy the output into a new array. This avoids the issue
+that calling this function again might overwrite output. However, if
+you know that the output array will not be used before this function
+might be called again with the same length, then setting this to False
+will provide some increase in efficiency. The uid can also be used to
+help ensure that data doesn’t get unintentionally overwritten!</p></li>
+<li><p><strong>uid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default: 0</em><em>)</em>) – Provide a unique identifier. This is used to provide a separate set
+of memory in the cache, for instance if calling this from different
+codes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.execute_cached_ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">execute_cached_ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#execute_cached_ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.execute_cached_ifft" title="Link to this definition"></a></dt>
+<dd><p>Executes a cached IFFT</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec_data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array"><em>Array</em></a>) – Array which will be used as input when fft_class is executed.</p></li>
+<li><p><strong>normalize_by_rate</strong> (<em>boolean</em><em> (</em><em>optional</em><em>, </em><em>default:False</em><em>)</em>) – If True, then normalize by delta_t (for an FFT) or delta_f (for an
+IFFT).</p></li>
+<li><p><strong>copy_output</strong> (<em>boolean</em><em> (</em><em>optional</em><em>, </em><em>default:True</em><em>)</em>) – If True we will copy the output into a new array. This avoids the issue
+that calling this function again might overwrite output. However, if
+you know that the output array will not be used before this function
+might be called again with the same length, then setting this to False
+will provide some increase in efficiency. The uid can also be used to
+help ensure that data doesn’t get unintentionally overwritten!</p></li>
+<li><p><strong>uid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default: 0</em><em>)</em>) – Provide a unique identifier. This is used to provide a separate set
+of memory in the cache, for instance if calling this from different
+codes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dyn_range_fac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'single'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_filter_rejector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.from_cli" title="Link to this definition"></a></dt>
+<dd><p>Parses the CLI options related to strain data reading and conditioning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes  (gps-start-time, gps-end-time, strain-high-pass,
+pad-data, sample-rate, (frame-cache or frame-files), channel-name,
+fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).</p></li>
+<li><p><strong>dyn_range_fac</strong> (<em>{float</em><em>, </em><em>1}</em><em>, </em><em>optional</em>) – A large constant to reduce the dynamic range of the strain.</p></li>
+<li><p><strong>precision</strong> (<em>string</em>) – Precision of the returned strain (‘single’ or ‘double’).</p></li>
+<li><p><strong>inj_filter_rejector</strong> (<em>InjFilterRejector instance; optional</em><em>, </em><em>default=None</em>) – If given send the InjFilterRejector instance to the inject module so
+that it can store a reduced representation of injections if
+necessary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain</strong> – The time series containing the conditioned strain data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.from_cli_multi_ifos">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">from_cli_multi_ifos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_filter_rejector_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#from_cli_multi_ifos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.from_cli_multi_ifos" title="Link to this definition"></a></dt>
+<dd><p>Get the strain for all ifos when using the multi-detector CLI</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.from_cli_single_ifo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">from_cli_single_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_filter_rejector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#from_cli_single_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.from_cli_single_ifo" title="Link to this definition"></a></dt>
+<dd><p>Get the strain for a single ifo when using the multi-detector CLI</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.gate_data">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">gate_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#gate_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.gate_data" title="Link to this definition"></a></dt>
+<dd><p>Apply a set of gating windows to a time series.</p>
+<p>Each gating window is
+defined by a central time, a given duration (centered on the given
+time) to zero out, and a given duration of smooth tapering on each side of
+the window. The window function used for tapering is a Tukey window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – The time series to be gated.</p></li>
+<li><p><strong>gate_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of parameters for the gating windows. Each element should be a
+list or tuple with 3 elements: the central time of the gating window,
+the half-duration of the portion to zero out, and the duration of the
+Tukey tapering on each side. All times in seconds. The total duration
+of the data affected by one gating window is thus twice the second
+parameter plus twice the third parameter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> – The gated time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.insert_strain_option_group">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">insert_strain_option_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gps_times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#insert_strain_option_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.insert_strain_option_group" title="Link to this definition"></a></dt>
+<dd><p>Add strain-related options to the optparser object.</p>
+<p>Adds the options used to call the pycbc.strain.from_cli function to an
+optparser as an OptionGroup. This should be used if you
+want to use these options in your code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance.</p></li>
+<li><p><strong>gps_times</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Include <code class="docutils literal notranslate"><span class="pre">--gps-start-time</span></code> and <code class="docutils literal notranslate"><span class="pre">--gps-end-time</span></code> options. Default
+is True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.insert_strain_option_group_multi_ifo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">insert_strain_option_group_multi_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gps_times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#insert_strain_option_group_multi_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.insert_strain_option_group_multi_ifo" title="Link to this definition"></a></dt>
+<dd><p>Adds the options used to call the pycbc.strain.from_cli function to an
+optparser as an OptionGroup. This should be used if you
+want to use these options in your code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance.</p></li>
+<li><p><strong>gps_times</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Include <code class="docutils literal notranslate"><span class="pre">--gps-start-time</span></code> and <code class="docutils literal notranslate"><span class="pre">--gps-end-time</span></code> options. Default
+is True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.next_power_of_2">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">next_power_of_2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#next_power_of_2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.next_power_of_2" title="Link to this definition"></a></dt>
+<dd><p>Return the smallest integer power of 2 larger than the argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – A positive integer.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>m</strong> – Smallest integer power of 2 larger than n.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.verify_strain_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">verify_strain_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#verify_strain_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.verify_strain_options" title="Link to this definition"></a></dt>
+<dd><p>Sanity check provided strain arguments.</p>
+<p>Parses the strain data CLI options and verifies that they are consistent
+and reasonable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (gps-start-time, gps-end-time, strain-high-pass,
+pad-data, sample-rate, frame-cache, channel-name, fake-strain,
+fake-strain-seed).</p></li>
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.strain.verify_strain_options_multi_ifo">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.strain.</span></span><span class="sig-name descname"><span class="pre">verify_strain_options_multi_ifo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain/strain.html#verify_strain_options_multi_ifo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.strain.verify_strain_options_multi_ifo" title="Link to this definition"></a></dt>
+<dd><p>Sanity check provided strain arguments.</p>
+<p>Parses the strain data CLI options and verifies that they are consistent
+and reasonable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (gps-start-time, gps-end-time, strain-high-pass,
+pad-data, sample-rate, frame-cache, channel-name, fake-strain,
+fake-strain-seed).</p></li>
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance.</p></li>
+<li><p><strong>ifos</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – List of ifos for which to verify options for</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.strain">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.strain" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.strain.read_model_from_config">
+<span class="sig-prename descclassname"><span class="pre">pycbc.strain.</span></span><span class="sig-name descname"><span class="pre">read_model_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'calibration'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/strain.html#read_model_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.strain.read_model_from_config" title="Link to this definition"></a></dt>
+<dd><p>Returns an instance of the calibration model specified in the
+given configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorflowConfigParser</em>) – An open config file to read.</p></li>
+<li><p><strong>ifo</strong> (<em>string</em>) – The detector (H1, L1)  whose model will be loaded.</p></li>
+<li><p><strong>section</strong> (<em>{&quot;calibration&quot;</em><em>, </em><em>string}</em>) – Section name from which to retrieve the model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the calibration model class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.results.html" class="btn btn-neutral float-left" title="pycbc.results package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.tmpltbank.html" class="btn btn-neutral float-right" title="pycbc.tmpltbank package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

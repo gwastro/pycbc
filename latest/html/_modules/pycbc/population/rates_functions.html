@@ -1,0 +1,665 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.rates_functions &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.rates_functions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.rates_functions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A set of helper functions for evaluating rates.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">integrate</span><span class="p">,</span> <span class="n">optimize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ss</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">mchirp_from_mass1_mass2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+
+
+<div class="viewcode-block" id="process_full_data">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.process_full_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_full_data</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">lo_mchirp</span><span class="p">,</span> <span class="n">hi_mchirp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the zero-lag and time-lag triggers identified by templates in</span>
+<span class="sd">       a specified range of chirp mass.</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       hdfile:</span>
+<span class="sd">              File that stores all the triggers</span>
+<span class="sd">       rhomin: float</span>
+<span class="sd">              Minimum value of SNR threhold (will need including ifar)</span>
+<span class="sd">       mass1: array</span>
+<span class="sd">              First mass of the waveform in the template bank</span>
+<span class="sd">       mass2: array</span>
+<span class="sd">              Second mass of the waveform in the template bank</span>
+<span class="sd">       lo_mchirp: float</span>
+<span class="sd">              Minimum chirp mass for the template</span>
+<span class="sd">       hi_mchirp: float</span>
+<span class="sd">              Maximum chirp mass for the template</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       dictionary</span>
+<span class="sd">              containing foreground triggers and background information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bulk</span><span class="p">:</span>
+
+        <span class="n">id_bkg</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;background_exc/template_id&#39;</span><span class="p">][:]</span>
+        <span class="n">id_fg</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;foreground/template_id&#39;</span><span class="p">][:]</span>
+
+        <span class="n">mchirp_bkg</span> <span class="o">=</span> <span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">[</span><span class="n">id_bkg</span><span class="p">],</span> <span class="n">mass2</span><span class="p">[</span><span class="n">id_bkg</span><span class="p">])</span>
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">mchirp_bkg</span> <span class="o">-</span> <span class="n">lo_mchirp</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">hi_mchirp</span> <span class="o">-</span> <span class="n">mchirp_bkg</span><span class="p">))</span>
+        <span class="n">idx_bkg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">mchirp_fg</span> <span class="o">=</span> <span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">[</span><span class="n">id_fg</span><span class="p">],</span> <span class="n">mass2</span><span class="p">[</span><span class="n">id_fg</span><span class="p">])</span>
+        <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">((</span><span class="n">mchirp_fg</span> <span class="o">-</span> <span class="n">lo_mchirp</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">hi_mchirp</span> <span class="o">-</span> <span class="n">mchirp_fg</span><span class="p">))</span>
+        <span class="n">idx_fg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">zerolagstat</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;foreground/stat&#39;</span><span class="p">][:][</span><span class="n">idx_fg</span><span class="p">]</span>
+        <span class="n">cstat_back_exc</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;background_exc/stat&#39;</span><span class="p">][:][</span><span class="n">idx_bkg</span><span class="p">]</span>
+        <span class="n">dec_factors</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;background_exc/decimation_factor&#39;</span><span class="p">][:][</span><span class="n">idx_bkg</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;zerolagstat&#39;</span><span class="p">:</span> <span class="n">zerolagstat</span><span class="p">[</span><span class="n">zerolagstat</span> <span class="o">&gt;</span> <span class="n">rhomin</span><span class="p">],</span>
+           <span class="s1">&#39;dec_factors&#39;</span><span class="p">:</span> <span class="n">dec_factors</span><span class="p">[</span><span class="n">cstat_back_exc</span> <span class="o">&gt;</span> <span class="n">rhomin</span><span class="p">],</span>
+           <span class="s1">&#39;cstat_back_exc&#39;</span><span class="p">:</span> <span class="n">cstat_back_exc</span><span class="p">[</span><span class="n">cstat_back_exc</span> <span class="o">&gt;</span> <span class="n">rhomin</span><span class="p">]}</span></div>
+
+
+
+<div class="viewcode-block" id="save_bkg_falloff">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.save_bkg_falloff">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_bkg_falloff</span><span class="p">(</span><span class="n">fname_statmap</span><span class="p">,</span> <span class="n">fname_bank</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">,</span> <span class="n">lo_mchirp</span><span class="p">,</span> <span class="n">hi_mchirp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Read the STATMAP files to derive snr falloff for the background events.</span>
+<span class="sd">        Save the output to a txt file</span>
+<span class="sd">        Bank file is also provided to restrict triggers to BBH templates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fname_statmap: string</span>
+<span class="sd">               STATMAP file containing trigger information</span>
+<span class="sd">        fname_bank: string</span>
+<span class="sd">               File name of the template bank</span>
+<span class="sd">        path: string</span>
+<span class="sd">               Destination where txt file is saved</span>
+<span class="sd">        rhomin: float</span>
+<span class="sd">               Minimum value of SNR threhold (will need including ifar)</span>
+<span class="sd">        lo_mchirp: float</span>
+<span class="sd">               Minimum chirp mass for the template</span>
+<span class="sd">        hi_mchirp: float</span>
+<span class="sd">               Maximum chirp mass for template</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">fname_bank</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bulk</span><span class="p">:</span>
+        <span class="n">mass1_bank</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:]</span>
+        <span class="n">mass2_bank</span> <span class="o">=</span> <span class="n">bulk</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][:]</span>
+        <span class="n">full_data</span> <span class="o">=</span> <span class="n">process_full_data</span><span class="p">(</span><span class="n">fname_statmap</span><span class="p">,</span> <span class="n">rhomin</span><span class="p">,</span>
+                           <span class="n">mass1_bank</span><span class="p">,</span> <span class="n">mass2_bank</span><span class="p">,</span> <span class="n">lo_mchirp</span><span class="p">,</span> <span class="n">hi_mchirp</span><span class="p">)</span>
+
+    <span class="n">max_bg_stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;cstat_back_exc&#39;</span><span class="p">])</span>
+    <span class="n">bg_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">rhomin</span><span class="p">,</span> <span class="n">max_bg_stat</span><span class="p">,</span> <span class="mi">76</span><span class="p">)</span>
+    <span class="n">bg_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;cstat_back_exc&#39;</span><span class="p">],</span>
+                         <span class="n">weights</span><span class="o">=</span><span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;dec_factors&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">bg_bins</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">zerolagstat</span> <span class="o">=</span> <span class="n">full_data</span><span class="p">[</span><span class="s1">&#39;zerolagstat&#39;</span><span class="p">]</span>
+    <span class="n">coincs</span> <span class="o">=</span> <span class="n">zerolagstat</span><span class="p">[</span><span class="n">zerolagstat</span> <span class="o">&gt;=</span> <span class="n">rhomin</span><span class="p">]</span>
+
+    <span class="n">bkg</span> <span class="o">=</span> <span class="p">(</span><span class="n">bg_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">bg_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">bg_counts</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">bkg</span><span class="p">,</span> <span class="n">coincs</span></div>
+
+
+
+<div class="viewcode-block" id="log_rho_fgmc">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.log_rho_fgmc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_rho_fgmc</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">injstats</span><span class="p">,</span> <span class="n">bins</span><span class="p">):</span>
+    <span class="n">counts</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">injstats</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+    <span class="n">dens</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span>
+
+    <span class="n">tinds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">log</span><span class="p">(</span><span class="n">dens</span><span class="p">[</span><span class="n">tinds</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="fgmc">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.fgmc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fgmc</span><span class="p">(</span><span class="n">log_fg_ratios</span><span class="p">,</span> <span class="n">mu_log_vt</span><span class="p">,</span> <span class="n">sigma_log_vt</span><span class="p">,</span> <span class="n">Rf</span><span class="p">,</span> <span class="n">maxfg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Function to fit the likelihood Fixme</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">Lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">maxfg</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Rf</span><span class="p">))</span>
+    <span class="n">pquit</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="n">pquit</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+        <span class="c1"># quit when the posterior on Lf is very close to its prior</span>
+
+        <span class="n">nsamp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Lb</span><span class="p">)</span>
+        <span class="n">Rf_sel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">Rf</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">)</span>
+        <span class="n">vt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mu_log_vt</span><span class="p">,</span> <span class="n">sigma_log_vt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">Rf_sel</span><span class="p">))</span>
+
+        <span class="n">Lf</span> <span class="o">=</span> <span class="n">Rf_sel</span> <span class="o">*</span> <span class="n">vt</span>
+
+        <span class="n">log_Lf</span><span class="p">,</span> <span class="n">log_Lb</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">Lf</span><span class="p">),</span> <span class="n">log</span><span class="p">(</span><span class="n">Lb</span><span class="p">)</span>
+
+        <span class="n">plR</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">lfr</span> <span class="ow">in</span> <span class="n">log_fg_ratios</span><span class="p">:</span>
+            <span class="n">plR</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">logaddexp</span><span class="p">(</span><span class="n">lfr</span> <span class="o">+</span> <span class="n">log_Lf</span><span class="p">,</span> <span class="n">log_Lb</span><span class="p">)</span>
+
+        <span class="n">plR</span> <span class="o">-=</span> <span class="p">(</span><span class="n">Lf</span> <span class="o">+</span> <span class="n">Lb</span><span class="p">)</span>
+        <span class="n">plRn</span> <span class="o">=</span> <span class="n">plR</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">plR</span><span class="p">)</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">plRn</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">plRn</span><span class="p">))</span>
+
+        <span class="n">pquit</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">ks_2samp</span><span class="p">(</span><span class="n">Lb</span><span class="p">,</span> <span class="n">Lb</span><span class="p">[</span><span class="n">idx</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">Lb</span> <span class="o">=</span> <span class="n">Lb</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">Rf_sel</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">Lf</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">Lb</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_optm</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Return probability density of skew-lognormal</span>
+<span class="sd">       See scipy.optimize.curve_fit</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">ss</span><span class="o">.</span><span class="n">skewnorm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="fit">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.fit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="n">R</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Fit skew - lognormal to the rate samples achived from a prior analysis</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        R: array</span>
+<span class="sd">           Rate samples</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ff[0]: float</span>
+<span class="sd">            The skewness</span>
+<span class="sd">        ff[1]: float</span>
+<span class="sd">            The mean</span>
+<span class="sd">        ff[2]: float</span>
+<span class="sd">            The standard deviation</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">lR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+    <span class="n">mu_norm</span><span class="p">,</span> <span class="n">sigma_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">lR</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">lR</span><span class="p">)</span>
+
+    <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">lR</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">lR</span><span class="p">),</span> <span class="mi">200</span><span class="p">)</span>
+    <span class="n">kde</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">gaussian_kde</span><span class="p">(</span><span class="n">lR</span><span class="p">)</span>
+    <span class="n">pxs</span> <span class="o">=</span> <span class="n">kde</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
+
+    <span class="c1"># Initial guess has been taken as the mean and std-dev of the data</span>
+    <span class="c1"># And a guess assuming small skewness</span>
+    <span class="n">ff</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">curve_fit</span><span class="p">(</span><span class="n">_optm</span><span class="p">,</span> <span class="n">xs</span><span class="p">,</span> <span class="n">pxs</span><span class="p">,</span> <span class="n">p0</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">mu_norm</span><span class="p">,</span> <span class="n">sigma_norm</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">ff</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ff</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ff</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="skew_lognormal_samples">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.skew_lognormal_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">skew_lognormal_samples</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">minrp</span><span class="p">,</span> <span class="n">maxrp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Returns a large number of Skew lognormal samples</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        alpha: float</span>
+<span class="sd">           Skewness of the distribution</span>
+<span class="sd">        mu: float</span>
+<span class="sd">           Mean of the distribution</span>
+<span class="sd">        sigma: float</span>
+<span class="sd">           Scale of the distribution</span>
+<span class="sd">        minrp: float</span>
+<span class="sd">           Minimum value for the samples</span>
+<span class="sd">        maxrp: float</span>
+<span class="sd">           Maximum value for the samples</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Rfs: array</span>
+<span class="sd">            Large number of samples (may need fixing)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">nsamp</span> <span class="o">=</span> <span class="mi">100000000</span>
+    <span class="n">lRu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">minrp</span><span class="p">,</span> <span class="n">maxrp</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">)</span>
+    <span class="n">plRu</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">skewnorm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">lRu</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+    <span class="n">rndn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">nsamp</span><span class="p">)</span>
+    <span class="n">maxp</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">plRu</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">plRu</span><span class="o">/</span><span class="n">maxp</span> <span class="o">&gt;</span> <span class="n">rndn</span><span class="p">)</span>
+    <span class="n">log_Rf</span> <span class="o">=</span> <span class="n">lRu</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">Rfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_Rf</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Rfs</span></div>
+
+
+
+<span class="c1"># The flat in log and power-law mass distribution models  #</span>
+
+<span class="c1"># PDF for the two canonical models plus flat in mass model</span>
+<div class="viewcode-block" id="prob_lnm">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.prob_lnm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prob_lnm</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Return probability density for uniform in log</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        m1: array</span>
+<span class="sd">            Component masses 1</span>
+<span class="sd">        m2: array</span>
+<span class="sd">            Component masses 2</span>
+<span class="sd">        s1z: array</span>
+<span class="sd">            Aligned spin 1(Not in use currently)</span>
+<span class="sd">        s2z:</span>
+<span class="sd">            Aligned spin 2(Not in use currently)</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">            Keyword arguments as model parameters</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p_m1_m2: array</span>
+<span class="sd">            The probability density for m1, m2 pair</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">min_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_mass&#39;</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)</span>
+    <span class="n">max_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_mass&#39;</span><span class="p">,</span> <span class="mf">95.</span><span class="p">)</span>
+    <span class="n">max_mtotal</span> <span class="o">=</span> <span class="n">min_mass</span> <span class="o">+</span> <span class="n">max_mass</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>
+
+    <span class="n">C_lnm</span> <span class="o">=</span> <span class="n">integrate</span><span class="o">.</span><span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">max_mtotal</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">log</span><span class="p">(</span><span class="n">min_mass</span><span class="p">))</span><span class="o">/</span><span class="n">x</span><span class="p">,</span> <span class="n">min_mass</span><span class="p">,</span> <span class="n">max_mass</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">xx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">xx</span>
+
+    <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">max_mtotal</span> <span class="o">-</span> <span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">max_mass</span> <span class="o">-</span> <span class="n">m1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">m2</span> <span class="o">-</span> <span class="n">min_mass</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">p_m1_m2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">C_lnm</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">m1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">m2</span><span class="p">)</span>
+    <span class="n">p_m1_m2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">p_m1_m2</span></div>
+
+
+
+<div class="viewcode-block" id="prob_imf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.prob_imf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prob_imf</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Return probability density for power-law</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        m1: array</span>
+<span class="sd">            Component masses 1</span>
+<span class="sd">        m2: array</span>
+<span class="sd">            Component masses 2</span>
+<span class="sd">        s1z: array</span>
+<span class="sd">            Aligned spin 1(Not in use currently)</span>
+<span class="sd">        s2z:</span>
+<span class="sd">            Aligned spin 2(Not in use currently)</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">            Keyword arguments as model parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p_m1_m2: array</span>
+<span class="sd">           the probability density for m1, m2 pair</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">min_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_mass&#39;</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)</span>
+    <span class="n">max_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_mass&#39;</span><span class="p">,</span> <span class="mf">95.</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.35</span><span class="p">)</span>
+    <span class="n">max_mtotal</span> <span class="o">=</span> <span class="n">min_mass</span> <span class="o">+</span> <span class="n">max_mass</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>
+
+    <span class="n">C_imf</span> <span class="o">=</span> <span class="n">max_mass</span><span class="o">**</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">C_imf</span> <span class="o">-=</span> <span class="n">min_mass</span><span class="o">**</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">xx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">xx</span>
+
+    <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">max_mtotal</span> <span class="o">-</span> <span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">max_mass</span> <span class="o">-</span> <span class="n">m1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">m2</span> <span class="o">-</span> <span class="n">min_mass</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">p_m1_m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">m1</span> <span class="o">&lt;=</span> <span class="n">max_mtotal</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">p_m1_m2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">C_imf</span><span class="p">)</span> <span class="o">*</span> <span class="n">m1</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">**</span><span class="n">alpha</span> <span class="o">/</span><span class="p">(</span><span class="n">m1</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">min_mass</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">m1</span> <span class="o">&gt;</span> <span class="n">max_mtotal</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">p_m1_m2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">C_imf</span><span class="p">)</span> <span class="o">*</span> <span class="n">m1</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">**</span><span class="n">alpha</span> <span class="o">/</span><span class="p">(</span><span class="n">max_mass</span> <span class="o">-</span> <span class="n">m1</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+    <span class="n">p_m1_m2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">p_m1_m2</span><span class="o">/</span><span class="mf">2.</span></div>
+
+
+
+<div class="viewcode-block" id="prob_flat">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.prob_flat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prob_flat</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Return probability density for uniform in component mass</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        m1: array</span>
+<span class="sd">            Component masses 1</span>
+<span class="sd">        m2: array</span>
+<span class="sd">            Component masses 2</span>
+<span class="sd">        s1z: array</span>
+<span class="sd">            Aligned spin 1 (not in use currently)</span>
+<span class="sd">        s2z:</span>
+<span class="sd">            Aligned spin 2 (not in use currently)</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">            Keyword arguments as model parameters</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        p_m1_m2: array</span>
+<span class="sd">           the probability density for m1, m2 pair</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">min_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_mass&#39;</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+    <span class="n">max_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_mass&#39;</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+
+    <span class="n">bound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">bound</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">max_mass</span> <span class="o">-</span> <span class="n">m1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">m2</span> <span class="o">-</span> <span class="n">min_mass</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bound</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">p_m1_m2</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_mass</span> <span class="o">-</span> <span class="n">min_mass</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">p_m1_m2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">p_m1_m2</span></div>
+
+
+
+<span class="c1"># Generate samples for the two canonical models plus flat in mass model</span>
+<div class="viewcode-block" id="draw_imf_samples">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.draw_imf_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_imf_samples</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Draw samples for power-law model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">           Keyword arguments as model parameters and number of samples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">           The first mass</span>
+<span class="sd">        array</span>
+<span class="sd">           The second mass</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">alpha_salpeter</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.35</span><span class="p">)</span>
+    <span class="n">nsamples</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nsamples&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">min_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_mass&#39;</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)</span>
+    <span class="n">max_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_mass&#39;</span><span class="p">,</span> <span class="mf">95.</span><span class="p">)</span>
+    <span class="n">max_mtotal</span> <span class="o">=</span> <span class="n">min_mass</span> <span class="o">+</span> <span class="n">max_mass</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_mass</span><span class="o">/</span><span class="n">min_mass</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">alpha_salpeter</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha_salpeter</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">k</span> <span class="o">=</span> <span class="n">nsamples</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">+</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">100.</span><span class="o">/</span><span class="n">nsamples</span><span class="p">))</span>
+    <span class="n">aa</span> <span class="o">=</span> <span class="n">min_mass</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">a</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">k</span><span class="p">))</span><span class="o">**</span><span class="n">beta</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">min_mass</span><span class="p">,</span> <span class="n">aa</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">aa</span> <span class="o">+</span> <span class="n">bb</span> <span class="o">&lt;</span> <span class="n">max_mtotal</span><span class="p">)</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">))[</span><span class="n">idx</span><span class="p">],</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">))[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="draw_lnm_samples">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.draw_lnm_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_lnm_samples</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Draw samples for uniform-in-log model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">           Keyword arguments as model parameters and number of samples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">           The first mass</span>
+<span class="sd">        array</span>
+<span class="sd">           The second mass</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1">#PDF doesnt match with sampler</span>
+    <span class="n">nsamples</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nsamples&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">min_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_mass&#39;</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)</span>
+    <span class="n">max_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_mass&#39;</span><span class="p">,</span> <span class="mf">95.</span><span class="p">)</span>
+    <span class="n">max_mtotal</span> <span class="o">=</span> <span class="n">min_mass</span> <span class="o">+</span> <span class="n">max_mass</span>
+    <span class="n">lnmmin</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">min_mass</span><span class="p">)</span>
+    <span class="n">lnmmax</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">max_mass</span><span class="p">)</span>
+
+    <span class="n">k</span> <span class="o">=</span> <span class="n">nsamples</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">+</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">100.</span><span class="o">/</span><span class="n">nsamples</span><span class="p">))</span>
+    <span class="n">aa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lnmmin</span><span class="p">,</span> <span class="n">lnmmax</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+    <span class="n">bb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lnmmin</span><span class="p">,</span> <span class="n">lnmmax</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">aa</span> <span class="o">+</span> <span class="n">bb</span> <span class="o">&lt;</span> <span class="n">max_mtotal</span><span class="p">)</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">))[</span><span class="n">idx</span><span class="p">],</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span> <span class="n">bb</span><span class="p">))[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="draw_flat_samples">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.draw_flat_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_flat_samples</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Draw samples for uniform in mass</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">           Keyword arguments as model parameters and number of samples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">           The first mass</span>
+<span class="sd">        array</span>
+<span class="sd">           The second mass</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1">#PDF doesnt match with sampler</span>
+    <span class="n">nsamples</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nsamples&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">min_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;min_mass&#39;</span><span class="p">,</span> <span class="mf">1.</span><span class="p">)</span>
+    <span class="n">max_mass</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_mass&#39;</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+
+    <span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">min_mass</span><span class="p">,</span> <span class="n">max_mass</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">min_mass</span><span class="p">,</span> <span class="n">max_mass</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Functions to generate chirp mass samples for the two canonical models</span>
+<div class="viewcode-block" id="mchirp_sampler_lnm">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.mchirp_sampler_lnm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_sampler_lnm</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Draw chirp mass samples for uniform-in-log model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">           Keyword arguments as model parameters and number of samples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mchirp-astro: array</span>
+<span class="sd">           The chirp mass samples for the population</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">draw_lnm_samples</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">mchirp_astro</span> <span class="o">=</span> <span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mchirp_astro</span></div>
+
+
+
+<div class="viewcode-block" id="mchirp_sampler_imf">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.mchirp_sampler_imf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_sampler_imf</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Draw chirp mass samples for power-law model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">           Keyword arguments as model parameters and number of samples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mchirp-astro: array</span>
+<span class="sd">           The chirp mass samples for the population</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">draw_imf_samples</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">mchirp_astro</span> <span class="o">=</span> <span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mchirp_astro</span></div>
+
+
+
+<div class="viewcode-block" id="mchirp_sampler_flat">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.rates_functions.mchirp_sampler_flat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_sampler_flat</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Draw chirp mass samples for flat in mass model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs: string</span>
+<span class="sd">           Keyword arguments as model parameters and number of samples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mchirp-astro: array</span>
+<span class="sd">           The chirp mass samples for the population</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="n">draw_flat_samples</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">mchirp_astro</span> <span class="o">=</span> <span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mchirp_astro</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

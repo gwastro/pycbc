@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/_include/models-table.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'brute_lisa_sky_modes_marginalize'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.brute_marg.BruteLISASkyModesMarginalize" title="pycbc.inference.models.brute_marg.BruteLISASkyModesMarginalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.brute_marg.BruteLISASkyModesMarginalize</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'brute_parallel_gaussian_marginalize'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.brute_marg.BruteParallelGaussianMarginalize" title="pycbc.inference.models.brute_marg.BruteParallelGaussianMarginalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.brute_marg.BruteParallelGaussianMarginalize</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'gated_gaussian_margpol'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol" title="pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'gated_gaussian_noise'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise" title="pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'gaussian_noise'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gaussian_noise.GaussianNoise</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'hierarchical'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel" title="pycbc.inference.models.hierarchical.HierarchicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.HierarchicalModel</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'joint_primary_marginalized'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel" title="pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'marginalized_hmpolphase'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'marginalized_phase'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'marginalized_polarization'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'marginalized_time'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'multi_signal'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.hierarchical.MultiSignalModel" title="pycbc.inference.models.hierarchical.MultiSignalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.MultiSignalModel</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'relative'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.Relative</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'relative_time'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTime" title="pycbc.inference.models.relbin.RelativeTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.RelativeTime</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'relative_time_dom'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTimeDom" title="pycbc.inference.models.relbin.RelativeTimeDom"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.RelativeTimeDom</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'single_template'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate" title="pycbc.inference.models.single_template.SingleTemplate"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.single_template.SingleTemplate</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'test_eggbox'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.analytic.TestEggbox" title="pycbc.inference.models.analytic.TestEggbox"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestEggbox</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'test_normal'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.analytic.TestNormal" title="pycbc.inference.models.analytic.TestNormal"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestNormal</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'test_posterior'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.analytic.TestPosterior" title="pycbc.inference.models.analytic.TestPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestPosterior</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'test_prior'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.analytic.TestPrior" title="pycbc.inference.models.analytic.TestPrior"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestPrior</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">'test_rosenbrock'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.analytic.TestRosenbrock" title="pycbc.inference.models.analytic.TestRosenbrock"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestRosenbrock</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">'test_volcano'</span></code></p></td>
+<td><p><a class="reference internal" href="../pycbc.inference.models.html#pycbc.inference.models.analytic.TestVolcano" title="pycbc.inference.models.analytic.TestVolcano"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestVolcano</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

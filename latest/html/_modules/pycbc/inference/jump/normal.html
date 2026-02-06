@@ -1,0 +1,723 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.jump.normal &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../jump.html">pycbc.inference.jump</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.jump.normal</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.jump.normal</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;Jump proposals that use a normal distribution.&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">epsie</span><span class="w"> </span><span class="kn">import</span> <span class="n">proposals</span> <span class="k">as</span> <span class="n">epsie_proposals</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">epsie.proposals</span><span class="w"> </span><span class="kn">import</span> <span class="n">Boundaries</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">VARARGS_DELIM</span>
+
+
+<div class="viewcode-block" id="EpsieNormal">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.EpsieNormal">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EpsieNormal</span><span class="p">(</span><span class="n">epsie_proposals</span><span class="o">.</span><span class="n">Normal</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds ``from_config`` method to epsie&#39;s normal proposal.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EpsieNormal.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.EpsieNormal.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a proposal from a config file.</span>
+
+<span class="sd">        This calls :py:func:`epsie_from_config` with ``cls`` set to</span>
+<span class="sd">        :py:class:`epsie.proposals.Normal` and ``with_boundaries`` set to</span>
+<span class="sd">        False. See that function for details on options that can be read.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            [jump_proposal-mchrip+q]</span>
+<span class="sd">            name = normal</span>
+<span class="sd">            var-q = 0.1</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser instance</span>
+<span class="sd">            Config file to read from.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to look in.</span>
+<span class="sd">        tag : str</span>
+<span class="sd">            :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">            to create proposals for.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :py:class:`epsie.proposals.Normal`:</span>
+<span class="sd">            A normal proposal for use with ``epsie`` samplers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">epsie_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">with_boundaries</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EpsieAdaptiveNormal">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.EpsieAdaptiveNormal">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EpsieAdaptiveNormal</span><span class="p">(</span><span class="n">epsie_proposals</span><span class="o">.</span><span class="n">AdaptiveNormal</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds ``from_config`` method to epsie&#39;s adaptive normal proposal.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EpsieAdaptiveNormal.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.EpsieAdaptiveNormal.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a proposal from a config file.</span>
+
+<span class="sd">        This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to</span>
+<span class="sd">        :py:class:`epsie.proposals.AdaptiveNormal`. See that function for</span>
+<span class="sd">        details on options that can be read.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            [jump_proposal-mchirp+q]</span>
+<span class="sd">            name = adaptive_normal</span>
+<span class="sd">            adaptation-duration = 1000</span>
+<span class="sd">            min-q = 1</span>
+<span class="sd">            max-q = 8</span>
+<span class="sd">            min-mchirp = 20</span>
+<span class="sd">            max-mchirp = 80</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser instance</span>
+<span class="sd">            Config file to read from.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to look in.</span>
+<span class="sd">        tag : str</span>
+<span class="sd">            :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">            to create proposals for.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :py:class:`epsie.proposals.AdaptiveNormal`:</span>
+<span class="sd">            An adaptive normal proposal for use with ``epsie`` samplers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">epsie_adaptive_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span>
+                                          <span class="n">boundary_arg_name</span><span class="o">=</span><span class="s1">&#39;prior_widths&#39;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EpsieATAdaptiveNormal">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.EpsieATAdaptiveNormal">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EpsieATAdaptiveNormal</span><span class="p">(</span><span class="n">epsie_proposals</span><span class="o">.</span><span class="n">ATAdaptiveNormal</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds ``from_config`` method to epsie&#39;s ATAdaptiveProposal.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EpsieATAdaptiveNormal.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.EpsieATAdaptiveNormal.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads a proposal from a config file.</span>
+
+<span class="sd">        This calls :py:func:`epsie_from_config` with ``cls`` set to</span>
+<span class="sd">        :py:class:`epsie.proposals.AdaptiveProposal` and ``with_boundaries``</span>
+<span class="sd">        set to False. See that function for details on options that can be</span>
+<span class="sd">        read.</span>
+
+<span class="sd">        Example::</span>
+
+<span class="sd">            [jump_proposal-mchrip+q]</span>
+<span class="sd">            name = adaptive_proposal</span>
+<span class="sd">            diagonal =</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser instance</span>
+<span class="sd">            Config file to read from.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to look in.</span>
+<span class="sd">        tag : str</span>
+<span class="sd">            :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">            to create proposals for.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        :py:class:`epsie.proposals.AdaptiveProposal`:</span>
+<span class="sd">            An adaptive proposal for use with ``epsie`` samplers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">epsie_at_adaptive_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span>
+                                             <span class="n">with_boundaries</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="epsie_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.epsie_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">epsie_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">with_boundaries</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generic function for loading epsie proposals from a config file.</span>
+
+<span class="sd">    This should be used for proposals that are not adaptive.</span>
+
+<span class="sd">    The section that is read should have the format ``[{section}-{tag}]``,</span>
+<span class="sd">    where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list</span>
+<span class="sd">    of the parameters to create the jump proposal for.</span>
+
+<span class="sd">    Options that are read:</span>
+
+<span class="sd">    * name : str</span>
+<span class="sd">        Required. Must match the name of the proposal.</span>
+<span class="sd">    * var-{param} : float</span>
+<span class="sd">        Optional. Variance to use for parameter {param}. If ``with_boundaries``</span>
+<span class="sd">        is True, then any parameter not specified will use a default variance</span>
+<span class="sd">        of :math:`(\Delta p/10)^2`, where :math:`\Delta p` is the boundary</span>
+<span class="sd">        width for that parameter. If ``with_boundaries`` is False, will use</span>
+<span class="sd">        a default value of 1.</span>
+<span class="sd">    * min-{param} : float</span>
+<span class="sd">    * max-{param} : float</span>
+<span class="sd">        The bounds on each parameter. Required if ``with_boundaries`` is set to</span>
+<span class="sd">        True, in which case bounds must be provided for every parameter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cls : epsie.proposals.BaseProposal</span>
+<span class="sd">        The epsie proposal class to initialize.</span>
+<span class="sd">    cp : WorkflowConfigParser instance</span>
+<span class="sd">        Config file to read from.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        The name of the section to look in.</span>
+<span class="sd">    tag : str</span>
+<span class="sd">        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">        to create proposals for.</span>
+<span class="sd">    with_boundaries : bool, optional</span>
+<span class="sd">        Try to load boundaries from the section and pass a ``boundaries``</span>
+<span class="sd">        argument to the class&#39;s initialization. This should be set to true</span>
+<span class="sd">        for bounded proposals. Default is False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cls :</span>
+<span class="sd">        The class initialized with the options read from the config file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that the name matches</span>
+    <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">&quot;name in specified section must match mine&quot;</span><span class="p">)</span>
+    <span class="n">params</span><span class="p">,</span> <span class="n">opts</span> <span class="o">=</span> <span class="n">load_opts</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;parameters&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">with_boundaries</span><span class="p">:</span>
+        <span class="n">boundaries</span> <span class="o">=</span> <span class="n">get_param_boundaries</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries</span>
+    <span class="k">if</span> <span class="s1">&#39;discrete&#39;</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;successive&#39;</span><span class="p">:</span>
+                     <span class="n">get_epsie_discrete_successive_settings</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)})</span>
+    <span class="c1"># if there are any options left, assume they are for setting the variance</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="p">:</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">get_variance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">with_boundaries</span><span class="p">:</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">abs</span><span class="p">(</span><span class="n">boundaries</span><span class="p">[</span><span class="n">p</span><span class="p">])</span><span class="o">/</span><span class="mf">10.</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">])</span><span class="o">**</span><span class="mf">2.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cov</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;cov&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov</span>
+    <span class="c1"># no other options should remain</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized options </span><span class="si">{}</span><span class="s2">&quot;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="epsie_adaptive_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.epsie_adaptive_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">epsie_adaptive_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">with_boundaries</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                               <span class="n">boundary_arg_name</span><span class="o">=</span><span class="s1">&#39;boundaries&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic function for loading adaptive epsie proposals from a config</span>
+<span class="sd">    file.</span>
+
+<span class="sd">    The section that is read should have the format ``[{section}-{tag}]``,</span>
+<span class="sd">    where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list</span>
+<span class="sd">    of the parameters to create the jump proposal for.</span>
+
+<span class="sd">    Options that are read:</span>
+
+<span class="sd">    * name : str</span>
+<span class="sd">        Required. Must match the name of the proposal.</span>
+<span class="sd">    * adaptation-duration : int</span>
+<span class="sd">        Required. Sets the ``adaptation_duration``.</span>
+<span class="sd">    * min-{param} : float</span>
+<span class="sd">    * max-{param} : float</span>
+<span class="sd">        The bounds on each parameter. Required if ``with_boundaries`` is set to</span>
+<span class="sd">        True, in which case bounds must be provided for every parameter.</span>
+<span class="sd">    * var-{param} : float</span>
+<span class="sd">        Optional. Initial variance to use. If not provided, will use a</span>
+<span class="sd">        default based on the bounds (see</span>
+<span class="sd">        :py:class:`epsie.proposals.AdaptiveSupport` for details).</span>
+<span class="sd">    * adaptation-decay : int</span>
+<span class="sd">        Optional. Sets the ``adaptation_decay``. If not provided, will use</span>
+<span class="sd">        the class&#39;s default.</span>
+<span class="sd">    * start-iteration : int</span>
+<span class="sd">        Optional. Sets the ``start_iteration``.If not provided, will use</span>
+<span class="sd">        the class&#39;s default.</span>
+<span class="sd">    * target-rate : float</span>
+<span class="sd">        Optional. Sets the ``target_rate``. If not provided, will use</span>
+<span class="sd">        the class&#39;s default.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cls : epsie.proposals.BaseProposal</span>
+<span class="sd">        The epsie proposal class to initialize. The class should have</span>
+<span class="sd">        :py:class:`epsie.proposals.normal.AdaptiveSupport`.</span>
+<span class="sd">    cp : WorkflowConfigParser instance</span>
+<span class="sd">        Config file to read from.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        The name of the section to look in.</span>
+<span class="sd">    tag : str</span>
+<span class="sd">        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">        to create proposals for.</span>
+<span class="sd">    with_boundaries : bool, optional</span>
+<span class="sd">        Try to load boundaries from the section and pass a ``boundaries``</span>
+<span class="sd">        argument to the class&#39;s initialization. Default is True.</span>
+<span class="sd">    boundary_arg_name : str, optional</span>
+<span class="sd">        The name of the argument for the boundaries (only used if</span>
+<span class="sd">        ``with_boundaries`` is True). Provided because some adaptive proposals</span>
+<span class="sd">        that only need the boundary widths call this ``prior_widths``. Default</span>
+<span class="sd">        is ``&#39;boundaries&#39;``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cls :</span>
+<span class="sd">        The class initialized with the options read from the config file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that the name matches</span>
+    <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">&quot;name in specified section must match mine&quot;</span><span class="p">)</span>
+    <span class="n">params</span><span class="p">,</span> <span class="n">opts</span> <span class="o">=</span> <span class="n">load_opts</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;parameters&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span>
+    <span class="c1"># get the bounds</span>
+    <span class="k">if</span> <span class="n">with_boundaries</span><span class="p">:</span>
+        <span class="n">args</span><span class="p">[</span><span class="n">boundary_arg_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_param_boundaries</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;discrete&#39;</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;successive&#39;</span><span class="p">:</span>
+                     <span class="n">get_epsie_discrete_successive_settings</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)})</span>
+    <span class="c1"># get the adaptation parameters</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">get_epsie_adaptation_settings</span><span class="p">(</span><span class="n">opts</span><span class="p">))</span>
+    <span class="c1"># if there are any other options, assume they are for setting the</span>
+    <span class="c1"># initial standard deviation</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="p">:</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">get_variance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;initial_std&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="c1"># at this point, there should be no options left</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognized options </span><span class="si">{}</span><span class="s1"> in section </span><span class="si">{}</span><span class="s1">&#39;</span>
+                             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                                     <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">])))</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="epsie_at_adaptive_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.epsie_at_adaptive_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">epsie_at_adaptive_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span>
+                                  <span class="n">with_boundaries</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic function for loading AT Adaptive Normal proposals from a config</span>
+<span class="sd">    file.</span>
+
+<span class="sd">    The section that is read should have the format ``[{section}-{tag}]``,</span>
+<span class="sd">    where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list</span>
+<span class="sd">    of the parameters to create the jump proposal for.</span>
+
+<span class="sd">    Options that are read:</span>
+
+<span class="sd">    * name : str</span>
+<span class="sd">        Required. Must match the name of the proposal.</span>
+<span class="sd">    * adaptation-duration : int</span>
+<span class="sd">        Sets the ``adaptation_duration``. If not provided will use the class&#39;s</span>
+<span class="sd">        default.</span>
+<span class="sd">    * diagonal : bool, optional</span>
+<span class="sd">        Determines whether only to adapt the variance. If True will only train</span>
+<span class="sd">        the diagonal elements.</span>
+<span class="sd">    * componentwise : bool, optional</span>
+<span class="sd">        Whether to include a componentwise scaling of the parameters.</span>
+<span class="sd">        By default set to False. Componentwise scaling `ndim` times more</span>
+<span class="sd">        expensive than global scaling.</span>
+<span class="sd">    * min-{param} : float</span>
+<span class="sd">    * max-{param} : float</span>
+<span class="sd">        The bounds on each parameter. Required if ``with_boundaries`` is set to</span>
+<span class="sd">        True, in which case bounds must be provided for every parameter.</span>
+<span class="sd">    * start-iteration : int</span>
+<span class="sd">        Optional. Sets the ``start_iteration``. If not provided, will use</span>
+<span class="sd">        the class&#39;s default.</span>
+<span class="sd">    * target-rate : float</span>
+<span class="sd">        Optional. Sets the ``target_rate``. If not provided, will use</span>
+<span class="sd">        the class&#39;s default.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cls : epsie.proposals.BaseProposal</span>
+<span class="sd">        The epsie proposal class to initialize. The class should have</span>
+<span class="sd">        :py:class:`epsie.proposals.normal.AdaptiveSupport`.</span>
+<span class="sd">    cp : WorkflowConfigParser instance</span>
+<span class="sd">        Config file to read from.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        The name of the section to look in.</span>
+<span class="sd">    tag : str</span>
+<span class="sd">        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">        to create proposals for.</span>
+<span class="sd">    with_boundaries : bool, optional</span>
+<span class="sd">        Try to load boundaries from the section and pass a ``boundaries``</span>
+<span class="sd">        argument to the class&#39;s initialization. Default is True.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cls :</span>
+<span class="sd">        The class initialized with the options read from the config file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that the name matches</span>
+    <span class="k">assert</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">&quot;name in specified section must match mine&quot;</span><span class="p">)</span>
+    <span class="n">params</span><span class="p">,</span> <span class="n">opts</span> <span class="o">=</span> <span class="n">load_opts</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;parameters&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span>
+    <span class="c1"># get the bounds</span>
+    <span class="k">if</span> <span class="n">with_boundaries</span><span class="p">:</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;boundaries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_param_boundaries</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;discrete&#39;</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;successive&#39;</span><span class="p">:</span>
+                     <span class="n">get_epsie_discrete_successive_settings</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">)})</span>
+    <span class="c1"># get the adaptation parameters</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">get_epsie_adaptation_settings</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+    <span class="c1"># bounded and angular adaptive proposals support diagonal-only</span>
+    <span class="n">diagonal</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;diagonal&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">p</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;bounded&#39;</span><span class="p">,</span> <span class="s1">&#39;angular&#39;</span><span class="p">]):</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;diagonal&#39;</span><span class="p">:</span> <span class="n">diagonal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+    <span class="n">componentwise</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;componentwise&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">componentwise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;componentwise&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized options </span><span class="si">{}</span><span class="s2">&quot;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="load_opts">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.load_opts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_opts</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads config options for jump proposals.</span>
+
+<span class="sd">    All `-` in option names are converted to `_` before returning.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : WorkflowConfigParser instance</span>
+<span class="sd">        Config file to read from.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        The name of the section to look in.</span>
+<span class="sd">    tag : str</span>
+<span class="sd">        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names</span>
+<span class="sd">        to create proposals for.</span>
+<span class="sd">    skip : list, optional</span>
+<span class="sd">        List of option names to skip loading.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    params : list</span>
+<span class="sd">        List of parameter names the jump proposal is for.</span>
+<span class="sd">    opts : dict</span>
+<span class="sd">        Dictionary of option names -&gt; values, where all values are strings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">skip</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">skip</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">tag</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+    <span class="c1"># get options</span>
+    <span class="n">readsection</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">])</span>
+    <span class="n">opts</span> <span class="o">=</span> <span class="p">{</span><span class="n">opt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">):</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">readsection</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">readsection</span><span class="p">)</span> <span class="k">if</span> <span class="n">opt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">params</span><span class="p">,</span> <span class="n">opts</span></div>
+
+
+
+<div class="viewcode-block" id="get_variance">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.get_variance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_variance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets variance for jump proposals from the dictionary of options.</span>
+
+<span class="sd">    This looks for ``var_{param}`` for every parameter listed in ``params``.</span>
+<span class="sd">    If found, the argument is popped from the given ``opts`` dictionary. If not</span>
+<span class="sd">    found, ``default`` will be used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : list of str</span>
+<span class="sd">        List of parameter names to look for.</span>
+<span class="sd">    opts : dict</span>
+<span class="sd">        Dictionary of option -&gt; value that was loaded from a config file</span>
+<span class="sd">        section.</span>
+<span class="sd">    default : float, optional</span>
+<span class="sd">        Default value to use for parameters that do not have variances</span>
+<span class="sd">        provided. Default is 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.array</span>
+<span class="sd">        Array of variances to use. Order is the same as the parameter names</span>
+<span class="sd">        given in ``params``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">varfmt</span> <span class="o">=</span> <span class="s1">&#39;var_</span><span class="si">{}</span><span class="s1">&#39;</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">varfmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span> <span class="n">default</span><span class="p">))</span>
+                       <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">cov</span></div>
+
+
+
+<div class="viewcode-block" id="get_param_boundaries">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.get_param_boundaries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_param_boundaries</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets parameter boundaries for jump proposals.</span>
+
+<span class="sd">    The syntax for the options should be ``(min|max)_{param} = value``. Both</span>
+<span class="sd">    a minimum and maximum should be provided for every parameter in ``params``.</span>
+<span class="sd">    If the opts are created using ``load_opts``, then the options can be</span>
+<span class="sd">    formatted as ``(min|max)-{param}``, since that function will turn all ``-``</span>
+<span class="sd">    to ``_`` in option names.</span>
+
+<span class="sd">    Arguments will be popped from the given ``opts`` dictionary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : list of str</span>
+<span class="sd">        List of parameter names to get boundaries for.</span>
+<span class="sd">    opts : dict</span>
+<span class="sd">        Dictionary of option -&gt; value that was loaded from a config file</span>
+<span class="sd">        section.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of parameter names -&gt; :py:class:`epsie.proposals.Boundaries`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">boundaries</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="n">minbound</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;min_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">minbound</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a minimum bound for </span><span class="si">{p}</span><span class="s2">.&quot;</span>
+                             <span class="s2">&quot;Syntax is min_</span><span class="si">{p}</span><span class="s2"> = val&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">param</span><span class="p">))</span>
+        <span class="n">maxbound</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;max_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">maxbound</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a maximum bound for </span><span class="si">{p}</span><span class="s2">.&quot;</span>
+                             <span class="s2">&quot;Syntax is max_</span><span class="si">{p}</span><span class="s2"> = val&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="n">param</span><span class="p">))</span>
+        <span class="n">boundaries</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">Boundaries</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">minbound</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxbound</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">boundaries</span></div>
+
+
+
+<div class="viewcode-block" id="get_epsie_adaptation_settings">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.get_epsie_adaptation_settings">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_epsie_adaptation_settings</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get settings for Epsie adaptive proposals from a config file.</span>
+
+<span class="sd">    This requires that ``adaptation_duration`` is in the given dictionary.</span>
+<span class="sd">    It will also look for ``adaptation_decay``, ``start_iteration``, and</span>
+<span class="sd">    ``target_rate``, but these are optional. Arguments will be popped from the</span>
+<span class="sd">    given dictionary.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : dict</span>
+<span class="sd">        Dictionary of option -&gt; value that was loaded from a config file</span>
+<span class="sd">        section.</span>
+<span class="sd">    name : str (optional)</span>
+<span class="sd">        Proposal name</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of argument name -&gt; values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">adaptation_duration</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;adaptation_duration&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">adaptation_duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">p</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;at&#39;</span><span class="p">,</span> <span class="s1">&#39;adaptive&#39;</span><span class="p">]):</span>
+                <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;adaptation_duration&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No adaptation_duration specified&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;adaptation_duration&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">adaptation_duration</span><span class="p">)})</span>
+    <span class="c1"># optional args</span>
+    <span class="n">adaptation_decay</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;adaptation_decay&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">adaptation_decay</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;adaptation_decay&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">adaptation_decay</span><span class="p">)})</span>
+    <span class="n">start_iteration</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;start_iteration&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">start_iteration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;start_iteration&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_iteration</span><span class="p">)})</span>
+    <span class="n">target_rate</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;target_rate&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">target_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;target_rate&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">target_rate</span><span class="p">)})</span>
+    <span class="k">return</span> <span class="n">args</span></div>
+
+
+
+<div class="viewcode-block" id="get_epsie_discrete_successive_settings">
+<a class="viewcode-back" href="../../../../pycbc.inference.jump.html#pycbc.inference.jump.normal.get_epsie_discrete_successive_settings">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_epsie_discrete_successive_settings</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get settings for Epsie successive discrete proposal successive jumps</span>
+<span class="sd">    from a config file.</span>
+
+<span class="sd">    If ``successive`` is not defined for a parameter then assumes successive</span>
+<span class="sd">    jumps are not allowed (i.e. jumps from an integer to the same integer).</span>
+<span class="sd">    Arguments will be popped from the given dictionary.</span>
+
+<span class="sd">    Example::</span>
+<span class="sd">        [jump_proposal-k+n]</span>
+<span class="sd">        name = discrete</span>
+<span class="sd">        successive-k =</span>
+
+<span class="sd">    This example sets successive jumps for ``k`` but does not do so for ``n``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params : list of str</span>
+<span class="sd">        List of parameter names to get the successive option for.</span>
+<span class="sd">    opts : dict</span>
+<span class="sd">        Dictionary of option -&gt; value that was loaded from a config file</span>
+<span class="sd">        section.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of parameter names -&gt; bools</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">successive</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="n">successive</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;successive_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">successive</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

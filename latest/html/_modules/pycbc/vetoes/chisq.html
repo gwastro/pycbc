@@ -1,0 +1,691 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.vetoes.chisq &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.vetoes.chisq</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.vetoes.chisq</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="o">,</span><span class="w"> </span><span class="nn">logging</span><span class="o">,</span><span class="w"> </span><span class="nn">math</span><span class="o">,</span><span class="w"> </span><span class="nn">pycbc.fft</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">real_same_precision_as</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">complex_same_precision_as</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigmasq_series</span><span class="p">,</span> <span class="n">make_frequency_series</span><span class="p">,</span> <span class="n">matched_filter_core</span><span class="p">,</span> <span class="n">get_cutoff_indices</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="kn">import</span> <span class="n">schemed</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.pnutils</span>
+
+<span class="n">BACKEND_PREFIX</span><span class="o">=</span><span class="s2">&quot;pycbc.vetoes.chisq_&quot;</span>
+
+<div class="viewcode-block" id="power_chisq_bins_from_sigmasq_series">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.power_chisq_bins_from_sigmasq_series">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">power_chisq_bins_from_sigmasq_series</span><span class="p">(</span><span class="n">sigmasq_series</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">kmin</span><span class="p">,</span> <span class="n">kmax</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns bins of equal power for use with the chisq functions</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    sigmasq_series: FrequencySeries</span>
+<span class="sd">        A frequency series containing the cumulative power of a filter template</span>
+<span class="sd">        preweighted by a psd.</span>
+<span class="sd">    num_bins: int</span>
+<span class="sd">        The number of chisq bins to calculate.</span>
+<span class="sd">    kmin: int</span>
+<span class="sd">        DOCUMENTME</span>
+<span class="sd">    kmax: int</span>
+<span class="sd">        DOCUMENTME</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    bins: List of ints</span>
+<span class="sd">        A list of the edges of the chisq bins is returned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sigmasq</span> <span class="o">=</span> <span class="n">sigmasq_series</span><span class="p">[</span><span class="n">kmax</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">edge_vec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigmasq</span> <span class="o">/</span> <span class="n">num_bins</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sigmasq_series</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">],</span> <span class="n">edge_vec</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">bins</span> <span class="o">+=</span> <span class="n">kmin</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">kmax</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="power_chisq_bins">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.power_chisq_bins">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">power_chisq_bins</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns bins of equal power for use with the chisq functions</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    htilde: FrequencySeries</span>
+<span class="sd">        A frequency series containing the template waveform</span>
+<span class="sd">    num_bins: int</span>
+<span class="sd">        The number of chisq bins to calculate.</span>
+<span class="sd">    psd: FrequencySeries</span>
+<span class="sd">        A frequency series containing the psd. Its length must be commensurate</span>
+<span class="sd">        with the template waveform.</span>
+<span class="sd">    low_frequency_cutoff: {None, float}, optional</span>
+<span class="sd">        The low frequency cutoff to apply</span>
+<span class="sd">    high_frequency_cutoff: {None, float}, optional</span>
+<span class="sd">        The high frequency cutoff to apply</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    bins: List of ints</span>
+<span class="sd">        A list of the edges of the chisq bins is returned.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sigma_vec</span> <span class="o">=</span> <span class="n">sigmasq_series</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                               <span class="n">high_frequency_cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">kmin</span><span class="p">,</span> <span class="n">kmax</span> <span class="o">=</span> <span class="n">get_cutoff_indices</span><span class="p">(</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                                    <span class="n">high_frequency_cutoff</span><span class="p">,</span>
+                                    <span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span>
+                                    <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">power_chisq_bins_from_sigmasq_series</span><span class="p">(</span><span class="n">sigma_vec</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">kmin</span><span class="p">,</span> <span class="n">kmax</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="chisq_accum_bin">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.chisq_accum_bin">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">chisq_accum_bin</span><span class="p">(</span><span class="n">chisq</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using the &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="shift_sum">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.shift_sum">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shift_sum</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">bins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculate the time shifted sum of the FrequencySeries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using the &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="power_chisq_at_points_from_precomputed">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.power_chisq_at_points_from_precomputed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">power_chisq_at_points_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the chisq timeseries from precomputed values for only select points.</span>
+
+<span class="sd">    This function calculates the chisq at each point by explicitly time shifting</span>
+<span class="sd">    and summing each bin. No FFT is involved.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    corr: FrequencySeries</span>
+<span class="sd">        The product of the template and data in the frequency domain.</span>
+<span class="sd">    snr: numpy.ndarray</span>
+<span class="sd">        The unnormalized array of snr values at only the selected points in `indices`.</span>
+<span class="sd">    snr_norm: float</span>
+<span class="sd">        The normalization of the snr (EXPLAINME : refer to Findchirp paper?)</span>
+<span class="sd">    bins: List of integers</span>
+<span class="sd">        The edges of the equal power bins</span>
+<span class="sd">    indices: Array</span>
+<span class="sd">        The indices where we will calculate the chisq. These must be relative</span>
+<span class="sd">        to the given `corr` series.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    chisq: Array</span>
+<span class="sd">        An array containing only the chisq at the selected points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">chisq</span> <span class="o">=</span> <span class="n">shift_sum</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span> <span class="c1"># pylint:disable=assignment-from-no-return</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">chisq</span> <span class="o">*</span> <span class="n">num_bins</span> <span class="o">-</span> <span class="p">(</span><span class="n">snr</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span> <span class="o">*</span> <span class="n">snr</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">snr_norm</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span></div>
+
+
+<span class="n">_q_l</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_qtilde_l</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_chisq_l</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="power_chisq_from_precomputed">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.power_chisq_from_precomputed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">power_chisq_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_bins</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the chisq timeseries from precomputed values.</span>
+
+<span class="sd">    This function calculates the chisq at all times by performing an</span>
+<span class="sd">    inverse FFT of each bin.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    corr: FrequencySeries</span>
+<span class="sd">        The produce of the template and data in the frequency domain.</span>
+<span class="sd">    snr: TimeSeries</span>
+<span class="sd">        The unnormalized snr time series.</span>
+<span class="sd">    snr_norm:</span>
+<span class="sd">        The snr normalization factor (true snr = snr * snr_norm) EXPLAINME - define &#39;true snr&#39;?</span>
+<span class="sd">    bins: List of integers</span>
+<span class="sd">        The edges of the chisq bins.</span>
+<span class="sd">    indices: {Array, None}, optional</span>
+<span class="sd">        Index values into snr that indicate where to calculate</span>
+<span class="sd">        chisq values. If none, calculate chisq for all possible indices.</span>
+<span class="sd">    return_bins: {boolean, False}, optional</span>
+<span class="sd">        Return a list of the SNRs for each chisq bin.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    chisq: TimeSeries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get workspace memory</span>
+    <span class="k">global</span> <span class="n">_q_l</span><span class="p">,</span> <span class="n">_qtilde_l</span><span class="p">,</span> <span class="n">_chisq_l</span>
+
+    <span class="n">bin_snrs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">_q_l</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">_q_l</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">snr</span><span class="p">))</span>
+        <span class="n">qtilde</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">snr</span><span class="p">))</span>
+        <span class="n">_q_l</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="n">_qtilde_l</span> <span class="o">=</span> <span class="n">qtilde</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">_q_l</span>
+        <span class="n">qtilde</span> <span class="o">=</span> <span class="n">_qtilde_l</span>
+
+    <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">snr</span> <span class="o">=</span> <span class="n">snr</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">_chisq_l</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">_chisq_l</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">):</span>
+        <span class="n">chisq</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">snr</span><span class="p">))</span>
+        <span class="n">_chisq_l</span> <span class="o">=</span> <span class="n">chisq</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">chisq</span> <span class="o">=</span> <span class="n">_chisq_l</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">snr</span><span class="p">)]</span>
+        <span class="n">chisq</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_bins</span><span class="p">):</span>
+        <span class="n">k_min</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">k_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">qtilde</span><span class="p">[</span><span class="n">k_min</span><span class="p">:</span><span class="n">k_max</span><span class="p">]</span> <span class="o">=</span> <span class="n">corr</span><span class="p">[</span><span class="n">k_min</span><span class="p">:</span><span class="n">k_max</span><span class="p">]</span>
+        <span class="n">pycbc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">qtilde</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="n">qtilde</span><span class="p">[</span><span class="n">k_min</span><span class="p">:</span><span class="n">k_max</span><span class="p">]</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">return_bins</span><span class="p">:</span>
+            <span class="n">bin_snrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TimeSeries</span><span class="p">(</span><span class="n">q</span>  <span class="o">*</span> <span class="n">snr_norm</span> <span class="o">*</span>  <span class="n">num_bins</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
+                                      <span class="n">delta_t</span><span class="o">=</span><span class="n">snr</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span>
+                                      <span class="n">epoch</span><span class="o">=</span><span class="n">snr</span><span class="o">.</span><span class="n">start_time</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">chisq_accum_bin</span><span class="p">(</span><span class="n">chisq</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">chisq_accum_bin</span><span class="p">(</span><span class="n">chisq</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+
+    <span class="n">chisq</span> <span class="o">=</span> <span class="p">(</span><span class="n">chisq</span> <span class="o">*</span> <span class="n">num_bins</span> <span class="o">-</span> <span class="n">snr</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">())</span> <span class="o">*</span> <span class="p">(</span><span class="n">snr_norm</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">chisq</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chisq</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">snr</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">snr</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_bins</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">chisq</span><span class="p">,</span> <span class="n">bin_snrs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">chisq</span></div>
+
+
+
+<div class="viewcode-block" id="fastest_power_chisq_at_points">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.fastest_power_chisq_at_points">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fastest_power_chisq_at_points</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the chisq values for only selected points.</span>
+
+<span class="sd">    This function looks at the number of points to be evaluated and selects</span>
+<span class="sd">    the fastest method (FFT, or direct time shift and sum). In either case,</span>
+<span class="sd">    only the selected points are returned.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    corr: FrequencySeries</span>
+<span class="sd">        The product of the template and data in the frequency domain.</span>
+<span class="sd">    snr: Array</span>
+<span class="sd">        The unnormalized snr</span>
+<span class="sd">    snr_norm: float</span>
+<span class="sd">        The snr normalization factor  --- EXPLAINME</span>
+<span class="sd">    bins: List of integers</span>
+<span class="sd">        The edges of the equal power bins</span>
+<span class="sd">    indices: Array</span>
+<span class="sd">        The indices where we will calculate the chisq. These must be relative</span>
+<span class="sd">        to the given `snr` series.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    chisq: Array</span>
+<span class="sd">        An array containing only the chisq at the selected points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.scheme</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pycbc</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">CPUScheme</span><span class="p">):</span>
+        <span class="c1"># We don&#39;t have that many points so do the direct time shift.</span>
+        <span class="k">return</span> <span class="n">power_chisq_at_points_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span>
+                                                      <span class="n">snr_norm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We have a lot of points so it is faster to use the fourier transform</span>
+        <span class="k">return</span> <span class="n">power_chisq_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span>
+                                            <span class="n">indices</span><span class="o">=</span><span class="n">indices</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="power_chisq">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.power_chisq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">power_chisq</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span>
+                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">return_bins</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the chisq timeseries</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template: FrequencySeries or TimeSeries</span>
+<span class="sd">        A time or frequency series that contains the filter template.</span>
+<span class="sd">    data: FrequencySeries or TimeSeries</span>
+<span class="sd">        A time or frequency series that contains the data to filter. The length</span>
+<span class="sd">        must be commensurate with the template.</span>
+<span class="sd">        (EXPLAINME - does this mean &#39;the same as&#39; or something else?)</span>
+<span class="sd">    num_bins: int</span>
+<span class="sd">        The number of frequency bins used for chisq. The number of statistical</span>
+<span class="sd">        degrees of freedom (&#39;dof&#39;) is 2*num_bins-2.</span>
+<span class="sd">    psd: FrequencySeries</span>
+<span class="sd">        The psd of the data.</span>
+<span class="sd">    low_frequency_cutoff: {None, float}, optional</span>
+<span class="sd">        The low frequency cutoff for the filter</span>
+<span class="sd">    high_frequency_cutoff: {None, float}, optional</span>
+<span class="sd">        The high frequency cutoff for the filter</span>
+<span class="sd">    return_bins: {boolean, False}, optional</span>
+<span class="sd">        Return a list of the individual chisq bins</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    chisq: TimeSeries</span>
+<span class="sd">        TimeSeries containing the chisq values for all times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">htilde</span> <span class="o">=</span> <span class="n">make_frequency_series</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="n">stilde</span> <span class="o">=</span> <span class="n">make_frequency_series</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">bins</span> <span class="o">=</span> <span class="n">power_chisq_bins</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                            <span class="n">high_frequency_cutoff</span><span class="p">)</span>
+    <span class="n">corra</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">htilde</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">total_snr</span><span class="p">,</span> <span class="n">corr</span><span class="p">,</span> <span class="n">tnorm</span> <span class="o">=</span> <span class="n">matched_filter_core</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span>
+                           <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">high_frequency_cutoff</span><span class="p">,</span>
+                           <span class="n">corr_out</span><span class="o">=</span><span class="n">corra</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">power_chisq_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span> <span class="n">total_snr</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">return_bins</span><span class="o">=</span><span class="n">return_bins</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SingleDetPowerChisq">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetPowerChisq">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleDetPowerChisq</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class that handles precomputation and memory management for efficiently</span>
+<span class="sd">    running the power chisq in a single detector inspiral analysis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">snr_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">num_bins</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span> <span class="ow">or</span> <span class="n">num_bins</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">column_name</span> <span class="o">=</span> <span class="s2">&quot;chisq&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table_dof_name</span> <span class="o">=</span> <span class="s2">&quot;chisq_dof&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span> <span class="o">=</span> <span class="n">num_bins</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span> <span class="o">=</span> <span class="n">snr_threshold</span>
+
+<div class="viewcode-block" id="SingleDetPowerChisq.parse_option">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetPowerChisq.parse_option">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_option</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="n">safe_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="nb">min</span><span class="p">}</span>
+        <span class="n">safe_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+        <span class="n">safe_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+        <span class="n">safe_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pycbc</span><span class="o">.</span><span class="n">pnutils</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;__builtins__&quot;</span><span class="p">:</span><span class="kc">None</span><span class="p">},</span> <span class="n">safe_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SingleDetPowerChisq.cached_chisq_bins">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetPowerChisq.cached_chisq_bins">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cached_chisq_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.opt</span><span class="w"> </span><span class="kn">import</span> <span class="n">LimitedSizeDict</span>
+
+        <span class="n">key</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="s1">&#39;_chisq_cached_key&#39;</span><span class="p">):</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">_chisq_cached_key</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;_bin_cache&#39;</span><span class="p">):</span>
+            <span class="n">template</span><span class="o">.</span><span class="n">_bin_cache</span> <span class="o">=</span> <span class="n">LimitedSizeDict</span><span class="p">(</span><span class="n">size_limit</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">_bin_cache</span> <span class="ow">or</span> <span class="nb">id</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">psd</span><span class="o">.</span><span class="n">_chisq_cached_key</span><span class="p">:</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">_chisq_cached_key</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_option</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="s1">&#39;sigmasq_vec&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+                    <span class="n">template</span><span class="o">.</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">psd</span><span class="o">.</span><span class="n">sigmasq_vec</span><span class="p">:</span>
+                <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">f_lower</span> <span class="o">/</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+                <span class="n">kmax</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">end_idx</span>
+                <span class="n">bins</span> <span class="o">=</span> <span class="n">power_chisq_bins_from_sigmasq_series</span><span class="p">(</span>
+                    <span class="n">psd</span><span class="o">.</span><span class="n">sigmasq_vec</span><span class="p">[</span><span class="n">template</span><span class="o">.</span><span class="n">approximant</span><span class="p">],</span>
+                    <span class="n">num_bins</span><span class="p">,</span>
+                    <span class="n">kmin</span><span class="p">,</span>
+                    <span class="n">kmax</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bins</span> <span class="o">=</span> <span class="n">power_chisq_bins</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">template</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+            <span class="n">template</span><span class="o">.</span><span class="n">_bin_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">bins</span>
+
+        <span class="k">return</span> <span class="n">template</span><span class="o">.</span><span class="n">_bin_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="SingleDetPowerChisq.values">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetPowerChisq.values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corr</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate the chisq at points given by indices.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        chisq: Array</span>
+<span class="sd">            Chisq values, one for each sample index, or zero for points below</span>
+<span class="sd">            the specified SNR threshold</span>
+
+<span class="sd">        chisq_dof: Array</span>
+<span class="sd">            Number of statistical degrees of freedom for the chisq test</span>
+<span class="sd">            in the given template, equal to 2 * num_bins - 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do</span><span class="p">:</span>
+            <span class="n">num_above</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="n">dof</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span><span class="p">:</span>
+                <span class="n">above</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">snrv</span> <span class="o">*</span> <span class="n">snr_norm</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span>
+                <span class="n">num_above</span> <span class="o">=</span> <span class="n">above</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> above chisq activation threshold&#39;</span> <span class="o">%</span> <span class="n">num_above</span><span class="p">)</span>
+                <span class="n">above_indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+                <span class="n">above_snrv</span> <span class="o">=</span> <span class="n">snrv</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+                <span class="n">chisq_out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">above_indices</span> <span class="o">=</span> <span class="n">indices</span>
+                <span class="n">above_snrv</span> <span class="o">=</span> <span class="n">snrv</span>
+
+            <span class="k">if</span> <span class="n">num_above</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_chisq_bins</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span>
+                <span class="c1"># len(bins) is number of bin edges, num_bins = len(bins) - 1</span>
+                <span class="n">dof</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+                <span class="n">_chisq</span> <span class="o">=</span> <span class="n">power_chisq_at_points_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span>
+                                     <span class="n">above_snrv</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">above_indices</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">num_above</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">chisq_out</span><span class="p">[</span><span class="n">above</span><span class="p">]</span> <span class="o">=</span> <span class="n">_chisq</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">num_above</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">chisq_out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">chisq_out</span> <span class="o">=</span> <span class="n">_chisq</span>
+
+            <span class="k">return</span> <span class="n">chisq_out</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span><span class="c1"># dof * numpy.ones_like(indices)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SingleDetSkyMaxPowerChisq">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleDetSkyMaxPowerChisq</span><span class="p">(</span><span class="n">SingleDetPowerChisq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class that handles precomputation and memory management for efficiently</span>
+<span class="sd">    running the power chisq in a single detector inspiral analysis when</span>
+<span class="sd">    maximizing analytically over sky location.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SingleDetSkyMaxPowerChisq</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">template_mem</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">corr_mem</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SingleDetSkyMaxPowerChisq.calculate_chisq_bins">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq.calculate_chisq_bins">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_chisq_bins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Obtain the chisq bins for this template and PSD.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_bins</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_option</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="s1">&#39;sigmasq_vec&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+                                       <span class="n">template</span><span class="o">.</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">psd</span><span class="o">.</span><span class="n">sigmasq_vec</span><span class="p">:</span>
+            <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">f_lower</span> <span class="o">/</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+            <span class="n">kmax</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">end_idx</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="n">power_chisq_bins_from_sigmasq_series</span><span class="p">(</span>
+                   <span class="n">psd</span><span class="o">.</span><span class="n">sigmasq_vec</span><span class="p">[</span><span class="n">template</span><span class="o">.</span><span class="n">approximant</span><span class="p">],</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">kmin</span><span class="p">,</span> <span class="n">kmax</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bins</span> <span class="o">=</span> <span class="n">power_chisq_bins</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">template</span><span class="o">.</span><span class="n">f_lower</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bins</span></div>
+
+
+<div class="viewcode-block" id="SingleDetSkyMaxPowerChisq.values">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.chisq.SingleDetSkyMaxPowerChisq.values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corr_plus</span><span class="p">,</span> <span class="n">corr_cross</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span>
+               <span class="n">indices</span><span class="p">,</span> <span class="n">template_plus</span><span class="p">,</span> <span class="n">template_cross</span><span class="p">,</span> <span class="n">u_vals</span><span class="p">,</span>
+               <span class="n">hplus_cross_corr</span><span class="p">,</span> <span class="n">hpnorm</span><span class="p">,</span> <span class="n">hcnorm</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate the chisq at points given by indices.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        chisq: Array</span>
+<span class="sd">            Chisq values, one for each sample index</span>
+
+<span class="sd">        chisq_dof: Array</span>
+<span class="sd">            Number of statistical degrees of freedom for the chisq test</span>
+<span class="sd">            in the given template</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do</span><span class="p">:</span>
+            <span class="n">num_above</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span><span class="p">:</span>
+                <span class="n">above</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">snrv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span>
+                <span class="n">num_above</span> <span class="o">=</span> <span class="n">above</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> above chisq activation threshold&#39;</span> <span class="o">%</span> <span class="n">num_above</span><span class="p">)</span>
+                <span class="n">above_indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+                <span class="n">above_snrv</span> <span class="o">=</span> <span class="n">snrv</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+                <span class="n">u_vals</span> <span class="o">=</span> <span class="n">u_vals</span><span class="p">[</span><span class="n">above</span><span class="p">]</span>
+                <span class="n">rchisq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="n">dof</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">above_indices</span> <span class="o">=</span> <span class="n">indices</span>
+                <span class="n">above_snrv</span> <span class="o">=</span> <span class="n">snrv</span>
+
+            <span class="k">if</span> <span class="n">num_above</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">chisq</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">curr_tmplt_mult_fac</span> <span class="o">=</span> <span class="mf">0.</span>
+                <span class="n">curr_corr_mult_fac</span> <span class="o">=</span> <span class="mf">0.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_mem</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> \
+                        <span class="p">(</span><span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template_mem</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">template_plus</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">template_mem</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">template_plus</span><span class="p">),</span>
+                                <span class="n">dtype</span><span class="o">=</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">corr_plus</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_mem</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> \
+                                <span class="p">(</span><span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_mem</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr_plus</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">corr_mem</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">corr_plus</span><span class="p">),</span>
+                                <span class="n">dtype</span><span class="o">=</span><span class="n">complex_same_precision_as</span><span class="p">(</span><span class="n">corr_plus</span><span class="p">))</span>
+
+                <span class="n">tmplt_data</span> <span class="o">=</span> <span class="n">template_cross</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">corr_data</span> <span class="o">=</span> <span class="n">corr_cross</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template_mem</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">template_cross</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corr_mem</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">corr_cross</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">template_cross</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_mem</span><span class="o">.</span><span class="n">data</span>
+                <span class="n">corr_cross</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_mem</span><span class="o">.</span><span class="n">data</span>
+
+                <span class="k">for</span> <span class="n">lidx</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">above_indices</span><span class="p">):</span>
+                    <span class="n">above_local_indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">index</span><span class="p">])</span>
+                    <span class="n">above_local_snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">above_snrv</span><span class="p">[</span><span class="n">lidx</span><span class="p">]])</span>
+                    <span class="n">local_u_val</span> <span class="o">=</span> <span class="n">u_vals</span><span class="p">[</span><span class="n">lidx</span><span class="p">]</span>
+                    <span class="c1"># Construct template from _plus and _cross</span>
+                    <span class="c1"># Note that this modifies in place, so we store that and</span>
+                    <span class="c1"># revert on the next pass.</span>
+                    <span class="n">template</span> <span class="o">=</span> <span class="n">template_cross</span><span class="o">.</span><span class="n">multiply_and_add</span><span class="p">(</span><span class="n">template_plus</span><span class="p">,</span>
+                                               <span class="n">local_u_val</span><span class="o">-</span><span class="n">curr_tmplt_mult_fac</span><span class="p">)</span>
+                    <span class="n">curr_tmplt_mult_fac</span> <span class="o">=</span> <span class="n">local_u_val</span>
+
+                    <span class="n">template</span><span class="o">.</span><span class="n">f_lower</span> <span class="o">=</span> <span class="n">template_plus</span><span class="o">.</span><span class="n">f_lower</span>
+                    <span class="n">template</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">template_plus</span><span class="o">.</span><span class="n">params</span>
+                    <span class="c1"># Construct the corr vector</span>
+                    <span class="n">norm_fac</span> <span class="o">=</span> <span class="n">local_u_val</span><span class="o">*</span><span class="n">local_u_val</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">norm_fac</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">local_u_val</span> <span class="o">*</span> <span class="n">hplus_cross_corr</span>
+                    <span class="n">norm_fac</span> <span class="o">=</span> <span class="n">hcnorm</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm_fac</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span>
+                    <span class="n">hp_fac</span> <span class="o">=</span> <span class="n">local_u_val</span> <span class="o">*</span> <span class="n">hpnorm</span> <span class="o">/</span> <span class="n">hcnorm</span>
+                    <span class="n">corr</span> <span class="o">=</span> <span class="n">corr_cross</span><span class="o">.</span><span class="n">multiply_and_add</span><span class="p">(</span><span class="n">corr_plus</span><span class="p">,</span>
+                                                   <span class="n">hp_fac</span> <span class="o">-</span> <span class="n">curr_corr_mult_fac</span><span class="p">)</span>
+                    <span class="n">curr_corr_mult_fac</span> <span class="o">=</span> <span class="n">hp_fac</span>
+
+                    <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_chisq_bins</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span>
+                    <span class="n">dof</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+                    <span class="n">curr_chisq</span> <span class="o">=</span> <span class="n">power_chisq_at_points_from_precomputed</span><span class="p">(</span><span class="n">corr</span><span class="p">,</span>
+                                          <span class="n">above_local_snr</span><span class="o">/</span> <span class="n">norm_fac</span><span class="p">,</span> <span class="n">norm_fac</span><span class="p">,</span>
+                                          <span class="n">bins</span><span class="p">,</span> <span class="n">above_local_indices</span><span class="p">)</span>
+                    <span class="n">chisq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_chisq</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">chisq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">chisq</span><span class="p">)</span>
+                <span class="c1"># Must reset corr and template to original values!</span>
+                <span class="n">template_cross</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">tmplt_data</span>
+                <span class="n">corr_cross</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">corr_data</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">num_above</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">rchisq</span><span class="p">[</span><span class="n">above</span><span class="p">]</span> <span class="o">=</span> <span class="n">chisq</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rchisq</span> <span class="o">=</span> <span class="n">chisq</span>
+
+            <span class="k">return</span> <span class="n">rchisq</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span><span class="c1"># dof * numpy.ones_like(indices)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

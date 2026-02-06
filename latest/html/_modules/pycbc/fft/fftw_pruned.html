@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft.fftw_pruned &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.fft.fftw_pruned</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.fft.fftw_pruned</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module provides a functions to perform a pruned FFT based on FFTW</span>
+
+<span class="sd">This should be considered a test and example module, as the functionality</span>
+<span class="sd">can and should be generalized to other FFT backends, and precisions.</span>
+
+<span class="sd">These functions largely implemented the generic FFT decomposition as</span>
+<span class="sd">described rather nicely by wikipedia.</span>
+
+<span class="sd">http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm</span>
+
+<span class="sd">I use a similar naming convention here, with minor simplifications to the</span>
+<span class="sd">twiddle factors.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="o">,</span><span class="w"> </span><span class="nn">ctypes</span><span class="o">,</span><span class="w"> </span><span class="nn">pycbc.types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ctypes_library</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.fftw_pruned_cython</span><span class="w"> </span><span class="kn">import</span> <span class="n">second_phase_cython</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.fftw_pruned&#39;</span><span class="p">)</span>
+
+<span class="n">warn_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;The FFTW_pruned module can be used to speed up computing SNR &quot;</span>
+            <span class="s2">&quot;timeseries by computing first at a low sample rate and then &quot;</span>
+            <span class="s2">&quot;computing at full sample rate only at certain samples. This code &quot;</span>
+            <span class="s2">&quot;has not yet been used in production, and has no test case. &quot;</span>
+            <span class="s2">&quot;This was also ported to Cython in this state. &quot;</span>
+            <span class="s2">&quot;This code would need verification before trusting results. &quot;</span>
+            <span class="s2">&quot;Please do contribute test cases.&quot;</span><span class="p">)</span>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+
+<span class="c1"># FFTW constants</span>
+<span class="n">FFTW_FORWARD</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">FFTW_BACKWARD</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">FFTW_MEASURE</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">FFTW_PATIENT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+<span class="n">FFTW_ESTIMATE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span>
+<span class="n">float_lib</span> <span class="o">=</span> <span class="n">get_ctypes_library</span><span class="p">(</span><span class="s1">&#39;fftw3f&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;fftw3f&#39;</span><span class="p">],</span><span class="n">mode</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">RTLD_GLOBAL</span><span class="p">)</span>
+<span class="n">fexecute</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_execute_dft</span>
+<span class="n">fexecute</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<span class="n">ftexecute</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_execute_dft</span>
+<span class="n">ftexecute</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+<div class="viewcode-block" id="plan_transpose">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.plan_transpose">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plan_transpose</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a plan for transposing internally to the pruned_FFT calculation.</span>
+<span class="sd">    (Alex to provide a write up with more details.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    N1 : int</span>
+<span class="sd">        Number of rows.</span>
+<span class="sd">    N2 : int</span>
+<span class="sd">        Number of columns.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    plan : FFTWF plan</span>
+<span class="sd">        The plan for performing the FFTW transpose.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">N1</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">N2</span>
+
+    <span class="n">iodim</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">iodim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">rows</span>
+    <span class="n">iodim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">iodim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span>
+    <span class="n">iodim</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span>
+    <span class="n">iodim</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">rows</span>
+    <span class="n">iodim</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="n">N1</span><span class="o">*</span><span class="n">N2</span>
+    <span class="n">vin</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">vout</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_guru_dft</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">iodim</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">vin</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">vout</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">FFTW_MEASURE</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plan_first_phase">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.plan_first_phase">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plan_first_phase</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a plan for the first stage of the pruned FFT operation.</span>
+<span class="sd">    (Alex to provide a write up with more details.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    N1 : int</span>
+<span class="sd">        Number of rows.</span>
+<span class="sd">    N2 : int</span>
+<span class="sd">        Number of columns.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    plan : FFTWF plan</span>
+<span class="sd">        The plan for performing the first phase FFT.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">N1</span><span class="o">*</span><span class="n">N2</span>
+    <span class="n">vin</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">vout</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_many_dft</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                  <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">(</span><span class="n">N2</span><span class="p">)),</span> <span class="n">N1</span><span class="p">,</span>
+             <span class="n">vin</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">N2</span><span class="p">,</span>
+             <span class="n">vout</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">N2</span><span class="p">,</span> <span class="n">FFTW_BACKWARD</span><span class="p">,</span> <span class="n">FFTW_MEASURE</span><span class="p">)</span></div>
+
+
+<span class="n">_theplan</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="first_phase">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.first_phase">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">first_phase</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This implements the first phase of the FFT decomposition, using</span>
+<span class="sd">    the standard FFT many plans.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    invec : array</span>
+<span class="sd">        The input array.</span>
+<span class="sd">    outvec : array</span>
+<span class="sd">        The output array.</span>
+<span class="sd">    N1 : int</span>
+<span class="sd">        Number of rows.</span>
+<span class="sd">    N2 : int</span>
+<span class="sd">        Number of columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_theplan</span>
+    <span class="k">if</span> <span class="n">_theplan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_theplan</span> <span class="o">=</span> <span class="n">plan_first_phase</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">)</span>
+    <span class="n">fexecute</span><span class="p">(</span><span class="n">_theplan</span><span class="p">,</span> <span class="n">invec</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="second_phase">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.second_phase">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">second_phase</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the second phase of the FFT decomposition that actually performs</span>
+<span class="sd">    the pruning. It is an explicit calculation for the subset of points. Note</span>
+<span class="sd">    that there seem to be some numerical accumulation issues at various values</span>
+<span class="sd">    of N1 and N2.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    invec :</span>
+<span class="sd">        The result of the first phase FFT</span>
+<span class="sd">    indices : array of ints</span>
+<span class="sd">        The index locations to calculate the FFT</span>
+<span class="sd">    N1 : int</span>
+<span class="sd">        The length of the second phase &quot;FFT&quot;</span>
+<span class="sd">    N2 : int</span>
+<span class="sd">        The length of the first phase FFT</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : array of floats</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">invec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">NI</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="c1"># pylint:disable=unused-variable</span>
+    <span class="n">N1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N1</span><span class="p">)</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">N2</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint32</span><span class="p">)</span>
+
+    <span class="c1"># Note, the next step if this needs to be faster is to invert the loops</span>
+    <span class="n">second_phase_cython</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">,</span> <span class="n">NI</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">invec</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<span class="n">_thetransposeplan</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="fft_transpose_fftw">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.fft_transpose_fftw">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fft_transpose_fftw</span><span class="p">(</span><span class="n">vec</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform an FFT transpose from vec into outvec.</span>
+<span class="sd">    (Alex to provide more details in a write-up.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    vec : array</span>
+<span class="sd">        Input array.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    outvec : array</span>
+<span class="sd">        Transposed output array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_thetransposeplan</span>
+    <span class="n">outvec</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vec</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_theplan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">N1</span><span class="p">,</span> <span class="n">N2</span> <span class="o">=</span> <span class="n">splay</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+        <span class="n">_thetransposeplan</span> <span class="o">=</span> <span class="n">plan_transpose</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="p">)</span>
+    <span class="n">ftexecute</span><span class="p">(</span><span class="n">_thetransposeplan</span><span class="p">,</span> <span class="n">vec</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">)</span>
+    <span class="k">return</span>  <span class="n">outvec</span></div>
+
+
+<span class="n">fft_transpose</span> <span class="o">=</span> <span class="n">fft_transpose_fftw</span>
+
+<div class="viewcode-block" id="splay">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.splay">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">splay</span><span class="p">(</span><span class="n">vec</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Determine two lengths to split stride the input vector by</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">N1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span> <span class="o">/</span> <span class="n">N2</span>
+    <span class="k">return</span> <span class="n">N1</span><span class="p">,</span> <span class="n">N2</span></div>
+
+
+<div class="viewcode-block" id="pruned_c2cifft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw_pruned.pruned_c2cifft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pruned_c2cifft</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">pretransposed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform a pruned iFFT, only valid for power of 2 iffts as the</span>
+<span class="sd">    decomposition is easier to choose. This is not a strict requirement of the</span>
+<span class="sd">    functions, but it is unlikely to the optimal to use anything but power</span>
+<span class="sd">    of 2. (Alex to provide more details in write up.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    invec : array</span>
+<span class="sd">        The input vector. This should be the correlation between the data and</span>
+<span class="sd">        the template at full sample rate. Ideally this is pre-transposed, but</span>
+<span class="sd">        if not this will be transposed in this function.</span>
+<span class="sd">    outvec : array</span>
+<span class="sd">        The output of the first phase of the pruned FFT.</span>
+<span class="sd">    indices : array of ints</span>
+<span class="sd">        The indexes at which to calculate the full sample-rate SNR.</span>
+<span class="sd">    pretransposed : boolean, default=False</span>
+<span class="sd">        Used to indicate whether or not invec is pretransposed.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    SNRs : array</span>
+<span class="sd">        The complex SNRs at the indexes given by indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N1</span><span class="p">,</span> <span class="n">N2</span> <span class="o">=</span> <span class="n">splay</span><span class="p">(</span><span class="n">invec</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pretransposed</span><span class="p">:</span>
+        <span class="n">invec</span> <span class="o">=</span> <span class="n">fft_transpose</span><span class="p">(</span><span class="n">invec</span><span class="p">)</span>
+    <span class="n">first_phase</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">N1</span><span class="o">=</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="o">=</span><span class="n">N2</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">second_phase</span><span class="p">(</span><span class="n">outvec</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">N1</span><span class="o">=</span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span><span class="o">=</span><span class="n">N2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

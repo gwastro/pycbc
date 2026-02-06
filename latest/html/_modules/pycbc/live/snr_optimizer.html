@@ -1,0 +1,538 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.live.snr_optimizer &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.live.snr_optimizer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.live.snr_optimizer</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2023 Arthur Tolley, Gareth Cabourn Davies</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; This module contains functions for optimizing the signal-to-noise ratio</span>
+<span class="sd">of triggers produced by PyCBC Live. Also contained within this module are the</span>
+<span class="sd">command line arguments required and options group for the SNR optimization.</span>
+<span class="sd">This module is primarily used in the pycbc_optimize_snr program.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">types</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">differential_evolution</span><span class="p">,</span> <span class="n">shgo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DYN_RANGE_FAC</span><span class="p">,</span> <span class="n">waveform</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">zeros</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.waveform.bank</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">matched_filter_core</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.live.snr_optimizer&#39;</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">pyswarms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ps</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">ps</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="c1"># Set a minimum mass for points tried in optimization allowing for</span>
+<span class="c1"># minimal slop relative to the lightest template</span>
+<span class="n">MIN_CPT_MASS</span> <span class="o">=</span> <span class="mf">0.99</span>
+
+<span class="c1"># Set a large maximum total mass</span>
+<span class="n">MAX_MTOTAL</span> <span class="o">=</span> <span class="mf">500.</span>
+
+<span class="n">Nfeval</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="callback_func">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.callback_func">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">callback_func</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">convergence</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">Nfeval</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Currently at </span><span class="si">%d</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">Nfeval</span><span class="p">,</span> <span class="n">convergence</span><span class="p">)</span>
+    <span class="c1"># Time out if the optimization takes longer than 6 minutes</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">360</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="n">Nfeval</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="compute_network_snr_core">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.compute_network_snr_core">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_network_snr_core</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">coinc_times</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">approximant</span><span class="p">,</span>
+                             <span class="n">flow</span><span class="p">,</span> <span class="n">f_end</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">raise_err</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute network SNR as a function over mchirp, eta, and two aligned</span>
+<span class="sd">    spin components, stored in that order in the sequence v.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    v : list</span>
+<span class="sd">        A list containing the input values for mchirp, eta, and spin</span>
+<span class="sd">        components.</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        A dictionary containing keys of ifos (&#39;H1&#39;, &#39;L1&#39;) and</span>
+<span class="sd">        values of the frequency series data for those ifos</span>
+<span class="sd">    coinc_times : dict</span>
+<span class="sd">        A dictionary containing the coincidence times for the network.</span>
+<span class="sd">    ifos : list</span>
+<span class="sd">        A list of the ifos, e.g. [&#39;H1&#39;, &#39;L1&#39;]</span>
+<span class="sd">    flen : float</span>
+<span class="sd">        The length of the data.</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        The approximant used for the waveform model.</span>
+<span class="sd">    flow : float</span>
+<span class="sd">        The lower frequency bound.</span>
+<span class="sd">    f_end : float</span>
+<span class="sd">        The upper frequency bound.</span>
+<span class="sd">    delta_f : float</span>
+<span class="sd">        The frequency spacing.</span>
+<span class="sd">    sample_rate : float</span>
+<span class="sd">        The sampling rate of the data.</span>
+<span class="sd">    raise_err : bool, optional</span>
+<span class="sd">        A flag indicating whether to raise an error if an exception</span>
+<span class="sd">        occurs during the computation. Defaults to False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    network_snr : float</span>
+<span class="sd">        The computed network SNR (Signal-to-Noise Ratio) value.</span>
+<span class="sd">    snr_series_dict : dict</span>
+<span class="sd">        A dictionary containing the snr timeseries from each ifo.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">DYN_RANGE_FAC</span>
+    <span class="n">mtotal</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">mtotal_from_mchirp_eta</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">mass1_from_mtotal_eta</span><span class="p">(</span><span class="n">mtotal</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">mass2_from_mtotal_eta</span><span class="p">(</span><span class="n">mtotal</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># enforce broadly accepted search space boundaries</span>
+    <span class="k">if</span> <span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">MIN_CPT_MASS</span> <span class="ow">or</span> <span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">MIN_CPT_MASS</span> <span class="ow">or</span> <span class="n">mtotal</span> <span class="o">&gt;</span> <span class="n">MAX_MTOTAL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="p">{}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">htilde</span> <span class="o">=</span> <span class="n">waveform</span><span class="o">.</span><span class="n">get_waveform_filter</span><span class="p">(</span>
+                <span class="n">zeros</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">),</span>
+                <span class="n">approximant</span><span class="o">=</span><span class="n">approximant</span><span class="p">,</span>
+                <span class="n">mass1</span><span class="o">=</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">spin2z</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                <span class="n">f_lower</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">f_final</span><span class="o">=</span><span class="n">f_end</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span>
+                <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.</span><span class="o">/</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="n">distance</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raise_err</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="c1"># Assume a failure in the waveform approximant</span>
+        <span class="c1"># due to the choice of parameters and carry on</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="s1">&#39;params&#39;</span><span class="p">):</span>
+        <span class="n">htilde</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mass1</span><span class="o">=</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="n">mass2</span><span class="p">,</span>
+                             <span class="n">spin1z</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">spin2z</span><span class="o">=</span><span class="n">v</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="s1">&#39;end_idx&#39;</span><span class="p">):</span>
+        <span class="n">htilde</span><span class="o">.</span><span class="n">end_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_end</span> <span class="o">/</span> <span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">htilde</span><span class="o">.</span><span class="n">approximant</span> <span class="o">=</span> <span class="n">approximant</span>
+    <span class="n">htilde</span><span class="o">.</span><span class="n">sigmasq</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">pycbc</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">bank</span><span class="o">.</span><span class="n">sigma_cached</span><span class="p">,</span>
+                                      <span class="n">htilde</span><span class="p">)</span>
+    <span class="n">htilde</span><span class="o">.</span><span class="n">min_f_lower</span> <span class="o">=</span> <span class="n">flow</span>
+    <span class="n">htilde</span><span class="o">.</span><span class="n">end_frequency</span> <span class="o">=</span> <span class="n">f_end</span>
+    <span class="n">htilde</span><span class="o">.</span><span class="n">f_lower</span> <span class="o">=</span> <span class="n">flow</span>
+    <span class="n">network_snrsq</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">snr_series_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">sigmasq</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">sigmasq</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">psd</span><span class="p">)</span>
+        <span class="n">snr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">norm</span> <span class="o">=</span> <span class="n">matched_filter_core</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                           <span class="n">h_norm</span><span class="o">=</span><span class="n">sigmasq</span><span class="p">)</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="mf">0.095</span>
+        <span class="n">half_dur_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">snr</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="n">duration</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">onsource_idx</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">coinc_times</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">snr</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">*</span>
+                        <span class="n">snr</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+        <span class="n">onsource_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">onsource_idx</span><span class="p">))</span>
+        <span class="n">onsource_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">onsource_idx</span> <span class="o">-</span> <span class="n">half_dur_samples</span><span class="p">,</span>
+                               <span class="n">onsource_idx</span> <span class="o">+</span> <span class="n">half_dur_samples</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">snr_series</span> <span class="o">=</span> <span class="n">snr</span><span class="p">[</span><span class="n">onsource_slice</span><span class="p">]</span> <span class="o">*</span> <span class="n">norm</span>
+        <span class="n">snr_series_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">snr</span> <span class="o">*</span> <span class="n">norm</span>
+        <span class="n">snr_series_dict</span><span class="p">[</span><span class="s1">&#39;sigmasq_&#39;</span> <span class="o">+</span> <span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmasq</span>
+        <span class="n">network_snrsq</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">snr_series</span><span class="o">.</span><span class="n">_data</span><span class="p">))</span> <span class="o">**</span> <span class="mf">2.</span>
+
+    <span class="k">return</span> <span class="n">network_snrsq</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">snr_series_dict</span></div>
+
+
+
+<div class="viewcode-block" id="compute_minus_network_snr">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.compute_minus_network_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_minus_network_snr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">argv</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">nsnr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compute_network_snr_core</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;snr: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">nsnr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">nsnr</span></div>
+
+
+
+<div class="viewcode-block" id="compute_minus_network_snr_pso">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.compute_minus_network_snr_pso">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_minus_network_snr_pso</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">argv</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span>
+    <span class="n">nsnr_array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">compute_network_snr_core</span><span class="p">(</span><span class="n">v_i</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">v_i</span> <span class="ow">in</span> <span class="n">v</span><span class="p">])</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">nsnr_array</span></div>
+
+
+
+<div class="viewcode-block" id="optimize_di">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.optimize_di">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">optimize_di</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">cli_args</span><span class="p">,</span> <span class="n">extra_args</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">):</span>
+    <span class="c1"># Convert from dict to array with parameters in a given order</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;mchirp&#39;</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+    <span class="p">])</span>
+    <span class="c1"># Initialize the population with random values within specified bounds</span>
+    <span class="n">population</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+        <span class="n">bounds</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_di_popsize</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">bounds</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_include_candidate</span><span class="p">:</span>
+        <span class="c1"># add the initial point to the population</span>
+        <span class="n">population</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">population</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">initial_point</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initial population: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">differential_evolution</span><span class="p">(</span>
+        <span class="n">compute_minus_network_snr</span><span class="p">,</span>
+        <span class="n">bounds</span><span class="p">,</span>
+        <span class="n">maxiter</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_di_maxiter</span><span class="p">),</span>
+        <span class="n">workers</span><span class="o">=</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">cores</span> <span class="ow">or</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">popsize</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_di_popsize</span><span class="p">),</span>
+        <span class="n">mutation</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="n">recombination</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+        <span class="n">callback</span><span class="o">=</span><span class="n">callback_func</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">,</span>
+        <span class="n">init</span><span class="o">=</span><span class="n">population</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span><span class="o">.</span><span class="n">x</span></div>
+
+
+
+<div class="viewcode-block" id="optimize_shgo">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.optimize_shgo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">optimize_shgo</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">cli_args</span><span class="p">,</span> <span class="n">extra_args</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">):</span> <span class="c1"># pylint: disable=unused-argument</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;mchirp&#39;</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span>
+    <span class="p">]</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">shgo</span><span class="p">(</span>
+        <span class="n">compute_minus_network_snr</span><span class="p">,</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="n">extra_args</span><span class="p">,</span>
+        <span class="n">iters</span><span class="o">=</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_shgo_iters</span><span class="p">,</span>
+        <span class="n">n</span><span class="o">=</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_shgo_samples</span><span class="p">,</span>
+        <span class="n">sampling_method</span><span class="o">=</span><span class="s2">&quot;sobol&quot;</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span><span class="o">.</span><span class="n">x</span></div>
+
+
+
+<div class="viewcode-block" id="optimize_pso">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.optimize_pso">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">optimize_pso</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span> <span class="n">cli_args</span><span class="p">,</span> <span class="n">extra_args</span><span class="p">,</span> <span class="n">initial_point</span><span class="p">):</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;c1&#39;</span><span class="p">:</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_pso_c1</span><span class="p">,</span>
+        <span class="s1">&#39;c2&#39;</span><span class="p">:</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_pso_c2</span><span class="p">,</span>
+        <span class="s1">&#39;w&#39;</span><span class="p">:</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_pso_w</span>
+    <span class="p">}</span>
+    <span class="n">min_bounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;mchirp&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">])</span>
+    <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;mchirp&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">bounds</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">])</span>
+
+    <span class="c1"># Initialize the population with random values within specified bounds</span>
+    <span class="n">population</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+        <span class="n">min_bounds</span><span class="p">,</span>
+        <span class="n">max_bounds</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_pso_particles</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">bounds</span><span class="p">))</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_include_candidate</span><span class="p">:</span>
+        <span class="c1"># add the initial point to the population</span>
+        <span class="n">population</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">population</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                        <span class="n">initial_point</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Initial population: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">single</span><span class="o">.</span><span class="n">GlobalBestPSO</span><span class="p">(</span>
+        <span class="n">n_particles</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_pso_particles</span><span class="p">),</span>
+        <span class="n">dimensions</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+        <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="n">min_bounds</span><span class="p">,</span> <span class="n">max_bounds</span><span class="p">),</span>
+        <span class="n">init_pos</span><span class="o">=</span><span class="n">population</span>
+    <span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">results</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span>
+        <span class="n">compute_minus_network_snr_pso</span><span class="p">,</span>
+        <span class="n">iters</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">snr_opt_pso_iters</span><span class="p">),</span>
+        <span class="n">n_processes</span><span class="o">=</span><span class="n">cli_args</span><span class="o">.</span><span class="n">cores</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="n">extra_args</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<span class="n">optimize_funcs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;differential_evolution&#39;</span><span class="p">:</span> <span class="n">optimize_di</span><span class="p">,</span>
+    <span class="s1">&#39;shgo&#39;</span><span class="p">:</span> <span class="n">optimize_shgo</span><span class="p">,</span>
+    <span class="s1">&#39;pso&#39;</span><span class="p">:</span> <span class="n">optimize_pso</span>
+<span class="p">}</span>
+
+<span class="c1"># The following sets the default values of the options, but allows us to check</span>
+<span class="c1"># if the option has been given on the command line</span>
+
+<span class="c1"># For each optimizer, we have a dictionary of the options, its help</span>
+<span class="c1"># message and default value</span>
+
+<span class="n">option_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;differential_evolution&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;The maximum number of generations over which the entire &#39;</span>
+                    <span class="s1">&#39;population is evolved.&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+        <span class="s1">&#39;popsize&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;A multiplier for setting the total population size.&#39;</span><span class="p">,</span>
+                    <span class="mi">100</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;shgo&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;samples&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Number of sampling points used in the construction of &#39;</span>
+                    <span class="s1">&#39;the simplicial complex.&#39;</span><span class="p">,</span> <span class="mi">76</span><span class="p">),</span>
+        <span class="s1">&#39;iters&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Number of iterations used in the construction of the &#39;</span>
+                  <span class="s1">&#39;simplicial complex.&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;pso&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;iters&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Number of iterations used in the particle swarm &#39;</span>
+                  <span class="s1">&#39;optimization.&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+        <span class="s1">&#39;particles&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Number of particles used in the swarm.&#39;</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span>
+        <span class="s1">&#39;c1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;The hyperparameter c1: the cognitive parameter.&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+        <span class="s1">&#39;c2&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;The hyperparameter c2: the social parameter.&#39;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+        <span class="s1">&#39;w&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;The hyperparameter w: the inertia parameter.&#39;</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="insert_snr_optimizer_options">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.insert_snr_optimizer_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_snr_optimizer_options</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+    <span class="n">opt_opt_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;SNR optimizer configuration &quot;</span>
+                                              <span class="s2">&quot;options.&quot;</span><span class="p">)</span>
+    <span class="c1"># Option to choose which optimizer to use:</span>
+    <span class="n">optimizer_choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">option_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">opt_opt_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--snr-opt-method&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;differential_evolution&#39;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="n">optimizer_choices</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;SNR Optimizer choices: &#39;</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">optimizer_choices</span><span class="p">))</span>
+
+    <span class="c1"># Add the generic options</span>
+    <span class="n">opt_opt_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--snr-opt-include-candidate&#39;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Include parameters of the candidate event in the initialized &#39;</span>
+             <span class="s1">&#39;array for the optimizer. Only relevant for --snr-opt-method pso &#39;</span>
+             <span class="s1">&#39;or differential_evolution&#39;</span><span class="p">)</span>
+    <span class="n">opt_opt_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--snr-opt-seed&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Seed to supply to the random generation of initial array to &#39;</span>
+             <span class="s1">&#39;pass to the optimizer. Only relevant for --snr-opt-method pso &#39;</span>
+             <span class="s1">&#39;or differential_evolution. Set to &#39;&#39;random&#39;&#39; for a random seed&#39;</span><span class="p">)</span>
+
+    <span class="c1"># For each optimizer, add the possible options</span>
+    <span class="k">for</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">option_subdict</span> <span class="ow">in</span> <span class="n">option_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">optimizer_name</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;differential-evolution&#39;</span><span class="p">:</span>
+            <span class="n">optimizer_name</span> <span class="o">=</span> <span class="s1">&#39;di&#39;</span>
+        <span class="k">for</span> <span class="n">opt_name</span><span class="p">,</span> <span class="n">opt_help_default</span> <span class="ow">in</span> <span class="n">option_subdict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">option_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;--snr-opt-</span><span class="si">{</span><span class="n">optimizer_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">opt_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">opt_opt_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">option_name</span><span class="p">,</span>
+                <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Only relevant for --snr-opt-method </span><span class="si">{</span><span class="n">optimizer</span><span class="si">}</span><span class="s1">: &#39;</span> <span class="o">+</span>
+                     <span class="n">opt_help_default</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span>
+                     <span class="sa">f</span><span class="s1">&#39; Default = </span><span class="si">{</span><span class="n">opt_help_default</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_snr_optimizer_options">
+<a class="viewcode-back" href="../../../pycbc.live.html#pycbc.live.snr_optimizer.check_snr_optimizer_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_snr_optimizer_options</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deal with default options and required parameters given optimizer option</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">options</span><span class="p">[</span><span class="s1">&#39;differential_evolution&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">snr_opt_di_maxiter</span><span class="p">,</span>
+                                         <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_di_popsize</span><span class="p">]</span>
+    <span class="n">options</span><span class="p">[</span><span class="s1">&#39;shgo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">snr_opt_shgo_samples</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_shgo_iters</span><span class="p">]</span>
+    <span class="n">options</span><span class="p">[</span><span class="s1">&#39;pso&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">snr_opt_pso_iters</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_pso_particles</span><span class="p">,</span>
+                      <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_pso_c1</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_pso_c2</span><span class="p">,</span>
+                      <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_pso_w</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_method</span> <span class="o">==</span> <span class="s1">&#39;pso&#39;</span> <span class="ow">and</span> <span class="n">ps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;You need to install pyswarms to use the pso optimizer.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Check all the options are suitable for the chosen optimizer</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">options</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_method</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Argument has been supplied which is not suitable &quot;</span> <span class="o">+</span>
+                         <span class="sa">f</span><span class="s2">&quot;for the optimizer given (</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">snr_opt_method</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Give the arguments the default values according to the dictionary</span>
+    <span class="n">optimizer_name</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">snr_opt_method</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;differential-evolution&#39;</span><span class="p">:</span>
+        <span class="n">optimizer_name</span> <span class="o">=</span> <span class="s1">&#39;di&#39;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">option_dict</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">snr_opt_method</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">key_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;snr_opt_</span><span class="si">{</span><span class="n">optimizer_name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">key_name</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">key_name</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

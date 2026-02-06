@@ -1,0 +1,605 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.cuts &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.cuts</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.cuts</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2022 Gareth Cabourn Davies</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for reading in command line options and</span>
+<span class="sd">applying cuts to triggers or templates in the offline search</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">ranking</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">hdf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank</span><span class="w"> </span><span class="kn">import</span> <span class="n">bank_conversions</span> <span class="k">as</span> <span class="n">bank_conv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_chisq_from_file_choice</span>
+
+<span class="c1"># Only used to check isinstance:</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReadByTemplate</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.cuts&#39;</span><span class="p">)</span>
+
+<span class="c1"># sngl_rank_keys are the allowed names of reweighted SNR functions</span>
+<span class="n">sngl_rank_keys</span> <span class="o">=</span> <span class="n">ranking</span><span class="o">.</span><span class="n">sngls_ranking_function_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+<span class="n">trigger_param_choices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sngl_rank_keys</span><span class="p">)</span>
+<span class="n">trigger_param_choices</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cc</span> <span class="o">+</span> <span class="s1">&#39;_chisq&#39;</span> <span class="k">for</span> <span class="n">cc</span> <span class="ow">in</span> <span class="n">hdf</span><span class="o">.</span><span class="n">chisq_choices</span><span class="p">]</span>
+<span class="n">trigger_param_choices</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">,</span> <span class="s1">&#39;psd_var_val&#39;</span><span class="p">,</span> <span class="s1">&#39;sigmasq&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sigma_multiple&#39;</span><span class="p">]</span>
+
+<span class="n">template_fit_param_choices</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fit_by_fit_coeff&#39;</span><span class="p">,</span> <span class="s1">&#39;smoothed_fit_coeff&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;fit_by_count_above_thresh&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;smoothed_fit_count_above_thresh&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;fit_by_count_in_template&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;smoothed_fit_count_in_template&#39;</span><span class="p">]</span>
+<span class="n">template_param_choices</span> <span class="o">=</span> <span class="n">bank_conv</span><span class="o">.</span><span class="n">conversion_options</span> <span class="o">+</span> \
+                             <span class="n">template_fit_param_choices</span>
+
+<span class="c1"># What are the inequalities associated with the cuts?</span>
+<span class="c1"># &#39;upper&#39; means upper limit, and so requires value &lt; threshold</span>
+<span class="c1"># to keep a trigger</span>
+<span class="n">ineq_functions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;upper&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">less</span><span class="p">,</span>
+    <span class="s1">&#39;lower&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">greater</span><span class="p">,</span>
+    <span class="s1">&#39;upper_inc&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">less_equal</span><span class="p">,</span>
+    <span class="s1">&#39;lower_inc&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">greater_equal</span>
+<span class="p">}</span>
+<span class="n">ineq_choices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ineq_functions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="insert_cuts_option_group">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.insert_cuts_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_cuts_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add options to the parser for cuts to the templates/triggers</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--trigger-cuts&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Cuts to apply to the triggers, supplied as &quot;</span>
+                             <span class="s2">&quot;PARAMETER:VALUE:LIMIT, where, PARAMETER is the &quot;</span>
+                             <span class="s2">&quot;parameter to be cut, VALUE is the value at &quot;</span>
+                             <span class="s2">&quot;which it is cut, and LIMIT is one of &#39;&quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;&#39;, &#39;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ineq_choices</span><span class="p">)</span> <span class="o">+</span>
+                             <span class="s2">&quot;&#39; to indicate the inequality needed. &quot;</span>
+                             <span class="s2">&quot;PARAMETER is one of:&#39;&quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;&#39;, &#39;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">trigger_param_choices</span><span class="p">)</span> <span class="o">+</span>
+                             <span class="s2">&quot;&#39;. For example snr:6:LOWER removes triggers &quot;</span>
+                             <span class="s2">&quot;with matched filter SNR &lt; 6&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--template-cuts&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Cuts to apply to the triggers, supplied as &quot;</span>
+                             <span class="s2">&quot;PARAMETER:VALUE:LIMIT. Format is the same as in &quot;</span>
+                             <span class="s2">&quot;--trigger-cuts. PARAMETER can be one of &#39;&quot;</span>
+                             <span class="o">+</span> <span class="s2">&quot;&#39;, &#39;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">template_param_choices</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;&#39;.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="convert_inputstr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.convert_inputstr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_inputstr</span><span class="p">(</span><span class="n">inputstr</span><span class="p">,</span> <span class="n">choices</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the inputstr into a dictionary keyed on parameter</span>
+<span class="sd">    with a tuple of the function to be used in the cut, and</span>
+<span class="sd">    the float to compare to.</span>
+<span class="sd">    Do input checks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cut_param</span><span class="p">,</span> <span class="n">cut_value_str</span><span class="p">,</span> <span class="n">cut_limit</span> <span class="o">=</span> <span class="n">inputstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">value_e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;ERROR: Cut string format not correct, please &quot;</span>
+                       <span class="s2">&quot;supply as PARAMETER:VALUE:LIMIT&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">value_e</span>
+
+    <span class="k">if</span> <span class="n">cut_param</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">choices</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cut parameter &quot;</span> <span class="o">+</span> <span class="n">cut_param</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+                                  <span class="s2">&quot;not recognised, choose from &quot;</span>
+                                  <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">choices</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">cut_limit</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ineq_choices</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cut inequality &quot;</span> <span class="o">+</span> <span class="n">cut_limit</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+                                  <span class="s2">&quot;not recognised, choose from &quot;</span>
+                                  <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ineq_choices</span><span class="p">))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cut_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cut_value_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">value_e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;ERROR: Cut value must be convertible into a float, &quot;</span>
+                       <span class="s2">&quot;got &#39;</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span><span class="p">,</span> <span class="n">cut_value_str</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">value_e</span>
+
+    <span class="k">return</span> <span class="p">{(</span><span class="n">cut_param</span><span class="p">,</span> <span class="n">ineq_functions</span><span class="p">[</span><span class="n">cut_limit</span><span class="p">]):</span> <span class="n">cut_value</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="check_update_cuts">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.check_update_cuts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_update_cuts</span><span class="p">(</span><span class="n">cut_dict</span><span class="p">,</span> <span class="n">new_cut</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update a cuts dictionary, but check whether the cut exists already,</span>
+<span class="sd">    warn and only apply the strictest cuts</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cut_dict: dictionary</span>
+<span class="sd">        Dictionary containing the cuts to be checked, will be updated</span>
+
+<span class="sd">    new_cut: single-entry dictionary</span>
+<span class="sd">        dictionary to define the new cut which is being considered to add</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_cut_key</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_cut</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">new_cut_key</span> <span class="ow">in</span> <span class="n">cut_dict</span><span class="p">:</span>
+        <span class="c1"># The cut has already been called</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;WARNING: Cut parameter </span><span class="si">%s</span><span class="s2"> and function </span><span class="si">%s</span><span class="s2"> have &quot;</span>
+                       <span class="s2">&quot;already been used. Utilising the strictest cut.&quot;</span><span class="p">,</span>
+                       <span class="n">new_cut_key</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_cut_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="c1"># Extract the function and work out which is strictest</span>
+        <span class="n">cut_function</span> <span class="o">=</span> <span class="n">new_cut_key</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">value_new</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_cut</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">value_old</span> <span class="o">=</span> <span class="n">cut_dict</span><span class="p">[</span><span class="n">new_cut_key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cut_function</span><span class="p">(</span><span class="n">value_new</span><span class="p">,</span> <span class="n">value_old</span><span class="p">):</span>
+            <span class="c1"># The new threshold would survive the cut of the</span>
+            <span class="c1"># old threshold, therefore the new threshold is stricter</span>
+            <span class="c1"># - update it</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;WARNING: New threshold of </span><span class="si">%.3f</span><span class="s2"> is &quot;</span>
+                           <span class="s2">&quot;stricter than old threshold </span><span class="si">%.3f</span><span class="s2">, &quot;</span>
+                           <span class="s2">&quot;using cut at </span><span class="si">%.3f</span><span class="s2">.&quot;</span><span class="p">,</span>
+                           <span class="n">value_new</span><span class="p">,</span> <span class="n">value_old</span><span class="p">,</span> <span class="n">value_new</span><span class="p">)</span>
+            <span class="n">cut_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_cut</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># New cut would not make a difference, ignore it</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;WARNING: New threshold of </span><span class="si">%.3f</span><span class="s2"> is less &quot;</span>
+                           <span class="s2">&quot;strict than old threshold </span><span class="si">%.3f</span><span class="s2">, using &quot;</span>
+                           <span class="s2">&quot;cut at </span><span class="si">%.3f</span><span class="s2">.&quot;</span><span class="p">,</span>
+                           <span class="n">value_new</span><span class="p">,</span> <span class="n">value_old</span><span class="p">,</span> <span class="n">value_old</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># This is a new cut - add it</span>
+        <span class="n">cut_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_cut</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ingest_cuts_option_group">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.ingest_cuts_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ingest_cuts_option_group</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return dictionaries for trigger and template cuts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Deal with the case where no cuts are supplied:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">trigger_cuts</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">template_cuts</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{},</span> <span class="p">{}</span>
+
+    <span class="c1"># Deal with the case where one set of cuts is supplied</span>
+    <span class="c1"># but not the other</span>
+    <span class="n">trigger_cut_strs</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">trigger_cuts</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="n">template_cut_strs</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">template_cuts</span> <span class="ow">or</span> <span class="p">[]</span>
+
+    <span class="c1"># Handle trigger cuts</span>
+    <span class="n">trigger_cut_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">inputstr</span> <span class="ow">in</span> <span class="n">trigger_cut_strs</span><span class="p">:</span>
+        <span class="n">new_trigger_cut</span> <span class="o">=</span> <span class="n">convert_inputstr</span><span class="p">(</span><span class="n">inputstr</span><span class="p">,</span> <span class="n">trigger_param_choices</span><span class="p">)</span>
+        <span class="n">check_update_cuts</span><span class="p">(</span><span class="n">trigger_cut_dict</span><span class="p">,</span> <span class="n">new_trigger_cut</span><span class="p">)</span>
+
+    <span class="c1"># Handle template cuts</span>
+    <span class="n">template_cut_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">inputstr</span> <span class="ow">in</span> <span class="n">template_cut_strs</span><span class="p">:</span>
+        <span class="n">new_template_cut</span> <span class="o">=</span> <span class="n">convert_inputstr</span><span class="p">(</span><span class="n">inputstr</span><span class="p">,</span> <span class="n">template_param_choices</span><span class="p">)</span>
+        <span class="n">check_update_cuts</span><span class="p">(</span><span class="n">template_cut_dict</span><span class="p">,</span> <span class="n">new_template_cut</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trigger_cut_dict</span><span class="p">,</span> <span class="n">template_cut_dict</span></div>
+
+
+
+<div class="viewcode-block" id="sigma_multiple_cut_thresh">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.sigma_multiple_cut_thresh">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sigma_multiple_cut_thresh</span><span class="p">(</span><span class="n">template_ids</span><span class="p">,</span> <span class="n">statistic</span><span class="p">,</span>
+                              <span class="n">cut_thresh</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply cuts based on a multiple of the median sigma value for the template</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    template_ids:</span>
+<span class="sd">        template_id values for each of the triggers to be considered,</span>
+<span class="sd">        this will be used to associate a sigma threshold for each trigger</span>
+<span class="sd">    statistic:</span>
+<span class="sd">        A PyCBC ranking statistic instance. Used to get the median_sigma</span>
+<span class="sd">        value for the cuts. If fits_by_tid does not exist for the specified</span>
+<span class="sd">        ifo (where median_sigma lives), an error will be raised.</span>
+<span class="sd">    ifo:</span>
+<span class="sd">        The IFO for which we want to read median_sigma</span>
+<span class="sd">    cut_thresh: int or float</span>
+<span class="sd">        The multiple of median_sigma to compare triggers to</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    idx_out: numpy array</span>
+<span class="sd">        An array of the indices of triggers which meet the criteria</span>
+<span class="sd">        set by the dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">statistic_classname</span> <span class="o">=</span> <span class="n">statistic</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">statistic</span><span class="p">,</span> <span class="s1">&#39;fits_by_tid&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cut parameter &#39;sigma_muliple&#39; cannot &quot;</span>
+                         <span class="s2">&quot;be used when the ranking statistic &quot;</span> <span class="o">+</span>
+                         <span class="n">statistic_classname</span> <span class="o">+</span> <span class="s2">&quot; does not use &quot;</span>
+                         <span class="s2">&quot;template fitting.&quot;</span><span class="p">)</span>
+    <span class="n">tid_med_sigma</span> <span class="o">=</span> <span class="n">statistic</span><span class="o">.</span><span class="n">fits_by_tid</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="s1">&#39;median_sigma&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">cut_thresh</span> <span class="o">*</span> <span class="n">tid_med_sigma</span><span class="p">[</span><span class="n">template_ids</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="apply_trigger_cuts">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.apply_trigger_cuts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_trigger_cuts</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="n">trigger_cut_dict</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetch/Calculate the parameter for triggers, and then</span>
+<span class="sd">    apply the cuts defined in template_cut_dict</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    triggers: ReadByTemplate object or dictionary</span>
+<span class="sd">        The triggers in this particular template. This</span>
+<span class="sd">        must have the correct datasets required to calculate</span>
+<span class="sd">        the values we cut on.</span>
+
+<span class="sd">    trigger_cut_dict: dictionary</span>
+<span class="sd">        Dictionary with tuples of (parameter, cut_function)</span>
+<span class="sd">        as keys, cut_thresholds as values</span>
+<span class="sd">        made using ingest_cuts_option_group function</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    idx_out: numpy array</span>
+<span class="sd">        An array of the indices which meet the criteria</span>
+<span class="sd">        set by the dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">idx_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">triggers</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]))</span>
+
+    <span class="c1"># Loop through the different cuts, and apply them</span>
+    <span class="k">for</span> <span class="n">parameter_cut_function</span><span class="p">,</span> <span class="n">cut_thresh</span> <span class="ow">in</span> <span class="n">trigger_cut_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># The function and threshold are stored as a tuple so unpack it</span>
+        <span class="n">parameter</span><span class="p">,</span> <span class="n">cut_function</span> <span class="o">=</span> <span class="n">parameter_cut_function</span>
+
+        <span class="c1"># What kind of parameter is it?</span>
+        <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_chisq&#39;</span><span class="p">):</span>
+            <span class="c1"># parameter is a chisq-type thing</span>
+            <span class="n">chisq_choice</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Currently calculated for all triggers - this seems inefficient</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">get_chisq_from_file_choice</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="n">chisq_choice</span><span class="p">)</span>
+            <span class="c1"># Apply any previous cuts to the value for comparison</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">idx_out</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">parameter</span> <span class="o">==</span> <span class="s2">&quot;sigma_multiple&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="n">ReadByTemplate</span><span class="p">):</span>
+                <span class="n">ifo_grp</span> <span class="o">=</span> <span class="n">triggers</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="n">triggers</span><span class="o">.</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ifo_grp</span><span class="p">[</span><span class="s1">&#39;sigmasq&#39;</span><span class="p">][</span><span class="n">idx_out</span><span class="p">])</span>
+                <span class="n">template_ids</span> <span class="o">=</span> <span class="n">ifo_grp</span><span class="p">[</span><span class="s1">&#39;template_id&#39;</span><span class="p">][</span><span class="n">idx_out</span><span class="p">]</span>
+                <span class="c1"># Get a cut threshold value, this will be different</span>
+                <span class="c1"># depending on the template ID, so we rewrite cut_thresh</span>
+                <span class="c1"># as a value for each trigger, numpy comparison functions</span>
+                <span class="c1"># allow this</span>
+                <span class="n">cut_thresh</span> <span class="o">=</span> <span class="n">sigma_multiple_cut_thresh</span><span class="p">(</span><span class="n">template_ids</span><span class="p">,</span>
+                                                       <span class="n">statistic</span><span class="p">,</span>
+                                                       <span class="n">cut_thresh</span><span class="p">,</span>
+                                                       <span class="n">triggers</span><span class="o">.</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Cuts on &#39;sigma_multiple&#39; are only implemented for &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;triggers in a ReadByTemplate format. This code &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;uses a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">triggers</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> format.&quot;</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">((</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">triggers</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="s2">&quot;file&quot;</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">triggers</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="n">triggers</span><span class="o">.</span><span class="n">ifo</span><span class="p">])):</span>
+            <span class="c1"># parameter can be read direct from the trigger dictionary / file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="s1">&#39;file&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">triggers</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">triggers</span><span class="p">[</span><span class="n">parameter</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">triggers</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="n">triggers</span><span class="o">.</span><span class="n">ifo</span><span class="p">][</span><span class="n">parameter</span><span class="p">]</span>
+            <span class="c1"># Apply any previous cuts to the value for comparison</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">idx_out</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">sngl_rank_keys</span><span class="p">:</span>
+            <span class="c1"># parameter is a newsnr-type thing</span>
+            <span class="c1"># Currently calculated for all triggers - this seems inefficient</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">ranking</span><span class="o">.</span><span class="n">get_sngls_ranking_from_trigs</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
+            <span class="c1"># Apply any previous cuts to the value for comparison</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">idx_out</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Parameter &#39;&quot;</span> <span class="o">+</span> <span class="n">parameter</span> <span class="o">+</span> <span class="s2">&quot;&#39; not &quot;</span>
+                                      <span class="s2">&quot;recognised. Input sanitisation means &quot;</span>
+                                      <span class="s2">&quot;this shouldn&#39;t have happened?!&quot;</span><span class="p">)</span>
+
+        <span class="n">idx_out</span> <span class="o">=</span> <span class="n">idx_out</span><span class="p">[</span><span class="n">cut_function</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">cut_thresh</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">idx_out</span></div>
+
+
+
+<div class="viewcode-block" id="apply_template_fit_cut">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.apply_template_fit_cut">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_template_fit_cut</span><span class="p">(</span><span class="n">statistic</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">parameter_cut_function</span><span class="p">,</span> <span class="n">cut_thresh</span><span class="p">,</span>
+                           <span class="n">template_ids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply cuts to template fit parameters, these have a few more checks</span>
+<span class="sd">    needed, so we separate out from apply_template_cuts defined later</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    statistic:</span>
+<span class="sd">        A PyCBC ranking statistic instance. Used for the template fit</span>
+<span class="sd">        cuts. If fits_by_tid does not exist for each ifo, then</span>
+<span class="sd">        template fit cuts will be skipped. If a fit cut has been specified</span>
+<span class="sd">        and fits_by_tid does not exist for all ifos, an error will be raised.</span>
+
+<span class="sd">    ifos: list of strings</span>
+<span class="sd">        List of IFOS used in this findtrigs instance.</span>
+<span class="sd">        Templates must pass cuts in all IFOs.</span>
+
+<span class="sd">    parameter_cut_function: tuple</span>
+<span class="sd">        First entry: Which parameter is being used for the cut?</span>
+<span class="sd">        Second entry: Cut function</span>
+
+<span class="sd">    cut_thresh: float or int</span>
+<span class="sd">        Cut threshold to the parameter according to the cut function</span>
+
+<span class="sd">    template_ids: numpy array</span>
+<span class="sd">        Array of template_ids which have passed previous cuts</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tids_out: numpy array</span>
+<span class="sd">        Array of template_ids which have passed this cut</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parameter</span><span class="p">,</span> <span class="n">cut_function</span> <span class="o">=</span> <span class="n">parameter_cut_function</span>
+    <span class="n">statistic_classname</span> <span class="o">=</span> <span class="n">statistic</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+
+    <span class="c1"># We can only apply template fit cuts if template fits have been done</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">statistic</span><span class="p">,</span> <span class="s1">&#39;fits_by_tid&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cut parameter &quot;</span> <span class="o">+</span> <span class="n">parameter</span> <span class="o">+</span> <span class="s2">&quot; cannot &quot;</span>
+                         <span class="s2">&quot;be used when the ranking statistic &quot;</span> <span class="o">+</span>
+                         <span class="n">statistic_classname</span> <span class="o">+</span> <span class="s2">&quot; does not use &quot;</span>
+                         <span class="s2">&quot;template fitting.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Is the parameter actually in the fits dictionary?</span>
+    <span class="k">if</span> <span class="n">parameter</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">statistic</span><span class="o">.</span><span class="n">fits_by_tid</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]]:</span>
+        <span class="c1"># Shouldn&#39;t get here due to input sanitisation</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cut parameter &quot;</span> <span class="o">+</span> <span class="n">parameter</span> <span class="o">+</span> <span class="s2">&quot; not &quot;</span>
+                         <span class="s2">&quot;available in fits file.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Template IDs array to cut down in each IFO</span>
+    <span class="n">tids_out</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">template_ids</span><span class="p">)</span>
+    <span class="c1"># Need to apply this cut to all IFOs</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">fits_dict</span> <span class="o">=</span> <span class="n">statistic</span><span class="o">.</span><span class="n">fits_by_tid</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">fits_dict</span><span class="p">[</span><span class="n">parameter</span><span class="p">][</span><span class="n">tids_out</span><span class="p">]</span>
+        <span class="c1"># Only keep templates which pass this cut</span>
+        <span class="n">tids_out</span> <span class="o">=</span> <span class="n">tids_out</span><span class="p">[</span><span class="n">cut_function</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">cut_thresh</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">tids_out</span></div>
+
+
+
+<div class="viewcode-block" id="apply_template_cuts">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.cuts.apply_template_cuts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_template_cuts</span><span class="p">(</span><span class="n">bank</span><span class="p">,</span> <span class="n">template_cut_dict</span><span class="p">,</span> <span class="n">template_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">statistic</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetch/calculate the parameter for the templates, possibly already</span>
+<span class="sd">    preselected by template_ids, and then apply the cuts defined</span>
+<span class="sd">    in template_cut_dict</span>
+<span class="sd">    As this is used to select templates for use in findtrigs codes,</span>
+<span class="sd">    we remove anything which does not pass</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bank: h5py File object, or a dictionary</span>
+<span class="sd">        Must contain the usual template bank datasets</span>
+
+<span class="sd">    template_cut_dict: dictionary</span>
+<span class="sd">        Dictionary with tuples of (parameter, cut_function)</span>
+<span class="sd">        as keys, cut_thresholds as values</span>
+<span class="sd">        made using ingest_cuts_option_group function</span>
+
+<span class="sd">    Optional Parameters</span>
+<span class="sd">    -------------------</span>
+<span class="sd">    template_ids: list of indices</span>
+<span class="sd">        Indices of templates to consider within the bank, useful if</span>
+<span class="sd">        templates have already been down-selected</span>
+
+<span class="sd">    statistic:</span>
+<span class="sd">        A PyCBC ranking statistic instance. Used for the template fit</span>
+<span class="sd">        cuts. If fits_by_tid does not exist for each ifo, then</span>
+<span class="sd">        template fit cuts will be skipped. If a fit cut has been specified</span>
+<span class="sd">        and fits_by_tid does not exist for all ifos, an error will be raised.</span>
+<span class="sd">        If not supplied, no template fit cuts will be attempted.</span>
+
+<span class="sd">    ifos: list of strings</span>
+<span class="sd">        List of IFOS used in this findtrigs instance.</span>
+<span class="sd">        Templates must pass cuts in all IFOs. This is important</span>
+<span class="sd">        e.g. for template fit parameter cuts.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tids_out: numpy array</span>
+<span class="sd">        Array of template_ids which have passed all cuts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the initial list of templates:</span>
+    <span class="n">tids_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">bank</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> \
+        <span class="k">if</span> <span class="n">template_ids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">template_ids</span><span class="p">[:]</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">statistic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">ifos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Either both or neither of statistic and &quot;</span>
+                                  <span class="s2">&quot;ifos must be supplied.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">template_cut_dict</span><span class="p">:</span>
+        <span class="c1"># No cuts are defined in the dictionary: just return the</span>
+        <span class="c1"># list of all tids</span>
+        <span class="k">return</span> <span class="n">tids_out</span>
+
+    <span class="c1"># Loop through the different cuts, and apply them</span>
+    <span class="k">for</span> <span class="n">parameter_cut_function</span><span class="p">,</span> <span class="n">cut_thresh</span> <span class="ow">in</span> <span class="n">template_cut_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># The function and threshold are stored as a tuple so unpack it</span>
+        <span class="n">parameter</span><span class="p">,</span> <span class="n">cut_function</span> <span class="o">=</span> <span class="n">parameter_cut_function</span>
+
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">bank_conv</span><span class="o">.</span><span class="n">conversion_options</span><span class="p">:</span>
+            <span class="c1"># Calculate the parameter values using the bank property helper</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">bank_conv</span><span class="o">.</span><span class="n">get_bank_property</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="n">bank</span><span class="p">,</span> <span class="n">tids_out</span><span class="p">)</span>
+            <span class="c1"># Only keep templates which pass this cut</span>
+            <span class="n">tids_out</span> <span class="o">=</span> <span class="n">tids_out</span><span class="p">[</span><span class="n">cut_function</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">cut_thresh</span><span class="p">)]</span>
+        <span class="k">elif</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">template_fit_param_choices</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">statistic</span> <span class="ow">and</span> <span class="n">ifos</span><span class="p">:</span>
+                <span class="n">tids_out</span> <span class="o">=</span> <span class="n">apply_template_fit_cut</span><span class="p">(</span><span class="n">statistic</span><span class="p">,</span>
+                                                  <span class="n">ifos</span><span class="p">,</span>
+                                                  <span class="n">parameter_cut_function</span><span class="p">,</span>
+                                                  <span class="n">cut_thresh</span><span class="p">,</span>
+                                                  <span class="n">tids_out</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cut parameter &quot;</span> <span class="o">+</span> <span class="n">parameter</span> <span class="o">+</span> <span class="s2">&quot; not recognised.&quot;</span>
+                             <span class="s2">&quot; This shouldn&#39;t happen with input sanitisation&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tids_out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

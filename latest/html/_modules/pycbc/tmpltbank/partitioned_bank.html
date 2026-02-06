@@ -1,0 +1,811 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.partitioned_bank &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.partitioned_bank</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.partitioned_bank</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013 Ian W. Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank</span><span class="w"> </span><span class="kn">import</span> <span class="n">coord_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.partitioned_bank&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PartitionedTmpltbank">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PartitionedTmpltbank</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is used to hold a template bank partitioned into numerous bins</span>
+<span class="sd">    based on position in the Cartesian parameter space where the axes are the</span>
+<span class="sd">    principal components. It can also be used to hold intermediary</span>
+<span class="sd">    products used while constructing (e.g.) a stochastic template bank.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass_range_params</span><span class="p">,</span> <span class="n">metric_params</span><span class="p">,</span> <span class="n">ref_freq</span><span class="p">,</span>
+                 <span class="n">bin_spacing</span><span class="p">,</span> <span class="n">bin_range_check</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set up the partitioned template bank class. The combination of the</span>
+<span class="sd">        reference frequency, the bin spacing and the metric dictates how the</span>
+<span class="sd">        parameter space will be partitioned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        mass_range_params : massRangeParameters object</span>
+<span class="sd">            An initialized massRangeParameters object holding the details of</span>
+<span class="sd">            the mass and spin ranges being considered.</span>
+<span class="sd">        metric_params : metricParameters object</span>
+<span class="sd">            An initialized metricParameters object holding the details of the</span>
+<span class="sd">            parameter space metric that is being used.</span>
+<span class="sd">        ref_freq : float</span>
+<span class="sd">            The reference frequency to use as the upper frequency cutoff of</span>
+<span class="sd">            the metric when partitioning the bank. In general this would be</span>
+<span class="sd">            set to the *smallest* upper frequency cutoff that is possible in</span>
+<span class="sd">            the given parameter space. However, in some cases this can lead</span>
+<span class="sd">            to only a small number of partitions and the computational cost</span>
+<span class="sd">            will increase dramatically. NOTE: when using the vary-fupper</span>
+<span class="sd">            option this upper frequency cutoff is only used to determine which</span>
+<span class="sd">            points should be matched against each other, it is *not* used in</span>
+<span class="sd">            the actual metric-based calculation of the distance (which uses the</span>
+<span class="sd">            frequency cutoffs of the points being considered).</span>
+<span class="sd">        bin_spacing : float</span>
+<span class="sd">            The metric distance to space the bins by. NOTE: If you want to</span>
+<span class="sd">            place the bins to have a width corresponding to a minimal match of</span>
+<span class="sd">            0.97 you would set this to :math:`(1 - 0.97)^{0.5}`.</span>
+<span class="sd">            Note the square root,</span>
+<span class="sd">            matches correspond to the square of parameter space distance.</span>
+<span class="sd">        bin_range_check : int</span>
+<span class="sd">            When computing matches consider points in the corresponding bin and</span>
+<span class="sd">            all bins +/- this value in both chi_1 and chi_2 directions.</span>
+<span class="sd">            DEFAULT = 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Flags to be used in other methods of this class. Initialized here for</span>
+        <span class="c1"># simplicity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spin_warning_given</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># These will probably be used a lot, so add to object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass_range_params</span> <span class="o">=</span> <span class="n">mass_range_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metric_params</span> <span class="o">=</span> <span class="n">metric_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_freq</span> <span class="o">=</span> <span class="n">ref_freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_spacing</span> <span class="o">=</span> <span class="n">bin_spacing</span>
+
+        <span class="c1"># Get parameter space extent</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">estimate_mass_range</span><span class="p">(</span><span class="mi">1000000</span><span class="p">,</span> <span class="n">mass_range_params</span><span class="p">,</span>
+                                          <span class="n">metric_params</span><span class="p">,</span> <span class="n">ref_freq</span><span class="p">,</span> <span class="n">covary</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">chi1_max</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">chi1_min</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">chi1_diff</span> <span class="o">=</span> <span class="n">chi1_max</span> <span class="o">-</span> <span class="n">chi1_min</span>
+        <span class="n">chi2_max</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">chi2_min</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">chi2_diff</span> <span class="o">=</span> <span class="n">chi2_max</span> <span class="o">-</span> <span class="n">chi2_min</span>
+        <span class="c1"># Add a little bit extra as we may not have reached the edges.</span>
+        <span class="c1"># FIXME: Maybe better to use the numerical code to find maxima here?</span>
+        <span class="n">chi1_min</span> <span class="o">=</span> <span class="n">chi1_min</span> <span class="o">-</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">chi1_diff</span>
+        <span class="n">chi1_max</span> <span class="o">=</span> <span class="n">chi1_max</span> <span class="o">+</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">chi1_diff</span>
+        <span class="n">chi2_min</span> <span class="o">=</span> <span class="n">chi2_min</span> <span class="o">-</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">chi2_diff</span>
+        <span class="n">chi2_max</span> <span class="o">=</span> <span class="n">chi2_max</span> <span class="o">+</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">chi2_diff</span>
+
+        <span class="n">massbank</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">bank</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Also add a little bit here</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">((</span><span class="n">chi1_max</span> <span class="o">-</span> <span class="n">chi1_min</span><span class="p">)</span> <span class="o">//</span> <span class="n">bin_spacing</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)):</span>
+            <span class="n">bank</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">massbank</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">((</span><span class="n">chi2_max</span> <span class="o">-</span> <span class="n">chi2_min</span><span class="p">)</span> <span class="o">//</span> <span class="n">bin_spacing</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)):</span>
+                <span class="n">bank</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">massbank</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">massbank</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span> <span class="o">=</span> <span class="n">massbank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bank</span> <span class="o">=</span> <span class="n">bank</span>
+        <span class="c1"># Record minimum and maximum bins</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_chi1_bin</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_chi2_bin</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_chi1_bin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">chi1_max</span> <span class="o">-</span> <span class="n">chi1_min</span><span class="p">)</span> <span class="o">//</span> <span class="n">bin_spacing</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_chi2_bin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">chi2_max</span> <span class="o">-</span> <span class="n">chi2_min</span><span class="p">)</span> <span class="o">//</span> <span class="n">bin_spacing</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chi1_min</span> <span class="o">=</span> <span class="n">chi1_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chi1_max</span> <span class="o">=</span> <span class="n">chi1_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chi2_min</span> <span class="o">=</span> <span class="n">chi2_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chi2_max</span> <span class="o">=</span> <span class="n">chi2_max</span>
+
+        <span class="c1"># How many adjacent bins should we check?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_range_check</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_loop_order</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">outspiral_loop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bin_range_check</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PartitionedTmpltbank.get_point_from_bins_and_idx">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.get_point_from_bins_and_idx">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_point_from_bins_and_idx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find masses and spins given bin numbers and index.</span>
+
+<span class="sd">        Given the chi1 bin, chi2 bin and an index, return the masses and spins</span>
+<span class="sd">        of the point at that index. Will fail if no point exists there.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi1_bin : int</span>
+<span class="sd">            The bin number for chi1.</span>
+<span class="sd">        chi2_bin : int</span>
+<span class="sd">            The bin number for chi2.</span>
+<span class="sd">        idx : int</span>
+<span class="sd">            The index within the chi1, chi2 bin.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        mass1 : float</span>
+<span class="sd">            Mass of heavier body.</span>
+<span class="sd">        mass2 : float</span>
+<span class="sd">            Mass of lighter body.</span>
+<span class="sd">        spin1z : float</span>
+<span class="sd">            Spin of heavier body.</span>
+<span class="sd">        spin2z : float</span>
+<span class="sd">            Spin of lighter body.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mass1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">chi1_bin</span><span class="p">][</span><span class="n">chi2_bin</span><span class="p">][</span><span class="s1">&#39;mass1s&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">mass2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">chi1_bin</span><span class="p">][</span><span class="n">chi2_bin</span><span class="p">][</span><span class="s1">&#39;mass2s&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">chi1_bin</span><span class="p">][</span><span class="n">chi2_bin</span><span class="p">][</span><span class="s1">&#39;spin1s&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">chi1_bin</span><span class="p">][</span><span class="n">chi2_bin</span><span class="p">][</span><span class="s1">&#39;spin2s&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.get_freq_map_and_normalizations">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.get_freq_map_and_normalizations">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_freq_map_and_normalizations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequency_list</span><span class="p">,</span>
+                                        <span class="n">upper_freq_formula</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If using the --vary-fupper capability we need to store the mapping</span>
+<span class="sd">        between index and frequencies in the list. We also precalculate the</span>
+<span class="sd">        normalization factor at every frequency, which is used when estimating</span>
+<span class="sd">        overlaps to account for abrupt changes in termination frequency.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        frequency_list : array of floats</span>
+<span class="sd">            The frequencies for which the metric has been computed and lie</span>
+<span class="sd">            within the parameter space being considered.</span>
+<span class="sd">        upper_freq_formula : string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalization_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper_freq_formula</span> <span class="o">=</span> <span class="n">upper_freq_formula</span>
+        <span class="c1"># FIXME: Must this be sorted on input</span>
+        <span class="n">frequency_list</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">frequency_list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frequency_map</span><span class="p">[</span><span class="n">frequency</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_map</span><span class="p">[</span><span class="n">frequency</span><span class="p">]</span> <span class="o">=</span> \
+                             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metric_params</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;I7&#39;</span><span class="p">][</span><span class="n">frequency</span><span class="p">])</span><span class="o">**</span><span class="mf">0.5</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.find_point_bin">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.find_point_bin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_point_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi_coords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a set of coordinates in the chi parameter space, identify the</span>
+<span class="sd">        indices of the chi1 and chi2 bins that the point occurs in. Returns</span>
+<span class="sd">        these indices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi_coords : numpy.array</span>
+<span class="sd">            The position of the point in the chi coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        chi1_bin : int</span>
+<span class="sd">            Index of the chi_1 bin.</span>
+<span class="sd">        chi2_bin : int</span>
+<span class="sd">            Index of the chi_2 bin.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Identify bin</span>
+        <span class="n">chi1_bin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">chi_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">chi1_min</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_spacing</span><span class="p">)</span>
+        <span class="n">chi2_bin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">chi_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">chi2_min</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_spacing</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_bin_existence</span><span class="p">(</span><span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span></div>
+
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.check_bin_existence">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.check_bin_existence">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_bin_existence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given indices for bins in chi1 and chi2 space check that the bin</span>
+<span class="sd">        exists in the object. If not add it. Also check for the existence of</span>
+<span class="sd">        all bins within +/- self.bin_range_check and add if not present.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi1_bin : int</span>
+<span class="sd">            The index of the chi1_bin to check</span>
+<span class="sd">        chi2_bin : int</span>
+<span class="sd">            The index of the chi2_bin to check</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bin_range_check</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_range_check</span>
+        <span class="c1"># Check if this bin actually exists. If not add it</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">chi1_bin</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_chi1_bin</span><span class="o">+</span><span class="n">bin_range_check</span><span class="p">)</span> <span class="ow">or</span>
+             <span class="p">(</span><span class="n">chi1_bin</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_chi1_bin</span><span class="o">-</span><span class="n">bin_range_check</span><span class="p">)</span> <span class="ow">or</span>
+             <span class="p">(</span><span class="n">chi2_bin</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_chi2_bin</span><span class="o">+</span><span class="n">bin_range_check</span><span class="p">)</span> <span class="ow">or</span>
+             <span class="p">(</span><span class="n">chi2_bin</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_chi2_bin</span><span class="o">-</span><span class="n">bin_range_check</span><span class="p">)</span> <span class="p">):</span>
+            <span class="k">for</span> <span class="n">temp_chi1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">chi1_bin</span><span class="o">-</span><span class="n">bin_range_check</span><span class="p">,</span>
+                                                   <span class="n">chi1_bin</span><span class="o">+</span><span class="n">bin_range_check</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">temp_chi1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">temp_chi1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="n">temp_chi1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">temp_chi2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">chi2_bin</span><span class="o">-</span><span class="n">bin_range_check</span><span class="p">,</span>
+                                                   <span class="n">chi2_bin</span><span class="o">+</span><span class="n">bin_range_check</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">temp_chi2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">temp_chi1</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">temp_chi1</span><span class="p">][</span><span class="n">temp_chi2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">temp_chi1</span><span class="p">][</span><span class="n">temp_chi2</span><span class="p">][</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span> <span class="o">=</span>\
+                                                                <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="n">temp_chi1</span><span class="p">][</span><span class="n">temp_chi2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.calc_point_distance">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.calc_point_distance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_point_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi_coords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate distance between point and the bank. Return the closest</span>
+<span class="sd">        distance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi_coords : numpy.array</span>
+<span class="sd">            The position of the point in the chi coordinates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        min_dist : float</span>
+<span class="sd">            The smallest **SQUARED** metric distance between the test point and</span>
+<span class="sd">            the bank.</span>
+<span class="sd">        indexes : The chi1_bin, chi2_bin and position within that bin at which</span>
+<span class="sd">            the closest matching point lies.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_point_bin</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">)</span>
+        <span class="n">min_dist</span> <span class="o">=</span> <span class="mi">1000000000</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">chi1_bin_offset</span><span class="p">,</span> <span class="n">chi2_bin_offset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_loop_order</span><span class="p">:</span>
+            <span class="n">curr_chi1_bin</span> <span class="o">=</span> <span class="n">chi1_bin</span> <span class="o">+</span> <span class="n">chi1_bin_offset</span>
+            <span class="n">curr_chi2_bin</span> <span class="o">=</span> <span class="n">chi2_bin</span> <span class="o">+</span> <span class="n">chi2_bin_offset</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">bank_chis</span> <span class="ow">in</span> \
+                            <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="n">curr_chi1_bin</span><span class="p">][</span><span class="n">curr_chi2_bin</span><span class="p">]):</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">calc_point_dist</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">,</span> <span class="n">bank_chis</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">min_dist</span><span class="p">:</span>
+                    <span class="n">min_dist</span> <span class="o">=</span> <span class="n">dist</span>
+                    <span class="n">indexes</span> <span class="o">=</span> <span class="p">(</span><span class="n">curr_chi1_bin</span><span class="p">,</span> <span class="n">curr_chi2_bin</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">min_dist</span><span class="p">,</span> <span class="n">indexes</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.test_point_distance">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.test_point_distance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_point_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi_coords</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Test if the distance between the supplied point and the bank is less</span>
+<span class="sd">        than the supplied distance theshold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi_coords : numpy.array</span>
+<span class="sd">            The position of the point in the chi coordinates.</span>
+<span class="sd">        distance_threshold : float</span>
+<span class="sd">            The **SQUARE ROOT** of the metric distance to test as threshold.</span>
+<span class="sd">            E.g. if you want to test to a minimal match of 0.97 you would</span>
+<span class="sd">            use 1 - 0.97 = 0.03 for this value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        Boolean</span>
+<span class="sd">            True if point is within the distance threshold. False if not.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_point_bin</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chi1_bin_offset</span><span class="p">,</span> <span class="n">chi2_bin_offset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_loop_order</span><span class="p">:</span>
+            <span class="n">curr_chi1_bin</span> <span class="o">=</span> <span class="n">chi1_bin</span> <span class="o">+</span> <span class="n">chi1_bin_offset</span>
+            <span class="n">curr_chi2_bin</span> <span class="o">=</span> <span class="n">chi2_bin</span> <span class="o">+</span> <span class="n">chi2_bin_offset</span>
+            <span class="k">for</span> <span class="n">bank_chis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="n">curr_chi1_bin</span><span class="p">][</span><span class="n">curr_chi2_bin</span><span class="p">]:</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">calc_point_dist</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">,</span> <span class="n">bank_chis</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">distance_threshold</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.calc_point_distance_vary">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.calc_point_distance_vary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_point_distance_vary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi_coords</span><span class="p">,</span> <span class="n">point_fupper</span><span class="p">,</span> <span class="n">mus</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate distance between point and the bank allowing the metric to</span>
+<span class="sd">        vary based on varying upper frequency cutoff. Slower than</span>
+<span class="sd">        calc_point_distance, but more reliable when upper frequency cutoff can</span>
+<span class="sd">        change a lot.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi_coords : numpy.array</span>
+<span class="sd">            The position of the point in the chi coordinates.</span>
+<span class="sd">        point_fupper : float</span>
+<span class="sd">            The upper frequency cutoff to use for this point. This value must</span>
+<span class="sd">            be one of the ones already calculated in the metric.</span>
+<span class="sd">        mus : numpy.array</span>
+<span class="sd">            A 2D array where idx 0 holds the upper frequency cutoff and idx 1</span>
+<span class="sd">            holds the coordinates in the [not covaried] mu parameter space for</span>
+<span class="sd">            each value of the upper frequency cutoff.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        min_dist : float</span>
+<span class="sd">            The smallest **SQUARED** metric distance between the test point and</span>
+<span class="sd">            the bank.</span>
+<span class="sd">        indexes : The chi1_bin, chi2_bin and position within that bin at which</span>
+<span class="sd">            the closest matching point lies.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_point_bin</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">)</span>
+        <span class="n">min_dist</span> <span class="o">=</span> <span class="mi">1000000000</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">chi1_bin_offset</span><span class="p">,</span> <span class="n">chi2_bin_offset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_loop_order</span><span class="p">:</span>
+            <span class="n">curr_chi1_bin</span> <span class="o">=</span> <span class="n">chi1_bin</span> <span class="o">+</span> <span class="n">chi1_bin_offset</span>
+            <span class="n">curr_chi2_bin</span> <span class="o">=</span> <span class="n">chi2_bin</span> <span class="o">+</span> <span class="n">chi2_bin_offset</span>
+            <span class="c1"># No points = Next iteration</span>
+            <span class="n">curr_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">curr_chi1_bin</span><span class="p">][</span><span class="n">curr_chi2_bin</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># *NOT* the same of .min and .max</span>
+            <span class="n">f_upper</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">point_fupper</span><span class="p">,</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">])</span>
+            <span class="n">f_other</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">point_fupper</span><span class="p">,</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">])</span>
+            <span class="c1"># NOTE: freq_idxes is a vector!</span>
+            <span class="n">freq_idxes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_upper</span><span class="p">])</span>
+            <span class="c1"># vecs1 gives a 2x2 vector: idx0 = stored index, idx1 = mu index</span>
+            <span class="n">vecs1</span> <span class="o">=</span> <span class="n">mus</span><span class="p">[</span><span class="n">freq_idxes</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># vecs2 gives a 2x2 vector: idx0 = stored index, idx1 = mu index</span>
+            <span class="n">range_idxes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freq_idxes</span><span class="p">))</span>
+            <span class="n">vecs2</span> <span class="o">=</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mus&#39;</span><span class="p">][</span><span class="n">range_idxes</span><span class="p">,</span> <span class="n">freq_idxes</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="c1"># Now do the sums</span>
+            <span class="n">dists</span> <span class="o">=</span> <span class="p">(</span><span class="n">vecs1</span> <span class="o">-</span> <span class="n">vecs2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">vecs1</span> <span class="o">-</span> <span class="n">vecs2</span><span class="p">)</span>
+            <span class="c1"># This reduces to 1D: idx = stored index</span>
+            <span class="n">dists</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">norm_upper</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">normalization_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> \
+                                      <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_upper</span><span class="p">])</span>
+            <span class="n">norm_other</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">normalization_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> \
+                                      <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_other</span><span class="p">])</span>
+            <span class="n">norm_fac</span> <span class="o">=</span> <span class="n">norm_upper</span> <span class="o">/</span> <span class="n">norm_other</span>
+            <span class="n">renormed_dists</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dists</span><span class="p">)</span><span class="o">*</span><span class="n">norm_fac</span>
+            <span class="n">curr_min_dist</span> <span class="o">=</span> <span class="n">renormed_dists</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">curr_min_dist</span> <span class="o">&lt;</span> <span class="n">min_dist</span><span class="p">:</span>
+                <span class="n">min_dist</span> <span class="o">=</span> <span class="n">curr_min_dist</span>
+                <span class="n">indexes</span> <span class="o">=</span> <span class="n">curr_chi1_bin</span><span class="p">,</span> <span class="n">curr_chi2_bin</span><span class="p">,</span> <span class="n">renormed_dists</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">min_dist</span><span class="p">,</span> <span class="n">indexes</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.test_point_distance_vary">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.test_point_distance_vary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_point_distance_vary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi_coords</span><span class="p">,</span> <span class="n">point_fupper</span><span class="p">,</span> <span class="n">mus</span><span class="p">,</span>
+                                 <span class="n">distance_threshold</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Test if distance between point and the bank is greater than distance</span>
+<span class="sd">        threshold while allowing the metric to</span>
+<span class="sd">        vary based on varying upper frequency cutoff. Slower than</span>
+<span class="sd">        test_point_distance, but more reliable when upper frequency cutoff can</span>
+<span class="sd">        change a lot.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi_coords : numpy.array</span>
+<span class="sd">            The position of the point in the chi coordinates.</span>
+<span class="sd">        point_fupper : float</span>
+<span class="sd">            The upper frequency cutoff to use for this point. This value must</span>
+<span class="sd">            be one of the ones already calculated in the metric.</span>
+<span class="sd">        mus : numpy.array</span>
+<span class="sd">            A 2D array where idx 0 holds the upper frequency cutoff and idx 1</span>
+<span class="sd">            holds the coordinates in the [not covaried] mu parameter space for</span>
+<span class="sd">            each value of the upper frequency cutoff.</span>
+<span class="sd">        distance_threshold : float</span>
+<span class="sd">            The **SQUARE ROOT** of the metric distance to test as threshold.</span>
+<span class="sd">            E.g. if you want to test to a minimal match of 0.97 you would</span>
+<span class="sd">            use 1 - 0.97 = 0.03 for this value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        Boolean</span>
+<span class="sd">            True if point is within the distance threshold. False if not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_point_bin</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">chi1_bin_offset</span><span class="p">,</span> <span class="n">chi2_bin_offset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_loop_order</span><span class="p">:</span>
+            <span class="n">curr_chi1_bin</span> <span class="o">=</span> <span class="n">chi1_bin</span> <span class="o">+</span> <span class="n">chi1_bin_offset</span>
+            <span class="n">curr_chi2_bin</span> <span class="o">=</span> <span class="n">chi2_bin</span> <span class="o">+</span> <span class="n">chi2_bin_offset</span>
+            <span class="c1"># No points = Next iteration</span>
+            <span class="n">curr_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">curr_chi1_bin</span><span class="p">][</span><span class="n">curr_chi2_bin</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># *NOT* the same of .min and .max</span>
+            <span class="n">f_upper</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">point_fupper</span><span class="p">,</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">])</span>
+            <span class="n">f_other</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">point_fupper</span><span class="p">,</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">])</span>
+            <span class="c1"># NOTE: freq_idxes is a vector!</span>
+            <span class="n">freq_idxes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_upper</span><span class="p">])</span>
+            <span class="c1"># vecs1 gives a 2x2 vector: idx0 = stored index, idx1 = mu index</span>
+            <span class="n">vecs1</span> <span class="o">=</span> <span class="n">mus</span><span class="p">[</span><span class="n">freq_idxes</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># vecs2 gives a 2x2 vector: idx0 = stored index, idx1 = mu index</span>
+            <span class="n">range_idxes</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freq_idxes</span><span class="p">))</span>
+            <span class="n">vecs2</span> <span class="o">=</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mus&#39;</span><span class="p">][</span><span class="n">range_idxes</span><span class="p">,</span><span class="n">freq_idxes</span><span class="p">,:]</span>
+
+            <span class="c1"># Now do the sums</span>
+            <span class="n">dists</span> <span class="o">=</span> <span class="p">(</span><span class="n">vecs1</span> <span class="o">-</span> <span class="n">vecs2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">vecs1</span> <span class="o">-</span> <span class="n">vecs2</span><span class="p">)</span>
+            <span class="c1"># This reduces to 1D: idx = stored index</span>
+            <span class="n">dists</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dists</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># I wonder if this line actually speeds things up?</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">dists</span> <span class="o">&gt;</span> <span class="n">distance_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="c1"># This is only needed for close templates, should we prune?</span>
+            <span class="n">norm_upper</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">normalization_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> \
+                                      <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_upper</span><span class="p">])</span>
+            <span class="n">norm_other</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">normalization_map</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> \
+                                      <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">f_other</span><span class="p">])</span>
+            <span class="n">norm_fac</span> <span class="o">=</span> <span class="n">norm_upper</span> <span class="o">/</span> <span class="n">norm_other</span>
+            <span class="n">renormed_dists</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dists</span><span class="p">)</span><span class="o">*</span><span class="n">norm_fac</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">renormed_dists</span> <span class="o">&lt;</span> <span class="n">distance_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.add_point_by_chi_coords">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_point_by_chi_coords">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_point_by_chi_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chi_coords</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+                          <span class="n">point_fupper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mus</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a point to the partitioned template bank. The point_fupper and mus</span>
+<span class="sd">        kwargs must be provided for all templates if the vary fupper capability</span>
+<span class="sd">        is desired. This requires that the chi_coords, as well as mus and</span>
+<span class="sd">        point_fupper if needed, to be precalculated. If you just have the</span>
+<span class="sd">        masses and don&#39;t want to worry about translations see</span>
+<span class="sd">        add_point_by_masses, which will do translations and then call this.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        chi_coords : numpy.array</span>
+<span class="sd">            The position of the point in the chi coordinates.</span>
+<span class="sd">        mass1 : float</span>
+<span class="sd">            The heavier mass of the point to add.</span>
+<span class="sd">        mass2 : float</span>
+<span class="sd">            The lighter mass of the point to add.</span>
+<span class="sd">        spin1z: float</span>
+<span class="sd">            The [aligned] spin on the heavier body.</span>
+<span class="sd">        spin2z: float</span>
+<span class="sd">            The [aligned] spin on the lighter body.</span>
+<span class="sd">            The upper frequency cutoff to use for this point. This value must</span>
+<span class="sd">            be one of the ones already calculated in the metric.</span>
+<span class="sd">        mus : numpy.array</span>
+<span class="sd">            A 2D array where idx 0 holds the upper frequency cutoff and idx 1</span>
+<span class="sd">            holds the coordinates in the [not covaried] mu parameter space for</span>
+<span class="sd">            each value of the upper frequency cutoff.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chi1_bin</span><span class="p">,</span> <span class="n">chi2_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_point_bin</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bank</span><span class="p">[</span><span class="n">chi1_bin</span><span class="p">][</span><span class="n">chi2_bin</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">))</span>
+        <span class="n">curr_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">chi1_bin</span><span class="p">][</span><span class="n">chi2_bin</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">],</span>
+                                               <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass1</span><span class="p">]))</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass2s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass2s&#39;</span><span class="p">],</span>
+                                               <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass2</span><span class="p">]))</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin1s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin1s&#39;</span><span class="p">],</span>
+                                               <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin1z</span><span class="p">]))</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin2s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin2s&#39;</span><span class="p">],</span>
+                                               <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin2z</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">point_fupper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">],</span>
+                                                 <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">point_fupper</span><span class="p">]))</span>
+            <span class="c1"># Mus needs to append onto axis 0. See below for contents of</span>
+            <span class="c1"># the mus variable</span>
+            <span class="k">if</span> <span class="n">mus</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mus&#39;</span><span class="p">],</span>
+                                            <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mus</span><span class="p">[:,:]]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass1</span><span class="p">])</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass2s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass2</span><span class="p">])</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin1s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin1z</span><span class="p">])</span>
+            <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin2s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin2z</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">point_fupper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;freqcuts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">point_fupper</span><span class="p">])</span>
+            <span class="c1"># curr_bank[&#39;mus&#39;] is a 3D array</span>
+            <span class="c1"># NOTE: mu relates to the non-covaried Cartesian coordinate system</span>
+            <span class="c1"># Axis 0: Template index</span>
+            <span class="c1"># Axis 1: Frequency cutoff index</span>
+            <span class="c1"># Axis 2: Mu coordinate index</span>
+            <span class="k">if</span> <span class="n">mus</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mus</span><span class="p">[:,:]])</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.add_point_by_masses">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_point_by_masses">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_point_by_masses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+                            <span class="n">vary_fupper</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a point to the template bank. This differs from add point to bank</span>
+<span class="sd">        as it assumes that the chi coordinates and the products needed to use</span>
+<span class="sd">        vary_fupper have not already been calculated. This function calculates</span>
+<span class="sd">        these products and then calls add_point_by_chi_coords.</span>
+<span class="sd">        This function also</span>
+<span class="sd">        carries out a number of sanity checks (eg. is the point within the</span>
+<span class="sd">        ranges given by mass_range_params) that add_point_by_chi_coords does</span>
+<span class="sd">        not do for speed concerns.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        mass1 : float</span>
+<span class="sd">            Mass of the heavier body</span>
+<span class="sd">        mass2 : float</span>
+<span class="sd">            Mass of the lighter body</span>
+<span class="sd">        spin1z : float</span>
+<span class="sd">            Spin of the heavier body</span>
+<span class="sd">        spin2z : float</span>
+<span class="sd">            Spin of the lighter body</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Test that masses are the expected way around (ie. mass1 &gt; mass2)</span>
+        <span class="k">if</span> <span class="n">mass2</span> <span class="o">&gt;</span> <span class="n">mass1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">spin_warning_given</span><span class="p">:</span>
+                <span class="n">warn_msg</span> <span class="o">=</span> <span class="s2">&quot;Am adding a template where mass2 &gt; mass1. The &quot;</span>
+                <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;convention is that mass1 &gt; mass2. Swapping mass1 &quot;</span>
+                <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;and mass2 and adding point to bank. This message &quot;</span>
+                <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;will not be repeated.&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spin_warning_given</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># These that masses obey the restrictions of mass_range_params</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mass_range_params</span><span class="o">.</span><span class="n">is_outside_range</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span>
+                                                                       <span class="n">spin2z</span><span class="p">):</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Point with masses given by &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2"> </span><span class="si">%f</span><span class="s2"> &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">)</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;(mass1, mass2, spin1z, spin2z) is not consistent &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;with the provided command-line restrictions on masses &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;and spins.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+        <span class="c1"># Get chi coordinates</span>
+        <span class="n">chi_coords</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">get_cov_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">metric_params</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">ref_freq</span><span class="p">)</span>
+
+        <span class="c1"># Get mus and best fupper for this point, if needed</span>
+        <span class="k">if</span> <span class="n">vary_fupper</span><span class="p">:</span>
+            <span class="n">mass_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;m1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass1</span><span class="p">])</span>
+            <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;m2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mass2</span><span class="p">])</span>
+            <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;s1z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin1z</span><span class="p">])</span>
+            <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;s2z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spin2z</span><span class="p">])</span>
+            <span class="n">freqs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">freq_cutoff</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">return_nearest_cutoff</span><span class="p">(</span>\
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">upper_freq_formula</span><span class="p">,</span> <span class="n">mass_dict</span><span class="p">,</span> <span class="n">freqs</span><span class="p">)</span>
+            <span class="n">freq_cutoff</span> <span class="o">=</span> <span class="n">freq_cutoff</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">lambdas</span> <span class="o">=</span> <span class="n">coord_utils</span><span class="o">.</span><span class="n">get_chirp_params</span>\
+                <span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">metric_params</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">metric_params</span><span class="o">.</span><span class="n">pnOrder</span><span class="p">)</span>
+            <span class="n">mus</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_map</span><span class="p">:</span>
+                <span class="n">mus</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coord_utils</span><span class="o">.</span><span class="n">get_mu_params</span><span class="p">(</span><span class="n">lambdas</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">metric_params</span><span class="p">,</span> <span class="n">freq</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">mus</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mus</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">freq_cutoff</span><span class="o">=</span><span class="kc">None</span>
+            <span class="n">mus</span><span class="o">=</span><span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_point_by_chi_coords</span><span class="p">(</span><span class="n">chi_coords</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+                               <span class="n">point_fupper</span><span class="o">=</span><span class="n">freq_cutoff</span><span class="p">,</span> <span class="n">mus</span><span class="o">=</span><span class="n">mus</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.add_tmpltbank_from_xml_table">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_tmpltbank_from_xml_table">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_tmpltbank_from_xml_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sngl_table</span><span class="p">,</span> <span class="n">vary_fupper</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function will take a sngl_inspiral_table of templates and add them</span>
+<span class="sd">        into the partitioned template bank object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        sngl_table : sngl_inspiral_table</span>
+<span class="sd">            List of sngl_inspiral templates.</span>
+<span class="sd">        vary_fupper : False</span>
+<span class="sd">            If given also include the additional information needed to compute</span>
+<span class="sd">            distances with a varying upper frequency cutoff.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">sngl</span> <span class="ow">in</span> <span class="n">sngl_table</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_point_by_masses</span><span class="p">(</span><span class="n">sngl</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">sngl</span><span class="o">.</span><span class="n">mass2</span><span class="p">,</span> <span class="n">sngl</span><span class="o">.</span><span class="n">spin1z</span><span class="p">,</span>
+                                     <span class="n">sngl</span><span class="o">.</span><span class="n">spin2z</span><span class="p">,</span> <span class="n">vary_fupper</span><span class="o">=</span><span class="n">vary_fupper</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.add_tmpltbank_from_hdf_file">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_tmpltbank_from_hdf_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_tmpltbank_from_hdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdf_fp</span><span class="p">,</span> <span class="n">vary_fupper</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function will take a pointer to an open HDF File object containing</span>
+<span class="sd">        a list of templates and add them into the partitioned template bank</span>
+<span class="sd">        object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        hdf_fp : h5py.File object</span>
+<span class="sd">            The template bank in HDF5 format.</span>
+<span class="sd">        vary_fupper : False</span>
+<span class="sd">            If given also include the additional information needed to compute</span>
+<span class="sd">            distances with a varying upper frequency cutoff.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mass1s</span> <span class="o">=</span> <span class="n">hdf_fp</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][:]</span>
+        <span class="n">mass2s</span> <span class="o">=</span> <span class="n">hdf_fp</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][:]</span>
+        <span class="n">spin1zs</span> <span class="o">=</span> <span class="n">hdf_fp</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][:]</span>
+        <span class="n">spin2zs</span> <span class="o">=</span> <span class="n">hdf_fp</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][:]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1s</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_point_by_masses</span><span class="p">(</span><span class="n">mass1s</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">mass2s</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">spin1zs</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                     <span class="n">spin2zs</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">vary_fupper</span><span class="o">=</span><span class="n">vary_fupper</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PartitionedTmpltbank.output_all_points">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.output_all_points">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">output_all_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all points in the bank.</span>
+
+<span class="sd">        Return all points in the bank as lists of m1, m2, spin1z, spin2z.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mass1 : list</span>
+<span class="sd">            List of mass1 values.</span>
+<span class="sd">        mass2 : list</span>
+<span class="sd">            List of mass2 values.</span>
+<span class="sd">        spin1z : list</span>
+<span class="sd">            List of spin1z values.</span>
+<span class="sd">        spin2z : list</span>
+<span class="sd">            List of spin2z values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mass1</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mass2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="s1">&#39;mass1s&#39;</span><span class="p">])):</span>
+                    <span class="n">curr_bank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">massbank</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+                    <span class="n">mass1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass1s&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+                    <span class="n">mass2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;mass2s&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+                    <span class="n">spin1z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin1s&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+                    <span class="n">spin2z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_bank</span><span class="p">[</span><span class="s1">&#39;spin2s&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

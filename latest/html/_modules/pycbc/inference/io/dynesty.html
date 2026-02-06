@@ -1,0 +1,339 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.io.dynesty &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">pycbc.inference.io</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.io.dynesty</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.io.dynesty</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019 Collin Capano, Sumit Kumar</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># self.option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Provides IO for the dynesty sampler.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">dump_state</span><span class="p">,</span> <span class="n">load_state</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_nested_sampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseNestedSamplerFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.posterior</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_samples_to_file</span><span class="p">,</span> <span class="n">read_raw_samples_from_file</span>
+
+<div class="viewcode-block" id="CommonNestedMetadataIO">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CommonNestedMetadataIO</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides functions for reading/writing dynesty metadata to file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CommonNestedMetadataIO.extra_args_parser">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO.extra_args_parser">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extra_args_parser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a parser to parse sampler-specific arguments for loading</span>
+<span class="sd">        samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parser : argparse.ArgumentParser, optional</span>
+<span class="sd">            Instead of creating a parser, add arguments to the given one. If</span>
+<span class="sd">            none provided, will create one.</span>
+<span class="sd">        skip_args : list, optional</span>
+<span class="sd">            Don&#39;t parse the given options. Options should be given as the</span>
+<span class="sd">            option string, minus the &#39;--&#39;. For example,</span>
+<span class="sd">            ``skip_args=[&#39;iteration&#39;]`` would cause the ``--iteration``</span>
+<span class="sd">            argument not to be included.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to the parser that is</span>
+<span class="sd">            created.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        parser : argparse.ArgumentParser</span>
+<span class="sd">            An argument parser with th extra arguments added.</span>
+<span class="sd">        actions : list of argparse.Action</span>
+<span class="sd">            A list of the actions that were added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No other keyword arguments should be provded if &quot;</span>
+                             <span class="s2">&quot;a parser is provided.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skip_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">skip_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">actions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;raw_samples&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--raw-samples&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Extract raw samples rather than a posterior. &quot;</span>
+                     <span class="s2">&quot;Raw samples are the unweighted samples obtained from &quot;</span>
+                     <span class="s2">&quot;the nested sampler. Default value is False, which means &quot;</span>
+                     <span class="s2">&quot;raw samples are weighted by the log-weight array &quot;</span>
+                     <span class="s2">&quot;obtained from the sampler, giving an estimate of the &quot;</span>
+                     <span class="s2">&quot;posterior.&quot;</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;seed&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--seed&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set the random-number seed used for extracting the &quot;</span>
+                     <span class="s2">&quot;posterior samples. This is needed because the &quot;</span>
+                     <span class="s2">&quot;unweighted samples are randomly shuffled to produce &quot;</span>
+                     <span class="s2">&quot;a posterior. Default is 0. Ignored if raw-samples are &quot;</span>
+                     <span class="s2">&quot;extracted instead.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parser</span><span class="p">,</span> <span class="n">actions</span></div>
+
+
+<div class="viewcode-block" id="CommonNestedMetadataIO.write_pickled_data_into_checkpoint_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO.write_pickled_data_into_checkpoint_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_pickled_data_into_checkpoint_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dump the sampler state into checkpoint file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;sampler_info/saved_state&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;sampler_info/saved_state&#39;</span><span class="p">)</span>
+        <span class="n">dump_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;sampler_info/saved_state&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CommonNestedMetadataIO.read_pickled_data_from_checkpoint_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO.read_pickled_data_from_checkpoint_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_pickled_data_from_checkpoint_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the sampler state (pickled) from checkpoint file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">load_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;sampler_info/saved_state&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CommonNestedMetadataIO.write_raw_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO.write_raw_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the nested samples to the file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;samples&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s1">&#39;samples&#39;</span><span class="p">)</span>
+        <span class="n">write_samples_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span>
+                              <span class="n">group</span><span class="o">=</span><span class="s1">&#39;samples&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CommonNestedMetadataIO.validate">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.CommonNestedMetadataIO.validate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs a validation test.</span>
+<span class="sd">        This checks that a samples group exist, and that pickeled data can</span>
+<span class="sd">        be loaded.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool :</span>
+<span class="sd">            Whether or not the file is valid as a checkpoint file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;sampler_info/saved_state&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="n">load_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;sampler_info/saved_state&#39;</span><span class="p">)</span>
+            <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">checkpoint_valid</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DynestyFile">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.DynestyFile">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DynestyFile</span><span class="p">(</span><span class="n">CommonNestedMetadataIO</span><span class="p">,</span> <span class="n">BaseNestedSamplerFile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to handle file IO for the ``dynesty`` sampler.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;dynesty_file&#39;</span>
+
+<div class="viewcode-block" id="DynestyFile.read_raw_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.dynesty.DynestyFile.read_raw_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">raw_samples</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads samples from a dynesty file and constructs a posterior.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fields : list of str</span>
+<span class="sd">            The names of the parameters to load. Names must correspond to</span>
+<span class="sd">            dataset names in the file&#39;s ``samples`` group.</span>
+<span class="sd">        raw_samples : bool, optional</span>
+<span class="sd">            Return the raw (unweighted) samples instead of the estimated</span>
+<span class="sd">            posterior samples. Default is False.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            When extracting the posterior, samples are randomly shuffled. To</span>
+<span class="sd">            make this reproduceable, numpy&#39;s random generator seed is set with</span>
+<span class="sd">            the given value prior to the extraction. Default is 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of parameter names -&gt; samples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">read_raw_samples_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+        <span class="n">logwt</span> <span class="o">=</span> <span class="n">read_raw_samples_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;logwt&#39;</span><span class="p">])[</span><span class="s1">&#39;logwt&#39;</span><span class="p">]</span>
+        <span class="n">loglikelihood</span> <span class="o">=</span> <span class="n">read_raw_samples_from_file</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">])[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span>
+        <span class="n">logz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;log_evidence&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">raw_samples</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logwt</span> <span class="o">-</span> <span class="n">logz</span><span class="p">)</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">))</span> <span class="o">/</span> <span class="n">N</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">cumulative_sum</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="n">cumulative_sum</span> <span class="o">/=</span> <span class="n">cumulative_sum</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">positions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">cumulative_sum</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                    <span class="n">idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rng</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="c1"># numpy pre-1.17 uses RandomState</span>
+                <span class="c1"># Py27: delete this after we drop python 2.7 support</span>
+                <span class="n">rng</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+            <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="n">post</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">:</span> <span class="n">loglikelihood</span><span class="p">[</span><span class="n">idx</span><span class="p">]}</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+                <span class="n">post</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">post</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">samples</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1559 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.generator &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.generator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano, Alex Nitz, Christopher Biwer</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes for generating waveforms.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">FailedWaveformError</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">ringdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">supernovae</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform_modes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_fseries_time_shift</span><span class="p">,</span> \
+                                 <span class="n">ceilpow2</span><span class="p">,</span> <span class="n">apply_fd_time_shift</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">use_mpi</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">strain</span>
+
+
+<span class="c1"># utility functions/class</span>
+<span class="n">failed_counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="BaseGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseGenerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A wrapper class to call a waveform generator with a set of frozen</span>
+<span class="sd">    parameters and a set of variable parameters. The frozen parameters and</span>
+<span class="sd">    values, along with a list of variable parameter names, are set at</span>
+<span class="sd">    initialization. This way, repeated calls can be made to the underlying</span>
+<span class="sd">    generator by simply passing a list of values for the variable parameters</span>
+<span class="sd">    to this class&#39;s generate function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    generator : function</span>
+<span class="sd">        The function that is called for waveform generation.</span>
+<span class="sd">    variable_args : {(), list}</span>
+<span class="sd">        A tuple or list of strings giving the names and order of variable</span>
+<span class="sd">        parameters that will be passed to the waveform generator when the</span>
+<span class="sd">        generate function is called.</span>
+<span class="sd">    record_failures : boolean</span>
+<span class="sd">        Store output files containing the parameters of failed waveform</span>
+<span class="sd">        generation. Default is False.</span>
+<span class="sd">    \**frozen_params :</span>
+<span class="sd">        These keyword arguments are the ones that will be frozen in the</span>
+<span class="sd">        waveform generator. For a list of possible parameters, see</span>
+<span class="sd">        pycbc.waveform.cbc_parameters.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    generator : function</span>
+<span class="sd">        The function that is called for waveform generation.</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The list of names of variable arguments.</span>
+<span class="sd">    frozen_params : dict</span>
+<span class="sd">        A dictionary of the frozen keyword arguments that are always passed</span>
+<span class="sd">        to the waveform generator function.</span>
+<span class="sd">    current_params : dict</span>
+<span class="sd">        A dictionary of the frozen keyword arguments and variable arguments</span>
+<span class="sd">        that were last passed to the waveform generator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="n">record_failures</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frozen_params</span> <span class="o">=</span> <span class="n">frozen_params</span>
+        <span class="c1"># we&#39;ll keep a dictionary of the current parameters for fast</span>
+        <span class="c1"># generation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span> <span class="o">=</span> <span class="n">frozen_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># keep a list of functions to call before waveform generation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pregenerate_functions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># If we are under mpi, then failed waveform will be stored by</span>
+        <span class="c1"># mpi rank to avoid file writing conflicts. We&#39;ll check for this</span>
+        <span class="c1"># upfront</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">record_failures</span> <span class="o">=</span> <span class="p">(</span><span class="n">record_failures</span> <span class="ow">or</span>
+                                <span class="p">(</span><span class="s1">&#39;PYCBC_RECORD_FAILED_WAVEFORMS&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi_enabled</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi_rank</span> <span class="o">=</span> <span class="n">use_mpi</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of the static arguments.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">frozen_params</span>
+
+<div class="viewcode-block" id="BaseGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a waveform from the keyword args. The current params</span>
+<span class="sd">        are updated with the given kwargs, then the generator is called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_from_current</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_pregenerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Adds a function that will be called by the generator function</span>
+<span class="sd">        before waveform generation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pregenerate_functions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_postgenerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allows the waveform returned by the generator function to be</span>
+<span class="sd">        manipulated before returning.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gdecorator</span><span class="p">(</span><span class="n">generate_func</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A decorator that allows for seemless pre/post manipulation of</span>
+<span class="sd">        the waveform generator function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">dostuff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pregenerate_functions</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">generate_func</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postgenerate</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dostuff</span>
+
+    <span class="nd">@_gdecorator</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_from_current</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a waveform from the current parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">new_waveform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">new_waveform</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_failures</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump_state</span><span class="p">,</span> <span class="n">HFile</span>
+
+                <span class="k">global</span> <span class="n">failed_counter</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi_enabled</span><span class="p">:</span>
+                    <span class="n">outname</span> <span class="o">=</span> <span class="s1">&#39;failed/params_</span><span class="si">%s</span><span class="s1">.hdf&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">mpi_rank</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">outname</span> <span class="o">=</span> <span class="s1">&#39;failed/params.hdf&#39;</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;failed&#39;</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="s1">&#39;failed&#39;</span><span class="p">)</span>
+
+                <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">outname</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">dump_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span>
+                               <span class="n">dsetname</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">failed_counter</span><span class="p">))</span>
+                    <span class="n">failed_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># we&#39;ll get a RuntimeError if lalsimulation failed to generate</span>
+            <span class="c1"># the waveform for whatever reason</span>
+            <span class="n">strparams</span> <span class="o">=</span> <span class="s1">&#39; | &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">p</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">))</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+            <span class="k">raise</span> <span class="n">FailedWaveformError</span><span class="p">(</span><span class="s2">&quot;Failed to generate waveform with &quot;</span>
+                                      <span class="s2">&quot;parameters:</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">Error was: </span><span class="si">{}</span><span class="s2">&quot;</span>
+                                      <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">strparams</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="BaseCBCGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseCBCGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseCBCGenerator</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds ability to convert from various derived parameters to parameters</span>
+<span class="sd">    needed by the waveform generators.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">possible_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">parameters</span><span class="o">.</span><span class="n">td_waveform_params</span> <span class="o">+</span>
+                        <span class="n">parameters</span><span class="o">.</span><span class="n">fd_waveform_params</span> <span class="o">+</span>
+                        <span class="p">[</span><span class="s1">&#39;taper&#39;</span><span class="p">])</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;set: The set of names of arguments that may be used in the</span>
+<span class="sd">        `variable_args` or `frozen_params`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BaseCBCGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">generator</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span>
+        <span class="c1"># decorate the generator function with a list of functions that convert</span>
+        <span class="c1"># parameters to those used by the waveform generation interface</span>
+        <span class="n">all_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frozen_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span>
+                       <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span><span class="p">))</span>
+        <span class="c1"># check that there are no unused (non-calibration) parameters</span>
+        <span class="n">calib_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span> <span class="k">if</span>
+                          <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;calib_&#39;</span><span class="p">)])</span>
+        <span class="n">all_args</span> <span class="o">=</span> <span class="n">all_args</span> <span class="o">-</span> <span class="n">calib_args</span>
+        <span class="n">unused_args</span> <span class="o">=</span> <span class="n">all_args</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">possible_args</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unused_args</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;WARNING: The following parameters are generally &quot;</span>
+                            <span class="s2">&quot;not used by CBC waveform generators: </span><span class="si">%s</span><span class="s2">. If you &quot;</span>
+                            <span class="s2">&quot;have provided a transform that converted these &quot;</span>
+                            <span class="s2">&quot;into known parameters (e.g., mchirp, q to &quot;</span>
+                            <span class="s2">&quot;mass1, mass2) or you are using a custom model &quot;</span>
+                            <span class="s2">&quot;that uses these parameters, you can safely &quot;</span>
+                            <span class="s2">&quot;ignore this message.&quot;</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">unused_args</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="FDomainCBCGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainCBCGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainCBCGenerator</span><span class="p">(</span><span class="n">BaseCBCGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates frequency-domain CBC waveforms in the radiation frame.</span>
+
+<span class="sd">    Uses `waveform.get_fd_waveform` as a generator function to create</span>
+<span class="sd">    frequency- domain CBC waveforms in the radiation frame; i.e., with no</span>
+<span class="sd">    detector response function applied. For more details, see `BaseGenerator`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import FDomainCBCGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = FDomainCBCGenerator(variable_args=[&#39;mass1&#39;, &#39;mass2&#39;], delta_f=1./32, f_lower=30., approximant=&#39;TaylorF2&#39;)</span>
+
+<span class="sd">    Create a waveform with the variable arguments (in this case, mass1, mass2):</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(mass1=1.4, mass2=1.4)</span>
+<span class="sd">        (&lt;pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450&gt;,</span>
+<span class="sd">         &lt;pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510&gt;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FDomainCBCGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">get_fd_waveform</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FDomainCBCModesGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainCBCModesGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainCBCModesGenerator</span><span class="p">(</span><span class="n">BaseCBCGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates frequency-domain CBC waveform modes.</span>
+
+<span class="sd">    Uses :py:func:`waveform_modes.get_fd_waveform_modes` as a generator</span>
+<span class="sd">    function to create frequency-domain CBC waveforms mode-by-mode, without</span>
+<span class="sd">    applying spherical harmonics.</span>
+
+<span class="sd">    For details, on methods and arguments, see :py:class:`BaseGenerator`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FDomainCBCModesGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">waveform_modes</span><span class="o">.</span><span class="n">get_fd_waveform_modes</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TDomainCBCGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.TDomainCBCGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TDomainCBCGenerator</span><span class="p">(</span><span class="n">BaseCBCGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create time domain CBC waveforms in the radiation frame.</span>
+
+<span class="sd">    Uses waveform.get_td_waveform as a generator function to create time-</span>
+<span class="sd">    domain CBC waveforms in the radiation frame; i.e., with no detector</span>
+<span class="sd">    response function applied. For more details, see `BaseGenerator`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import TDomainCBCGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = TDomainCBCGenerator(variable_args=[&#39;mass1&#39;, &#39;mass2&#39;], delta_t=1./4096, f_lower=30., approximant=&#39;TaylorT4&#39;)</span>
+
+<span class="sd">    Create a waveform with the variable arguments (in this case, mass1, mass2):</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(mass1=2., mass2=1.3)</span>
+<span class="sd">        (&lt;pycbc.types.timeseries.TimeSeries at 0x10e546710&gt;,</span>
+<span class="sd">         &lt;pycbc.types.timeseries.TimeSeries at 0x115f37690&gt;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TDomainCBCGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">get_td_waveform</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_postgenerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies a taper if it is in current params.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">res</span>
+        <span class="k">if</span> <span class="s1">&#39;taper&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;taper&#39;</span><span class="p">]</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span>
+                                     <span class="n">tapermethod</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                     <span class="n">taper_window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span>
+                                     <span class="n">tapermethod</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                     <span class="n">taper_window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+ 
+        <span class="k">return</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span></div>
+
+
+
+<div class="viewcode-block" id="TDomainCBCModesGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.TDomainCBCModesGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TDomainCBCModesGenerator</span><span class="p">(</span><span class="n">BaseCBCGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates time domain CBC waveform modes.</span>
+
+<span class="sd">    Uses :py:func:`waveform_modes.get_td_waveform_modes` as a generator</span>
+<span class="sd">    function to create time-domain CBC waveforms mode-by-mode, without applying</span>
+<span class="sd">    spherical harmonics. The ``generate`` function returns a dictionary of</span>
+<span class="sd">    modes -&gt; (real, imag) part of the complex time series.</span>
+
+<span class="sd">    For details, on methods and arguments, see :py:class:`BaseGenerator`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TDomainCBCModesGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">waveform_modes</span><span class="o">.</span><span class="n">get_td_waveform_modes</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_postgenerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies a taper if it is in current params.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;taper&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;taper&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+                <span class="n">ulm</span><span class="p">,</span> <span class="n">vlm</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+                <span class="n">ulm</span> <span class="o">=</span> <span class="n">ulm</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span> 
+                                           <span class="n">tapermethod</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                           <span class="n">taper_window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+                <span class="n">vlm</span> <span class="o">=</span> <span class="n">vlm</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">,</span> 
+                                           <span class="n">tapermethod</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                           <span class="n">taper_window</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ulm</span><span class="p">,</span> <span class="n">vlm</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<div class="viewcode-block" id="FDomainMassSpinRingdownGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainMassSpinRingdownGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainMassSpinRingdownGenerator</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses ringdown.get_fd_from_final_mass_spin as a generator function to</span>
+<span class="sd">    create frequency-domain ringdown waveforms with higher modes in the</span>
+<span class="sd">    radiation frame; i.e., with no detector response function applied.</span>
+<span class="sd">    For more details, see BaseGenerator.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import FDomainMassSpinRingdownGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = FDomainMassSpinRingdownGenerator(variable_args=[&#39;final_mass&#39;,</span>
+<span class="sd">                    &#39;final_spin&#39;,&#39;amp220&#39;,&#39;amp210&#39;,&#39;phi220&#39;,&#39;phi210&#39;], lmns=[&#39;221&#39;,&#39;211&#39;],</span>
+<span class="sd">                    delta_f=1./32, f_lower=30., f_final=500)</span>
+
+<span class="sd">    Create a ringdown with the variable arguments:</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(final_mass=65., final_spin=0.7,</span>
+<span class="sd">                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)</span>
+<span class="sd">        (&lt;pycbc.types.frequencyseries.FrequencySeries at 0x51614d0&gt;,</span>
+<span class="sd">         &lt;pycbc.types.frequencyseries.FrequencySeries at 0x5161550&gt;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FDomainMassSpinRingdownGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ringdown</span><span class="o">.</span><span class="n">get_fd_from_final_mass_spin</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FDomainFreqTauRingdownGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainFreqTauRingdownGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainFreqTauRingdownGenerator</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses ringdown.get_fd_from_freqtau as a generator function to</span>
+<span class="sd">    create frequency-domain ringdown waveforms with higher modes in the</span>
+<span class="sd">    radiation frame; i.e., with no detector response function applied.</span>
+<span class="sd">    For more details, see BaseGenerator.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import FDomainFreqTauRingdownGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = FDomainFreqTauRingdownGenerator(variable_args=[&#39;f_220&#39;,</span>
+<span class="sd">                    &#39;tau_220&#39;,&#39;f_210&#39;,&#39;tau_210&#39;,&#39;amp220&#39;,&#39;amp210&#39;,&#39;phi220&#39;,&#39;phi210&#39;],</span>
+<span class="sd">                    lmns=[&#39;221&#39;,&#39;211&#39;], delta_f=1./32, f_lower=30., f_final=500)</span>
+
+<span class="sd">    Create a ringdown with the variable arguments:</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(f_220=317., tau_220=0.003, f_210=274., tau_210=0.003,</span>
+<span class="sd">                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)</span>
+<span class="sd">        (&lt;pycbc.types.frequencyseries.FrequencySeries at 0x51614d0&gt;,</span>
+<span class="sd">         &lt;pycbc.types.frequencyseries.FrequencySeries at 0x5161550&gt;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FDomainFreqTauRingdownGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ringdown</span><span class="o">.</span><span class="n">get_fd_from_freqtau</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TDomainMassSpinRingdownGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.TDomainMassSpinRingdownGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TDomainMassSpinRingdownGenerator</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses ringdown.get_td_from_final_mass_spin as a generator function to</span>
+<span class="sd">    create time-domain ringdown waveforms with higher modes in the</span>
+<span class="sd">    radiation frame; i.e., with no detector response function applied.</span>
+<span class="sd">    For more details, see BaseGenerator.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import TDomainMassSpinRingdownGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = TDomainMassSpinRingdownGenerator(variable_args=[&#39;final_mass&#39;,</span>
+<span class="sd">                    &#39;final_spin&#39;,&#39;amp220&#39;,&#39;amp210&#39;,&#39;phi220&#39;,&#39;phi210&#39;], lmns=[&#39;221&#39;,&#39;211&#39;],</span>
+<span class="sd">                    delta_t=1./2048)</span>
+
+<span class="sd">    Create a ringdown with the variable arguments:</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(final_mass=65., final_spin=0.7,</span>
+<span class="sd">                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)</span>
+<span class="sd">        (&lt;pycbc.types.frequencyseries.FrequencySeries at 0x51614d0&gt;,</span>
+<span class="sd">         &lt;pycbc.types.frequencyseries.FrequencySeries at 0x5161550&gt;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TDomainMassSpinRingdownGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ringdown</span><span class="o">.</span><span class="n">get_td_from_final_mass_spin</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TDomainFreqTauRingdownGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.TDomainFreqTauRingdownGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TDomainFreqTauRingdownGenerator</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses ringdown.get_td_from_freqtau as a generator function to</span>
+<span class="sd">    create time-domain ringdown waveforms with higher modes in the</span>
+<span class="sd">    radiation frame; i.e., with no detector response function applied.</span>
+<span class="sd">    For more details, see BaseGenerator.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import FDomainFreqTauRingdownGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = TDomainFreqTauRingdownGenerator(variable_args=[&#39;f_220&#39;,</span>
+<span class="sd">                    &#39;tau_220&#39;,&#39;f_210&#39;,&#39;tau_210&#39;,&#39;amp220&#39;,&#39;amp210&#39;,&#39;phi220&#39;,&#39;phi210&#39;],</span>
+<span class="sd">                    lmns=[&#39;221&#39;,&#39;211&#39;], delta_t=1./2048)</span>
+
+<span class="sd">    Create a ringdown with the variable arguments:</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(f_220=317., tau_220=0.003, f_210=274., tau_210=0.003,</span>
+<span class="sd">                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)</span>
+<span class="sd">        (&lt;pycbc.types.frequencyseries.FrequencySeries at 0x51614d0&gt;,</span>
+<span class="sd">         &lt;pycbc.types.frequencyseries.FrequencySeries at 0x5161550&gt;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TDomainFreqTauRingdownGenerator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ringdown</span><span class="o">.</span><span class="n">get_td_from_freqtau</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TDomainSupernovaeGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.TDomainSupernovaeGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TDomainSupernovaeGenerator</span><span class="p">(</span><span class="n">BaseGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses supernovae.py to create time domain core-collapse supernovae waveforms</span>
+<span class="sd">    using a set of Principal Components provided in a .hdf file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TDomainSupernovaeGenerator</span><span class="p">,</span>
+              <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">supernovae</span><span class="o">.</span><span class="n">get_corecollapse_bounce</span><span class="p">,</span>
+           <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                        Detector-frame generators</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="BaseFDomainDetFrameGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseFDomainDetFrameGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseFDomainDetFrameGenerator</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base generator for frquency-domain waveforms in a detector frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rFrameGeneratorClass : class</span>
+<span class="sd">        The class to use for generating the waveform in the radiation frame,</span>
+<span class="sd">        e.g., FDomainCBCGenerator. This should be the class, not an</span>
+<span class="sd">        instance of the class (the class will be initialized with the</span>
+<span class="sd">        appropriate arguments internally).</span>
+<span class="sd">    detectors : {None, list of strings}</span>
+<span class="sd">        The names of the detectors to use. If provided, all location parameters</span>
+<span class="sd">        must be included in either the variable args or the frozen params. If</span>
+<span class="sd">        None, the generate function will just return the plus polarization</span>
+<span class="sd">        returned by the rFrameGeneratorClass shifted by any desired time shift.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The epoch start time to set the waveform to. A time shift = tc - epoch is</span>
+<span class="sd">        applied to waveforms before returning.</span>
+<span class="sd">    variable_args : {(), list or tuple}</span>
+<span class="sd">        A list or tuple of strings giving the names and order of parameters</span>
+<span class="sd">        that will be passed to the generate function.</span>
+<span class="sd">    \**frozen_params</span>
+<span class="sd">        Keyword arguments setting the parameters that will not be changed from</span>
+<span class="sd">        call-to-call of the generate function.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detectors : dict</span>
+<span class="sd">        The dictionary of detectors that antenna patterns are calculated for</span>
+<span class="sd">        on each call of generate. If no detectors were provided, will be</span>
+<span class="sd">        ``{&#39;RF&#39;: None}``, where &quot;RF&quot; means &quot;radiation frame&quot;.</span>
+<span class="sd">    detector_names : list</span>
+<span class="sd">        The list of detector names. If no detectors were provided, then this</span>
+<span class="sd">        will be [&#39;RF&#39;] for &quot;radiation frame&quot;.</span>
+<span class="sd">    current_params : dict</span>
+<span class="sd">        A dictionary of name, value pairs of the arguments that were last</span>
+<span class="sd">        used by the generate function.</span>
+<span class="sd">    rframe_generator : instance of rFrameGeneratorClass</span>
+<span class="sd">        The instance of the radiation-frame generator that is used for waveform</span>
+<span class="sd">        generation. All parameters in current_params except for the</span>
+<span class="sd">        location params are passed to this class&#39;s generate function.</span>
+<span class="sd">    frozen_location_args : dict</span>
+<span class="sd">        Any location parameters that were included in the frozen_params.</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The list of names of arguments that are passed to the generate</span>
+<span class="sd">        function.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">location_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set: Should be overriden by children classes with a set of parameters</span>
+<span class="sd">        that set the binary&#39;s location.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rFrameGeneratorClass</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span> <span class="n">recalib</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">):</span>
+        <span class="c1"># initialize frozen &amp; current parameters:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span> <span class="o">=</span> <span class="n">frozen_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_static_args</span> <span class="o">=</span> <span class="n">frozen_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># we&#39;ll separate out frozen location parameters from the frozen</span>
+        <span class="c1"># parameters that are sent to the rframe generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frozen_location_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">loc_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">frozen_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_args</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">loc_params</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frozen_location_args</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">frozen_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="c1"># set the order of the variable parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span>
+        <span class="c1"># variables that are sent to the rFrame generator</span>
+        <span class="n">rframe_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_args</span><span class="p">)</span>
+        <span class="c1"># initialize the radiation frame generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rframe_generator</span> <span class="o">=</span> <span class="n">rFrameGeneratorClass</span><span class="p">(</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">rframe_variables</span><span class="p">,</span> <span class="o">**</span><span class="n">frozen_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># set calibration model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span> <span class="o">=</span> <span class="n">recalib</span>
+        <span class="c1"># if detectors are provided, convert to detector type; also ensure that</span>
+        <span class="c1"># location variables are specified</span>
+        <span class="k">if</span> <span class="n">detectors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det</span><span class="p">)</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">detectors</span><span class="p">}</span>
+            <span class="n">missing_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_args</span> <span class="k">if</span> <span class="ow">not</span>
+                <span class="p">(</span><span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span> <span class="ow">or</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">missing_args</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;detectors provided, but missing location &quot;</span>
+                    <span class="s2">&quot;parameters </span><span class="si">%s</span><span class="s2">. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_args</span><span class="p">))</span> <span class="o">+</span>
+                    <span class="s2">&quot;These must be either in the frozen params or the &quot;</span>
+                    <span class="s2">&quot;variable args.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;RF&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gates</span> <span class="o">=</span> <span class="n">gates</span>
+
+<div class="viewcode-block" id="BaseFDomainDetFrameGenerator.set_epoch">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseFDomainDetFrameGenerator.set_epoch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the epoch; epoch should be a float or a LIGOTimeGPS.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_args</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a dictionary of the static arguments.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_static_args</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The GPS start time of the frequency series returned by the generate</span>
+<span class="sd">        function. A time shift is applied to the waveform equal to tc-epoch.</span>
+<span class="sd">        Update by using ``set_epoch``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+
+<div class="viewcode-block" id="BaseFDomainDetFrameGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseFDomainDetFrameGenerator.generate">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The function that generates the waveforms.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseFDomainDetFrameGenerator.select_rframe_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.BaseFDomainDetFrameGenerator.select_rframe_generator">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_rframe_generator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">approximant</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to select waveform generator based on an approximant.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FDomainDetFrameGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainDetFrameGenerator</span><span class="p">(</span><span class="n">BaseFDomainDetFrameGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates frequency-domain waveform in a specific frame.</span>
+
+<span class="sd">    Generates a waveform using the given radiation frame generator class,</span>
+<span class="sd">    and applies the detector response function and appropriate time offset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rFrameGeneratorClass : class</span>
+<span class="sd">        The class to use for generating the waveform in the radiation frame,</span>
+<span class="sd">        e.g., FDomainCBCGenerator. This should be the class, not an</span>
+<span class="sd">        instance of the class (the class will be initialized with the</span>
+<span class="sd">        appropriate arguments internally).</span>
+<span class="sd">    detectors : {None, list of strings}</span>
+<span class="sd">        The names of the detectors to use. If provided, all location parameters</span>
+<span class="sd">        must be included in either the variable args or the frozen params. If</span>
+<span class="sd">        None, the generate function will just return the plus polarization</span>
+<span class="sd">        returned by the rFrameGeneratorClass shifted by any desired time shift.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The epoch start time to set the waveform to. A time shift = tc - epoch is</span>
+<span class="sd">        applied to waveforms before returning.</span>
+<span class="sd">    variable_args : {(), list or tuple}</span>
+<span class="sd">        A list or tuple of strings giving the names and order of parameters</span>
+<span class="sd">        that will be passed to the generate function.</span>
+<span class="sd">    \**frozen_params</span>
+<span class="sd">        Keyword arguments setting the parameters that will not be changed from</span>
+<span class="sd">        call-to-call of the generate function.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detectors : dict</span>
+<span class="sd">        The dictionary of detectors that antenna patterns are calculated for</span>
+<span class="sd">        on each call of generate. If no detectors were provided, will be</span>
+<span class="sd">        ``{&#39;RF&#39;: None}``, where &quot;RF&quot; means &quot;radiation frame&quot;.</span>
+<span class="sd">    detector_names : list</span>
+<span class="sd">        The list of detector names. If no detectors were provided, then this</span>
+<span class="sd">        will be [&#39;RF&#39;] for &quot;radiation frame&quot;.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The GPS start time of the frequency series returned by the generate function.</span>
+<span class="sd">        A time shift is applied to the waveform equal to tc-epoch. Update by using</span>
+<span class="sd">        ``set_epoch``.</span>
+<span class="sd">    current_params : dict</span>
+<span class="sd">        A dictionary of name, value pairs of the arguments that were last</span>
+<span class="sd">        used by the generate function.</span>
+<span class="sd">    rframe_generator : instance of rFrameGeneratorClass</span>
+<span class="sd">        The instance of the radiation-frame generator that is used for waveform</span>
+<span class="sd">        generation. All parameters in current_params except for the</span>
+<span class="sd">        location params are passed to this class&#39;s generate function.</span>
+<span class="sd">    frozen_location_args : dict</span>
+<span class="sd">        Any location parameters that were included in the frozen_params.</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The list of names of arguments that are passed to the generate</span>
+<span class="sd">        function.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Initialize a generator:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import FDomainDetFrameGenerator</span>
+<span class="sd">    &gt;&gt;&gt; generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=[&#39;mass1&#39;, &#39;mass2&#39;, &#39;spin1z&#39;, &#39;spin2z&#39;, &#39;tc&#39;, &#39;ra&#39;, &#39;dec&#39;, &#39;polarization&#39;], detectors=[&#39;H1&#39;, &#39;L1&#39;], delta_f=1./64, f_lower=20., approximant=&#39;SEOBNRv2_ROM_DoubleSpin&#39;)</span>
+
+<span class="sd">    Generate a waveform:</span>
+
+<span class="sd">    &gt;&gt;&gt; generator.generate(mass1=38.6, mass2=29.3, spin1z=0.33, spin2z=-0.94, tc=2.43, ra=1.37, dec=-1.26, polarization=2.76)</span>
+<span class="sd">    {&#39;H1&#39;: &lt;pycbc.types.frequencyseries.FrequencySeries at 0x116637350&gt;,</span>
+<span class="sd">     &#39;L1&#39;: &lt;pycbc.types.frequencyseries.FrequencySeries at 0x116637a50&gt;}</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">location_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;polarization&#39;</span><span class="p">])</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;set([&#39;tc&#39;, &#39;ra&#39;, &#39;dec&#39;, &#39;polarization&#39;]):</span>
+<span class="sd">        The set of location parameters. These are not passed to the rFrame</span>
+<span class="sd">        generator class; instead, they are used to apply the detector response</span>
+<span class="sd">        function and/or shift the waveform in time. The parameters are:</span>
+
+<span class="sd">          * tc: The GPS time of coalescence.</span>
+<span class="sd">          * ra: Right ascension.</span>
+<span class="sd">          * dec: declination</span>
+<span class="sd">          * polarization: polarization.</span>
+<span class="sd">          * tc_ref_frame (optional): reference frame in which tc is defined.</span>
+<span class="sd">            Must be one of: &#39;geocentric&#39;, for geocentric time, or one of the</span>
+<span class="sd">            detector names. Default &#39;geocentric.&#39;</span>
+
+<span class="sd">        All of these must be provided in either the variable args or the</span>
+<span class="sd">        frozen params if detectors is not None. If detectors</span>
+<span class="sd">        is None, tc may optionally be provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FDomainDetFrameGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a waveform, applies a time shift and the detector response</span>
+<span class="sd">        function from the given kwargs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">rfparams</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_args</span><span class="p">}</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rframe_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">rfparams</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+            <span class="c1"># time-domain waveforms will not be shifted so that the peak amp</span>
+            <span class="c1"># happens at the end of the time series (as they are for f-domain),</span>
+            <span class="c1"># so we add an additional shift to account for it</span>
+            <span class="n">tshift</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">df</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tshift</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_names</span> <span class="o">!=</span> <span class="p">[</span><span class="s1">&#39;RF&#39;</span><span class="p">]:</span>
+            <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+            <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+            <span class="n">ref_tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+            <span class="n">pol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">]</span>
+            <span class="n">refframe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">detname</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">tc</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+                <span class="c1"># apply response function</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pol</span><span class="p">,</span> <span class="n">tc</span><span class="p">)</span>
+                <span class="n">thish</span> <span class="o">=</span> <span class="n">fp</span><span class="o">*</span><span class="n">hp</span> <span class="o">+</span> <span class="n">fc</span><span class="o">*</span><span class="n">hc</span>
+                <span class="c1"># apply time shift</span>
+                <span class="n">h</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">thish</span><span class="p">,</span> <span class="n">tc</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">:</span>
+                    <span class="c1"># recalibrate with given calibration model</span>
+                    <span class="n">h</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">detname</span><span class="p">],</span>
+                            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># no detector response, just use the + polarization</span>
+            <span class="k">if</span> <span class="s1">&#39;tc&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">:</span>
+                <span class="n">hp</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span>
+                                         <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">[</span><span class="s1">&#39;RF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hp</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># resize all to nearest power of 2</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">ceilpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">apply_gates_to_fd</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="FDomainDetFrameGenerator.select_rframe_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameGenerator.select_rframe_generator">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_rframe_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a radiation frame generator class based on the approximant</span>
+<span class="sd">        string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">select_waveform_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FDomainDetFrameTwoPolGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameTwoPolGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainDetFrameTwoPolGenerator</span><span class="p">(</span><span class="n">BaseFDomainDetFrameGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates frequency-domain waveform in a specific frame.</span>
+
+<span class="sd">    Generates both polarizations of a waveform using the given radiation frame</span>
+<span class="sd">    generator class, and applies the time shift. Detector response functions</span>
+<span class="sd">    are not applied.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rFrameGeneratorClass : class</span>
+<span class="sd">        The class to use for generating the waveform in the radiation frame,</span>
+<span class="sd">        e.g., FDomainCBCGenerator. This should be the class, not an</span>
+<span class="sd">        instance of the class (the class will be initialized with the</span>
+<span class="sd">        appropriate arguments internally).</span>
+<span class="sd">    detectors : {None, list of strings}</span>
+<span class="sd">        The names of the detectors to use. If provided, all location parameters</span>
+<span class="sd">        must be included in either the variable args or the frozen params. If</span>
+<span class="sd">        None, the generate function will just return the plus polarization</span>
+<span class="sd">        returned by the rFrameGeneratorClass shifted by any desired time shift.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The epoch start time to set the waveform to. A time shift = tc - epoch is</span>
+<span class="sd">        applied to waveforms before returning.</span>
+<span class="sd">    variable_args : {(), list or tuple}</span>
+<span class="sd">        A list or tuple of strings giving the names and order of parameters</span>
+<span class="sd">        that will be passed to the generate function.</span>
+<span class="sd">    \**frozen_params</span>
+<span class="sd">        Keyword arguments setting the parameters that will not be changed from</span>
+<span class="sd">        call-to-call of the generate function.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detectors : dict</span>
+<span class="sd">        The dictionary of detectors that antenna patterns are calculated for</span>
+<span class="sd">        on each call of generate. If no detectors were provided, will be</span>
+<span class="sd">        ``{&#39;RF&#39;: None}``, where &quot;RF&quot; means &quot;radiation frame&quot;.</span>
+<span class="sd">    detector_names : list</span>
+<span class="sd">        The list of detector names. If no detectors were provided, then this</span>
+<span class="sd">        will be [&#39;RF&#39;] for &quot;radiation frame&quot;.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The GPS start time of the frequency series returned by the generate function.</span>
+<span class="sd">        A time shift is applied to the waveform equal to tc-epoch. Update by using</span>
+<span class="sd">        ``set_epoch``.</span>
+<span class="sd">    current_params : dict</span>
+<span class="sd">        A dictionary of name, value pairs of the arguments that were last</span>
+<span class="sd">        used by the generate function.</span>
+<span class="sd">    rframe_generator : instance of rFrameGeneratorClass</span>
+<span class="sd">        The instance of the radiation-frame generator that is used for waveform</span>
+<span class="sd">        generation. All parameters in current_params except for the</span>
+<span class="sd">        location params are passed to this class&#39;s generate function.</span>
+<span class="sd">    frozen_location_args : dict</span>
+<span class="sd">        Any location parameters that were included in the frozen_params.</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The list of names of arguments that are passed to the generate</span>
+<span class="sd">        function.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">location_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">])</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; set([&#39;tc&#39;, &#39;ra&#39;, &#39;dec&#39;]):</span>
+<span class="sd">        The set of location parameters. These are not passed to the rFrame</span>
+<span class="sd">        generator class; instead, they are used to apply the detector response</span>
+<span class="sd">        function and/or shift the waveform in time. The parameters are:</span>
+
+<span class="sd">          * tc: The GPS time of coalescence.</span>
+<span class="sd">          * ra: Right ascension.</span>
+<span class="sd">          * dec: declination</span>
+<span class="sd">          * tc_ref_frame (optional): reference frame in which tc is defined.</span>
+<span class="sd">            Must be one of: &#39;geocentric&#39;, for geocentric time, or one of the</span>
+<span class="sd">            detector names. Default &#39;geocentric.&#39;</span>
+
+<span class="sd">        All of these must be provided in either the variable args or the</span>
+<span class="sd">        frozen params if detectors is not None. If detectors</span>
+<span class="sd">        is None, tc may optionally be provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FDomainDetFrameTwoPolGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameTwoPolGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a waveform polarizations and applies a time shift.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of ``detector names -&gt; (hp, hc)``, where ``hp, hc`` are</span>
+<span class="sd">            the plus and cross polarization, respectively.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">rfparams</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_args</span><span class="p">}</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rframe_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">rfparams</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+            <span class="c1"># time-domain waveforms will not be shifted so that the peak amp</span>
+            <span class="c1"># happens at the end of the time series (as they are for f-domain),</span>
+            <span class="c1"># so we add an additional shift to account for it</span>
+            <span class="n">tshift</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">df</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tshift</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_names</span> <span class="o">!=</span> <span class="p">[</span><span class="s1">&#39;RF&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">detname</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">refframe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+                <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+                <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+                <span class="n">ref_tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+                <span class="n">tc</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+                <span class="c1"># apply time shift</span>
+                <span class="n">dethp</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">tc</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">dethc</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">hc</span><span class="p">,</span> <span class="n">tc</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">:</span>
+                    <span class="c1"># recalibrate with given calibration model</span>
+                    <span class="n">dethp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span>
+                        <span class="n">dethp</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+                    <span class="n">dethc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span>
+                        <span class="n">dethc</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+                <span class="n">h</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">dethp</span><span class="p">,</span> <span class="n">dethc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># no detector response, just use the + polarization</span>
+            <span class="k">if</span> <span class="s1">&#39;tc&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">:</span>
+                <span class="n">hp</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span>
+                                         <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">hc</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">hc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span>
+                                         <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">[</span><span class="s1">&#39;RF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># resize all to nearest power of 2</span>
+            <span class="n">hps</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">hcs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">h</span><span class="p">:</span>
+                <span class="n">hp</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                <span class="n">hc</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                <span class="n">hp</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">ceilpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hp</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">hc</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">ceilpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hc</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">hps</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hp</span>
+                <span class="n">hcs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">hc</span>
+            <span class="n">hps</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">apply_gates_to_fd</span><span class="p">(</span><span class="n">hps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">)</span>
+            <span class="n">hcs</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">apply_gates_to_fd</span><span class="p">(</span><span class="n">hps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">)</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="p">(</span><span class="n">hps</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">hcs</span><span class="p">[</span><span class="n">det</span><span class="p">])</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">h</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="FDomainDetFrameTwoPolGenerator.select_rframe_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameTwoPolGenerator.select_rframe_generator">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_rframe_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a radiation frame generator class based on the approximant</span>
+<span class="sd">        string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">select_waveform_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="FDomainDetFrameTwoPolNoRespGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameTwoPolNoRespGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainDetFrameTwoPolNoRespGenerator</span><span class="p">(</span><span class="n">BaseFDomainDetFrameGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates frequency-domain waveform in a specific frame.</span>
+
+<span class="sd">    Generates both polarizations of a waveform using the given radiation frame</span>
+<span class="sd">    generator class, and applies the time shift. Detector response functions</span>
+<span class="sd">    are not applied.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rFrameGeneratorClass : class</span>
+<span class="sd">        The class to use for generating the waveform in the radiation frame,</span>
+<span class="sd">        e.g., FDomainCBCGenerator. This should be the class, not an</span>
+<span class="sd">        instance of the class (the class will be initialized with the</span>
+<span class="sd">        appropriate arguments internally).</span>
+<span class="sd">    detectors : {None, list of strings}</span>
+<span class="sd">        The names of the detectors to use. If provided, all location parameters</span>
+<span class="sd">        must be included in either the variable args or the frozen params. If</span>
+<span class="sd">        None, the generate function will just return the plus polarization</span>
+<span class="sd">        returned by the rFrameGeneratorClass shifted by any desired time shift.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The epoch start time to set the waveform to. A time shift = tc - epoch is</span>
+<span class="sd">        applied to waveforms before returning.</span>
+<span class="sd">    variable_args : {(), list or tuple}</span>
+<span class="sd">        A list or tuple of strings giving the names and order of parameters</span>
+<span class="sd">        that will be passed to the generate function.</span>
+<span class="sd">    \**frozen_params</span>
+<span class="sd">        Keyword arguments setting the parameters that will not be changed from</span>
+<span class="sd">        call-to-call of the generate function.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detectors : dict</span>
+<span class="sd">        The dictionary of detectors that antenna patterns are calculated for</span>
+<span class="sd">        on each call of generate. If no detectors were provided, will be</span>
+<span class="sd">        ``{&#39;RF&#39;: None}``, where &quot;RF&quot; means &quot;radiation frame&quot;.</span>
+<span class="sd">    detector_names : list</span>
+<span class="sd">        The list of detector names. If no detectors were provided, then this</span>
+<span class="sd">        will be [&#39;RF&#39;] for &quot;radiation frame&quot;.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The GPS start time of the frequency series returned by the generate function.</span>
+<span class="sd">        A time shift is applied to the waveform equal to tc-epoch. Update by using</span>
+<span class="sd">        ``set_epoch``.</span>
+<span class="sd">    current_params : dict</span>
+<span class="sd">        A dictionary of name, value pairs of the arguments that were last</span>
+<span class="sd">        used by the generate function.</span>
+<span class="sd">    rframe_generator : instance of rFrameGeneratorClass</span>
+<span class="sd">        The instance of the radiation-frame generator that is used for waveform</span>
+<span class="sd">        generation. All parameters in current_params except for the</span>
+<span class="sd">        location params are passed to this class&#39;s generate function.</span>
+<span class="sd">    frozen_location_args : dict</span>
+<span class="sd">        Any location parameters that were included in the frozen_params.</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The list of names of arguments that are passed to the generate</span>
+<span class="sd">        function.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FDomainDetFrameTwoPolNoRespGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameTwoPolNoRespGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a waveform polarizations</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of ``detector names -&gt; (hp, hc)``, where ``hp, hc`` are</span>
+<span class="sd">            the plus and cross polarization, respectively.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rframe_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+            <span class="c1"># time-domain waveforms will not be shifted so that the peak amp</span>
+            <span class="c1"># happens at the end of the time series (as they are for f-domain),</span>
+            <span class="c1"># so we add an additional shift to account for it</span>
+            <span class="n">tshift</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">df</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">apply_fseries_time_shift</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">apply_fseries_time_shift</span><span class="p">(</span><span class="n">hc</span><span class="p">,</span> <span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">detname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">:</span>
+                <span class="c1"># recalibrate with given calibration model</span>
+                <span class="n">hp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span>
+                    <span class="n">hp</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+                <span class="n">hc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span>
+                    <span class="n">hc</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+            <span class="n">h</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">hc</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="FDomainDetFrameTwoPolNoRespGenerator.select_rframe_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameTwoPolNoRespGenerator.select_rframe_generator">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_rframe_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a radiation frame generator class based on the approximant</span>
+<span class="sd">        string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">select_waveform_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FDomainDetFrameModesGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameModesGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainDetFrameModesGenerator</span><span class="p">(</span><span class="n">BaseFDomainDetFrameGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates frequency-domain waveform modes in a specific frame.</span>
+
+<span class="sd">    Generates both polarizations of every waveform mode using the given</span>
+<span class="sd">    radiation frame generator class, and applies the time shift. Detector</span>
+<span class="sd">    response functions are not applied.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    rFrameGeneratorClass : class</span>
+<span class="sd">        The class to use for generating the waveform modes in the radiation</span>
+<span class="sd">        frame, e.g., :py:class:`FDomainCBCModesGenerator`. This should be the</span>
+<span class="sd">        class, not an instance of the class (the class will be initialized with</span>
+<span class="sd">        the appropriate arguments internally). The class should have a generate</span>
+<span class="sd">        function that returns a dictionary of waveforms keyed by the modes.</span>
+<span class="sd">    detectors : {None, list of strings}</span>
+<span class="sd">        The names of the detectors to use. If provided, all location parameters</span>
+<span class="sd">        must be included in either the variable args or the frozen params. If</span>
+<span class="sd">        None, the generate function will just return the plus polarization</span>
+<span class="sd">        returned by the rFrameGeneratorClass shifted by any desired time shift.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The epoch start time to set the waveform to. A time shift = tc - epoch is</span>
+<span class="sd">        applied to waveforms before returning.</span>
+<span class="sd">    variable_args : {(), list or tuple}</span>
+<span class="sd">        A list or tuple of strings giving the names and order of parameters</span>
+<span class="sd">        that will be passed to the generate function.</span>
+<span class="sd">    \**frozen_params</span>
+<span class="sd">        Keyword arguments setting the parameters that will not be changed from</span>
+<span class="sd">        call-to-call of the generate function.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detectors : dict</span>
+<span class="sd">        The dictionary of detectors that antenna patterns are calculated for</span>
+<span class="sd">        on each call of generate. If no detectors were provided, will be</span>
+<span class="sd">        ``{&#39;RF&#39;: None}``, where &quot;RF&quot; means &quot;radiation frame&quot;.</span>
+<span class="sd">    detector_names : list</span>
+<span class="sd">        The list of detector names. If no detectors were provided, then this</span>
+<span class="sd">        will be [&#39;RF&#39;] for &quot;radiation frame&quot;.</span>
+<span class="sd">    epoch : float</span>
+<span class="sd">        The GPS start time of the frequency series returned by the generate</span>
+<span class="sd">        function. A time shift is applied to the waveform equal to tc-epoch.</span>
+<span class="sd">        Update by using ``set_epoch``.</span>
+<span class="sd">    current_params : dict</span>
+<span class="sd">        A dictionary of name, value pairs of the arguments that were last</span>
+<span class="sd">        used by the generate function.</span>
+<span class="sd">    rframe_generator : instance of rFrameGeneratorClass</span>
+<span class="sd">        The instance of the radiation-frame generator that is used for waveform</span>
+<span class="sd">        generation. All parameters in current_params except for the</span>
+<span class="sd">        location params are passed to this class&#39;s generate function.</span>
+<span class="sd">    frozen_location_args : dict</span>
+<span class="sd">        Any location parameters that were included in the frozen_params.</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The list of names of arguments that are passed to the generate</span>
+<span class="sd">        function.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">location_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">])</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; set([&#39;tc&#39;, &#39;ra&#39;, &#39;dec&#39;]):</span>
+<span class="sd">        The set of location parameters. These are not passed to the rFrame</span>
+<span class="sd">        generator class; instead, they are used to apply the detector response</span>
+<span class="sd">        function and/or shift the waveform in time. The parameters are:</span>
+
+<span class="sd">          * tc: The GPS time of coalescence (should be geocentric time).</span>
+<span class="sd">          * ra: Right ascension.</span>
+<span class="sd">          * dec: declination</span>
+<span class="sd">          * tc_ref_frame (optional): reference frame in which tc is defined.</span>
+<span class="sd">            Must be one of: &#39;geocentric&#39;, for geocentric time, or one of the</span>
+<span class="sd">            detector names. Default &#39;geocentric.&#39;</span>
+
+<span class="sd">        All of these must be provided in either the variable args or the</span>
+<span class="sd">        frozen params if detectors is not None. If detectors</span>
+<span class="sd">        is None, tc may optionally be provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FDomainDetFrameModesGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameModesGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates and returns a waveform decompsed into separate modes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of ``detector names -&gt; modes -&gt; (ulm, vlm)``, where</span>
+<span class="sd">            ``ulm, vlm`` are the frequency-domain representations of the real</span>
+<span class="sd">            and imaginary parts, respectively, of the complex time series</span>
+<span class="sd">            representation of the ``hlm``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">rfparams</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_args</span><span class="p">}</span>
+        <span class="n">hlms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rframe_generator</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">rfparams</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">hlms</span><span class="p">:</span>
+            <span class="n">ulm</span><span class="p">,</span> <span class="n">vlm</span> <span class="o">=</span> <span class="n">hlms</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ulm</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span>
+                <span class="n">ulm</span> <span class="o">=</span> <span class="n">ulm</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+                <span class="n">vlm</span> <span class="o">=</span> <span class="n">vlm</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">(</span><span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+                <span class="c1"># time-domain waveforms will not be shifted so that the peak</span>
+                <span class="c1"># amplitude happens at the end of the time series (as they are</span>
+                <span class="c1"># for f-domain), so we add an additional shift to account for</span>
+                <span class="c1"># it</span>
+                <span class="n">tshift</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">df</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ulm</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tshift</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">ulm</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">vlm</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_names</span> <span class="o">!=</span> <span class="p">[</span><span class="s1">&#39;RF&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">detname</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">refframe</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tc_ref_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;geocentric&#39;</span><span class="p">)</span>
+                    <span class="n">ra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span>
+                    <span class="n">dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+                    <span class="n">ref_tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span>
+                    <span class="n">tc</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">arrival_time</span><span class="p">(</span><span class="n">ref_tc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">refframe</span><span class="p">)</span>
+                    <span class="c1"># apply time shift</span>
+                    <span class="n">detulm</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">ulm</span><span class="p">,</span> <span class="n">tc</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">detvlm</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">vlm</span><span class="p">,</span> <span class="n">tc</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">:</span>
+                        <span class="c1"># recalibrate with given calibration model</span>
+                        <span class="n">detulm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span>
+                            <span class="n">detulm</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+                        <span class="n">detvlm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recalib</span><span class="p">[</span><span class="n">detname</span><span class="p">]</span><span class="o">.</span><span class="n">map_to_adjust</span><span class="p">(</span>
+                            <span class="n">detvlm</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+                    <span class="n">h</span><span class="p">[</span><span class="n">detname</span><span class="p">][</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">detulm</span><span class="p">,</span> <span class="n">detvlm</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># no detector response, just apply time shift</span>
+                <span class="k">if</span> <span class="s1">&#39;tc&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">:</span>
+                    <span class="n">ulm</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">ulm</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span>
+                                              <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">vlm</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">vlm</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">tshift</span><span class="p">,</span>
+                                              <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">h</span><span class="p">[</span><span class="s1">&#39;RF&#39;</span><span class="p">][</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ulm</span><span class="p">,</span> <span class="n">vlm</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># resize all to nearest power of 2</span>
+                <span class="n">ulms</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">vlms</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">h</span><span class="p">:</span>
+                    <span class="n">ulm</span><span class="p">,</span> <span class="n">vlm</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">mode</span><span class="p">]</span>
+                    <span class="n">ulm</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">ceilpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ulm</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">vlm</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">ceilpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vlm</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">ulms</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">ulm</span>
+                    <span class="n">vlms</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlm</span>
+                <span class="n">ulms</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">apply_gates_to_fd</span><span class="p">(</span><span class="n">ulms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">)</span>
+                <span class="n">vlms</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">apply_gates_to_fd</span><span class="p">(</span><span class="n">ulms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gates</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">ulms</span><span class="p">:</span>
+                    <span class="n">h</span><span class="p">[</span><span class="n">det</span><span class="p">][</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ulms</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">vlms</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="FDomainDetFrameModesGenerator.select_rframe_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDetFrameModesGenerator.select_rframe_generator">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_rframe_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a radiation frame generator class based on the approximant</span>
+<span class="sd">        string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">select_waveform_modes_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FDomainDirectDetFrameGenerator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDirectDetFrameGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FDomainDirectDetFrameGenerator</span><span class="p">(</span><span class="n">BaseCBCGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates frequency-domain waveforms directly in the detector frame.</span>
+
+<span class="sd">    Uses :py:func:`waveform.get_fd_det_waveform` as a generator</span>
+<span class="sd">    function to create frequency-domain CBC waveforms that include the detector</span>
+<span class="sd">    response.</span>
+
+<span class="sd">    For details, on methods and arguments, see :py:class:`BaseCBCGenerator`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">rFrameGeneratorClass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">detectors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">variable_args</span><span class="o">=</span><span class="p">(),</span>
+        <span class="n">gates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">recalib</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">frozen_params</span>
+    <span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">rFrameGeneratorClass</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not supprt using a radiation &quot;</span>
+                <span class="s2">&quot;frame generator class.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span> <span class="o">=</span> <span class="n">detectors</span>
+
+        <span class="k">if</span> <span class="n">gates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not support `gates`&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">recalib</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not support `recalib`&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">detectors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Must specify detectors to use </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">waveform</span><span class="o">.</span><span class="n">get_fd_det_waveform</span><span class="p">,</span>
+            <span class="n">variable_args</span><span class="o">=</span><span class="n">variable_args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">frozen_params</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="FDomainDirectDetFrameGenerator.set_epoch">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDirectDetFrameGenerator.set_epoch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the epoch; epoch should be a float or a LIGOTimeGPS.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The GPS start time of the frequency series returned by the generate</span>
+<span class="sd">        function. A time shift is applied to the waveform equal to tc-epoch.</span>
+<span class="sd">        Update by using ``set_epoch``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+
+<div class="viewcode-block" id="FDomainDirectDetFrameGenerator.select_rframe_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDirectDetFrameGenerator.select_rframe_generator">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_rframe_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the radiation frame generator.</span>
+
+<span class="sd">        Returns ``None`` since this class does not support generating waveforms</span>
+<span class="sd">        in the radiation frame.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="FDomainDirectDetFrameGenerator.generate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.FDomainDirectDetFrameGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates and returns a waveform in the detector frame.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of ``detector names -&gt; h``, where is the waveform in the</span>
+<span class="sd">            specified detector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">ifos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">:</span>
+            <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span>
+            <span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_fd_time_shift</span><span class="p">(</span><span class="n">wfs</span><span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">],</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wfs</span></div>
+</div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                        Helper functions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="get_td_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.get_td_generator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_td_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">modes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the time-domain generator for the given approximant.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">waveform</span><span class="o">.</span><span class="n">td_approximants</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">modes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">TDomainCBCModesGenerator</span>
+        <span class="k">return</span> <span class="n">TDomainCBCGenerator</span>
+
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">ringdown</span><span class="o">.</span><span class="n">ringdown_td_approximants</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">approximant</span> <span class="o">==</span> <span class="s1">&#39;TdQNMfromFinalMassSpin&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">TDomainMassSpinRingdownGenerator</span>
+        <span class="k">return</span> <span class="n">TDomainFreqTauRingdownGenerator</span>
+
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">supernovae</span><span class="o">.</span><span class="n">supernovae_td_approximants</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">TDomainSupernovaeGenerator</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No time-domain generator found for &quot;</span>
+                       <span class="s2">&quot;approximant: </span><span class="si">{approximant}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_fd_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.get_fd_generator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fd_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">modes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the frequency-domain generator for the given approximant.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">waveform</span><span class="o">.</span><span class="n">fd_approximants</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">modes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FDomainCBCModesGenerator</span>
+        <span class="k">return</span> <span class="n">FDomainCBCGenerator</span>
+
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">ringdown</span><span class="o">.</span><span class="n">ringdown_fd_approximants</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">approximant</span> <span class="o">==</span> <span class="s1">&#39;FdQNMfromFinalMassSpin&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FDomainMassSpinRingdownGenerator</span>
+        <span class="k">return</span> <span class="n">FDomainFreqTauRingdownGenerator</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No frequency-domain generator found for &quot;</span>
+                       <span class="s2">&quot;approximant: </span><span class="si">{approximant}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="select_waveform_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.select_waveform_generator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">select_waveform_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the single-IFO generator for the approximant.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        Name of waveform approximant. Valid names can be found using</span>
+<span class="sd">        ``pycbc.waveform`` methods.</span>
+<span class="sd">    domain : str or None</span>
+<span class="sd">        Name of the preferred waveform domain</span>
+<span class="sd">        (&#39;td&#39; for time domain, &#39;fd&#39; for frequency domain, None for default)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    generator : (PyCBC generator instance)</span>
+<span class="sd">        A waveform generator object.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Get a list of available approximants:</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc import waveform</span>
+<span class="sd">    &gt;&gt;&gt; waveform.fd_approximants()</span>
+<span class="sd">    &gt;&gt;&gt; waveform.td_approximants()</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform import ringdown</span>
+<span class="sd">    &gt;&gt;&gt; ringdown.ringdown_fd_approximants.keys()</span>
+
+<span class="sd">    Get generator object:</span>
+<span class="sd">    &gt;&gt;&gt; from pycbc.waveform.generator import select_waveform_generator</span>
+<span class="sd">    &gt;&gt;&gt; select_waveform_generator(waveform.fd_approximants()[0])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;td&#39;</span><span class="p">,</span> <span class="s1">&#39;fd&#39;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid domain &#39;</span><span class="si">{</span><span class="n">domain</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                          <span class="s2">&quot;Must be one of: None, &#39;td&#39;, or &#39;fd&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;td&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_td_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;fd&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_fd_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">domain</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_fd_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_td_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="select_waveform_modes_generator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.generator.select_waveform_modes_generator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">select_waveform_modes_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the single-IFO modes generator for the approximant.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        Name of waveform approximant. Valid names can be found using</span>
+<span class="sd">        ``pycbc.waveform`` methods.</span>
+<span class="sd">    domain : str or None</span>
+<span class="sd">        Name of the preferred waveform domain</span>
+<span class="sd">        (&#39;td&#39; for time domain, &#39;fd&#39; for frequency domain, None for default)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    generator : (PyCBC generator instance)</span>
+<span class="sd">        A waveform modes generator object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;td&#39;</span><span class="p">,</span> <span class="s1">&#39;fd&#39;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid domain &#39;</span><span class="si">{</span><span class="n">domain</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                           <span class="s2">&quot;Must be one of: None, &#39;td&#39;, or &#39;fd&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;td&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_td_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">modes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;fd&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_fd_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">modes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">domain</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_fd_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">modes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_td_generator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">modes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

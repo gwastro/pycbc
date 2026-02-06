@@ -1,0 +1,278 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.psdfiles &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.psdfiles</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.psdfiles</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2015 Larne Pekowsky</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for setting up the psd files used by CBC</span>
+<span class="sd">workflows.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># FIXME: Is this module still relevant for any code? Can it be removed?</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ConfigParser</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_analysis_dir</span><span class="p">,</span> <span class="n">resolve_url_to_file</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.psdfiles&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="setup_psd_workflow">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.psdfiles.setup_psd_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_psd_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                             <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup static psd section of CBC workflow. At present this only supports pregenerated</span>
+<span class="sd">    psd files, in the future these could be created within the workflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    science_segs : Keyed dictionary of igwn_segments.segmentlist objects</span>
+<span class="sd">        scienceSegs[ifo] holds the science segments to be analysed for each</span>
+<span class="sd">        ifo.</span>
+<span class="sd">    datafind_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        The file list containing the datafind files.</span>
+<span class="sd">    output_dir : path string</span>
+<span class="sd">        The directory where data products will be placed.</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    psd_files : pycbc.workflow.core.FileList</span>
+<span class="sd">        The FileList holding the psd files, 0 or 1 per ifo</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Entering static psd module.&quot;</span><span class="p">)</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+
+    <span class="c1"># Parse for options in ini file.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">psdMethod</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-psd&quot;</span><span class="p">,</span> <span class="s2">&quot;psd-method&quot;</span><span class="p">,</span>
+                                     <span class="n">tags</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Predefined PSD sare optional, just return an empty list if not</span>
+        <span class="c1"># provided.</span>
+        <span class="k">return</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="k">if</span> <span class="n">psdMethod</span> <span class="o">==</span> <span class="s2">&quot;PREGENERATED_FILE&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting psd from pre-generated file(s).&quot;</span><span class="p">)</span>
+        <span class="n">psd_files</span> <span class="o">=</span> <span class="n">setup_psd_pregenerated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;PSD method not recognized. Only &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;PREGENERATED_FILE is currently supported.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leaving psd module.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">psd_files</span></div>
+
+
+
+<div class="viewcode-block" id="setup_psd_pregenerated">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.psdfiles.setup_psd_pregenerated">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_psd_pregenerated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup CBC workflow to use pregenerated psd files.</span>
+<span class="sd">    The file given in cp.get(&#39;workflow&#39;,&#39;pregenerated-psd-file-(ifo)&#39;) will</span>
+<span class="sd">    be used as the --psd-file argument to geom_nonspinbank, geom_aligned_bank</span>
+<span class="sd">    and pycbc_plot_psd_file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    psd_files : pycbc.workflow.core.FileList</span>
+<span class="sd">        The FileList holding the gating files</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">psd_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">global_seg</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span>
+    <span class="n">file_attrs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;segs&#39;</span><span class="p">:</span> <span class="n">global_seg</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">:</span> <span class="n">tags</span><span class="p">}</span>
+
+    <span class="c1"># Check for one psd for all ifos</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pre_gen_file</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s1">&#39;workflow-psd&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;psd-pregenerated-file&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+        <span class="n">file_attrs</span><span class="p">[</span><span class="s1">&#39;ifos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span>
+        <span class="n">curr_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">pre_gen_file</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">file_attrs</span><span class="p">)</span>
+        <span class="n">psd_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_file</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+        <span class="c1"># Check for one psd per ifo</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pre_gen_file</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s1">&#39;workflow-psd&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;psd-pregenerated-file-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                <span class="n">tags</span><span class="p">)</span>
+                <span class="n">file_attrs</span><span class="p">[</span><span class="s1">&#39;ifos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">curr_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">pre_gen_file</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">file_attrs</span><span class="p">)</span>
+                <span class="n">psd_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_file</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+                <span class="c1"># It&#39;s unlikely, but not impossible, that only some ifos</span>
+                <span class="c1"># will have pregenerated PSDs</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No psd file specified for IFO </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+                <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">psd_files</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

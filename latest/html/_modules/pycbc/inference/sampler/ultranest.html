@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.ultranest &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.ultranest</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.ultranest</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2020  Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes and functions for using the ultranest sampler</span>
+<span class="sd">packages for parameter estimation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io.ultranest</span><span class="w"> </span><span class="kn">import</span> <span class="n">UltranestFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">use_mpi</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseSampler</span><span class="p">,</span> <span class="n">setup_output</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_cube</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_calls</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Samplers</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="UltranestSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UltranestSampler</span><span class="p">(</span><span class="n">BaseSampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class is used to construct an Ultranest sampler from the ultranest</span>
+<span class="sd">    package.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : model</span>
+<span class="sd">        A model from ``pycbc.inference.models``.</span>
+<span class="sd">    log_dir : str</span>
+<span class="sd">        Folder where files should be stored for resuming (optional).</span>
+<span class="sd">    stepsampling : bool</span>
+<span class="sd">        If false, uses rejection sampling. If true, uses</span>
+<span class="sd">        hit-and-run sampler, which scales better with dimensionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;ultranest&quot;</span>
+    <span class="n">_io</span> <span class="o">=</span> <span class="n">UltranestFile</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">stepsampling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">enable_plots</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">UltranestSampler</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">ultranest</span>
+        <span class="n">log_likelihood_call</span><span class="p">,</span> <span class="n">prior_call</span> <span class="o">=</span> <span class="n">setup_calls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">copy_prior</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Check for cyclic boundaries</span>
+        <span class="n">periodic</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cyclic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">cyclic</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">cyclic</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Param: </span><span class="si">%s</span><span class="s1"> will be cyclic&#39;</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+                <span class="n">periodic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">periodic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span> <span class="o">=</span> <span class="n">ultranest</span><span class="o">.</span><span class="n">ReactiveNestedSampler</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">),</span>
+            <span class="n">log_likelihood_call</span><span class="p">,</span>
+            <span class="n">prior_call</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span>
+            <span class="n">wrapped_params</span><span class="o">=</span><span class="n">periodic</span><span class="p">,</span>
+            <span class="n">resume</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">stepsampling</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">ultranest.stepsampler</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">stepsampler</span> <span class="o">=</span> <span class="n">ultranest</span><span class="o">.</span><span class="n">stepsampler</span><span class="o">.</span><span class="n">RegionBallSliceSampler</span><span class="p">(</span>
+                <span class="n">nsteps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">adaptive_nsteps</span><span class="o">=</span><span class="s1">&#39;move-distance&#39;</span><span class="p">,</span>
+                <span class="n">region_filter</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">enable_plots</span> <span class="o">=</span> <span class="n">enable_plots</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nlive</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>  <span class="c1"># Keywords for the run method of ultranest</span>
+
+        <span class="n">do_mpi</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">use_mpi</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">main</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="n">do_mpi</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UltranestSampler.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">main</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">print_results</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_plots</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sampler</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_io</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">niterations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;niter&#39;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="UltranestSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the sampler from the given config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">skeys</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;update_interval_iter_fraction&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s1">&#39;update_interval_ncall&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;log_interval&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;show_status&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                <span class="s1">&#39;dlogz&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s1">&#39;dKL&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s1">&#39;frac_remain&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s1">&#39;Lepsilon&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s1">&#39;min_ess&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;max_iters&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;max_ncalls&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;log_dir&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                <span class="s1">&#39;stepsampling&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                <span class="s1">&#39;enable_plots&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                <span class="s1">&#39;max_num_improvement_loops&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;min_num_live_points&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s1">&#39;cluster_num_live_points:&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">opt_name</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s1">&#39;sampler&#39;</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sampler&#39;</span><span class="p">,</span> <span class="n">opt_name</span><span class="p">)</span>
+                <span class="n">skeys</span><span class="p">[</span><span class="n">opt_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="n">opt_name</span><span class="p">](</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">inst</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">skeys</span><span class="p">)</span>
+
+        <span class="n">do_mpi</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rank</span> <span class="o">=</span> <span class="n">use_mpi</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">do_mpi</span> <span class="ow">or</span> <span class="p">(</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">setup_output</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inst</span></div>
+
+
+<div class="viewcode-block" id="UltranestSampler.checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UltranestSampler.resume_from_checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.resume_from_checkpoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume_from_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UltranestSampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing samples to files&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_results</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">ultranest.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">resample_equal</span>
+
+        <span class="c1"># we&#39;ll do the resampling ourselves so we can pick up</span>
+        <span class="c1"># additional parameters</span>
+        <span class="k">try</span><span class="p">:</span>  <span class="c1"># Remove me on next ultranest release</span>
+            <span class="n">wsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;weighted_samples&#39;</span><span class="p">][</span><span class="s1">&#39;v&#39;</span><span class="p">]</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;weighted_samples&#39;</span><span class="p">][</span><span class="s1">&#39;w&#39;</span><span class="p">]</span>
+            <span class="n">logl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;weighted_samples&#39;</span><span class="p">][</span><span class="s1">&#39;L&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">wsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;weighted_samples&#39;</span><span class="p">][</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;weighted_samples&#39;</span><span class="p">][</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
+            <span class="n">logl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;weighted_samples&#39;</span><span class="p">][</span><span class="s1">&#39;logl&#39;</span><span class="p">]</span>
+
+        <span class="n">wsamples</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">wsamples</span><span class="p">,</span> <span class="n">logl</span><span class="p">))</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">resample_equal</span><span class="p">(</span><span class="n">wsamples</span><span class="p">,</span> <span class="n">weights</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">samples_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">samples</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">params</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="n">samples_dict</span>
+
+<div class="viewcode-block" id="UltranestSampler.write_results">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.write_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes samples, model stats, acceptance fraction, and random state</span>
+<span class="sd">        to the given file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The file to write to. The file is opened using the ``io`` class</span>
+<span class="sd">            in an an append state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># write samples</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="c1"># write log evidence</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_logevidence</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">logz_err</span><span class="p">)</span>
+
+            <span class="c1"># write full ultranest formatted results</span>
+            <span class="n">dump_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span>
+                       <span class="n">path</span><span class="o">=</span><span class="s1">&#39;sampler_info&#39;</span><span class="p">,</span>
+                       <span class="n">dsetname</span><span class="o">=</span><span class="s1">&#39;presult&#39;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return bayesian evidence estimated by ultranest sampler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;logz&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logz_err</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return error in bayesian evidence estimated by ultranest sampler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;logzerr&#39;</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

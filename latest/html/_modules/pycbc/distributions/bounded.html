@@ -1,0 +1,513 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.bounded &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.bounded</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.bounded</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano, Christopher M. Biwer</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes for evaluating distributions with bounds.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">Error</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">boundaries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">VARARGS_DELIM</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.bounded&#39;</span><span class="p">)</span>
+
+<span class="c1">#</span>
+<span class="c1">#   Distributions for priors</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="get_param_bounds_from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.get_param_bounds_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_param_bounds_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets bounds for the given parameter from a section in a config file.</span>
+
+<span class="sd">    Minimum and maximum values for bounds are specified by adding</span>
+<span class="sd">    `min-{param}` and `max-{param}` options, where `{param}` is the name of</span>
+<span class="sd">    the parameter. The types of boundary (open, closed, or reflected) to create</span>
+<span class="sd">    may also be specified by adding options `btype-min-{param}` and</span>
+<span class="sd">    `btype-max-{param}`. Cyclic conditions can be adding option</span>
+<span class="sd">    `cyclic-{param}`. If no `btype` arguments are provided, the</span>
+<span class="sd">    left bound will be closed and the right open.</span>
+
+<span class="sd">    For example, the following will create right-open bounds for parameter</span>
+<span class="sd">    `foo`:</span>
+
+<span class="sd">    .. code-block:: ini</span>
+
+<span class="sd">        [{section}-{tag}]</span>
+<span class="sd">        min-foo = -1</span>
+<span class="sd">        max-foo = 1</span>
+
+<span class="sd">    This would make the boundaries cyclic:</span>
+
+<span class="sd">    .. code-block:: ini</span>
+
+<span class="sd">        [{section}-{tag}]</span>
+<span class="sd">        min-foo = -1</span>
+<span class="sd">        max-foo = 1</span>
+<span class="sd">        cyclic-foo =</span>
+
+<span class="sd">    For more details on boundary types and their meaning, see</span>
+<span class="sd">    `boundaries.Bounds`.</span>
+
+<span class="sd">    If the parameter is not found in the section will just return None (in</span>
+<span class="sd">    this case, all `btype` and `cyclic` arguments are ignored for that</span>
+<span class="sd">    parameter).  If bounds are specified, both a minimum and maximum must be</span>
+<span class="sd">    provided, else a Value or Type Error will be raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : ConfigParser instance</span>
+<span class="sd">        The config file.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        The name of the section.</span>
+<span class="sd">    tag : str</span>
+<span class="sd">        Any tag in the section name. The full section name searched for in</span>
+<span class="sd">        the config file is `{section}(-{tag})`.</span>
+<span class="sd">    param : str</span>
+<span class="sd">        The name of the parameter to retrieve bounds for.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bounds : {Bounds instance | None}</span>
+<span class="sd">        If bounds were provided, a `boundaries.Bounds` instance</span>
+<span class="sd">        representing the bounds. Otherwise, `None`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">minbnd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;min-&#39;</span><span class="o">+</span><span class="n">param</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+        <span class="n">minbnd</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">maxbnd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;max-&#39;</span><span class="o">+</span><span class="n">param</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+        <span class="n">maxbnd</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">minbnd</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">maxbnd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bnds</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">minbnd</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">maxbnd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;if specifying bounds for </span><span class="si">%s</span><span class="s2">, &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="o">+</span>
+            <span class="s2">&quot;you must provide both a minimum and a maximum&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bndargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min_bound&#39;</span><span class="p">:</span> <span class="n">minbnd</span><span class="p">,</span> <span class="s1">&#39;max_bound&#39;</span><span class="p">:</span> <span class="n">maxbnd</span><span class="p">}</span>
+        <span class="c1"># try to get  any other conditions, if provided</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">minbtype</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;btype-min-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span>
+                                      <span class="n">tag</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+            <span class="n">minbtype</span> <span class="o">=</span> <span class="s1">&#39;closed&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">maxbtype</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;btype-max-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span>
+                                      <span class="n">tag</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+            <span class="n">maxbtype</span> <span class="o">=</span> <span class="s1">&#39;open&#39;</span>
+        <span class="n">bndargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;btype_min&#39;</span><span class="p">:</span> <span class="n">minbtype</span><span class="p">,</span> <span class="s1">&#39;btype_max&#39;</span><span class="p">:</span> <span class="n">maxbtype</span><span class="p">})</span>
+        <span class="n">cyclic</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;cyclic-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">),</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">bndargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;cyclic&#39;</span><span class="p">:</span> <span class="n">cyclic</span><span class="p">})</span>
+        <span class="n">bnds</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span><span class="o">**</span><span class="n">bndargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bnds</span></div>
+
+
+
+<div class="viewcode-block" id="bounded_from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.bounded_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bounded_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">,</span>
+        <span class="n">bounds_required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">additional_opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a bounded distribution based on a configuration file. The</span>
+<span class="sd">    parameters for the distribution are retrieved from the section titled</span>
+<span class="sd">    &quot;[`section`-`variable_args`]&quot; in the config file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cls : pycbc.prior class</span>
+<span class="sd">        The class to initialize with.</span>
+<span class="sd">    cp : pycbc.workflow.WorkflowConfigParser</span>
+<span class="sd">        A parsed configuration file that contains the distribution</span>
+<span class="sd">        options.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        Name of the section in the configuration file.</span>
+<span class="sd">    variable_args : str</span>
+<span class="sd">        The names of the parameters for this distribution, separated by</span>
+<span class="sd">        `prior.VARARGS_DELIM`. These must appear in the &quot;tag&quot; part</span>
+<span class="sd">        of the section header.</span>
+<span class="sd">    bounds_required : {False, bool}</span>
+<span class="sd">       If True, raise a ValueError if a min and max are not provided for</span>
+<span class="sd">       every parameter. Otherwise, the prior will be initialized with the</span>
+<span class="sd">       parameter set to None. Even if bounds are not required, a</span>
+<span class="sd">       ValueError will be raised if only one bound is provided; i.e.,</span>
+<span class="sd">       either both bounds need to provided or no bounds.</span>
+<span class="sd">    additional_opts : {None, dict}</span>
+<span class="sd">        Provide additional options to be passed to the distribution class;</span>
+<span class="sd">        should be a dictionary specifying option -&gt; value. If an option is</span>
+<span class="sd">        provided that also exists in the config file, the value provided will</span>
+<span class="sd">        be used instead of being read from the file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cls</span>
+<span class="sd">        An instance of the given class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+    <span class="n">variable_args</span> <span class="o">=</span> <span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">additional_opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">additional_opts</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># list of args that are used to construct distribution</span>
+    <span class="n">special_args</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="p">[</span><span class="s1">&#39;min-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="p">[</span><span class="s1">&#39;max-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="p">[</span><span class="s1">&#39;btype-min-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="p">[</span><span class="s1">&#39;btype-max-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="p">[</span><span class="s1">&#39;cyclic-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="nb">list</span><span class="p">(</span><span class="n">additional_opts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="c1"># get a dict with bounds as value</span>
+    <span class="n">dist_args</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">:</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="n">get_param_bounds_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bounds_required</span> <span class="ow">and</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min and/or max missing for parameter </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span>
+                <span class="n">param</span><span class="p">))</span>
+        <span class="n">dist_args</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span>
+
+    <span class="c1"># add any additional options that user put in that section</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">])):</span>
+
+        <span class="c1"># ignore options that are already included</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">special_args</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># check if option can be cast as a float</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># add option</span>
+        <span class="n">dist_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">key</span><span class="p">:</span><span class="n">val</span><span class="p">})</span>
+
+    <span class="n">dist_args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">additional_opts</span><span class="p">)</span>
+
+    <span class="c1"># construction distribution and add to list</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">dist_args</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="BoundedDist">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BoundedDist</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A generic class for storing common properties of distributions in which</span>
+<span class="sd">    each parameter has a minimum and maximum value.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    \**params :</span>
+<span class="sd">        The keyword arguments should provide the names of parameters and their</span>
+<span class="sd">        corresponding bounds, as either tuples or a `boundaries.Bounds`</span>
+<span class="sd">        instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="c1"># convert input bounds to Bounds class, if necessary</span>
+        <span class="k">for</span> <span class="n">param</span><span class="p">,</span><span class="n">bnds</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">bnds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bnds</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">):</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span><span class="n">bnds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bnds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># warn the user about reflected boundaries</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bnds</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                    <span class="n">bnds</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;reflected&#39;</span> <span class="ow">or</span>
+                    <span class="n">bnds</span><span class="o">.</span><span class="n">max</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;reflected&#39;</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Param </span><span class="si">{}</span><span class="s2"> has one or more &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="o">+</span>
+                              <span class="s2">&quot;reflected boundaries. Reflected boundaries &quot;</span>
+                              <span class="s2">&quot;can cause issues when used in an MCMC.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;list of strings: The list of parameter names.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;dict: A dictionary of the parameter names and their bounds.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">contains_conditioned</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="p">])</span>
+                       <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must provide all parameters [</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span><span class="p">(</span>
+                <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="BoundedDist.apply_boundary_conditions">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.apply_boundary_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_boundary_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies any boundary conditions to the given values (e.g., applying</span>
+<span class="sd">        cyclic conditions, and/or reflecting values off of boundaries). This</span>
+<span class="sd">        is done by running `apply_conditions` of each bounds in self on the</span>
+<span class="sd">        corresponding value. See `boundaries.Bounds.apply_conditions` for</span>
+<span class="sd">        details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            The keyword args should be the name of a parameter and value to</span>
+<span class="sd">            apply its boundary conditions to. The arguments need not include</span>
+<span class="sd">            all of the parameters in self. Any unrecognized arguments are</span>
+<span class="sd">            ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of the parameter names and the conditioned values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">([[</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">val</span><span class="p">)]</span>
+                     <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="BoundedDist.pdf">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.pdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the pdf at the given values. The keyword arguments must</span>
+<span class="sd">        contain all of parameters in self&#39;s params. Unrecognized arguments are</span>
+<span class="sd">        ignored. Any boundary conditions are applied to the values before the</span>
+<span class="sd">        pdf is evaluated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pdf</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The underlying pdf function called by `self.pdf`. This must be set</span>
+<span class="sd">        by any class that inherits from this class. Otherwise, a</span>
+<span class="sd">        `NotImplementedError` is raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;pdf function not set&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BoundedDist.logpdf">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.logpdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logpdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the log of the pdf at the given values. The keyword</span>
+<span class="sd">        arguments must contain all of parameters in self&#39;s params.</span>
+<span class="sd">        Unrecognized arguments are ignored. Any boundary conditions are</span>
+<span class="sd">        applied to the values before the pdf is evaluated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logpdf</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_logpdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The underlying log pdf function called by `self.logpdf`. This must</span>
+<span class="sd">        be set by any class that inherits from this class. Otherwise, a</span>
+<span class="sd">        `NotImplementedError` is raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;pdf function not set&quot;</span><span class="p">)</span>
+
+    <span class="fm">__call__</span> <span class="o">=</span> <span class="n">logpdf</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cdfinv_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the cdfinv for a single given parameter &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;inverse cdf not set&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BoundedDist.cdfinv">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.cdfinv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cdfinv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the inverse cdf to map the unit interval to parameter bounds.</span>
+<span class="sd">        You must provide a keyword for every parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">updated</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cdfinv_param</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">kwds</span><span class="p">[</span><span class="n">param</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">updated</span></div>
+
+
+<div class="viewcode-block" id="BoundedDist.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="s2">&quot;Draw random value&quot;</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="p">[(</span><span class="n">p</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">]</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">draw</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdfinv</span><span class="p">(</span><span class="o">**</span><span class="n">draw</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">arr</span></div>
+
+
+<div class="viewcode-block" id="BoundedDist.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">,</span> <span class="n">bounds_required</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a distribution based on a configuration file. The parameters</span>
+<span class="sd">        for the distribution are retrieved from the section titled</span>
+<span class="sd">        &quot;[`section`-`variable_args`]&quot; in the config file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : pycbc.workflow.WorkflowConfigParser</span>
+<span class="sd">            A parsed configuration file that contains the distribution</span>
+<span class="sd">            options.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Name of the section in the configuration file.</span>
+<span class="sd">        variable_args : str</span>
+<span class="sd">            The names of the parameters for this distribution, separated by</span>
+<span class="sd">            `prior.VARARGS_DELIM`. These must appear in the &quot;tag&quot; part</span>
+<span class="sd">            of the section header.</span>
+<span class="sd">        bounds_required : {False, bool}</span>
+<span class="sd">           If True, raise a ValueError if a min and max are not provided for</span>
+<span class="sd">           every parameter. Otherwise, the prior will be initialized with the</span>
+<span class="sd">           parameter set to None. Even if bounds are not required, a</span>
+<span class="sd">           ValueError will be raised if only one bound is provided; i.e.,</span>
+<span class="sd">           either both bounds need to provided or no bounds.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BoundedDist</span>
+<span class="sd">            A distribution instance from the pycbc.distribution subpackage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">bounded_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">,</span>
+                                    <span class="n">bounds_required</span><span class="o">=</span><span class="n">bounds_required</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

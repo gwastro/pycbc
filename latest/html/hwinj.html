@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hardware injection waveform generation &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Calculating the Effectualness (Fitting Factor) of Template Banks" href="banksim.html" />
+    <link rel="prev" title="PyCBC template bank generation documentation (pycbc.tmpltbank)" href="tmpltbank.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_offline_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hardware injection waveform generation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-waveform-from-command-line-pycbc-generate-hwinj">Generate waveform from command line (<code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#select-a-time-for-the-injection">Select a time for the injection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#select-data-for-psd-estimation">Select data for PSD estimation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#run-pycbc-generate-hwinj">Run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-waveform-from-lalapps-inspinj-output-pycbc-generate-hwinj-from-xml">Generate waveform from <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> output (<code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#run-lalapps-inspinj">Run <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#run-pycbc-generate-hwinj-from-xml">Run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#checks-for-the-hardware-injection-output">Checks for the hardware injection output</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#plot-ascii-waveform-files-with-pycbc-plot-hwinj">Plot ASCII waveform files with <code class="docutils literal notranslate"><span class="pre">pycbc_plot_hwinj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#recover-software-injection-with-pycbc-inspiral">Recover software injection with <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#recover-ascii-file-injection-with-pycbc-inspiral">Recover ASCII file injection with <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mock_data_generation.html"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active">Hardware injection waveform generation</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/hwinj.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hardware-injection-waveform-generation">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Hardware injection waveform generation</a><a class="headerlink" href="#hardware-injection-waveform-generation" title="Link to this heading"></a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#hardware-injection-waveform-generation" id="id1">Hardware injection waveform generation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id2">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#generate-waveform-from-command-line-pycbc-generate-hwinj" id="id3">Generate waveform from command line (<code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code>)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#select-a-time-for-the-injection" id="id4">Select a time for the injection</a></p></li>
+<li><p><a class="reference internal" href="#select-data-for-psd-estimation" id="id5">Select data for PSD estimation</a></p></li>
+<li><p><a class="reference internal" href="#run-pycbc-generate-hwinj" id="id6">Run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#generate-waveform-from-lalapps-inspinj-output-pycbc-generate-hwinj-from-xml" id="id7">Generate waveform from <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> output (<code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code>)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#run-lalapps-inspinj" id="id8">Run <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code></a></p></li>
+<li><p><a class="reference internal" href="#run-pycbc-generate-hwinj-from-xml" id="id9">Run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code></a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#checks-for-the-hardware-injection-output" id="id10">Checks for the hardware injection output</a></p>
+<ul>
+<li><p><a class="reference internal" href="#plot-ascii-waveform-files-with-pycbc-plot-hwinj" id="id11">Plot ASCII waveform files with <code class="docutils literal notranslate"><span class="pre">pycbc_plot_hwinj</span></code></a></p></li>
+<li><p><a class="reference internal" href="#recover-software-injection-with-pycbc-inspiral" id="id12">Recover software injection with <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code></a></p></li>
+<li><p><a class="reference internal" href="#recover-ascii-file-injection-with-pycbc-inspiral" id="id13">Recover ASCII file injection with <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code></a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-to-query-the-segment-database" id="id14">How to query the segment database</a></p></li>
+<li><p><a class="reference internal" href="#how-to-query-the-ldr-server" id="id15">How to query the LDR server</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This page describes how to generate waveforms and save them as single-column ASCII waveform files that can be used by <code class="docutils literal notranslate"><span class="pre">awgstream</span></code> to inject into the detector.</p>
+<p>There are two executables that can be used to generate single-column ASCII files; they are <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> and <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code>. Both executables use the PyCBC injection module (<code class="docutils literal notranslate"><span class="pre">pycbc.inject</span></code>) to inject the coherent waveform into a time series of zeroes.</p>
+<p>The executable <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> generates a waveform using parameters from the command line. The user inputs parameters such as <code class="docutils literal notranslate"><span class="pre">--mass1</span></code>, <code class="docutils literal notranslate"><span class="pre">--mass2</span></code>, etc. on the command line. This executable is useful for generating a specific coherent waveform for hardware injections.</p>
+<p>The executable <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code> generates all the waveforms in a LIGOLW <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> table. The output of <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> (an executable for generating a population of injections) is a LIGOLW <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> table. This executable is useful if you want to generate a population of coherent waveforms for hardware injections.</p>
+</section>
+<section id="generate-waveform-from-command-line-pycbc-generate-hwinj">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Generate waveform from command line (<code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code>)</a><a class="headerlink" href="#generate-waveform-from-command-line-pycbc-generate-hwinj" title="Link to this heading"></a></h2>
+<p>Here is a usage example for generating a CBC waveform using detector data with <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code>.</p>
+<section id="select-a-time-for-the-injection">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Select a time for the injection</a><a class="headerlink" href="#select-a-time-for-the-injection" title="Link to this heading"></a></h3>
+<p>First on the command line set a variable for the GPS geocentric end time of the coherent injection</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GEOCENT_END_TIME</span><span class="o">=</span><span class="mi">1124381661</span>
+</pre></div>
+</div>
+</section>
+<section id="select-data-for-psd-estimation">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Select data for PSD estimation</a><a class="headerlink" href="#select-data-for-psd-estimation" title="Link to this heading"></a></h3>
+<p>We need to set what data we will use to estimate the PSD. This should be a 2048 second interval. So in this example we will set</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GPS_START_TIME</span><span class="o">=</span><span class="mi">1124380361</span>
+<span class="n">GPS_END_TIME</span><span class="o">=</span><span class="mi">1124382409</span>
+</pre></div>
+</div>
+<p>We will want to use data from when the detector was in science mode time to estimate the PSD. To check if the detector was in science mode you can query the segment database, check the section <a class="reference internal" href="#howtoquerysegdb"><span class="std std-ref">How to query the segment database</span></a> for an example command.</p>
+<p>Since we are using detector data we will need to read the data from frame files. We will need to specify the frame type and channel name. The frame type is a way to identify what list of channels is in the frame file. So on the command line we set</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FRAME_TYPE</span><span class="o">=</span><span class="n">H1_HOFT_C00</span>
+<span class="n">CHANNEL_NAME</span><span class="o">=</span><span class="n">H1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+</pre></div>
+</div>
+<p>We can check that frames exist for this time by querying the LDR server, check the section <a class="reference internal" href="#howtoqueryldr"><span class="std std-ref">How to query the LDR server</span></a> for an example command.</p>
+<p><strong>Do not assume that the frame type and channel name are the same as in this section. These values are correct for this example.</strong></p>
+</section>
+<section id="run-pycbc-generate-hwinj">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code></a><a class="headerlink" href="#run-pycbc-generate-hwinj" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--instruments</span></code> option specifies the IFOs to include in the injection. The executable <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> will write the waveform for all detectors listed with the <code class="docutils literal notranslate"><span class="pre">--instruments</span></code> option. There are a number of options, including <code class="docutils literal notranslate"><span class="pre">--instruments</span></code> that take a space-seperated list, example usage of this option is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">instruments</span> <span class="n">H1</span> <span class="n">L1</span>
+</pre></div>
+</div>
+<p>Now let’s specify the parameters of the waveform. A full list of the command line options is available with <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span> <span class="pre">--help</span></code>. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the <code class="docutils literal notranslate"><span class="pre">EOBNRv2</span></code> approximant. Here is an example of this command line case</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">approximant</span> <span class="n">SEOBNRv2</span> <span class="o">--</span><span class="n">order</span> <span class="n">pseudoFourPN</span> <span class="o">--</span><span class="n">mass1</span> <span class="mf">25.0</span> <span class="o">--</span><span class="n">mass2</span> <span class="mf">25.0</span> <span class="o">--</span><span class="n">inclination</span> <span class="mf">0.0</span> <span class="o">--</span><span class="n">polarization</span> <span class="mf">0.0</span> <span class="o">--</span><span class="n">ra</span> <span class="mf">0.0</span> <span class="o">--</span><span class="n">dec</span> <span class="mf">0.0</span>
+</pre></div>
+</div>
+<p>The sample rate of the output ASCII file is given by the <code class="docutils literal notranslate"><span class="pre">--sample-rate</span></code> option. The sample rate for each IFO must match, example usage of this option is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="n">H1</span><span class="p">:</span><span class="mi">16384</span> <span class="n">L1</span><span class="p">:</span><span class="mi">16384</span>
+</pre></div>
+</div>
+<p>We have the option to query the LDR server directly with <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code>. So we only need to specify a <code class="docutils literal notranslate"><span class="pre">--frame-type</span></code> option to get the data. Alternatively you an pass a space-seperated list with <code class="docutils literal notranslate"><span class="pre">--frame-files</span></code> or a LAL frame cache with <code class="docutils literal notranslate"><span class="pre">--frame-cache</span></code>. We also need to say what channel to use for the PSD estimation with the <code class="docutils literal notranslate"><span class="pre">--channel-name</span></code> option. Example usage of <code class="docutils literal notranslate"><span class="pre">--frame-type</span></code> would be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>--frame-type H1:${FRAME_TYPE} L1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} L1:${CHANNEL_NAME}
+</pre></div>
+</div>
+<p>We do not want to inject a step-like response into the detector, therefore we taper the waveform at the beginning. The <code class="docutils literal notranslate"><span class="pre">EOBNRv2</span></code> has a ringdown at the end so we do not need to taper the end. Example usage of this option is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">taper</span> <span class="n">TAPER_START</span>
+</pre></div>
+</div>
+<p>We specify the network SNR we want the coherent injection to have on the command line. The network SNR calculation includes all IFOs specified in the <code class="docutils literal notranslate"><span class="pre">--insturments</span></code> option, example usage of this option is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">network</span><span class="o">-</span><span class="n">snr</span> <span class="mi">28</span>
+</pre></div>
+</div>
+<p>In calculating the network SNR the executable <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> will generate a PSD and calculate an SNR for the waveform. The options <code class="docutils literal notranslate"><span class="pre">--low-frequency-cutoff</span></code> and <code class="docutils literal notranslate"><span class="pre">--high-frequency-cutoff</span></code> set the min and max frequency for the SNR calculation. The waveform used in the SNR calculation is also generated at this low-frequency cutoff, note the waveform is not written to disk with this low-frequency cutoff. Example usage of the PSD options is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="mf">40.0</span> <span class="o">--</span><span class="n">high</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="mf">1000.0</span> <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">estimation</span> <span class="n">median</span> <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">length</span> <span class="mi">16</span> <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">stride</span> <span class="mi">8</span> <span class="o">--</span><span class="n">pad</span><span class="o">-</span><span class="n">data</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<p>The additional PSD options dictate how the PSD will be calculated, ie. how many seconds per FFT and how much overlap. The <code class="docutils literal notranslate"><span class="pre">--pad-data</span></code> option is how much data to disgard at the edges of our time series used in PSD estimation to avoid data corruption.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--waveform-low-frequency-cutoff</span></code> option is the frequency that <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> will begin generating the waveform that is written to file.</p>
+<p>Here is a full example command for generating an injection in only H1</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pycbc_generate_hwinj --high-frequency-cutoff 1000.0 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time H1:${GPS_START_TIME} --gps-end-time H1:${GPS_END_TIME} --frame-type H1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --low-frequency-cutoff 40.0 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --instruments H1
+</pre></div>
+</div>
+<p>This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code>. In this example the ASCII file with the waveform will be named <code class="docutils literal notranslate"><span class="pre">hwinjcbc_${START}_H1.txt</span></code> where <code class="docutils literal notranslate"><span class="pre">${START}</span></code> is the start time stamp of the time series. The LIGOLW XML file will be named <code class="docutils literal notranslate"><span class="pre">hwinjcbc_${START}.xml.gz</span></code>.</p>
+<p>The LIGOLW XML file contains a <code class="docutils literal notranslate"><span class="pre">process_params</span></code> table that saves the command line that was used to generate the waveform for future reference. It also includes a <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> table and a <code class="docutils literal notranslate"><span class="pre">sngl_inspiral</span></code> table. The <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> entry allows us to use the parameters of the waveform as a software injection in the PyCBC matched filtering executable <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code>. The <code class="docutils literal notranslate"><span class="pre">sngl_inspiral</span></code> entry allows us to use the parameters of the waveform as the filter in <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code>.</p>
+<p>The user should inspect the waveforms. For a waveform plotting executable see section <a class="reference internal" href="#runpycbcplothwinj"><span class="std std-ref">Plot ASCII waveform files with pycbc_plot_hwinj</span></a>.</p>
+</section>
+</section>
+<section id="generate-waveform-from-lalapps-inspinj-output-pycbc-generate-hwinj-from-xml">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Generate waveform from <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> output (<code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code>)</a><a class="headerlink" href="#generate-waveform-from-lalapps-inspinj-output-pycbc-generate-hwinj-from-xml" title="Link to this heading"></a></h2>
+<p>Here is a usage case for generating a population of waveforms with <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code>. This example generates an injection every Tuesday for three months.</p>
+<section id="run-lalapps-inspinj">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Run <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code></a><a class="headerlink" href="#run-lalapps-inspinj" title="Link to this heading"></a></h3>
+<p>Here we show an example on how to use <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> to generate a population of injections.</p>
+<p>In this example we will select distributions for time, distance, inclination, mass, spin, and sky location. Below is a explaination of the command line options in this example. A full list of command line options can be found with <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span> <span class="pre">--help</span></code>.</p>
+<p>Our time distribution will be a fixed time step to perform an injection every Tuesday. We will allow the injections to be anytime during the day (86400 seconds) and have a minimum one week (604800 seconds) between injections. The command line options will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">time</span><span class="o">-</span><span class="n">interval</span> <span class="mi">86400</span> <span class="o">--</span><span class="n">time</span><span class="o">-</span><span class="n">step</span> <span class="mi">604800</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1126368017</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1130371217</span>
+</pre></div>
+</div>
+<p>Our distance distribution will be uniformly distributed in volume. We set the minimum and maximum chirp distance in units of kpc. The command line options will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">d</span><span class="o">-</span><span class="n">distr</span> <span class="n">volume</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">distance</span> <span class="mi">10000</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">distance</span> <span class="mi">40000</span>
+</pre></div>
+</div>
+<p>Our mass distribution will be uniform in total mass. We can select the minimum and maximum component masses in units of solar masses. The command line options will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">m</span><span class="o">-</span><span class="n">distr</span> <span class="n">totalMass</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">mass1</span> <span class="mf">1.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">mass1</span> <span class="mf">2.0</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">mass2</span> <span class="mf">1.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">mass2</span> <span class="mf">2.0</span>
+</pre></div>
+</div>
+<p>We can select the minimum and maximum component spins. The command line options will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">spin</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">spin1</span> <span class="mf">0.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">spin1</span> <span class="mf">0.04</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">spin2</span> <span class="mf">0.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">spin2</span> <span class="mf">0.04</span>
+</pre></div>
+</div>
+<p>Our inclination distribution will be uniform. The command line option will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">i</span><span class="o">-</span><span class="n">distr</span> <span class="n">uniform</span>
+</pre></div>
+</div>
+<p>Our source distribution will be random. The command line option will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">l</span><span class="o">-</span><span class="n">distr</span> <span class="n">random</span>
+</pre></div>
+</div>
+<p>We select to use the <code class="docutils literal notranslate"><span class="pre">SpinTaylorT4</span></code> approximant and begin the waveforms at 10.0Hz. Here we taper the injection at the start and end of the injection. The command line options will be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">waveform</span> <span class="n">SpinTaylorT4threePointFivePN</span> <span class="o">--</span><span class="n">f</span><span class="o">-</span><span class="n">lower</span> <span class="mi">10</span> <span class="o">--</span><span class="n">taper</span><span class="o">-</span><span class="n">injection</span> <span class="n">startend</span> <span class="o">--</span><span class="n">band</span><span class="o">-</span><span class="k">pass</span><span class="o">-</span><span class="n">injection</span>
+</pre></div>
+</div>
+<p>Now we can combine all the options above and run <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lalapps_inspinj</span> <span class="o">--</span><span class="n">time</span><span class="o">-</span><span class="n">interval</span> <span class="mi">86400</span> <span class="o">--</span><span class="n">time</span><span class="o">-</span><span class="n">step</span> <span class="mi">604800</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1126368017</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1130371217</span> <span class="o">--</span><span class="n">d</span><span class="o">-</span><span class="n">distr</span> <span class="n">volume</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">distance</span> <span class="mi">10000</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">distance</span> <span class="mi">40000</span> <span class="o">--</span><span class="n">m</span><span class="o">-</span><span class="n">distr</span> <span class="n">totalMass</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">mass1</span> <span class="mf">1.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">mass1</span> <span class="mf">2.0</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">mass2</span> <span class="mf">1.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">mass2</span> <span class="mf">2.0</span> <span class="o">--</span><span class="n">enable</span><span class="o">-</span><span class="n">spin</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">spin1</span> <span class="mf">0.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">spin1</span> <span class="mf">0.04</span> <span class="o">--</span><span class="nb">min</span><span class="o">-</span><span class="n">spin2</span> <span class="mf">0.0</span> <span class="o">--</span><span class="nb">max</span><span class="o">-</span><span class="n">spin2</span> <span class="mf">0.04</span> <span class="o">--</span><span class="n">i</span><span class="o">-</span><span class="n">distr</span> <span class="n">uniform</span> <span class="o">--</span><span class="n">l</span><span class="o">-</span><span class="n">distr</span> <span class="n">random</span> <span class="o">--</span><span class="n">waveform</span> <span class="n">SpinTaylorT4threePointFivePN</span> <span class="o">--</span><span class="n">f</span><span class="o">-</span><span class="n">lower</span> <span class="mi">10</span> <span class="o">--</span><span class="n">taper</span><span class="o">-</span><span class="n">injection</span> <span class="n">startend</span> <span class="o">--</span><span class="n">band</span><span class="o">-</span><span class="k">pass</span><span class="o">-</span><span class="n">injection</span>
+</pre></div>
+</div>
+<p>In this example <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> will write a LIGOLW XML file called <code class="docutils literal notranslate"><span class="pre">HL-INJECTIONS_1-1126368017-4003200.xml</span></code> that has a <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> table with the population of injections.</p>
+</section>
+<section id="run-pycbc-generate-hwinj-from-xml">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code></a><a class="headerlink" href="#run-pycbc-generate-hwinj-from-xml" title="Link to this heading"></a></h3>
+<p>Running <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> has written a LIGOLW XML file with a <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> table. Now we can run <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj_from_xml</span></code> to write single-column ASCII waveform files for the population of injections.</p>
+<p>There are just two command line options <code class="docutils literal notranslate"><span class="pre">--injection-file</span></code> (path to the LIGOLW XML file that <code class="docutils literal notranslate"><span class="pre">lalapps_inspinj</span></code> had written) and <code class="docutils literal notranslate"><span class="pre">--sample-rate</span></code> (the sample rate of the ASCII waveform files).</p>
+<p>In this example we set the sample rate to 16384Hz so on the command line do</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_hwinj_from_xml</span> <span class="o">--</span><span class="n">injection</span><span class="o">-</span><span class="n">file</span> <span class="n">HL</span><span class="o">-</span><span class="n">INJECTIONS_1</span><span class="o">-</span><span class="mi">1126368017</span><span class="o">-</span><span class="mf">4003200.</span><span class="n">xml</span> <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mi">16384</span>
+</pre></div>
+</div>
+<p>As this command runs it will generate a H1 and L1 ASCII waveform file for each row in the <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> table.</p>
+<p>The ASCII waveform files will be named <code class="docutils literal notranslate"><span class="pre">${IFO}-HWINJ_CBC_SIMULATION_ID_${SIMID}-${START}-${DURATION}.txt</span></code> where where <code class="docutils literal notranslate"><span class="pre">${SIMID}</span></code> is the <code class="docutils literal notranslate"><span class="pre">simulation_id</span></code> number for the <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> row, <code class="docutils literal notranslate"><span class="pre">${START}</span></code> is the GPS start time of the ASCII waveform file, and <code class="docutils literal notranslate"><span class="pre">${DURATION}</span></code> is the duration of the file in seconds.</p>
+<p>The user should inspect the waveforms. For a waveform plotting executable see section <a class="reference internal" href="#runpycbcplothwinj"><span class="std std-ref">Plot ASCII waveform files with pycbc_plot_hwinj</span></a>.</p>
+</section>
+</section>
+<section id="checks-for-the-hardware-injection-output">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Checks for the hardware injection output</a><a class="headerlink" href="#checks-for-the-hardware-injection-output" title="Link to this heading"></a></h2>
+<p>Here are some follow-up checks the user can do.</p>
+<section id="plot-ascii-waveform-files-with-pycbc-plot-hwinj">
+<span id="runpycbcplothwinj"></span><h3><a class="toc-backref" href="#id11" role="doc-backlink">Plot ASCII waveform files with <code class="docutils literal notranslate"><span class="pre">pycbc_plot_hwinj</span></code></a><a class="headerlink" href="#plot-ascii-waveform-files-with-pycbc-plot-hwinj" title="Link to this heading"></a></h3>
+<p>You can plot the ASCII waveform files with an X11 connection. It’s strongly recommended to use the X11 connection instead of saving a static image of the entire waveform. The X11 connection allows the user to zoom in and inspect the waveform more closely. A basic inspection would include checking the amplitude, the tapering, and the ringdown  of the waveforms are reasonable. For the <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> example above one would do</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pycbc_plot_hwinj --input-file hwinjcbc_${START}_H1.txt --output-file ${OUTPUT_PATH}
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">${OUTPUT_PATH}</span></code> is the path to the output plot.</p>
+<p>If you are using <code class="docutils literal notranslate"><span class="pre">ssh</span></code> to log into a cluster, you can provide the <code class="docutils literal notranslate"><span class="pre">-Y</span></code> option to open an X11 connection. For example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gsissh</span> <span class="o">-</span><span class="n">Y</span> <span class="n">ldas</span><span class="o">-</span><span class="n">pcdev1</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span>
+</pre></div>
+</div>
+</section>
+<section id="recover-software-injection-with-pycbc-inspiral">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Recover software injection with <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code></a><a class="headerlink" href="#recover-software-injection-with-pycbc-inspiral" title="Link to this heading"></a></h3>
+<p>The executable <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> will create an XML file with both a <code class="docutils literal notranslate"><span class="pre">sim_inspiral</span></code> and <code class="docutils literal notranslate"><span class="pre">sngl_inspiral</span></code> table. Therefore we can inject the exact waveform parameters and recover them with the exact template.</p>
+<p>The analogous software injection command for the example above would be</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>TMPLTBANK_FILE=hwinjcbc_${START}.xml.gz
+INSPIRAL_FILE=H1-INSPIRAL_PYCBC-${GPS_START_TIME}-$((${GPS_END_TIME}-${GPS_START_TIME})).hdf
+pycbc_inspiral --segment-end-pad 64  --segment-length 256 --segment-start-pad 64 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --psd-inverse-length 16 --pad-data 8 --sample-rate 4096 --low-frequency-cutoff 40 --strain-high-pass 30 --filter-inj-only --processing-scheme cpu --cluster-method template --approximant SEOBNRv2 --order 8 --snr-threshold 5.5 --chisq-bins 16 --channel-name ${CHANNEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --trig-start-time $(($GEOCENT_END_TIME - 2)) --trig-end-time $(($GEOCENT_END_TIME + 2)) --frame-type ${FRAME_TYPE} --injection-file ${TMPLTBANK_FILE}  --bank-file ${TMPLTBANK_FILE} --output ${INSPIRAL_FILE} --verbose
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">${START}</span></code> is the start of the injection. We kept the same PSD options (eg. <code class="docutils literal notranslate"><span class="pre">--psd-segment-length</span></code>, etc.), data, high-pass filter, and low-frequency-cutoff.</p>
+<p>You can print out the recovered SNR and other parameters as follows</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>echo `python -c &quot;import numpy;from pycbc.io.hdf import SingleDetTriggers; \
+h1_triggers=SingleDetTriggers(&#39;${INSPIRAL_FILE}&#39;, &#39;H1&#39;); \
+imax=numpy.argmax(h1_triggers.snr); max_snr=h1_triggers.snr[imax]; \
+time=h1_triggers.end_time[imax]; print(time, max_snr)&quot;`
+</pre></div>
+</div>
+</section>
+<section id="recover-ascii-file-injection-with-pycbc-inspiral">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Recover ASCII file injection with <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code></a><a class="headerlink" href="#recover-ascii-file-injection-with-pycbc-inspiral" title="Link to this heading"></a></h3>
+<p>There is an executable <code class="docutils literal notranslate"><span class="pre">pycbc_insert_frame_hwinj</span></code> that will read the single-column ASCII file and insert it into frame data. An example command is here</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>HWINJ_FILE=hwinjcbc_${START}_H1.txt
+pycbc_insert_frame_hwinj --frame-type ${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --gps-start-time $((${GPS_START_TIME} - 16)) --gps-end-time $((${GPS_END_TIME} + 16)) --pad-data 8 --strain-high-pass 30.0 --sample-rate 16384 --hwinj-file ${HWINJ_FILE} --hwinj-start-time ${START} --ifo H1 --output-file H1-HWINJ.gwf
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">${START}</span></code> is the start time of the injection.</p>
+<p>Then you can run pycbc on the output frame file <code class="docutils literal notranslate"><span class="pre">H1-HWINJ.gwf</span></code>.</p>
+<section id="how-to-query-the-segment-database">
+<span id="howtoquerysegdb"></span><h4><a class="toc-backref" href="#id14" role="doc-backlink">How to query the segment database</a><a class="headerlink" href="#how-to-query-the-segment-database" title="Link to this heading"></a></h4>
+<p>Here is an example on how to check if the detector was in science mode for a GPS time interval. To do this we query the segment database. A command line tool to do check the <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> example above is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ligolw_segment_query_dqsegdb</span> <span class="o">--</span><span class="n">query</span><span class="o">-</span><span class="n">segments</span> <span class="o">--</span><span class="n">segment</span><span class="o">-</span><span class="n">url</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">dqsegdb5</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124380361</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124382409</span> <span class="o">--</span><span class="n">include</span><span class="o">-</span><span class="n">segments</span> <span class="n">L1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">L1</span><span class="o">-</span><span class="n">SEGMENTS</span><span class="o">.</span><span class="n">xml</span>
+<span class="n">ligolw_segment_query_dqsegdb</span> <span class="o">--</span><span class="n">query</span><span class="o">-</span><span class="n">segments</span> <span class="o">--</span><span class="n">segment</span><span class="o">-</span><span class="n">url</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">dqsegdb5</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124380361</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124382409</span> <span class="o">--</span><span class="n">include</span><span class="o">-</span><span class="n">segments</span> <span class="n">H1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">file</span> <span class="n">H1</span><span class="o">-</span><span class="n">SEGMENTS</span><span class="o">.</span><span class="n">xml</span>
+</pre></div>
+</div>
+<p>This should write two XML files <code class="docutils literal notranslate"><span class="pre">L1-SEGMENTS.xml</span></code> and another <code class="docutils literal notranslate"><span class="pre">H1-SEGMENTS.xml</span></code>. You can check the <code class="docutils literal notranslate"><span class="pre">segment</span></code> table to see if the detector was in science mode for this time. A command line tool that helps is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ligolw_print</span> <span class="o">--</span><span class="n">table</span> <span class="n">segment</span> <span class="o">--</span><span class="n">column</span> <span class="n">start_time</span> <span class="o">--</span><span class="n">column</span> <span class="n">end_time</span> <span class="n">L1</span><span class="o">-</span><span class="n">SEGMENTS</span><span class="o">.</span><span class="n">xml</span>
+<span class="n">ligolw_print</span> <span class="o">--</span><span class="n">table</span> <span class="n">segment</span> <span class="o">--</span><span class="n">column</span> <span class="n">start_time</span> <span class="o">--</span><span class="n">column</span> <span class="n">end_time</span> <span class="n">H1</span><span class="o">-</span><span class="n">SEGMENTS</span><span class="o">.</span><span class="n">xml</span>
+</pre></div>
+</div>
+<p>The output should be <code class="docutils literal notranslate"><span class="pre">1124380361,1124382409</span></code> for both <code class="docutils literal notranslate"><span class="pre">ligolw_print</span></code> commands. This tells us that the detector was in science mode for the entire time since there is one segment that is the equal to the interval of <code class="docutils literal notranslate"><span class="pre">--gps-start-time</span></code> to <code class="docutils literal notranslate"><span class="pre">--gps-end-time</span></code>.</p>
+<p><strong>Do not assume that the segment databse URL and science-mode segment names are the same as in this section. These values are correct for this example.</strong></p>
+</section>
+<section id="how-to-query-the-ldr-server">
+<span id="howtoqueryldr"></span><h4><a class="toc-backref" href="#id15" role="doc-backlink">How to query the LDR server</a><a class="headerlink" href="#how-to-query-the-ldr-server" title="Link to this heading"></a></h4>
+<p>Here is an example on how to check if frame files exist for a GPS time interval. To do this we query the LDR server. A command line tool to do check the <code class="docutils literal notranslate"><span class="pre">pycbc_generate_hwinj</span></code> example above is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gw_data_find</span> <span class="o">--</span><span class="n">observatory</span> <span class="n">L</span> <span class="o">--</span><span class="nb">type</span> <span class="n">L1_RDS</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124380361</span>  <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124382409</span> <span class="o">--</span><span class="n">url</span><span class="o">-</span><span class="nb">type</span> <span class="n">file</span> <span class="o">--</span><span class="n">gaps</span>
+<span class="n">gw_data_find</span> <span class="o">--</span><span class="n">observatory</span> <span class="n">H</span> <span class="o">--</span><span class="nb">type</span> <span class="n">H1_RDS</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124380361</span>  <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1124382409</span> <span class="o">--</span><span class="n">url</span><span class="o">-</span><span class="nb">type</span> <span class="n">file</span> <span class="o">--</span><span class="n">gaps</span>
+</pre></div>
+</div>
+<p>A list of frame files will be print to your terminal if they are accessible. If <code class="docutils literal notranslate"><span class="pre">Missing</span> <span class="pre">segments</span></code> is printed, then you will not be able to access all the frame files.</p>
+<p><strong>Do not assume that the frame type and channel name are the same as in this section. These values are correct for this example.</strong></p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tmpltbank.html" class="btn btn-neutral float-left" title="PyCBC template bank generation documentation (pycbc.tmpltbank)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="banksim.html" class="btn btn-neutral float-right" title="Calculating the Effectualness (Fitting Factor) of Template Banks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

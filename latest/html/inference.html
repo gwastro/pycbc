@@ -1,0 +1,1845 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyCBC inference documentation (pycbc.inference) &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Running on an analytic distribution" href="inference/examples/analytic.html" />
+    <link rel="prev" title="The ranking statistic used in PyCBC searches" href="searches/ranking_statistic.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-the-model">Configuring the model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-the-sampler">Configuring the sampler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-the-prior">Configuring the prior</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#static-parameters">Static parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setting-data">Setting data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-configuration-settings">Advanced configuration settings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#waveform-transforms">Waveform transforms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calibration-parameters">Calibration parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#constraints">Constraints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/examples/generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-the-posteriors">Visualizing the Posteriors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="inference/viz.html">Plotting the posteriors (<code class="docutils literal notranslate"><span class="pre">pycbc_inference_plot_posterior</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/viz.html#making-a-movie-pycbc-inference-plot-movie">Making a movie (<code class="docutils literal notranslate"><span class="pre">pycbc_inference_plot_movie</span></code>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#workflows">Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="workflow/pycbc_make_inference_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_workflow</span></code>: A parameter estimation workflow generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="workflow/pycbc_make_inference_inj_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_inj_workflow</span></code>: A parameter estimation workflow generator for injections</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#for-developers">For Developers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="inference/sampler_api.html">Sampler API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inference/io.html">Inference IO</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-inference-documentation-pycbc-inference">
+<span id="inference"></span><h1>PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)<a class="headerlink" href="#pycbc-inference-documentation-pycbc-inference" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This page gives details on how to use the various parameter estimation
+executables and modules available in PyCBC. The <code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code> subpackage
+contains classes and functions for evaluating probability distributions,
+likelihoods, and running Bayesian samplers.</p>
+</section>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The executable <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> is designed to sample the parameter space
+and save the samples in an HDF file. A high-level description of the
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> algorithm is</p>
+<ol class="arabic">
+<li><p>Read priors from a configuration file.</p></li>
+<li><p>Setup the model to use. If the model uses data, then:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Read gravitational-wave strain from a gravitational-wave model or use
+recolored fake strain.</p></li>
+<li><p>Estimate a PSD.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Run a sampler to estimate the posterior distribution of the model.</p></li>
+<li><p>Write the samples and metadata to an HDF file.</p></li>
+</ol>
+<p>The model, data, sampler, parameters to vary and their priors are specified in
+one or more configuration files, which are passed to the program using the
+<code class="docutils literal notranslate"><span class="pre">--config-file</span></code> option. Other command-line options determine what
+parallelization settings to use. For a full listing of all options run
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference</span> <span class="pre">--help</span></code>. Below, we give details on how to set up a
+configuration file and provide examples of how to run <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>.</p>
+</section>
+<section id="configuring-the-model-sampler-priors-and-data">
+<h2>Configuring the model, sampler, priors, and data<a class="headerlink" href="#configuring-the-model-sampler-priors-and-data" title="Link to this heading"></a></h2>
+<p>The configuration file(s) uses <a class="reference internal" href="pycbc.workflow.html#pycbc.workflow.configuration.WorkflowConfigParser" title="pycbc.workflow.configuration.WorkflowConfigParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkflowConfigParser</span></code></a> syntax.  The required
+sections are: <code class="docutils literal notranslate"><span class="pre">[model]</span></code>, <code class="docutils literal notranslate"><span class="pre">[sampler]</span></code>, and <code class="docutils literal notranslate"><span class="pre">[variable_params]</span></code>.  In
+addition, multiple <code class="docutils literal notranslate"><span class="pre">[prior]</span></code> sections must be provided that define the prior
+distribution to use for the parameters in <code class="docutils literal notranslate"><span class="pre">[variable_params]</span></code>. If a model
+uses data a <code class="docutils literal notranslate"><span class="pre">[data]</span></code> section must also be provided.</p>
+<p>These sections may be split up over multiple files. In that case, all of the
+files should be provided as space-separated arguments to the <code class="docutils literal notranslate"><span class="pre">--config-file</span></code>.
+Providing multiple files is equivalent to providing a single file with
+everything across the files combined. If the same section is specified in
+multiple files, the all of the options will be combined.</p>
+<p>Configuration files allow for referencing values in other sections using the
+syntax <code class="docutils literal notranslate"><span class="pre">${section|option}</span></code>. See the examples below for an example of this.
+When providing multiple configuration files, sections in other files may be
+referenced, since in the multiple files are combined into a single file in
+memory when the files are loaded.</p>
+<section id="configuring-the-model">
+<h3>Configuring the model<a class="headerlink" href="#configuring-the-model" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="inference/models.html#models-detailed"><span class="std std-ref">explanation of common likelihood models</span></a></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">[model]</span></code> section sets up what model to use for the analysis. At minimum,
+a <code class="docutils literal notranslate"><span class="pre">name</span></code> argument must be provided, specifying which model to use. For
+example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">gaussian_noise</span>
+</pre></div>
+</div>
+<p>In this case, the <a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a> model would be used. (Examples of using this
+model on a BBH injection and on GW150914 are given below.) Other arguments to
+configure the model may also be set in this section. The recognized arguments
+depend on the model. The currently available models are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">List of Models</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Name</p></th>
+<th class="head"><p class="sd-card-text">Class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'brute_lisa_sky_modes_marginalize'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.brute_marg.BruteLISASkyModesMarginalize" title="pycbc.inference.models.brute_marg.BruteLISASkyModesMarginalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.brute_marg.BruteLISASkyModesMarginalize</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'brute_parallel_gaussian_marginalize'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.brute_marg.BruteParallelGaussianMarginalize" title="pycbc.inference.models.brute_marg.BruteParallelGaussianMarginalize"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.brute_marg.BruteParallelGaussianMarginalize</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'gated_gaussian_margpol'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol" title="pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gated_gaussian_noise.GatedGaussianMargPol</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'gated_gaussian_noise'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise" title="pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gated_gaussian_noise.GatedGaussianNoise</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'gaussian_noise'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.gaussian_noise.GaussianNoise</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'hierarchical'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel" title="pycbc.inference.models.hierarchical.HierarchicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.HierarchicalModel</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'joint_primary_marginalized'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel" title="pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.JointPrimaryMarginalizedModel</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_hmpolphase'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_phase'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_polarization'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'marginalized_time'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.marginalized_gaussian_noise.MarginalizedTime</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'multi_signal'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.hierarchical.MultiSignalModel" title="pycbc.inference.models.hierarchical.MultiSignalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.hierarchical.MultiSignalModel</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'relative'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.Relative</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'relative_time'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTime" title="pycbc.inference.models.relbin.RelativeTime"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.RelativeTime</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'relative_time_dom'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTimeDom" title="pycbc.inference.models.relbin.RelativeTimeDom"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.relbin.RelativeTimeDom</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'single_template'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate" title="pycbc.inference.models.single_template.SingleTemplate"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.single_template.SingleTemplate</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'test_eggbox'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.analytic.TestEggbox" title="pycbc.inference.models.analytic.TestEggbox"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestEggbox</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'test_normal'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.analytic.TestNormal" title="pycbc.inference.models.analytic.TestNormal"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestNormal</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'test_posterior'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.analytic.TestPosterior" title="pycbc.inference.models.analytic.TestPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestPosterior</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'test_prior'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.analytic.TestPrior" title="pycbc.inference.models.analytic.TestPrior"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestPrior</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'test_rosenbrock'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.analytic.TestRosenbrock" title="pycbc.inference.models.analytic.TestRosenbrock"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestRosenbrock</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'test_volcano'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.analytic.TestVolcano" title="pycbc.inference.models.analytic.TestVolcano"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.models.analytic.TestVolcano</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details><p>Refer to the models’ <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to see what configuration arguments
+are available.</p>
+<p>Any model name that starts with <code class="docutils literal notranslate"><span class="pre">test_</span></code> is an analytic test distribution that
+requires no data or waveform generation. See the section below on running on an
+analytic distribution for more details.</p>
+</section>
+<section id="configuring-the-sampler">
+<h3>Configuring the sampler<a class="headerlink" href="#configuring-the-sampler" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="inference/examples/sampler_platter.html#inference-example-samplers"><span class="std std-ref">example of trying different samplers</span></a></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">[sampler]</span></code> section sets up what sampler to use for the analysis. As
+with the <code class="docutils literal notranslate"><span class="pre">[model]</span></code> section, a <code class="docutils literal notranslate"><span class="pre">name</span></code> must be provided to specify which
+sampler to use. The currently available samplers are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">List of Supported Samplers</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Name</p></th>
+<th class="head"><p class="sd-card-text">Class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cpnest'</span></code></p></td>
+<td><p class="sd-card-text"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.cpnest.CPNestSampler</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dummy'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" title="pycbc.inference.sampler.dummy.DummySampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.dummy.DummySampler</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dynesty'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler" title="pycbc.inference.sampler.dynesty.DynestySampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.dynesty.DynestySampler</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'emcee'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.emcee.EmceeEnsembleSampler</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'emcee_pt'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.emcee_pt.EmceePTSampler" title="pycbc.inference.sampler.emcee_pt.EmceePTSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.emcee_pt.EmceePTSampler</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'epsie'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler" title="pycbc.inference.sampler.epsie.EpsieSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.epsie.EpsieSampler</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'games'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler" title="pycbc.inference.sampler.games.GameSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.games.GameSampler</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'multinest'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.multinest.MultinestSampler" title="pycbc.inference.sampler.multinest.MultinestSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.multinest.MultinestSampler</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'nessai'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler" title="pycbc.inference.sampler.nessai.NessaiSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.nessai.NessaiSampler</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'ptemcee'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler" title="pycbc.inference.sampler.ptemcee.PTEmceeSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.ptemcee.PTEmceeSampler</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'refine'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler" title="pycbc.inference.sampler.refine.RefineSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.refine.RefineSampler</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'snowline'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.snowline.SnowlineSampler" title="pycbc.inference.sampler.snowline.SnowlineSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.snowline.SnowlineSampler</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'ultranest'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler" title="pycbc.inference.sampler.ultranest.UltranestSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.sampler.ultranest.UltranestSampler</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details><p>Configuration options for the sampler should also be specified in the
+<code class="docutils literal notranslate"><span class="pre">[sampler]</span></code> section. For example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">emcee</span>
+<span class="na">nwalkers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5000</span>
+<span class="na">niterations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+<span class="na">checkpoint-interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+</pre></div>
+</div>
+<p>This would tell <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> to run the
+<a class="reference internal" href="pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" title="pycbc.inference.sampler.emcee.EmceeEnsembleSampler"><code class="xref py py-class docutils literal notranslate"><span class="pre">EmceeEnsembleSampler</span></code></a>
+with 5000 walkers for 1000 iterations, checkpointing every 100th iteration.
+Refer to the samplers’ <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to see what configuration options
+are available.</p>
+<p>Burn-in tests may also be configured for MCMC samplers in the config file. The
+options for the burn-in should be placed in <code class="docutils literal notranslate"><span class="pre">[sampler-burn_in]</span></code>. At minimum,
+a <code class="docutils literal notranslate"><span class="pre">burn-in-test</span></code> argument must be given in this section. This argument
+specifies which test(s) to apply. Multiple tests may be combined using standard
+python logic operators. For example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler-burn_in]</span>
+<span class="na">burn-in-test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nacl &amp; max_posterior</span>
+</pre></div>
+</div>
+<p>In this case, the sampler would be considered to be burned in when both the
+<code class="docutils literal notranslate"><span class="pre">nacl</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">max_posterior</span></code> tests were satisfied. Setting this to <code class="docutils literal notranslate"><span class="pre">nacl</span> <span class="pre">|</span>
+<span class="pre">max_postrior</span></code> would instead consider the sampler to be burned in when either
+the <code class="docutils literal notranslate"><span class="pre">nacl</span></code> <em>or</em> <code class="docutils literal notranslate"><span class="pre">max_posterior</span></code> tests were satisfied. For more information
+on what tests are available, see the <a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.burn_in" title="pycbc.inference.burn_in"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.inference.burn_in</span></code></a> module.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Thinning samples (MCMC only)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">The default behavior for the MCMC samplers (<code class="docutils literal notranslate"><span class="pre">emcee</span></code>, <code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code>) is to save
+every iteration of the Markov chains to the output file. This can quickly lead
+to very large files. For example, a BBH analysis (~15 parameters) with 200
+walkers, 20 temperatures may take ~50 000 iterations to acquire ~5000
+independent samples. This will lead to a file that is ~ 50 000 iterations x 200
+walkers x 20 temperatures x 15 parameters x 8 bytes ~ 20GB.  Quieter signals
+can take an order of magnitude more iterations to converge, leading to O(100GB)
+files. Clearly, since we only obtain 5000 independent samples from such a run,
+the vast majority of these samples are of little interest.</p>
+<p class="sd-card-text">To prevent large file size growth, samples may be thinned before they are
+written to disk. Two thinning options are available, both of which are set in
+the <code class="docutils literal notranslate"><span class="pre">[sampler]</span></code> section of the configuration file. They are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">thin-interval</span></code>: This will thin the samples by the given integer before
+writing the samples to disk. File sizes can still grow unbounded, but at
+a slower rate. The interval must be less than the checkpoint interval.</p></li>
+<li><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">max-samples-per-chain</span></code>: This will cap the maximum number of samples per
+walker and per temperature to the given integer. This ensures that file
+sizes never exceed ~ <code class="docutils literal notranslate"><span class="pre">max-samples-per-chain</span></code> x <code class="docutils literal notranslate"><span class="pre">nwalkers</span></code> x <code class="docutils literal notranslate"><span class="pre">ntemps</span></code>
+x <code class="docutils literal notranslate"><span class="pre">nparameters</span></code> x 8 bytes. Once the limit is reached,
+samples will be thinned on disk, and new samples will be thinned to match.
+The thinning interval will grow with longer runs as a result. To ensure
+that enough samples exist to determine burn in and to measure an
+autocorrelation length, <code class="docutils literal notranslate"><span class="pre">max-samples-per-chain</span></code> must be greater than
+or equal to 100.</p></li>
+</ul>
+</div></blockquote>
+<p class="sd-card-text">The thinned interval that was used for thinning samples is saved to the output
+file’s <code class="docutils literal notranslate"><span class="pre">thinned_by</span></code> attribute (stored in the HDF file’s <code class="docutils literal notranslate"><span class="pre">.attrs</span></code>).  Note
+that this is not the autocorrelation length (ACL), which is the amount that the
+samples need to be further thinned to obtain independent samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="sd-card-text">In the output file creates by the MCMC samplers, we adopt the convention
+that “iteration” means iteration of the sampler, not index of the samples.
+For example, if a burn in test is used, <code class="docutils literal notranslate"><span class="pre">burn_in_iteration</span></code> will be
+stored to the <code class="docutils literal notranslate"><span class="pre">sampler_info</span></code> group in the output file. This gives the
+iteration of the sampler at which burn in occurred, not the sample on disk.
+To determine  which samples an iteration corresponds to in the file, divide
+iteration by <code class="docutils literal notranslate"><span class="pre">thinned_by</span></code>.</p>
+<p class="sd-card-text">Likewise, we adopt the convention that autocorrelation <strong>length</strong> (ACL) is
+the autocorrelation length of the thinned samples (the number of samples on
+disk that you need to skip to get independent samples) whereas
+autocorrelation <strong>time</strong> (ACT) is the autocorrelation length in terms of
+iteration (it is the number of <strong>iterations</strong> that you need to skip to get
+independent samples); i.e., <code class="docutils literal notranslate"><span class="pre">ACT</span> <span class="pre">=</span> <span class="pre">thinned_by</span> <span class="pre">x</span> <span class="pre">ACL</span></code>. The ACT is (up to
+measurement resolution) independent of the thinning used, and thus is
+useful for comparing the performance of the sampler.</p>
+</div>
+</div>
+</details></section>
+<section id="configuring-the-prior">
+<h3>Configuring the prior<a class="headerlink" href="#configuring-the-prior" title="Link to this heading"></a></h3>
+<p>What parameters to vary to obtain a posterior distribution are determined by
+<code class="docutils literal notranslate"><span class="pre">[variable_params]</span></code> section. For example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+<span class="na">x</span><span class="w"> </span><span class="o">=</span>
+<span class="na">y</span><span class="w"> </span><span class="o">=</span>
+</pre></div>
+</div>
+<p>This would tell <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> to sample a posterior over two parameters
+called <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p>
+<p>A prior must be provided for every parameter in <code class="docutils literal notranslate"><span class="pre">[variable_params]</span></code>. This
+is done by adding sections named <code class="docutils literal notranslate"><span class="pre">[prior-{param}]</span></code> where <code class="docutils literal notranslate"><span class="pre">{param}</span></code> is the
+name of the parameter the prior is for. For example, to provide a prior for the
+<code class="docutils literal notranslate"><span class="pre">x</span></code> parameter in the above example, you would need to add a section called
+<code class="docutils literal notranslate"><span class="pre">[prior-x]</span></code>. If the prior couples more than one parameter together in a joint
+distribution, the parameters should be provided as a <code class="docutils literal notranslate"><span class="pre">+</span></code> separated list,
+e.g., <code class="docutils literal notranslate"><span class="pre">[prior-x+y+z]</span></code>.</p>
+<p>The prior sections specify what distribution to use for the parameter’s prior,
+along with any settings for that distribution.  Similar to the <code class="docutils literal notranslate"><span class="pre">model</span></code> and
+<code class="docutils literal notranslate"><span class="pre">sampler</span></code> sections, each <code class="docutils literal notranslate"><span class="pre">prior</span></code> section must have a <code class="docutils literal notranslate"><span class="pre">name</span></code> argument that
+identifies the distribution to use. Distributions are defined in the
+<a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions" title="pycbc.distributions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.distributions</span></code></a> module. The currently available distributions
+are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">List of Statistical Distributions</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Name</p></th>
+<th class="head"><p class="sd-card-text">Class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'arbitrary'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.arbitrary.Arbitrary" title="pycbc.distributions.arbitrary.Arbitrary"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.arbitrary.Arbitrary</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cos_angle'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.angular.CosAngle" title="pycbc.distributions.angular.CosAngle"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.angular.CosAngle</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'external'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.external.External" title="pycbc.distributions.external.External"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.external.External</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'external_func_fromfile'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.external.DistributionFunctionFromFile" title="pycbc.distributions.external.DistributionFunctionFromFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.external.DistributionFunctionFromFile</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'fisher_sky'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky" title="pycbc.distributions.sky_location.FisherSky"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.sky_location.FisherSky</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'fixed_samples'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples" title="pycbc.distributions.fixedsamples.FixedSamples"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.fixedsamples.FixedSamples</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'fromfile'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.arbitrary.FromFile" title="pycbc.distributions.arbitrary.FromFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.arbitrary.FromFile</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'gaussian'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.gaussian.Gaussian" title="pycbc.distributions.gaussian.Gaussian"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.gaussian.Gaussian</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'healpix_sky'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.sky_location.HealpixSky" title="pycbc.distributions.sky_location.HealpixSky"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.sky_location.HealpixSky</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'independent_chip_chieff'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.spins.IndependentChiPChiEff" title="pycbc.distributions.spins.IndependentChiPChiEff"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.spins.IndependentChiPChiEff</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mchirp_from_uniform_mass1_mass2'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.mass.MchirpfromUniformMass1Mass2" title="pycbc.distributions.mass.MchirpfromUniformMass1Mass2"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.mass.MchirpfromUniformMass1Mass2</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'q_from_uniform_mass1_mass2'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.mass.QfromUniformMass1Mass2" title="pycbc.distributions.mass.QfromUniformMass1Mass2"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.mass.QfromUniformMass1Mass2</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'sin_angle'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.angular.SinAngle" title="pycbc.distributions.angular.SinAngle"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.angular.SinAngle</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.uniform.Uniform" title="pycbc.distributions.uniform.Uniform"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.uniform.Uniform</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_angle'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.angular.UniformAngle" title="pycbc.distributions.angular.UniformAngle"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.angular.UniformAngle</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_disk_sky'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.sky_location.UniformDiskSky" title="pycbc.distributions.sky_location.UniformDiskSky"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.sky_location.UniformDiskSky</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_f0_tau'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.qnm.UniformF0Tau" title="pycbc.distributions.qnm.UniformF0Tau"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.qnm.UniformF0Tau</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_log10'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.uniform_log.UniformLog10" title="pycbc.distributions.uniform_log.UniformLog10"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.uniform_log.UniformLog10</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_power_law'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.power_law.UniformPowerLaw" title="pycbc.distributions.power_law.UniformPowerLaw"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.power_law.UniformPowerLaw</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_radius'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.power_law.UniformRadius" title="pycbc.distributions.power_law.UniformRadius"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.power_law.UniformRadius</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_sky'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.sky_location.UniformSky" title="pycbc.distributions.sky_location.UniformSky"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.sky_location.UniformSky</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'uniform_solidangle'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle" title="pycbc.distributions.angular.UniformSolidAngle"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.distributions.angular.UniformSolidAngle</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details></section>
+<section id="static-parameters">
+<h3>Static parameters<a class="headerlink" href="#static-parameters" title="Link to this heading"></a></h3>
+<p>A <code class="docutils literal notranslate"><span class="pre">[static_params]</span></code> section may be provided to list any parameters that
+will remain fixed throughout the run. For example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[static_params]</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomPv2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18</span>
+</pre></div>
+</div>
+<p>In the example above, we choose the waveform model ‘IMRPhenomPv2’. PyCBC comes
+with access to waveforms provided by the lalsimulation package. If you’d like
+to use a custom waveform outside of what PyCBC currently supports,
+see <a class="reference internal" href="waveform_plugin.html#waveform-plugin"><span class="std std-ref">documentation on creating a plugin for PyCBC</span></a></p>
+</section>
+<section id="setting-data">
+<h3>Setting data<a class="headerlink" href="#setting-data" title="Link to this heading"></a></h3>
+<p>Many models, such as the <a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a> model, require data to be provided. To
+do so, a <code class="docutils literal notranslate"><span class="pre">[data]</span></code> section must be included that provides information about
+what data to load, and how to condition it.</p>
+<p>The type of data to be loaded depends on the model. For example, if you are
+using the <a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a> or <a class="reference internal" href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">MarginalizedPhaseGaussianNoise</span></code></a> models (the
+typical case), one will need to load gravitational-wave data.  This is
+accomplished using tools provided in the <a class="reference internal" href="pycbc.strain.html#module-pycbc.strain" title="pycbc.strain"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.strain</span></code></a> module. The
+full set of options are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Options for reading / configuring GW data</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Name</p></th>
+<th class="head"><p class="sd-card-text">Syntax</p></th>
+<th class="head"><p class="sd-card-text">Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">instruments</span></code></p></td>
+<td><p class="sd-card-text">INSTRUMENTS [INSTRUMENTS …]</p></td>
+<td><p class="sd-card-text">Instruments to analyze, eg. H1 L1.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">trigger-time</span></code></p></td>
+<td><p class="sd-card-text">TRIGGER_TIME</p></td>
+<td><p class="sd-card-text">Reference GPS time (at geocenter) from which the
+(anlaysis|psd)-(start|end)-time options are measured.
+The integer seconds will be used. Default is 0; i.e.,
+if not provided, the analysis and psd times should be
+in GPS seconds.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analysis-start-time</span></code></p></td>
+<td><p class="sd-card-text">IFO:TIME [IFO:TIME …]</p></td>
+<td><p class="sd-card-text">The start time to use for the analysis, measured with
+respect to the trigger-time. If psd-inverse-length is
+provided, the given start time will be padded by half
+that length to account for wrap-around effects.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analysis-end-time</span></code></p></td>
+<td><p class="sd-card-text">IFO:TIME [IFO:TIME …]</p></td>
+<td><p class="sd-card-text">The end time to use for the analysis, measured with
+respect to the trigger-time. If psd-inverse-length is
+provided, the given end time will be padded by half
+that length to account for wrap-around effects.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-start-time</span></code></p></td>
+<td><p class="sd-card-text">IFO:TIME [IFO:TIME …]</p></td>
+<td><p class="sd-card-text">Start time to use for PSD estimation, measured with
+respect to the trigger-time.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-end-time</span></code></p></td>
+<td><p class="sd-card-text">IFO:TIME [IFO:TIME …]</p></td>
+<td><p class="sd-card-text">End time to use for PSD estimation, measured with
+respect to the trigger-time.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">data-conditioning-low-freq</span></code></p></td>
+<td><p class="sd-card-text">IFO:FLOW [IFO:FLOW …]</p></td>
+<td><p class="sd-card-text">Low frequency cutoff of the data. Needed for PSD
+estimation and when creating fake strain. If not
+provided, will use the model’s low-frequency-cutoff.</p></td>
+</tr>
+<tr class="row-odd"><td colspan="3"><p class="sd-card-text">Options to select the method of PSD generation:
+The options <code class="docutils literal notranslate"><span class="pre">psd-model</span></code>, <code class="docutils literal notranslate"><span class="pre">psd-file</span></code>, <code class="docutils literal notranslate"><span class="pre">asd-file</span></code>, and <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code> are
+mutually exclusive.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-model</span></code></p></td>
+<td><p class="sd-card-text">IFO:MODEL [IFO:MODEL …]</p></td>
+<td><p class="sd-card-text">Get PSD from given analytical model. Choose from any
+available PSD model.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-extra-args</span></code></p></td>
+<td><p class="sd-card-text">DETECTOR:PARAM:VALUE
+[DETECTOR:PARAM:VALUE …]</p></td>
+<td><p class="sd-card-text">(optional) Extra arguments passed to the PSD models.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-file</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">Get PSD using given PSD ASCII file</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">asd-file</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">Get PSD using given ASD ASCII file</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">Measure PSD from the data, using given average method.
+Choose from mean, median or median-mean.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-segment-length</span></code></p></td>
+<td><p class="sd-card-text">IFO:LENGTH [IFO:LENGTH …]</p></td>
+<td><p class="sd-card-text">(Required for <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>) The segment length for
+PSD estimation (s)</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-segment-stride</span></code></p></td>
+<td><p class="sd-card-text">IFO:STRIDE [IFO:STRIDE …]</p></td>
+<td><p class="sd-card-text">(Required for <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>) The separation between
+consecutive segments (s)</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-num-segments</span></code></p></td>
+<td><p class="sd-card-text">IFO:NUM [IFO:NUM …]</p></td>
+<td><p class="sd-card-text">(Optional, used only with <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>). If given
+PSDs will be estimated using only this number of
+segments. If more data is given than needed to make
+this number of segments than excess data will not be
+used in the PSD estimate. If not enough data is given
+the code will fail.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-inverse-length</span></code></p></td>
+<td><p class="sd-card-text">IFO:LENGTH [IFO:LENGTH …]</p></td>
+<td><p class="sd-card-text">(Optional) The maximum length of the impulse response
+of the overwhitening filter (s)</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">invpsd-trunc-method</span></code></p></td>
+<td><p class="sd-card-text">{hann}</p></td>
+<td><p class="sd-card-text">(Optional) What truncation method to use when applying
+psd-inverse-length. If not provided, a hard truncation
+will be used.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-output</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">(Optional) Write PSD to specified file</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-segment</span></code></p></td>
+<td><p class="sd-card-text">SECONDS</p></td>
+<td><p class="sd-card-text">Length of segment when calculating the PSD
+variability.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-short-segment</span></code></p></td>
+<td><p class="sd-card-text">SECONDS</p></td>
+<td><p class="sd-card-text">Length of short segment for outliers removal in PSD
+variability calculation.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-long-segment</span></code></p></td>
+<td><p class="sd-card-text">SECONDS</p></td>
+<td><p class="sd-card-text">Length of long segment when calculating the PSD
+variability.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-psd-duration</span></code></p></td>
+<td><p class="sd-card-text">SECONDS</p></td>
+<td><p class="sd-card-text">Duration of short segments for PSD estimation.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-psd-stride</span></code></p></td>
+<td><p class="sd-card-text">SECONDS</p></td>
+<td><p class="sd-card-text">Separation between PSD estimation segments.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-low-freq</span></code></p></td>
+<td><p class="sd-card-text">HERTZ</p></td>
+<td><p class="sd-card-text">Minimum frequency to consider in strain bandpass.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psdvar-high-freq</span></code></p></td>
+<td><p class="sd-card-text">HERTZ</p></td>
+<td><p class="sd-card-text">Maximum frequency to consider in strain bandpass.</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p class="sd-card-text">Options for obtaining h(t):
+These options are used for generating h(t) either by reading from a file
+or by generating it. This is only needed if the PSD is to be estimated
+from the data, ie. if the <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code> option is given. This group
+supports reading from multiple ifos simultaneously.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">strain-high-pass</span></code></p></td>
+<td><p class="sd-card-text">IFO:FREQUENCY [IFO:FREQUENCY …]</p></td>
+<td><p class="sd-card-text">High pass frequency</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">strain-low-pass</span></code></p></td>
+<td><p class="sd-card-text">IFO:FREQUENCY [IFO:FREQUENCY …]</p></td>
+<td><p class="sd-card-text">Low pass frequency</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">pad-data</span></code></p></td>
+<td><p class="sd-card-text">IFO:LENGTH [IFO:LENGTH …]</p></td>
+<td><p class="sd-card-text">Extra padding to remove highpass corruption (integer
+seconds, default 8)</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">taper-data</span></code></p></td>
+<td><p class="sd-card-text">IFO:LENGTH [IFO:LENGTH …]</p></td>
+<td><p class="sd-card-text">Taper ends of data to zero using the supplied length
+as a window (integer seconds)</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">sample-rate</span></code></p></td>
+<td><p class="sd-card-text">IFO:RATE [IFO:RATE …]</p></td>
+<td><p class="sd-card-text">The sample rate to use for h(t) generation (integer
+Hz).</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">channel-name</span></code></p></td>
+<td><p class="sd-card-text">IFO:CHANNEL [IFO:CHANNEL …]</p></td>
+<td><p class="sd-card-text">The channel containing the gravitational strain data</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">frame-cache</span></code></p></td>
+<td><p class="sd-card-text">IFO:FRAME_CACHE [IFO:FRAME_CACHE
+…]</p></td>
+<td><p class="sd-card-text">Cache file containing the frame locations.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">frame-files</span></code></p></td>
+<td><p class="sd-card-text">IFO:FRAME_FILES [IFO:FRAME_FILES
+…]</p></td>
+<td><p class="sd-card-text">list of frame files</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">hdf-store</span></code></p></td>
+<td><p class="sd-card-text">IFO:HDF_STORE_FILE
+[IFO:HDF_STORE_FILE …]</p></td>
+<td><p class="sd-card-text">Store of time series data in hdf format</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">frame-type</span></code></p></td>
+<td><p class="sd-card-text">IFO:FRAME_TYPE [IFO:FRAME_TYPE
+…]</p></td>
+<td><p class="sd-card-text">(optional) Replaces frame-files. Use datafind to get
+the needed frame file(s) of this type.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">frame-sieve</span></code></p></td>
+<td><p class="sd-card-text">IFO:FRAME_SIEVE [IFO:FRAME_SIEVE
+…]</p></td>
+<td><p class="sd-card-text">(optional), Only use frame files where the URL matches
+the regular expression given.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain</span></code></p></td>
+<td><p class="sd-card-text">IFO:CHOICE [IFO:CHOICE …]</p></td>
+<td><p class="sd-card-text">Name of model PSD for generating fake gaussian noise.
+Choose from any available PSD model, or <code class="docutils literal notranslate"><span class="pre">zeroNoise</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain-extra-args</span></code></p></td>
+<td><p class="sd-card-text">DETECTOR:PARAM:VALUE
+[DETECTOR:PARAM:VALUE …]</p></td>
+<td><p class="sd-card-text">(optional) Extra arguments passed to the PSD models.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain-seed</span></code></p></td>
+<td><p class="sd-card-text">IFO:SEED [IFO:SEED …]</p></td>
+<td><p class="sd-card-text">Seed value for the generation of fake colored gaussian
+noise</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain-from-file</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">File containing ASD for generating fake noise from it.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain-flow</span></code></p></td>
+<td><p class="sd-card-text">FAKE_STRAIN_FLOW [FAKE_STRAIN_FLOW
+…]</p></td>
+<td><p class="sd-card-text">Low frequency cutoff of the fake strain</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain-filter-duration</span></code></p></td>
+<td><p class="sd-card-text">FAKE_STRAIN_FILTER_DURATION
+[FAKE_STRAIN_FILTER_DURATION …]</p></td>
+<td><p class="sd-card-text">Duration in seconds of the fake data coloring filter</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">fake-strain-sample-rate</span></code></p></td>
+<td><p class="sd-card-text">FAKE_STRAIN_SAMPLE_RATE
+[FAKE_STRAIN_SAMPLE_RATE …]</p></td>
+<td><p class="sd-card-text">Sample rate of the fake data generation</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-file</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">(optional) Injection file containing parametersof CBC
+signals to be added to the strain
+<code class="docutils literal notranslate"><span class="pre">do-not</span></code>-inject-from-file
+If this options are given, the injections in
+injection-file or sgburst-injection-file are not added
+into the data. This can be used for debugging (ie. in
+minifollowups), or if using injections from frame
+files where you need to know injection parameters to
+allow the injection optimization settings.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">sgburst-injection-file</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">(optional) Injection file containing parametersof
+sine-Gaussian burst signals to add to the strain</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-scale-factor</span></code></p></td>
+<td><p class="sd-card-text">IFO:VAL [IFO:VAL …]</p></td>
+<td><p class="sd-card-text">Divide injections by this factor before adding to the
+strain data</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-sample-rate</span></code></p></td>
+<td><p class="sd-card-text">IFO:VAL [IFO:VAL …]</p></td>
+<td><p class="sd-card-text">Sample rate to use for injections (integer Hz).
+Typically similar to the strain data sample rate.If
+not provided, the strain sample rate will be used</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-f-ref</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">Reference frequency in Hz for creating CBC injections
+from an XML file</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-f-final</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">Override the f_final field of a CBC XML injection file
+(frequency in Hz)</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-channel-name</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">The channel containing the injection strain data</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-frame-type</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">We are going to add injections from frame files. This
+will use datafind to get the needed frame files of
+this type.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">injection-frame-files</span></code></p></td>
+<td><p class="sd-card-text">IFO:FRAME_FILES [IFO:FRAME_FILES
+…]</p></td>
+<td><p class="sd-card-text">We are going to add injections from frame files. This
+provides the list of frame files containing injection
+strain.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">gating-file</span></code></p></td>
+<td><p class="sd-card-text">IFO:FILE [IFO:FILE …]</p></td>
+<td><p class="sd-card-text">(optional) Text file of gating segments to apply.
+Format of each line (units s) : gps_time
+zeros_half_width pad_half_width</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">autogating-threshold</span></code></p></td>
+<td><p class="sd-card-text">IFO:SIGMA [IFO:SIGMA …]</p></td>
+<td><p class="sd-card-text">If given, find and gate glitches producing a deviation
+larger than SIGMA in the whitened strain time series</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">autogating-max-iterations</span></code></p></td>
+<td><p class="sd-card-text">SIGMA</p></td>
+<td><p class="sd-card-text">If given, iteratively apply autogating</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">autogating-cluster</span></code></p></td>
+<td><p class="sd-card-text">IFO:SECONDS [IFO:SECONDS …]</p></td>
+<td><p class="sd-card-text">Length of clustering window for detecting glitches for
+autogating.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">autogating-width</span></code></p></td>
+<td><p class="sd-card-text">IFO:SECONDS [IFO:SECONDS …]</p></td>
+<td><p class="sd-card-text">Half-width of the gating window.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">autogating-taper</span></code></p></td>
+<td><p class="sd-card-text">IFO:SECONDS [IFO:SECONDS …]</p></td>
+<td><p class="sd-card-text">Taper the strain before and after each gating window
+over a duration of SECONDS.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">autogating-pad</span></code></p></td>
+<td><p class="sd-card-text">IFO:SECONDS [IFO:SECONDS …]</p></td>
+<td><p class="sd-card-text">Ignore the given length of whitened strain at the ends
+of a segment, to avoid filters ringing.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">gating-method</span></code></p></td>
+<td><p class="sd-card-text">{hard,taper,paint}
+[{hard,taper,paint} …]</p></td>
+<td><p class="sd-card-text">Choose the method for gating. Default: <cite>taper</cite></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">normalize-strain</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">(optional) Divide frame data by constant.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">zpk-z</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">(optional) Zero-pole-gain (zpk) filter strain. A list
+of zeros for transfer function</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">zpk-p</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">(optional) Zero-pole-gain (zpk) filter strain. A list
+of poles for transfer function</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">zpk-k</span></code></p></td>
+<td><p class="sd-card-text">IFO:VALUE [IFO:VALUE …]</p></td>
+<td><p class="sd-card-text">(optional) Zero-pole-gain (zpk) filter strain.
+Transfer function gain</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p class="sd-card-text">Options for gating data:</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">gate</span></code></p></td>
+<td><p class="sd-card-text">IFO:CENTRALTIME:HALFDUR:TAPERDUR
+[IFO:CENTRALTIME:HALFDUR:TAPERDUR
+…]</p></td>
+<td><p class="sd-card-text">Apply one or more gates to the data before filtering.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">gate-overwhitened</span></code></p></td>
+<td></td>
+<td><p class="sd-card-text">Overwhiten data first, then apply the gates specified
+in <code class="docutils literal notranslate"><span class="pre">gate</span></code>. Overwhitening allows for sharper tapers to
+be used, since lines are not blurred.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">psd-gate</span></code></p></td>
+<td><p class="sd-card-text">IFO:CENTRALTIME:HALFDUR:TAPERDUR
+[IFO:CENTRALTIME:HALFDUR:TAPERDUR
+…]</p></td>
+<td><p class="sd-card-text">Apply one or more gates to the data used for computing
+the PSD. Gates are applied prior to FFT-ing the data
+for PSD estimation.</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p class="sd-card-text">Options for quering data quality (DQ):</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">dq-segment-name</span></code></p></td>
+<td><p class="sd-card-text">DQ_SEGMENT_NAME</p></td>
+<td><p class="sd-card-text">The status flag to query for data quality. Default is
+“DATA”.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">dq-source</span></code></p></td>
+<td><p class="sd-card-text">{any,GWOSC,dqsegdb}</p></td>
+<td><p class="sd-card-text">Where to look for DQ information. If “any” (the
+default) will first try GWOSC, then dqsegdb.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">dq-server</span></code></p></td>
+<td><p class="sd-card-text">DQ_SERVER</p></td>
+<td><p class="sd-card-text">The server to use for dqsegdb.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">veto-definer</span></code></p></td>
+<td><p class="sd-card-text">VETO_DEFINER</p></td>
+<td><p class="sd-card-text">Path to a veto definer file that defines groups of
+flags, which themselves define a set of DQ segments.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details><p>As indicated in the table, the <code class="docutils literal notranslate"><span class="pre">psd-model</span></code> and <code class="docutils literal notranslate"><span class="pre">fake-strain</span></code> options can
+accept an analytical PSD as an argument. The available PSD models are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Options for reading or estimating PSDs</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Name</p></th>
+<th class="head"><p class="sd-card-text">Function</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVBNSOptimizedSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087" title="pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVDesignSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVDesignSensitivityP1200087" title="pycbc.psd.analytical.AdVDesignSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVDesignSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVEarlyHighSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087" title="pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVEarlyLowSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087" title="pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVLateHighSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVLateHighSensitivityP1200087" title="pycbc.psd.analytical.AdVLateHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVLateHighSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVLateLowSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVLateLowSensitivityP1200087" title="pycbc.psd.analytical.AdVLateLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVLateLowSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVMidHighSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVMidHighSensitivityP1200087" title="pycbc.psd.analytical.AdVMidHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVMidHighSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVMidLowSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVMidLowSensitivityP1200087" title="pycbc.psd.analytical.AdVMidLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVMidLowSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVO3LowT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVO3LowT1800545" title="pycbc.psd.analytical.AdVO3LowT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVO3LowT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVO4IntermediateT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVO4IntermediateT1800545" title="pycbc.psd.analytical.AdVO4IntermediateT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVO4IntermediateT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdVO4T1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdVO4T1800545" title="pycbc.psd.analytical.AdVO4T1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVO4T1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">AdvVirgo</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.AdvVirgo" title="pycbc.psd.analytical.AdvVirgo"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdvVirgo()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">CosmicExplorerP1600143</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.CosmicExplorerP1600143" title="pycbc.psd.analytical.CosmicExplorerP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.CosmicExplorerP1600143()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">CosmicExplorerPessimisticP1600143</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.CosmicExplorerPessimisticP1600143" title="pycbc.psd.analytical.CosmicExplorerPessimisticP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.CosmicExplorerPessimisticP1600143()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">CosmicExplorerWidebandP1600143</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.CosmicExplorerWidebandP1600143" title="pycbc.psd.analytical.CosmicExplorerWidebandP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.CosmicExplorerWidebandP1600143()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">EinsteinTelescopeP1600143</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.EinsteinTelescopeP1600143" title="pycbc.psd.analytical.EinsteinTelescopeP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.EinsteinTelescopeP1600143()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">GEOHF</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.GEOHF" title="pycbc.psd.analytical.GEOHF"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.GEOHF()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">GEO</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.GEO" title="pycbc.psd.analytical.GEO"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.GEO()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRA128MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRA128MpcT1800545" title="pycbc.psd.analytical.KAGRA128MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRA128MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRA25MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRA25MpcT1800545" title="pycbc.psd.analytical.KAGRA25MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRA25MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRA80MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRA80MpcT1800545" title="pycbc.psd.analytical.KAGRA80MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRA80MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRADesignSensitivityT1600593</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRADesignSensitivityT1600593" title="pycbc.psd.analytical.KAGRADesignSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRADesignSensitivityT1600593()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRAEarlySensitivityT1600593</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRAEarlySensitivityT1600593" title="pycbc.psd.analytical.KAGRAEarlySensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRAEarlySensitivityT1600593()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRALateSensitivityT1600593</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRALateSensitivityT1600593" title="pycbc.psd.analytical.KAGRALateSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRALateSensitivityT1600593()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRAMidSensitivityT1600593</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRAMidSensitivityT1600593" title="pycbc.psd.analytical.KAGRAMidSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRAMidSensitivityT1600593()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRAOpeningSensitivityT1600593</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593" title="pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">KAGRA</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.KAGRA" title="pycbc.psd.analytical.KAGRA"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRA()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">TAMA</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.TAMA" title="pycbc.psd.analytical.TAMA"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.TAMA()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">Virgo</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.Virgo" title="pycbc.psd.analytical.Virgo"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.Virgo()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGO140MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGO140MpcT1800545" title="pycbc.psd.analytical.aLIGO140MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGO140MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGO175MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGO175MpcT1800545" title="pycbc.psd.analytical.aLIGO175MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGO175MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOAPlusDesignSensitivityT1800042</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042" title="pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOAdVO3LowT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO3LowT1800545" title="pycbc.psd.analytical.aLIGOAdVO3LowT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAdVO3LowT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOAdVO4IntermediateT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545" title="pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOAdVO4T1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO4T1800545" title="pycbc.psd.analytical.aLIGOAdVO4T1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAdVO4T1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOBHBH20DegGWINC</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOBHBH20DegGWINC" title="pycbc.psd.analytical.aLIGOBHBH20DegGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOBHBH20DegGWINC()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOBHBH20Deg</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOBHBH20Deg" title="pycbc.psd.analytical.aLIGOBHBH20Deg"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOBHBH20Deg()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOBNSOptimizedSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087" title="pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGODesignSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGODesignSensitivityP1200087" title="pycbc.psd.analytical.aLIGODesignSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGODesignSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGODesignSensitivityT1800044</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGODesignSensitivityT1800044" title="pycbc.psd.analytical.aLIGODesignSensitivityT1800044"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGODesignSensitivityT1800044()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOEarlyHighSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087" title="pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOEarlyLowSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087" title="pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOHighFrequencyGWINC</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOHighFrequencyGWINC" title="pycbc.psd.analytical.aLIGOHighFrequencyGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOHighFrequencyGWINC()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOHighFrequency</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOHighFrequency" title="pycbc.psd.analytical.aLIGOHighFrequency"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOHighFrequency()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOKAGRA128MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545" title="pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOKAGRA25MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545" title="pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOKAGRA80MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545" title="pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOLateHighSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087" title="pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOLateLowSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087" title="pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOMidHighSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087" title="pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOMidLowSensitivityP1200087</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087" title="pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGONSNSOptGWINC</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGONSNSOptGWINC" title="pycbc.psd.analytical.aLIGONSNSOptGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONSNSOptGWINC()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGONSNSOpt</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGONSNSOpt" title="pycbc.psd.analytical.aLIGONSNSOpt"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONSNSOpt()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGONoSRMHighPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMHighPower" title="pycbc.psd.analytical.aLIGONoSRMHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONoSRMHighPower()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGONoSRMLowPowerGWINC</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC" title="pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGONoSRMLowPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMLowPower" title="pycbc.psd.analytical.aLIGONoSRMLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONoSRMLowPower()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOO3LowT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOO3LowT1800545" title="pycbc.psd.analytical.aLIGOO3LowT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOO3LowT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumBHBH20Deg</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumBHBH20Deg" title="pycbc.psd.analytical.aLIGOQuantumBHBH20Deg"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumBHBH20Deg()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumHighFrequency</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumHighFrequency" title="pycbc.psd.analytical.aLIGOQuantumHighFrequency"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumHighFrequency()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumNSNSOpt</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNSNSOpt" title="pycbc.psd.analytical.aLIGOQuantumNSNSOpt"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumNSNSOpt()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumNoSRMHighPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower" title="pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumNoSRMLowPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower" title="pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumZeroDetHighPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower" title="pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumZeroDetLowPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower" title="pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOThermal</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOThermal" title="pycbc.psd.analytical.aLIGOThermal"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOThermal()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetHighPowerGWINC</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC" title="pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetHighPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetHighPower" title="pycbc.psd.analytical.aLIGOZeroDetHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetHighPower()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetLowPowerGWINC</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC" title="pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetLowPower</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetLowPower" title="pycbc.psd.analytical.aLIGOZeroDetLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetLowPower()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGO140MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545" title="pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGO175MpcT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545" title="pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGODesignSensitivityT1800044</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044" title="pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGOO3LowT1800545</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545" title="pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_lisa_tdi_AE_confusion</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_lisa_tdi_AE_confusion" title="pycbc.psd.analytical_space.analytical_psd_lisa_tdi_AE_confusion"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_lisa_tdi_AE_confusion()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_lisa_tdi_AE</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_lisa_tdi_AE" title="pycbc.psd.analytical_space.analytical_psd_lisa_tdi_AE"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_lisa_tdi_AE()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_lisa_tdi_T</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_lisa_tdi_T" title="pycbc.psd.analytical_space.analytical_psd_lisa_tdi_T"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_lisa_tdi_T()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_lisa_tdi_XYZ</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_lisa_tdi_XYZ" title="pycbc.psd.analytical_space.analytical_psd_lisa_tdi_XYZ"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_lisa_tdi_XYZ()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_taiji_tdi_AE_confusion</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_taiji_tdi_AE_confusion" title="pycbc.psd.analytical_space.analytical_psd_taiji_tdi_AE_confusion"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_taiji_tdi_AE_confusion()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_taiji_tdi_AE</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_taiji_tdi_AE" title="pycbc.psd.analytical_space.analytical_psd_taiji_tdi_AE"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_taiji_tdi_AE()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_taiji_tdi_T</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_taiji_tdi_T" title="pycbc.psd.analytical_space.analytical_psd_taiji_tdi_T"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_taiji_tdi_T()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_taiji_tdi_XYZ</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_taiji_tdi_XYZ" title="pycbc.psd.analytical_space.analytical_psd_taiji_tdi_XYZ"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_taiji_tdi_XYZ()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_tianqin_tdi_AE_confusion</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_AE_confusion" title="pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_AE_confusion"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_AE_confusion()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_tianqin_tdi_AE</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_AE" title="pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_AE"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_AE()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_tianqin_tdi_T</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_T" title="pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_T"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_T()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">analytical_psd_tianqin_tdi_XYZ</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_XYZ" title="pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_XYZ"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.analytical_psd_tianqin_tdi_XYZ()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">eLIGOModel</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.eLIGOModel" title="pycbc.psd.analytical.eLIGOModel"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.eLIGOModel()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">eLIGOShot</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.eLIGOShot" title="pycbc.psd.analytical.eLIGOShot"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.eLIGOShot()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">flat_unity</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.flat_unity" title="pycbc.psd.analytical.flat_unity"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.flat_unity()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">iLIGOModel</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.iLIGOModel" title="pycbc.psd.analytical.iLIGOModel"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOModel()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">iLIGOSRD</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.iLIGOSRD" title="pycbc.psd.analytical.iLIGOSRD"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOSRD()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">iLIGOSeismic</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.iLIGOSeismic" title="pycbc.psd.analytical.iLIGOSeismic"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOSeismic()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">iLIGOShot</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.iLIGOShot" title="pycbc.psd.analytical.iLIGOShot"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOShot()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">iLIGOThermal</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical.iLIGOThermal" title="pycbc.psd.analytical.iLIGOThermal"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOThermal()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">sh_transformed_psd_lisa_tdi_XYZ</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.psd.html#pycbc.psd.analytical_space.sh_transformed_psd_lisa_tdi_XYZ" title="pycbc.psd.analytical_space.sh_transformed_psd_lisa_tdi_XYZ"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical_space.sh_transformed_psd_lisa_tdi_XYZ()</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details></section>
+</section>
+<section id="advanced-configuration-settings">
+<h2>Advanced configuration settings<a class="headerlink" href="#advanced-configuration-settings" title="Link to this heading"></a></h2>
+<p>The following are additional settings that may be provided in the configuration
+file, in order to do more sophisticated analyses.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Sampling transform (for MCMC samplers)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">One or more of the <code class="docutils literal notranslate"><span class="pre">variable_params</span></code> may be transformed to a different
+parameter space for purposes of sampling. This is done by specifying a
+<code class="docutils literal notranslate"><span class="pre">[sampling_params]</span></code> section. This section specifies which
+<code class="docutils literal notranslate"><span class="pre">variable_params</span></code> to replace with which parameters for sampling. This must be
+followed by one or more <code class="docutils literal notranslate"><span class="pre">[sampling_transforms-{sampling_params}]</span></code> sections
+that provide the transform class to use. For example, the following would cause
+the sampler to sample in chirp mass (<code class="docutils literal notranslate"><span class="pre">mchirp</span></code>) and mass ratio (<code class="docutils literal notranslate"><span class="pre">q</span></code>) instead
+of <code class="docutils literal notranslate"><span class="pre">mass1</span></code> and <code class="docutils literal notranslate"><span class="pre">mass2</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampling_params]</span>
+<span class="na">mass1, mass2</span><span class="o">:</span><span class="w"> </span><span class="s">mchirp, q</span>
+
+<span class="k">[sampling_transforms-mchirp+q]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mass1_mass2_to_mchirp_q</span>
+</pre></div>
+</div>
+<p class="sd-card-text">Transforms are provided by the <a class="reference internal" href="pycbc.html#module-pycbc.transforms" title="pycbc.transforms"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.transforms</span></code></a> module. The currently
+available transforms are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">List of Sampling Transformations</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Name</p></th>
+<th class="head"><p class="sd-card-text">Class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'align_total_spin'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignTotalSpin" title="pycbc.transforms.AlignTotalSpin"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.AlignTotalSpin</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'aligned_mass_spin_to_cartesian_spin'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin" title="pycbc.transforms.AlignedMassSpinToCartesianSpin"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.AlignedMassSpinToCartesianSpin</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cartesian_spin_1_to_spherical_spin_1'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpin1ToSphericalSpin1" title="pycbc.transforms.CartesianSpin1ToSphericalSpin1"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CartesianSpin1ToSphericalSpin1</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cartesian_spin_2_to_spherical_spin_2'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpin2ToSphericalSpin2" title="pycbc.transforms.CartesianSpin2ToSphericalSpin2"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CartesianSpin2ToSphericalSpin2</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cartesian_spin_to_aligned_mass_spin'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin" title="pycbc.transforms.CartesianSpinToAlignedMassSpin"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CartesianSpinToAlignedMassSpin</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cartesian_spin_to_chi_p'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToChiP" title="pycbc.transforms.CartesianSpinToChiP"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CartesianSpinToChiP</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cartesian_spin_to_precession_mass_spin'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin" title="pycbc.transforms.CartesianSpinToPrecessionMassSpin"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CartesianSpinToPrecessionMassSpin</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'cartesian_to_spherical'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical" title="pycbc.transforms.CartesianToSpherical"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CartesianToSpherical</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'chirp_distance_to_distance'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance" title="pycbc.transforms.ChirpDistanceToDistance"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.ChirpDistanceToDistance</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'custom'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform" title="pycbc.transforms.CustomTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CustomTransform</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'custom_multi'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransformMultiOutputs" title="pycbc.transforms.CustomTransformMultiOutputs"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.CustomTransformMultiOutputs</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'distance_to_chirp_distance'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance" title="pycbc.transforms.DistanceToChirpDistance"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.DistanceToChirpDistance</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'distance_to_redshift'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToRedshift" title="pycbc.transforms.DistanceToRedshift"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.DistanceToRedshift</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'exponent'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent" title="pycbc.transforms.Exponent"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.Exponent</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'geo_to_lisa'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToLISA" title="pycbc.transforms.GEOToLISA"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.GEOToLISA</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'geo_to_ssb'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB" title="pycbc.transforms.GEOToSSB"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.GEOToSSB</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lambda_from_multiple_tov_files'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles" title="pycbc.transforms.LambdaFromMultipleTOVFiles"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.LambdaFromMultipleTOVFiles</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lambda_from_tov_file'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile" title="pycbc.transforms.LambdaFromTOVFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.LambdaFromTOVFile</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lisa_to_geo'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO" title="pycbc.transforms.LISAToGEO"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.LISAToGEO</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lisa_to_ssb'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB" title="pycbc.transforms.LISAToSSB"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.LISAToSSB</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'log'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log" title="pycbc.transforms.Log"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.Log</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'logistic'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic" title="pycbc.transforms.Logistic"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.Logistic</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'logit'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit" title="pycbc.transforms.Logit"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.Logit</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mass1_mass2_to_mchirp_eta'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta" title="pycbc.transforms.Mass1Mass2ToMchirpEta"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.Mass1Mass2ToMchirpEta</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mass1_mass2_to_mchirp_q'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ" title="pycbc.transforms.Mass1Mass2ToMchirpQ"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.Mass1Mass2ToMchirpQ</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mchirp_eta_to_mass1_mass2'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2" title="pycbc.transforms.MchirpEtaToMass1Mass2"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.MchirpEtaToMass1Mass2</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mchirp_q_to_mass1_mass2'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2" title="pycbc.transforms.MchirpQToMass1Mass2"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.MchirpQToMass1Mass2</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'precession_mass_spin_to_cartesian_spin'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.PrecessionMassSpinToCartesianSpin" title="pycbc.transforms.PrecessionMassSpinToCartesianSpin"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.PrecessionMassSpinToCartesianSpin</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spherical_spin_1_to_cartesian_spin_1'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin1ToCartesianSpin1" title="pycbc.transforms.SphericalSpin1ToCartesianSpin1"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.SphericalSpin1ToCartesianSpin1</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spherical_spin_2_to_cartesian_spin_2'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin2ToCartesianSpin2" title="pycbc.transforms.SphericalSpin2ToCartesianSpin2"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.SphericalSpin2ToCartesianSpin2</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spherical_to_cartesian'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalToCartesian" title="pycbc.transforms.SphericalToCartesian"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.SphericalToCartesian</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'ssb_to_geo'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToGEO" title="pycbc.transforms.SSBToGEO"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.SSBToGEO</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'ssb_to_lisa'</span></code></p></td>
+<td><p class="sd-card-text"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToLISA" title="pycbc.transforms.SSBToLISA"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.transforms.SSBToLISA</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p class="sd-card-text">Both a <code class="docutils literal notranslate"><span class="pre">jacobian</span></code> and <code class="docutils literal notranslate"><span class="pre">inverse_jacobian</span></code> must be defined in order to use
+a transform class for a sampling transform. Not all transform classes in
+<a class="reference internal" href="pycbc.html#module-pycbc.transforms" title="pycbc.transforms"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.transforms</span></code></a> have these defined. Check the class
+documentation to see if a Jacobian is defined.</p>
+</div>
+</div>
+</details><section id="waveform-transforms">
+<h3>Waveform transforms<a class="headerlink" href="#waveform-transforms" title="Link to this heading"></a></h3>
+<p>There can be any number of <code class="docutils literal notranslate"><span class="pre">variable_params</span></code> with any name. No parameter name
+is special (with the exception of parameters that start with <code class="docutils literal notranslate"><span class="pre">calib_</span></code>; see
+below).</p>
+<p>However, when doing parameter estimation with CBC waveforms, certain parameter
+names must be provided for waveform generation. The parameter names recognized
+by the CBC waveform generators are:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">List of CBCs signal parameters</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p class="sd-card-text">Parameter</p></th>
+<th class="head"><p class="sd-card-text">Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mass1'</span></code></p></td>
+<td><p class="sd-card-text">The mass of the first component object in the binary (in solar masses).</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mass2'</span></code></p></td>
+<td><p class="sd-card-text">The mass of the second component object in the binary (in solar masses).</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin1x'</span></code></p></td>
+<td><p class="sd-card-text">The x component of the first binary component’s dimensionless spin.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin1y'</span></code></p></td>
+<td><p class="sd-card-text">The y component of the first binary component’s dimensionless spin.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin1z'</span></code></p></td>
+<td><p class="sd-card-text">The z component of the first binary component’s dimensionless spin.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin2x'</span></code></p></td>
+<td><p class="sd-card-text">The x component of the second binary component’s dimensionless spin.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin2y'</span></code></p></td>
+<td><p class="sd-card-text">The y component of the second binary component’s dimensionless spin.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin2z'</span></code></p></td>
+<td><p class="sd-card-text">The z component of the second binary component’s dimensionless spin.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'eccentricity'</span></code></p></td>
+<td><p class="sd-card-text">Eccentricity.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lambda1'</span></code></p></td>
+<td><p class="sd-card-text">The dimensionless tidal deformability parameter of object 1.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lambda2'</span></code></p></td>
+<td><p class="sd-card-text">The dimensionless tidal deformability parameter of object 2.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dquad_mon1'</span></code></p></td>
+<td><p class="sd-card-text">Quadrupole-monopole parameter / m_1^5 -1.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dquad_mon2'</span></code></p></td>
+<td><p class="sd-card-text">Quadrupole-monopole parameter / m_2^5 -1.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lambda_octu1'</span></code></p></td>
+<td><p class="sd-card-text">The octupolar tidal deformability parameter of object 1.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'lambda_octu2'</span></code></p></td>
+<td><p class="sd-card-text">The octupolar tidal deformability parameter of object 2.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'quadfmode1'</span></code></p></td>
+<td><p class="sd-card-text">The quadrupolar f-mode angular frequency of object 1.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'quadfmode2'</span></code></p></td>
+<td><p class="sd-card-text">The quadrupolar f-mode angular frequency of object 2.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'octufmode1'</span></code></p></td>
+<td><p class="sd-card-text">The octupolar f-mode angular frequency of object 1.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'octufmode2'</span></code></p></td>
+<td><p class="sd-card-text">The octupolar f-mode angular frequency of object 2.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi0'</span></code></p></td>
+<td><p class="sd-card-text">0PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi1'</span></code></p></td>
+<td><p class="sd-card-text">0.5PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi2'</span></code></p></td>
+<td><p class="sd-card-text">1PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi3'</span></code></p></td>
+<td><p class="sd-card-text">1.5PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi4'</span></code></p></td>
+<td><p class="sd-card-text">2PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi5'</span></code></p></td>
+<td><p class="sd-card-text">2.5PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi5l'</span></code></p></td>
+<td><p class="sd-card-text">2.5PN logrithm testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi6'</span></code></p></td>
+<td><p class="sd-card-text">3PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi6l'</span></code></p></td>
+<td><p class="sd-card-text">3PN logrithm testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dchi7'</span></code></p></td>
+<td><p class="sd-card-text">3.5PN testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dalpha1'</span></code></p></td>
+<td><p class="sd-card-text">Merger-ringdown testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dalpha2'</span></code></p></td>
+<td><p class="sd-card-text">Merger-ringdown testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dalpha3'</span></code></p></td>
+<td><p class="sd-card-text">Merger-ringdown testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dalpha4'</span></code></p></td>
+<td><p class="sd-card-text">Merger-ringdown testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dalpha5'</span></code></p></td>
+<td><p class="sd-card-text">Merger-ringdown testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dbeta1'</span></code></p></td>
+<td><p class="sd-card-text">Intermediate testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dbeta2'</span></code></p></td>
+<td><p class="sd-card-text">Intermediate testingGR parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dbeta3'</span></code></p></td>
+<td><p class="sd-card-text">Intermediate testingGR parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'distance'</span></code></p></td>
+<td><p class="sd-card-text">Luminosity distance to the binary (in Mpc).</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'coa_phase'</span></code></p></td>
+<td><p class="sd-card-text">Coalesence phase of the binary (in rad).</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'inclination'</span></code></p></td>
+<td><p class="sd-card-text">Inclination (rad), defined as the angle between the orbital angular momentum L and the line-of-sight at the reference frequency.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'long_asc_nodes'</span></code></p></td>
+<td><p class="sd-card-text">Longitude of ascending nodes axis (rad).</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mean_per_ano'</span></code></p></td>
+<td><p class="sd-card-text">Mean anomaly of the periastron (rad).</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'delta_t'</span></code></p></td>
+<td><p class="sd-card-text">The time step used to generate the waveform (in s).</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'f_lower'</span></code></p></td>
+<td><p class="sd-card-text">The starting frequency of the waveform (in Hz).</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'approximant'</span></code></p></td>
+<td><p class="sd-card-text">A string that indicates the chosen approximant.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'f_ref'</span></code></p></td>
+<td><p class="sd-card-text">The reference frequency.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'phase_order'</span></code></p></td>
+<td><p class="sd-card-text">The pN order of the orbital phase. The default of -1 indicates that all implemented orders are used.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'spin_order'</span></code></p></td>
+<td><p class="sd-card-text">The pN order of the spin corrections. The default of -1 indicates that all implemented orders are used.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'tidal_order'</span></code></p></td>
+<td><p class="sd-card-text">The pN order of the tidal corrections. The default of -1 indicates that all implemented orders are used.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'amplitude_order'</span></code></p></td>
+<td><p class="sd-card-text">The pN order of the amplitude. The default of -1 indicates that all implemented orders are used.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'eccentricity_order'</span></code></p></td>
+<td><p class="sd-card-text">The pN order of the eccentricity corrections.The default of -1 indicates that all implemented orders are used.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'frame_axis'</span></code></p></td>
+<td><p class="sd-card-text">Allow to choose among orbital_l, view and total_j</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'modes_choice'</span></code></p></td>
+<td><p class="sd-card-text">Allow to turn on  among orbital_l, view and total_j</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'side_bands'</span></code></p></td>
+<td><p class="sd-card-text">Flag for generating sidebands</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'mode_array'</span></code></p></td>
+<td><p class="sd-card-text">Choose which (l,m) modes to include when generating a waveform. Only if approximant supports this feature.By default pass None and let lalsimulation use it’s default behaviour.Example: mode_array = [ [2,2], [2,-2] ]</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'numrel_data'</span></code></p></td>
+<td><p class="sd-card-text">Sets the NR flags; only needed for NR waveforms.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'delta_f'</span></code></p></td>
+<td><p class="sd-card-text">The frequency step used to generate the waveform (in Hz).</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'f_final'</span></code></p></td>
+<td><p class="sd-card-text">The ending frequency of the waveform. The default (0) indicates that the choice is made by the respective approximant.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'f_final_func'</span></code></p></td>
+<td><p class="sd-card-text">Use the given frequency function to compute f_final based on the parameters of the waveform.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'tc'</span></code></p></td>
+<td><p class="sd-card-text">Coalescence time (s) is the time when a GW reaches the origin of a certain coordinate system.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'ra'</span></code></p></td>
+<td><p class="sd-card-text">Right ascension (rad).</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'dec'</span></code></p></td>
+<td><p class="sd-card-text">Declination (rad).</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'polarization'</span></code></p></td>
+<td><p class="sd-card-text">Polarization angle (rad) in a certain coordinate system.</p></td>
+</tr>
+<tr class="row-odd"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'eclipticlatitude'</span></code></p></td>
+<td><p class="sd-card-text">eclipticlatitude in SSB/LISA coords.</p></td>
+</tr>
+<tr class="row-even"><td><p class="sd-card-text"><code class="docutils literal notranslate"><span class="pre">'eclipticlongitude'</span></code></p></td>
+<td><p class="sd-card-text">eclipticlongitude in SSB/LISA coords.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details><p>It is possible to specify a <code class="docutils literal notranslate"><span class="pre">variable_param</span></code> that is not one of these
+parameters. To do so, you must provide one or more
+<code class="docutils literal notranslate"><span class="pre">[waveforms_transforms-{param}]</span></code> section(s) that define transform(s) from the
+arbitrary <code class="docutils literal notranslate"><span class="pre">variable_params</span></code> to the needed waveform parameter(s) <code class="docutils literal notranslate"><span class="pre">{param}</span></code>.
+For example, in the following we provide a prior on <code class="docutils literal notranslate"><span class="pre">chirp_distance</span></code>. Since
+<code class="docutils literal notranslate"><span class="pre">distance</span></code>, not <code class="docutils literal notranslate"><span class="pre">chirp_distance</span></code>, is recognized by the CBC waveforms
+module, we provide a transform to go from <code class="docutils literal notranslate"><span class="pre">chirp_distance</span></code> to <code class="docutils literal notranslate"><span class="pre">distance</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+<span class="na">chirp_distance</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[prior-chirp_distance]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-chirp_distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1</span>
+<span class="na">max-chirp_distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">200</span>
+
+<span class="k">[waveform_transforms-distance]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">chirp_distance_to_distance</span>
+</pre></div>
+</div>
+<p>A useful transform for these purposes is the
+<a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform" title="pycbc.transforms.CustomTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">CustomTransform</span></code></a>, which allows
+for arbitrary transforms using any function in the <a class="reference internal" href="pycbc.html#module-pycbc.conversions" title="pycbc.conversions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.conversions</span></code></a>,
+<a class="reference internal" href="pycbc.coordinates.html#module-pycbc.coordinates" title="pycbc.coordinates"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.coordinates</span></code></a>, or <a class="reference internal" href="pycbc.html#module-pycbc.cosmology" title="pycbc.cosmology"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.cosmology</span></code></a> modules, along with
+numpy math functions. For example, the following would use the I-Love-Q
+relationship <a class="reference internal" href="pycbc.html#pycbc.conversions.dquadmon_from_lambda" title="pycbc.conversions.dquadmon_from_lambda"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycbc.conversions.dquadmon_from_lambda()</span></code></a> to relate the
+quadrupole moment of a neutron star <code class="docutils literal notranslate"><span class="pre">dquad_mon1</span></code> to its tidal deformation
+<code class="docutils literal notranslate"><span class="pre">lambda1</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+<span class="na">lambda1</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[waveform_transforms-dquad_mon1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">lambda1</span>
+<span class="na">dquad_mon1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dquadmon_from_lambda(lambda1)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A Jacobian is not necessary for waveform transforms, since the transforms
+are only being used to convert a set of parameters into something that the
+waveform generator understands. This is why in the above example we are
+able to use a custom transform without needing to provide a Jacobian.</p>
+</div>
+</section>
+<section id="calibration-parameters">
+<h3>Calibration parameters<a class="headerlink" href="#calibration-parameters" title="Link to this heading"></a></h3>
+<p>If any calibration parameters are used (prefix <code class="docutils literal notranslate"><span class="pre">calib_</span></code>), a <code class="docutils literal notranslate"><span class="pre">[calibration]</span></code>
+section must be included. This section must have a <code class="docutils literal notranslate"><span class="pre">name</span></code> option that
+identifies what calibration model to use. The models are described in
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.calibration</span></code>. The <code class="docutils literal notranslate"><span class="pre">[calibration]</span></code> section must also include
+reference values <code class="docutils literal notranslate"><span class="pre">fc0</span></code>, <code class="docutils literal notranslate"><span class="pre">fs0</span></code>, and <code class="docutils literal notranslate"><span class="pre">qinv0</span></code>, as well as paths to ASCII
+transfer function files for the test mass actuation, penultimate mass
+actuation, sensing function, and digital filter for each IFO being used in the
+analysis. E.g. for an analysis using H1 only, the required options would be
+<code class="docutils literal notranslate"><span class="pre">h1-fc0</span></code>, <code class="docutils literal notranslate"><span class="pre">h1-fs0</span></code>, <code class="docutils literal notranslate"><span class="pre">h1-qinv0</span></code>, <code class="docutils literal notranslate"><span class="pre">h1-transfer-function-a-tst</span></code>,
+<code class="docutils literal notranslate"><span class="pre">h1-transfer-function-a-pu</span></code>, <code class="docutils literal notranslate"><span class="pre">h1-transfer-function-c</span></code>,
+<code class="docutils literal notranslate"><span class="pre">h1-transfer-function-d</span></code>.</p>
+<p>Calibration configuration files can be generated from the detector calibration
+uncertainty estimates provided by the LIGO–Virgo–KAGRA (LVK) Collaboration. For
+example, the calibration uncertainty estimates for the O1–O3 observing runs can
+be downloaded from the following DCC page:
+<a class="reference external" href="https://dcc.ligo.org/T2100313/public">LIGO DCC T2100313</a></p>
+<p>Once the calibration uncertainty files are downloaded to a local directory, the
+configuration files can be created using the executable
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference_create_calibration_config</span></code>.</p>
+<p>For a complete working example, see the <a class="reference internal" href="inference/examples/generate_calibration_config.html#generate-calibration-config"><span class="std std-ref">GW150914 calibration example</span></a>. You can also run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference_create_calibration_config<span class="w"> </span>--help
+</pre></div>
+</div>
+<p>to view all available options and usage details.</p>
+</section>
+<section id="constraints">
+<h3>Constraints<a class="headerlink" href="#constraints" title="Link to this heading"></a></h3>
+<p>One or more constraints may be applied to the parameters; these are
+specified by the <code class="docutils literal notranslate"><span class="pre">[constraint]</span></code> section(s). Additional constraints may be
+supplied by adding more <code class="docutils literal notranslate"><span class="pre">[constraint-{tag}]</span></code> sections. Any tag may be used; the
+only requirement is that they be unique. If multiple constraint sections are
+provided, the union of all constraints is applied. Alternatively, multiple
+constraints may be joined in a single argument using numpy’s logical operators.</p>
+<p>The parameter that constraints are applied to may be any parameter in
+<code class="docutils literal notranslate"><span class="pre">variable_params</span></code> or any output parameter of the transforms. Functions may be
+applied to these parameters to obtain constraints on derived parameters. Any
+function in the conversions, coordinates, or cosmology module may be used,
+along with any numpy ufunc. So, in the following example, the mass ratio (q) is
+constrained to be &lt;= 4 by using a function from the conversions module.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[prior-mass1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3</span>
+<span class="na">max-mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">12</span>
+
+<span class="k">[prior-mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1</span>
+<span class="na">min-mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3</span>
+
+<span class="k">[constraint-1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">constraint_arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">q_from_mass1_mass2(mass1, mass2) &lt;= 4</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="checkpointing-and-output-files">
+<h2>Checkpointing and output files<a class="headerlink" href="#checkpointing-and-output-files" title="Link to this heading"></a></h2>
+<p>While <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> is running it will create a checkpoint file which
+is named <code class="docutils literal notranslate"><span class="pre">{output-file}.checkpoint</span></code>, where <code class="docutils literal notranslate"><span class="pre">{output-file}</span></code> was the name
+of the file you specified with the <code class="docutils literal notranslate"><span class="pre">--output-file</span></code> command. When it
+checkpoints it will dump results to this file; when finished, the file is
+renamed to <code class="docutils literal notranslate"><span class="pre">{output-file}</span></code>. A <code class="docutils literal notranslate"><span class="pre">{output-file}.bkup</span></code> is also created, which
+is a copy of the checkpoint file. This is kept in case the checkpoint file gets
+corrupted during writing. The <code class="docutils literal notranslate"><span class="pre">.bkup</span></code> file is deleted at the end of the run,
+unless <code class="docutils literal notranslate"><span class="pre">--save-backup</span></code> is turned on.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> starts, it checks if either
+<code class="docutils literal notranslate"><span class="pre">{output-file}.checkpoint</span></code> or <code class="docutils literal notranslate"><span class="pre">{output-file}.bkup</span></code> exist (in that order).
+If at least one of them exists, <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> will attempt to load them
+and continue to run from the last checkpoint state they were in.</p>
+<p>The output/checkpoint file are HDF files. To peruse the structure of the file
+you can use the <cite>h5ls</cite> command-line utility. More advanced utilities for
+reading and writing from/to them are provided by the sampler IO classes in
+<a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io" title="pycbc.inference.io"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.inference.io</span></code></a>. To load one of these files in python do:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">io</span>
+<span class="n">fp</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">fp</span></code> is an instance of a sampler IO class. Basically, this is an
+instance of an <code class="xref py py-mod docutils literal notranslate"><span class="pre">h5py.File</span></code> handler, with additional
+convenience functions added on top. For example, if you want all of the samples
+of all of the variable parameters in the file, you can do:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_samples</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will return a <a class="reference internal" href="pycbc.io.html#pycbc.io.record.FieldArray" title="pycbc.io.record.FieldArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">FieldArray</span></code></a> of all
+of the samples.</p>
+<p>Each sampler has it’s own sampler IO class that adds different convenience
+functions, depending on the sampler that was used. For more details on these
+classes, see the <a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io" title="pycbc.inference.io"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.inference.io</span></code></a> module.</p>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/margtime.html">Marginalized time model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/single.html">Using the single template model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/relative.html">Using the relative model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/examples/generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</div>
+</section>
+<section id="visualizing-the-posteriors">
+<h2>Visualizing the Posteriors<a class="headerlink" href="#visualizing-the-posteriors" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference/viz.html">Plotting the posteriors (<code class="docutils literal notranslate"><span class="pre">pycbc_inference_plot_posterior</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/viz.html#making-a-movie-pycbc-inference-plot-movie">Making a movie (<code class="docutils literal notranslate"><span class="pre">pycbc_inference_plot_movie</span></code>)</a></li>
+</ul>
+</div>
+</section>
+<section id="workflows">
+<h2>Workflows<a class="headerlink" href="#workflows" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_inference_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_workflow</span></code>: A parameter estimation workflow generator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_inference_inj_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_inj_workflow</span></code>: A parameter estimation workflow generator for injections</a></li>
+</ul>
+</div>
+</section>
+<section id="for-developers">
+<h2>For Developers<a class="headerlink" href="#for-developers" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference/sampler_api.html">Sampler API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference/io.html">Inference IO</a></li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="searches/ranking_statistic.html" class="btn btn-neutral float-left" title="The ranking statistic used in PyCBC searches" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="inference/examples/analytic.html" class="btn btn-neutral float-right" title="Running on an analytic distribution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

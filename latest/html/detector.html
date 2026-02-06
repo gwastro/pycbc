@@ -1,0 +1,389 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gravitational-wave Detectors &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Handling PSDs" href="psd.html" />
+    <link rel="prev" title="Signal Processing with GW150914" href="gw150914.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Gravitational-wave Detectors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#detector-locations">Detector Locations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#light-travel-time-between-detectors">Light travel time between detectors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#time-source-gravitational-wave-passes-through-detector">Time source gravitational-wave passes through detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#antenna-patterns-and-projecting-a-signal-into-the-detector-frame">Antenna Patterns and Projecting a Signal into the Detector Frame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-a-custom-detector-overriding-existing-ones">Adding a custom detector / overriding existing ones</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Gravitational-wave Detectors</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/detector.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gravitational-wave-detectors">
+<h1>Gravitational-wave Detectors<a class="headerlink" href="#gravitational-wave-detectors" title="Link to this heading"></a></h1>
+<p>The pycbc.detector module provides the <code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.detector.Detector</span></code> class
+to access information about gravitational wave detectors and key information
+about how their orientation and position affects their view of a source</p>
+<section id="detector-locations">
+<h2>Detector Locations<a class="headerlink" href="#detector-locations" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span><span class="p">,</span> <span class="n">get_available_detectors</span>
+
+<span class="c1"># We can list the available detectors. This gives their detector abbreviation</span>
+<span class="c1"># along with a longer name. Note that some of these are not physical detectors</span>
+<span class="c1"># but may be useful for testing or study purposes</span>
+
+<span class="k">for</span> <span class="n">abv</span> <span class="ow">in</span> <span class="n">get_available_detectors</span><span class="p">():</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">abv</span><span class="p">)</span>
+
+    <span class="c1"># Note that units are all in radians</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> Latitude </span><span class="si">{}</span><span class="s2"> Longitude </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">abv</span><span class="p">,</span>
+                                                  <span class="n">d</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span>
+                                                  <span class="n">d</span><span class="o">.</span><span class="n">longitude</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ python ../examples/detector/loc.py
+T1 Latitude 0.6226733602199997 Longitude 2.43536359469
+V0 Latitude 0.7615118398400004 Longitude 0.18333805213
+V1 Latitude 0.7615118398400004 Longitude 0.18333805213
+G1 Latitude 0.9118498275199999 Longitude 0.17116780435
+H2 Latitude 0.8107952638300001 Longitude -2.084056769170001
+H1 Latitude 0.8107952638300001 Longitude -2.084056769170001
+L1 Latitude 0.5334231350600002 Longitude -1.58430937078
+I1 Latitude 0.3423167673900001 Longitude 1.3444421505800004
+C1 Latitude 0.5963790054099999 Longitude -2.0617574453799996
+E1 Latitude 0.7615118398400004 Longitude 0.18333805213
+E2 Latitude 0.7629930799000002 Longitude 0.1840585887
+E3 Latitude 0.7627046325699999 Longitude 0.1819299673
+E0 Latitude 0.7627046325699999 Longitude 0.1819299673
+K1 Latitude 0.6355068497000002 Longitude 2.396441015
+U1 Latitude 0.0 Longitude 0.0
+A1 Latitude 0.53079879206 Longitude -1.5913706849599998
+O1 Latitude 0.79156499342 Longitude 0.20853775679
+X1 Latitude 0.81070543755 Longitude 0.10821041362
+N1 Latitude 0.7299645671 Longitude 0.22117684945999996
+B1 Latitude -0.5573418078 Longitude 2.02138216202
+</pre></div>
+</div>
+</section>
+<section id="light-travel-time-between-detectors">
+<h2>Light travel time between detectors<a class="headerlink" href="#light-travel-time-between-detectors" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+
+<span class="k">for</span> <span class="n">ifo1</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">,</span> <span class="s1">&#39;V1&#39;</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">ifo2</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">,</span> <span class="s1">&#39;V1&#39;</span><span class="p">]:</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">ifo1</span><span class="p">)</span><span class="o">.</span><span class="n">light_travel_time_to_detector</span><span class="p">(</span><span class="n">Detector</span><span class="p">(</span><span class="n">ifo2</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Direct Time from </span><span class="si">{}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2"> is </span><span class="si">{}</span><span class="s2"> seconds&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo1</span><span class="p">,</span> <span class="n">ifo2</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ python ../examples/detector/travel.py
+Direct Time from H1 to H1 is 0.0 seconds
+Direct Time from H1 to L1 is 0.010012846152267725 seconds
+Direct Time from H1 to V1 is 0.027287979933397113 seconds
+Direct Time from L1 to H1 is 0.010012846152267725 seconds
+Direct Time from L1 to L1 is 0.0 seconds
+Direct Time from L1 to V1 is 0.02644834101635671 seconds
+Direct Time from V1 to H1 is 0.027287979933397113 seconds
+Direct Time from V1 to L1 is 0.02644834101635671 seconds
+Direct Time from V1 to V1 is 0.0 seconds
+</pre></div>
+</div>
+</section>
+<section id="time-source-gravitational-wave-passes-through-detector">
+<h2>Time source gravitational-wave passes through detector<a class="headerlink" href="#time-source-gravitational-wave-passes-through-detector" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">iers</span>
+
+<span class="c1"># Make sure the documentation can be built without an internet connection</span>
+<span class="n">iers</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">auto_download</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># The source of the gravitational waves</span>
+<span class="n">right_ascension</span> <span class="o">=</span> <span class="mf">0.7</span>
+<span class="n">declination</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span>
+
+<span class="c1"># Reference location will be the Hanford detector</span>
+<span class="c1"># see the `time_delay_from_earth_center` method to use use geocentric time</span>
+<span class="c1"># as the reference</span>
+<span class="n">dref</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="s2">&quot;H1&quot;</span><span class="p">)</span>
+
+<span class="c1"># Time in GPS seconds that the GW passes</span>
+<span class="n">time</span> <span class="o">=</span> <span class="mi">100000000</span>
+
+<span class="c1"># Time that the GW will (or has) passed through the given detector</span>
+<span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;H1&quot;</span><span class="p">,</span> <span class="s2">&quot;L1&quot;</span><span class="p">,</span> <span class="s2">&quot;V1&quot;</span><span class="p">]:</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">time_delay_from_detector</span><span class="p">(</span><span class="n">dref</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+    <span class="n">st</span> <span class="o">=</span> <span class="s2">&quot;GW passed through </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> seconds relative to passing by Hanford&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ python ../examples/detector/delay.py
+GW passed through H1 0.0 seconds relative to passing by Hanford
+GW passed through L1 0.002444164314882327 seconds relative to passing by Hanford
+GW passed through V1 -0.014733669725760679 seconds relative to passing by Hanford
+</pre></div>
+</div>
+</section>
+<section id="antenna-patterns-and-projecting-a-signal-into-the-detector-frame">
+<h2>Antenna Patterns and Projecting a Signal into the Detector Frame<a class="headerlink" href="#antenna-patterns-and-projecting-a-signal-into-the-detector-frame" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_td_waveform</span>
+
+<span class="c1"># Time, orientation and location of the source in the sky</span>
+<span class="n">ra</span> <span class="o">=</span> <span class="mf">1.7</span>
+<span class="n">dec</span> <span class="o">=</span> <span class="mf">1.7</span>
+<span class="n">pol</span> <span class="o">=</span> <span class="mf">0.2</span>
+<span class="n">inc</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">time</span> <span class="o">=</span> <span class="mi">1000000000</span>
+
+<span class="c1"># We can calcualate the antenna pattern for Hanford at</span>
+<span class="c1"># the specific sky location</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="s2">&quot;H1&quot;</span><span class="p">)</span>
+
+<span class="c1"># We get back the fp and fc antenna pattern weights.</span>
+<span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pol</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;fp=</span><span class="si">{}</span><span class="s2">, fc=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">))</span>
+
+<span class="c1"># These factors allow us to project a signal into what the detector would</span>
+<span class="c1"># observe</span>
+
+<span class="c1">## Generate a waveform</span>
+<span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;IMRPhenomD&quot;</span><span class="p">,</span> <span class="n">mass1</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mass2</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                         <span class="n">f_lower</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="mi">4096</span><span class="p">,</span> <span class="n">inclination</span><span class="o">=</span><span class="n">inc</span><span class="p">,</span>
+                         <span class="n">distance</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+
+<span class="c1">## Apply the factors to get the detector frame strain</span>
+<span class="n">ht</span> <span class="o">=</span> <span class="n">fp</span> <span class="o">*</span> <span class="n">hp</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">hc</span>
+
+
+<span class="c1"># The projection process can also take into account the rotation of the</span>
+<span class="c1"># earth using the project wave function.</span>
+<span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span>
+<span class="n">ht2</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">project_wave</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pol</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ python ../examples/detector/ant.py
+No CuPy
+No CuPy or GPU PhenomHM module.
+No CuPy or GPU response available.
+No CuPy or GPU interpolation available.
+fp=-0.3854852615415981, fc=0.7059873069668027
+</pre></div>
+</div>
+</section>
+<section id="adding-a-custom-detector-overriding-existing-ones">
+<h2>Adding a custom detector / overriding existing ones<a class="headerlink" href="#adding-a-custom-detector-overriding-existing-ones" title="Link to this heading"></a></h2>
+<p>PyCBC supports observatories with arbitrary locations. For the study
+of possible new observatories you can add them explicitly within a script
+or by means of a config file to make the detectors visible to all codes
+that use the PyCBC detector interfaces.</p>
+<p>An example of adding a detector directly within a script.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_detector_on_earth</span><span class="p">,</span> <span class="n">Detector</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Set up potential Cosmic Explorer detector locations</span>
+
+<span class="c1"># 40 km detector</span>
+<span class="n">lon</span> <span class="o">=</span> <span class="o">-</span><span class="mi">125</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">lat</span> <span class="o">=</span> <span class="mi">46</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">yangle</span> <span class="o">=</span> <span class="mf">100.0</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> 
+<span class="c1"># yangle is the rotation clockwise from pointing north at 0</span>
+<span class="c1"># xangle can also be specified and allows for detectors that don&#39;t have</span>
+<span class="c1"># 90 degree opening between arms. By default we assume xangle is yangle + pi/2</span>
+<span class="n">add_detector_on_earth</span><span class="p">(</span><span class="s2">&quot;C4&quot;</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">yangle</span><span class="o">=</span><span class="n">yangle</span><span class="p">,</span>
+                      <span class="n">xlength</span><span class="o">=</span><span class="mi">40000</span><span class="p">,</span> <span class="n">ylength</span><span class="o">=</span><span class="mi">40000</span><span class="p">)</span>
+
+<span class="c1"># 20 km detector</span>
+<span class="c1"># Arm length is optional, but if provided, you can accurately calcuale</span>
+<span class="c1"># high-frequency corrects if you provide a frequency argument to the</span>
+<span class="c1"># antenna pattern method</span>
+<span class="n">lon</span> <span class="o">=</span> <span class="o">-</span><span class="mi">94</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">lat</span> <span class="o">=</span> <span class="mi">29</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">yangle</span> <span class="o">=</span> <span class="mf">160.0</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">add_detector_on_earth</span><span class="p">(</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">yangle</span><span class="o">=</span><span class="n">yangle</span><span class="p">,</span>
+                      <span class="n">xlength</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">ylength</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+
+<span class="n">ra</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">.1</span><span class="p">),</span> 
+                      <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">.1</span><span class="p">))</span>
+<span class="n">ra</span> <span class="o">=</span> <span class="n">ra</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<span class="n">dec</span> <span class="o">=</span> <span class="n">dec</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+<span class="n">pol</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">time</span> <span class="o">=</span> <span class="mf">1e10</span> <span class="o">+</span> <span class="mi">8000</span> <span class="c1"># A time when ra ~ lines up with lat/lon coordinates</span>
+
+<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Detector</span><span class="p">(</span><span class="s2">&quot;C4&quot;</span><span class="p">),</span> <span class="n">Detector</span><span class="p">(</span><span class="s2">&quot;C2&quot;</span><span class="p">)]:</span>
+    <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">pol</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s2">&quot;mollweide&quot;</span><span class="p">)</span>
+    <span class="n">ra</span><span class="p">[</span><span class="n">ra</span><span class="o">&gt;</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">]</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">2.0</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">fp</span><span class="o">**</span><span class="mf">2.0</span> <span class="o">+</span> <span class="n">fc</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Mollweide&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/0f03f488991ef25e6a2110bbea97d3e3/custom.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>)</p>
+<figure class="align-default" id="id1">
+<img alt="_images/custom_00.png" class="plot-directive" src="_images/custom_00.png" />
+<figcaption>
+<p><span class="caption-text">(<a class="reference download internal" download="" href="_downloads/bd97f978ca347604cfc56ed2f0179357/custom_00.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/0ec990a46902a476429a6f3e921fd9e4/custom_00.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/765f02e6453de47aaccb177ac06221f4/custom_00.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id2">
+<img alt="_images/custom_01.png" class="plot-directive" src="_images/custom_01.png" />
+<figcaption>
+<p><span class="caption-text">(<a class="reference download internal" download="" href="_downloads/91178aedab5fcd6cf839ce24c5cdbb9f/custom_01.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/3279a6bca0987ce771242f64df62149d/custom_01.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/cbb584ab88c70c6cae5ca5cb5c36bbb6/custom_01.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The following demonstrates a config file which similarly can provide
+custom observatory information. The options are the same as for the
+direct function calls. To tell PyCBC the location of the config file,
+set the PYCBC_DETECTOR_CONFIG variable to the location of the file e.g.
+PYCBC_DETECTOR_CONFIG=/some/path/to/detectors.ini. The following would
+provide new detectors ‘f1’ and ‘f2’.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">detector</span><span class="o">-</span><span class="n">f1</span><span class="p">]</span>
+<span class="n">method</span> <span class="o">=</span> <span class="n">earth_normal</span>
+<span class="n">latitude</span> <span class="o">=</span> <span class="mf">0.7120943348136864</span>
+<span class="n">longitude</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.9861846887695471</span>
+<span class="n">yangle</span> <span class="o">=</span> <span class="mf">2.0943951023931953</span>
+
+<span class="p">[</span><span class="n">detector</span><span class="o">-</span><span class="n">f2</span><span class="p">]</span>
+<span class="n">method</span> <span class="o">=</span> <span class="n">earth_normal</span>
+<span class="n">latitude</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5497787143782138</span>
+<span class="n">longitude</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0594885173533086</span>
+<span class="n">yangle</span> <span class="o">=</span> <span class="mf">2.5830872929516078</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gw150914.html" class="btn btn-neutral float-left" title="Signal Processing with GW150914" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="psd.html" class="btn btn-neutral float-right" title="Handling PSDs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

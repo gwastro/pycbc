@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Handling PSDs &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Generating Noise" href="noise.html" />
+    <link rel="prev" title="Gravitational-wave Detectors" href="detector.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Handling PSDs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reading-saving-a-psd-from-a-file">Reading / Saving a PSD from a file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generating-an-analytic-psd-from-lalsimulation">Generating an Analytic PSD from lalsimulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#estimating-the-psd-of-a-time-series">Estimating the PSD of a time series</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Handling PSDs</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/psd.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="handling-psds">
+<h1>Handling PSDs<a class="headerlink" href="#handling-psds" title="Link to this heading"></a></h1>
+<section id="reading-saving-a-psd-from-a-file">
+<h2>Reading / Saving a PSD from a file<a class="headerlink" href="#reading-saving-a-psd-from-a-file" title="Link to this heading"></a></h2>
+<p>If you have a PSD in a two column, space separated, (frequency strain), you can
+load this into PyCBC.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.types</span>
+
+
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;example_psd.txt&#39;</span>
+
+<span class="c1"># The PSD will be interpolated to the requested frequency spacing</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">4</span>
+<span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1024</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span>
+<span class="n">low_frequency_cutoff</span> <span class="o">=</span> <span class="mf">30.0</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">from_txt</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span>
+                         <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">is_asd_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">psd</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;interpolated&#39;</span><span class="p">)</span>
+
+<span class="c1"># The PSD will be read in without modification</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">load_frequencyseries</span><span class="p">(</span><span class="s1">&#39;./example_psd.txt&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">psd</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Hz&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Save a psd to file, several formats are supported (.txt, .hdf, .npy)</span>
+<span class="n">psd</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;tmp_psd.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/ee3f63cbeb84eeada66caea40b503142/read.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/cf27a3cf7c72c6d8629dfb8614154a86/read.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/8f9fbac86ecf6bfffd6095e5279ae16e/read.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/fefae50936f9a7dc0e125dc7871795dd/read.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/read.png" class="plot-directive" src="_images/read.png" />
+</figure>
+</section>
+<section id="generating-an-analytic-psd-from-lalsimulation">
+<span id="analytic-psds-from-lalsimulation"></span><h2>Generating an Analytic PSD from lalsimulation<a class="headerlink" href="#generating-an-analytic-psd-from-lalsimulation" title="Link to this heading"></a></h2>
+<p>A certain number of PSDs are built into lalsimulation, which you’ll be able
+to access through PyCBC. Below we show how to see which ones are available,
+and demonstrate how to generate one.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+
+
+<span class="c1"># List the available analytic psds</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">get_lalsim_psd_list</span><span class="p">())</span>
+
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">4</span>
+<span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1024</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span>
+<span class="n">low_frequency_cutoff</span> <span class="o">=</span> <span class="mf">30.0</span>
+
+<span class="c1"># One can either call the psd generator by name</span>
+<span class="n">p1</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">aLIGOZeroDetHighPower</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">)</span>
+
+<span class="c1"># or by using the name as a string.</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="s1">&#39;aLIGOZeroDetLowPower&#39;</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;HighPower&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;LowPower&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/524f46f309c6a5e099509f216d9dc4e9/analytic.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/3e78a0a1d11204a9c9bbb1180523a859/analytic.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/148ab970ade4e6a65d1bca1aa5baf8a4/analytic.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/ea7cfe5da95cad9e92f2da94b44a2c9f/analytic.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/analytic.png" class="plot-directive" src="_images/analytic.png" />
+</figure>
+<p>The PSDs from lalsimulation are computed at the required frequencies by
+interpolating a fixed set of samples; if the required frequencies fall
+outside of the range of the known samples no warnings will be raised,
+and (meaningless) extrapolated values will be returned.</p>
+<p>Therefore, users should check the validity range of the PSD they are
+using within lalsimulation, lest they get incorrect results.</p>
+</section>
+<section id="estimating-the-psd-of-a-time-series">
+<h2>Estimating the PSD of a time series<a class="headerlink" href="#estimating-the-psd-of-a-time-series" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.noise</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+
+
+<span class="c1"># generate some colored gaussian noise</span>
+<span class="n">flow</span> <span class="o">=</span> <span class="mf">30.0</span>
+<span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">16</span>
+<span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2048</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="n">psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">aLIGOZeroDetHighPower</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+
+<span class="c1">### Generate 128 seconds of noise at 4096 Hz</span>
+<span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">4096</span>
+<span class="n">tsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">128</span> <span class="o">/</span> <span class="n">delta_t</span><span class="p">)</span>
+<span class="n">ts</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">noise</span><span class="o">.</span><span class="n">noise_from_psd</span><span class="p">(</span><span class="n">tsamples</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">127</span><span class="p">)</span>
+
+<span class="c1"># Estimate the PSD</span>
+<span class="c1"># We&#39;ll choose 4 seconds PSD samples that are overlapped 50 %</span>
+<span class="n">seg_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4</span> <span class="o">/</span> <span class="n">delta_t</span><span class="p">)</span>
+<span class="n">seg_stride</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seg_len</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">estimated_psd</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span>
+                      <span class="n">seg_len</span><span class="o">=</span><span class="n">seg_len</span><span class="p">,</span>
+                      <span class="n">seg_stride</span><span class="o">=</span><span class="n">seg_stride</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">estimated_psd</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">estimated_psd</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;estimate&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">psd</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;known psd&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">1e-48</span><span class="p">,</span> <span class="mf">1e-45</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/168a0acfc61247bbc8f9f5585ab38af7/estimate.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/7d8462d7a88e3e0c56afa064af258d16/estimate.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/f3f76b9b3839c05a31fb5109042593f5/estimate.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/8841a51870154a7d3f36163052c5483b/estimate.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/estimate.png" class="plot-directive" src="_images/estimate.png" />
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="detector.html" class="btn btn-neutral float-left" title="Gravitational-wave Detectors" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="noise.html" class="btn btn-neutral float-right" title="Generating Noise" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

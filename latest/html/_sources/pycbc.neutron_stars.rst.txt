@@ -1,0 +1,29 @@
+pycbc.neutron\_stars package
+============================
+
+Submodules
+----------
+
+pycbc.neutron\_stars.eos\_utils module
+--------------------------------------
+
+.. automodule:: pycbc.neutron_stars.eos_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.neutron\_stars.pg\_isso\_solver module
+--------------------------------------------
+
+.. automodule:: pycbc.neutron_stars.pg_isso_solver
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.neutron_stars
+   :members:
+   :undoc-members:
+   :show-inheritance:

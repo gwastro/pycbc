@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using the relative model &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Using the hierarchical model" href="hierarchical.html" />
+    <link rel="prev" title="Using the single template model" href="single.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Using the relative model</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/relative.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-the-relative-model">
+<span id="relative-example"></span><h1>Using the relative model<a class="headerlink" href="#using-the-relative-model" title="Link to this heading"></a></h1>
+<p>The relative model is useful for when you know the parameters of your signal
+(say the masses, spins, etc of a merger) that are near the peak of the
+likelihood. In this case, we don’t need to calculate the likelihood at the full
+frequency resolution in order to accurately sample the neighborhood of the
+maximum likelihood. This can greatly speed up the calculation of the likelihood.
+To use this model you provide the near-peak parameters as fixed arguments as in
+the configuration file below.</p>
+<p>This example demonstrates using the <code class="docutils literal notranslate"><span class="pre">relative</span></code> model with the
+<code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code> sampler. First, we create the following configuration file:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">relative</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30.0</span>
+<span class="na">high-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1024.0</span>
+<span class="na">epsilon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.03</span>
+<span class="na">mass1_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="na">mass2_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="na">tc_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.42</span>
+
+<span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1 V1</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008482</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008892</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:LOSC-STRAIN L1:LOSC-STRAIN V1:LOSC-STRAIN</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf L1:L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf V1:V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">emcee_pt</span>
+<span class="na">ntemps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4</span>
+<span class="na">nwalkers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+<span class="na">niterations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">300</span>
+
+<span class="k">[sampler-burn_in]</span>
+<span class="na">burn-in-test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">min_iterations</span>
+<span class="na">min-iterations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+<span class="na">mchirp</span><span class="w"> </span><span class="o">=</span>
+<span class="na">eta</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TaylorF2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30</span>
+
+<span class="c1">#; we&#39;ll choose not to sample over these, but you could</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3.44615914</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-0.40808407</span>
+
+<span class="c1">#; You could also set additional parameters if your waveform model supports / requires it.</span>
+<span class="c1">; spin1z = 0</span>
+
+<span class="k">[prior-mchirp]</span>
+<span class="c1">; chirp mass prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.1876</span>
+<span class="na">max-mchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.2076</span>
+
+<span class="k">[prior-eta]</span>
+<span class="c1">; symmetric mass ratio prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-eta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.23</span>
+<span class="na">max-eta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.25</span>
+
+<span class="k">[prior-tc]</span>
+<span class="c1">; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.4</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.5</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">#; following gives a uniform in volume</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">60</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+
+<span class="k">[waveform_transforms-mass1+mass2]</span>
+<span class="c1">; transform from mchirp, eta to mass1, mass2 for waveform generation</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mchirp_eta_to_mass1_mass2</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/b4a89d69026a1bf9afa043c9a8234b83/relative.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>For this example, we’ll need to download gravitational-wave data for GW170817:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="w"> </span>-e
+
+<span class="k">for</span><span class="w"> </span>ifo<span class="w"> </span><span class="k">in</span><span class="w"> </span>H-H1<span class="w"> </span>L-L1<span class="w"> </span>V-V1
+<span class="k">do</span>
+<span class="w">    </span><span class="nv">file</span><span class="o">=</span><span class="si">${</span><span class="nv">ifo</span><span class="si">}</span>_LOSC_CLN_4_V1-1187007040-2048.gwf
+<span class="w">    </span><span class="nb">test</span><span class="w"> </span>-f<span class="w"> </span><span class="si">${</span><span class="nv">file</span><span class="si">}</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">continue</span>
+<span class="w">    </span>curl<span class="w"> </span>-O<span class="w"> </span>-L<span class="w"> </span>--show-error<span class="w"> </span>--silent<span class="w"> </span>https://dcc.ligo.org/public/0146/P1700349/001/<span class="si">${</span><span class="nv">file</span><span class="si">}</span>
+<span class="k">done</span>
+</pre></div>
+</div>
+<p>By setting the model name to <code class="docutils literal notranslate"><span class="pre">relative</span></code> we are using
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">Relative</span></code></a>.</p>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-file<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/relative.ini<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>relative.hdf<span class="w"> </span><span class="se">\</span>
+--seed<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/72f653000524b9d236f157c5ff389f12/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will run the <code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code> sampler. When it is done, you will have a file called
+<code class="docutils literal notranslate"><span class="pre">relative.hdf</span></code> which contains the results. It should take about a minute or two to
+run.</p>
+<p>To plot the posterior distribution after the last iteration, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>relative.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>relative.png<span class="w"> </span><span class="se">\</span>
+--z-arg<span class="w"> </span>snr
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/a3c7e3c9469d27473ba132ee67a423f0/plot.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/relative.png"><img alt="../../_images/relative.png" class="align-center" src="../../_images/relative.png" style="width: 405.9px; height: 332.09999999999997px;" />
+</a>
+<p>The scatter points show each walker’s position after the last iteration. The
+points are colored by the signal-to-noise ratio at that point.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="single.html" class="btn btn-neutral float-left" title="Using the single template model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hierarchical.html" class="btn btn-neutral float-right" title="Using the hierarchical model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

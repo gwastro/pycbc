@@ -1,0 +1,374 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The workflow injection generation module &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The workflow template bank generation module" href="template_bank.html" />
+    <link rel="prev" title="The workflow datafind and validation module" href="datafind.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../devs.html">Documentation for Developers</a></li>
+          <li class="breadcrumb-item"><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+      <li class="breadcrumb-item active">The workflow injection generation module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/injections.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-workflow-injection-generation-module">
+<span id="workflowinjectionsmod"></span><h1>The workflow injection generation module<a class="headerlink" href="#the-workflow-injection-generation-module" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The injection generation module of pycbc’s workflow
+is responsible for generating or
+gathering the injection files that will be used to assess the performance of a
+pipeline to detect simulated signals. This can be run
+either by generating injection files at run time, by generating injection files
+within the workflow or by using pregenerated injection files.</p>
+<p>The return of the injection generation module is a FileList of the injection files generated/supplied to this module. It is possible to call this module
+multiple times by using the tags key-word argument, but we have not foreseen
+a case where this would be needed.</p>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Using this module requires a number of things</p>
+<ul class="simple">
+<li><p>A configuration file (or files) containing the information needed to tell this module how to generate the injection files (described below).</p></li>
+<li><p>An initialized instance of the pycbc Workflow class, containing the ConfigParser.</p></li>
+</ul>
+<p>The module is then called according to</p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_injection_workflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_section_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'injections'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#setup_injection_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function is the gateway for setting up injection-generation jobs in a
+workflow. It should be possible for this function to support a number
+of different ways/codes that could be used for doing this, however as this
+will presumably stay as a single call to a single code (which need not be
+inspinj) there are currently no subfunctions in this moudle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The Workflow instance that the coincidence jobs will be added to.</p></li>
+<li><p><strong>output_dir</strong> (<em>path</em>) – The directory in which injection files will be stored.</p></li>
+<li><p><strong>inj_section_name</strong> (<em>string</em><em> (</em><em>optional</em><em>, </em><em>default='injections'</em><em>)</em>) – The string that corresponds to the option describing the exe location
+in the [executables] section of the .ini file and that corresponds to
+the section (and sub-sections) giving the options that will be given to
+the code at run time.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em> (</em><em>optional</em><em>, </em><em>default =</em><em> [</em><em>]</em><em>)</em>) – A list of the tagging strings that will be used for all jobs created
+by this call to the workflow. This will be used in output names.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>inj_files</strong> (<em>pycbc.workflow.core.FileList</em>) – The list of injection files created by this call.</p></li>
+<li><p><strong>inj_tags</strong> (<em>list of strings</em>) – The tag corresponding to each injection file and used to uniquely
+identify them. The FileList class contains functions to search
+based on tags.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="configuration-file-setup">
+<h3>Configuration file setup<a class="headerlink" href="#configuration-file-setup" title="Link to this heading"></a></h3>
+<p>Here we describe the options given in the configuration file used in the workflow that will be needed in this section</p>
+<section id="workflow-injections-section">
+<h4>[workflow-injections] section<a class="headerlink" href="#workflow-injections-section" title="Link to this heading"></a></h4>
+<p>The configuration file must have a [workflow-injections] section, which is used to
+tell the workflow how to construct (or gather) the injection files. The first option to choose and provide is</p>
+<ul class="simple">
+<li><p>injections-method = VALUE</p></li>
+</ul>
+<p>The choices here and their description are as described below</p>
+<ul class="simple">
+<li><p>IN_WORKFLOW - The injection file generation will be added as jobs in the workflow and will be generated after submission of the workflow.</p></li>
+<li><p>AT_RUNTIME - The injection jobs will be run directly within this module.</p></li>
+<li><p>PREGENERATED - The injection files will be supplied as pregenerated files.</p></li>
+</ul>
+<p>When using IN_WORKFLOW or AT_RUNTIME no additional options are required in the [workflow-injections] section.</p>
+<p>When using PREGENERATED the additional option is needed:</p>
+<ul class="simple">
+<li><p>injections-pregenerated-file = PATH - Specifies the location of the pregenerated injection file.</p></li>
+</ul>
+</section>
+<section id="executables">
+<h4>[executables]<a class="headerlink" href="#executables" title="Link to this heading"></a></h4>
+<p><strong>PLEASE READ THIS EVEN IF USING method=PREGENERATED</strong></p>
+<p>In this section, if not using PREGENERATED, you need to supply the executable that will be used to generate the injection files. This is done in the [executables] section by adding something like:</p>
+<p>injections = /path/to/lalapps_inspinj</p>
+<p>The option, in this case ‘injections’, will be used to specify the constant command line options that are sent to all lalapps_inspinj jobs. The tag ‘injections’ can be changed, it is currently supplied as a key-word argument when calling the function. ‘injections’ is the default, and must be used if you want to use pipedown.</p>
+<p><strong>IMPORTANT</strong> this injSectionName tag, “injections” by default, is used to identify which injections are to be performed. The module will search for modules called [injections-XXXX] and generate one injection file for every sub-section using XXXX as a tag.</p>
+<p>When using IN_WORKFLOW option, value pairs in [injections-XXXX]
+are also used to specify options specific to that
+particular injection set. These options will be directly supplied to the
+executable being used to generate the file.</p>
+<p><strong>PLEASE NOTE:</strong> When using PREGENERATED the injection names are still identified by looking in the “injections-XXXX” sections (a path in [executables] is not needed). These sections will be empty in this case. Also note that as XXXX is used as a tag you can use [workflow-injections-XXXX] section to supply unique pregenerated injection files.</p>
+</section>
+</section>
+<section id="supported-injection-executables-and-instructions-for-using-them">
+<h3>Supported injection executables and instructions for using them<a class="headerlink" href="#supported-injection-executables-and-instructions-for-using-them" title="Link to this heading"></a></h3>
+<p>The following injection generation executables are currently supported</p>
+<ul class="simple">
+<li><p>lalapps_inspinj</p></li>
+</ul>
+<p>Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.</p>
+<section id="lalapps-inspinj">
+<h4>lalapps_inspinj<a class="headerlink" href="#lalapps-inspinj" title="Link to this heading"></a></h4>
+<p>lalapps_inspinj is the legacy C-code that has been used to generate injection files for gravitational-wave data analysis since the dawn of time. Documentation and command line options can be found at <a class="reference external" href="https://lscsoft.docs.ligo.org/lalsuite/lalapps/inspinj_8c.html">https://lscsoft.docs.ligo.org/lalsuite/lalapps/inspinj_8c.html</a></p>
+<p>Of these options the workflow will automatically add the following. <strong>DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE</strong>.</p>
+<ul class="simple">
+<li><p>–gps-start-time</p></li>
+<li><p>–gps-end-time</p></li>
+<li><p>–output</p></li>
+</ul>
+<p>All other options must be provided in the configuration file. Here is an example of a lalapps_inspinj call.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lalapps_inspinj<span class="w"> </span>--gps-end-time<span class="w"> </span><span class="m">961671943</span><span class="w"> </span>--i-distr<span class="w"> </span>uniform<span class="w"> </span>--max-mass1<span class="w"> </span><span class="m">3</span>.1<span class="w"> </span>--max-mass2<span class="w"> </span><span class="m">3</span>.1<span class="w"> </span>--m-distr<span class="w"> </span>componentMass<span class="w"> </span>--disable-spin<span class="w">  </span>--min-mtotal<span class="w"> </span><span class="m">2</span>.0<span class="w"> </span>--output<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/inj_files/HL-INJECTIONS_BNSLININJ_2134-961585543-86400.xml<span class="w"> </span>--max-mtotal<span class="w"> </span><span class="m">6</span>.2<span class="w"> </span>--waveform<span class="w"> </span>TaylorT4threePointFivePN<span class="w"> </span>--time-interval<span class="w"> </span><span class="m">300</span><span class="w"> </span>--time-step<span class="w"> </span><span class="m">837</span>.155<span class="w"> </span>--min-mass2<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span>--f-lower<span class="w"> </span><span class="m">30</span><span class="w"> </span>--l-distr<span class="w"> </span>random<span class="w"> </span>--min-mass1<span class="w"> </span><span class="m">1</span>.0<span class="w"> </span>--min-distance<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--gps-start-time<span class="w"> </span><span class="m">961585543</span><span class="w"> </span>--d-distr<span class="w"> </span>uniform<span class="w"> </span>--max-distance<span class="w"> </span><span class="m">60000</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="pycbc-workflow-injection-module">
+<h2><a class="reference internal" href="../pycbc.workflow.html#module-pycbc.workflow.injection" title="pycbc.workflow.injection"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.workflow.injection</span></code></a> Module<a class="headerlink" href="#pycbc-workflow-injection-module" title="Link to this heading"></a></h2>
+<p>This is complete documentation of this module’s code</p>
+<p>This module is responsible for setting up the part of a pycbc workflow that
+will generate the injection files to be used for assessing the workflow’s
+ability to detect predicted signals.
+Full documentation for this module can be found here:
+<a class="reference external" href="https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html</a></p>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">PyCBCMergeHDFExecutable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reuse_executable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_submit_subdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#PyCBCMergeHDFExecutable"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Executable" title="pycbc.workflow.core.Executable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Executable</span></code></a></p>
+<p>Merge HDF injection files executable class</p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">create_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#PyCBCMergeHDFExecutable.create_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Default node constructor.</p>
+<p>This is usually overridden by subclasses of Executable.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">current_retention_level</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">PyCBCOptimalSNRExecutable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reuse_executable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set_submit_subdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#PyCBCOptimalSNRExecutable"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Executable" title="pycbc.workflow.core.Executable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Executable</span></code></a></p>
+<p>Compute optimal SNR for injections</p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">create_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precalc_psd_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#PyCBCOptimalSNRExecutable.create_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Default node constructor.</p>
+<p>This is usually overridden by subclasses of Executable.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">current_retention_level</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">compute_inj_optimal_snr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precalc_psd_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#compute_inj_optimal_snr"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Set up a job for computing optimal SNRs of a sim_inspiral file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">cut_distant_injections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#cut_distant_injections"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Set up a job for removing injections that are too distant to be seen</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">inj_to_hdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#inj_to_hdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Convert injection file to hdf format.</p>
+<p>If the file is already PyCBC HDF format, this will just make a copy.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">setup_injection_workflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_section_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'injections'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#setup_injection_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function is the gateway for setting up injection-generation jobs in a
+workflow. It should be possible for this function to support a number
+of different ways/codes that could be used for doing this, however as this
+will presumably stay as a single call to a single code (which need not be
+inspinj) there are currently no subfunctions in this moudle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The Workflow instance that the coincidence jobs will be added to.</p></li>
+<li><p><strong>output_dir</strong> (<em>path</em>) – The directory in which injection files will be stored.</p></li>
+<li><p><strong>inj_section_name</strong> (<em>string</em><em> (</em><em>optional</em><em>, </em><em>default='injections'</em><em>)</em>) – The string that corresponds to the option describing the exe location
+in the [executables] section of the .ini file and that corresponds to
+the section (and sub-sections) giving the options that will be given to
+the code at run time.</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em><em> (</em><em>optional</em><em>, </em><em>default =</em><em> [</em><em>]</em><em>)</em>) – A list of the tagging strings that will be used for all jobs created
+by this call to the workflow. This will be used in output names.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>inj_files</strong> (<em>pycbc.workflow.core.FileList</em>) – The list of injection files created by this call.</p></li>
+<li><p><strong>inj_tags</strong> (<em>list of strings</em>) – The tag corresponding to each injection file and used to uniquely
+identify them. The FileList class contains functions to search
+based on tags.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.injection.</span></span><span class="sig-name descname"><span class="pre">veto_injections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">veto_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">veto_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/injection.html#veto_injections"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="datafind.html" class="btn btn-neutral float-left" title="The workflow datafind and validation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="template_bank.html" class="btn btn-neutral float-right" title="The workflow template bank generation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

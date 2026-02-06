@@ -1,0 +1,259 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.mpld3_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.mpld3_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.mpld3_utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; This module provides functionality to extend mpld3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mpld3</span><span class="o">,</span><span class="w"> </span><span class="nn">mpld3.plugins</span><span class="o">,</span><span class="w"> </span><span class="nn">mpld3.utils</span>
+
+<div class="viewcode-block" id="ClickLink">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.mpld3_utils.ClickLink">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClickLink</span><span class="p">(</span><span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plugin for following a link on click&quot;&quot;&quot;</span>
+
+    <span class="n">JAVASCRIPT</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    mpld3.register_plugin(&quot;clicklink&quot;, ClickLink);</span>
+<span class="s2">    ClickLink.prototype = Object.create(mpld3.Plugin.prototype);</span>
+<span class="s2">    ClickLink.prototype.constructor = ClickLink;</span>
+<span class="s2">    ClickLink.prototype.requiredProps = [&quot;id&quot;];</span>
+<span class="s2">    ClickLink.prototype.defaultProps = {</span>
+<span class="s2">        links: null</span>
+<span class="s2">    }</span>
+<span class="s2">    function ClickLink(fig, props){</span>
+<span class="s2">        mpld3.Plugin.call(this, fig, props);</span>
+<span class="s2">    };</span>
+
+<span class="s2">    ClickLink.prototype.draw = function(){</span>
+<span class="s2">        var obj = mpld3.get_element(this.props.id);</span>
+<span class="s2">        var links = this.props.links;</span>
+
+<span class="s2">        obj.elements().on(&quot;mousedown&quot;,</span>
+<span class="s2">                          function(d, i){</span>
+<span class="s2">                                           window.open(links[i]);</span>
+<span class="s2">                                        }</span>
+<span class="s2">                          );</span>
+<span class="s2">    }</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">links</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict_</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;clicklink&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_id</span><span class="p">(</span><span class="n">points</span><span class="p">),</span>
+                      <span class="s2">&quot;links&quot;</span><span class="p">:</span> <span class="n">links</span><span class="p">,</span>
+                      <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="MPLSlide">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.mpld3_utils.MPLSlide">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MPLSlide</span><span class="p">(</span><span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">PluginBase</span><span class="p">):</span>
+    <span class="n">JAVASCRIPT</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">         mpld3.Axes.prototype.zoomed = function(propagate) {</span>
+<span class="s2">            propagate = typeof propagate == &quot;undefined&quot; ? true : propagate;</span>
+<span class="s2">            if (propagate) {</span>
+<span class="s2">              var dt0 = this.zoom.translate()[0] - this.zoom.last_t[0];</span>
+<span class="s2">              var dt1 = this.zoom.translate()[1] - this.zoom.last_t[1];</span>
+<span class="s2">              var ds = this.zoom.scale() / this.zoom.last_s;</span>
+<span class="s2">              this.zoom_x.translate([ this.zoom_x.translate()[0] + dt0, 0 ]);</span>
+<span class="s2">              this.zoom_x.scale(this.zoom_x.scale() * ds);</span>
+
+<span class="s2">              this.zoom.last_t = this.zoom.translate();</span>
+<span class="s2">              this.zoom.last_s = this.zoom.scale();</span>
+<span class="s2">              this.sharex.forEach(function(ax) {</span>
+<span class="s2">                ax.zoom_x.translate(this.zoom_x.translate()).scale(this.zoom_x.scale());</span>
+<span class="s2">              }.bind(this));</span>
+
+<span class="s2">              this.sharex.forEach(function(ax) {</span>
+<span class="s2">                ax.zoomed(false);</span>
+<span class="s2">              });</span>
+<span class="s2">            }</span>
+<span class="s2">            for (var i = 0; i &lt; this.elements.length; i++) {</span>
+<span class="s2">              this.elements[i].zoomed();</span>
+<span class="s2">            }</span>
+<span class="s2">          };</span>
+
+<span class="s2">            mpld3.ZoomPlugin = mpld3_ZoomPlugin;</span>
+<span class="s2">            mpld3.register_plugin(&quot;zoom&quot;, mpld3_ZoomPlugin);</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype = Object.create(mpld3.Plugin.prototype);</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype.constructor = mpld3_ZoomPlugin;</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype.requiredProps = [];</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype.defaultProps = {</span>
+<span class="s2">                button: true,</span>
+<span class="s2">                enabled: null</span>
+<span class="s2">            };</span>
+<span class="s2">            function mpld3_ZoomPlugin(fig, props) {</span>
+<span class="s2">                mpld3.Plugin.call(this, fig, props);</span>
+<span class="s2">                if (this.props.enabled === null) {</span>
+<span class="s2">                    this.props.enabled = !this.props.button;</span>
+<span class="s2">                }</span>
+<span class="s2">                var enabled = this.props.enabled;</span>
+<span class="s2">                if (this.props.button) {</span>
+<span class="s2">                    var ZoomButton = mpld3.ButtonFactory({</span>
+<span class="s2">                        buttonID: &quot;zoom&quot;,</span>
+<span class="s2">                        sticky: true,</span>
+<span class="s2">                        actions: [ &quot;scroll&quot;, &quot;drag&quot; ],</span>
+<span class="s2">                        onActivate: this.activate.bind(this),</span>
+<span class="s2">                        onDeactivate: this.deactivate.bind(this),</span>
+<span class="s2">                        onDraw: function() {</span>
+<span class="s2">                            this.setState(enabled);</span>
+<span class="s2">                        },</span>
+<span class="s2">                        icon: function() {</span>
+<span class="s2">                            return mpld3.icons[&quot;move&quot;];</span>
+<span class="s2">                        }</span>
+<span class="s2">                    });</span>
+<span class="s2">                this.fig.buttons.push(ZoomButton);</span>
+<span class="s2">                }</span>
+<span class="s2">            }</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype.activate = function() {</span>
+<span class="s2">                this.fig.enable_zoom();</span>
+<span class="s2">            };</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype.deactivate = function() {</span>
+<span class="s2">                this.fig.disable_zoom();</span>
+<span class="s2">            };</span>
+<span class="s2">            mpld3_ZoomPlugin.prototype.draw = function() {</span>
+<span class="s2">                if (this.props.enabled) this.fig.enable_zoom(); else this.fig.disable_zoom();</span>
+<span class="s2">            };</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">button</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">enabled</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">enabled</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dict_</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;zoom&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;button&quot;</span><span class="p">:</span> <span class="n">button</span><span class="p">,</span>
+                      <span class="s2">&quot;enabled&quot;</span><span class="p">:</span> <span class="n">enabled</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="Tooltip">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.mpld3_utils.Tooltip">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Tooltip</span><span class="p">(</span><span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">PointHTMLTooltip</span><span class="p">):</span>
+    <span class="n">JAVASCRIPT</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">hoffset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">voffset</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">css</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tooltip</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">hoffset</span><span class="p">,</span> <span class="n">voffset</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LineTooltip">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.mpld3_utils.LineTooltip">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LineTooltip</span><span class="p">(</span><span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">LineHTMLTooltip</span><span class="p">):</span>
+    <span class="n">JAVASCRIPT</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hoffset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">voffset</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">css</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LineTooltip</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">hoffset</span><span class="p">,</span> <span class="n">voffset</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

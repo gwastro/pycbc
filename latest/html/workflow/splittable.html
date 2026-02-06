@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The workflow table splitting module &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The workflow matched-filter module" href="matched_filter.html" />
+    <link rel="prev" title="The workflow template bank generation module" href="template_bank.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../devs.html">Documentation for Developers</a></li>
+          <li class="breadcrumb-item"><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+      <li class="breadcrumb-item active">The workflow table splitting module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/splittable.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-workflow-table-splitting-module">
+<span id="workflowsplittablemod"></span><h1>The workflow table splitting module<a class="headerlink" href="#the-workflow-table-splitting-module" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This module is used when you want to split a file into multiple parts, normally to enable analysis to proceed in parallel. The most common example of this is to split the list of templates output by a template bank generation code to enable a set of matched-filter jobs to analyse that bank in parallel. If you want to do something similar this module is the place to do it.</p>
+<p>The return of the table splitting module is a pycbc FileList of the split files generated by this module.</p>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Using this module requires a number of things</p>
+<ul class="simple">
+<li><p>A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).</p></li>
+<li><p>An initialized instance of the pycbc Workflow class, containing the ConfigParser.</p></li>
+<li><p>A FileList of the files that are to be split.</p></li>
+</ul>
+<p>This module is then called according to</p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">setup_splittable_workflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_tables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/splittable.html#setup_splittable_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function aims to be the gateway for code that is responsible for taking
+some input file containing some table, and splitting into multiple files
+containing different parts of that table. For now the only supported operation
+is using lalapps_splitbank to split a template bank xml file into multiple
+template bank xml files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The Workflow instance that the jobs will be added to.</p></li>
+<li><p><strong>input_tables</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The input files to be split up.</p></li>
+<li><p><strong>out_dir</strong> (<em>path</em>) – The directory in which output will be written.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>split_table_outs</strong> – The list of split up files as output from this job.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="configuration-file-setup">
+<h3>Configuration file setup<a class="headerlink" href="#configuration-file-setup" title="Link to this heading"></a></h3>
+<p>Here we describe the options given in the configuration file used in the
+workflow that will be needed in this section</p>
+<section id="workflow-splittable-section">
+<h4>[workflow-splittable] section<a class="headerlink" href="#workflow-splittable-section" title="Link to this heading"></a></h4>
+<p>The configuration file must have a [workflow-splittable] section,
+which is used to
+tell the workflow how to construct the split output files. The first option to choose and provide is</p>
+<ul class="simple">
+<li><p>splittable-method = VALUE</p></li>
+</ul>
+<p>The choices here and their description are as described below</p>
+<ul class="simple">
+<li><p>IN_WORKFLOW - The file splitting jobs will be added as jobs in the workflow and will be generated after submission of the workflow.</p></li>
+<li><p>NOOP - Do nothing and return the input file list. It is better not to call the module at all if you do not want to split files, but this can be useful if you want to use an existing script and do not need the splittable functionality.</p></li>
+</ul>
+<p>When using IN_WORKFLOW the following additional option is needed:</p>
+<ul class="simple">
+<li><p>splittable-num-banks = VALUE - Specifies how many parts to split each input file into.</p></li>
+</ul>
+</section>
+<section id="executables">
+<h4>[executables]<a class="headerlink" href="#executables" title="Link to this heading"></a></h4>
+<p>In this section, if not using NOOP, you need to supply the executable that will be used to generate the time slide files. This is done in the [executables] section by adding something like:</p>
+<p>splittable = /path/to/pycbc_splitbank</p>
+<p>The option, in this case ‘splittable’, will be used to specify the constant command line options that are sent to all pycbc_splitbank jobs. These will need to be put in a section called [splittable] and the options themselves are discussed below. The tag ‘splittable’ cannot be changed currently.</p>
+<p><strong>FIXME: Tag support is not yet present in splittable, the following is currently untrue, but should be fixed.</strong>
+As with other modules tagged subsections [splittable-TAG] [workflow-splittable-TAG] sub-sections are supported, if this module needs to be run in different configurations</p>
+</section>
+</section>
+<section id="supported-splittable-executables-and-instructions-for-using-them">
+<h3>Supported splittable executables and instructions for using them<a class="headerlink" href="#supported-splittable-executables-and-instructions-for-using-them" title="Link to this heading"></a></h3>
+<p>The following splittable executables are currently supported:</p>
+<ul class="simple">
+<li><p>pycbc_splitbank</p></li>
+<li><p>lalapps_splitbank - <strong>NOTE</strong>: The output of this code can be unpredicatable, or broken. We strongly recommend using pycbc_splitbank. For this reason we do not give any further details about running this code.</p></li>
+</ul>
+<p>Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.</p>
+<section id="pycbc-splitbank">
+<h4>pycbc_splitbank<a class="headerlink" href="#pycbc-splitbank" title="Link to this heading"></a></h4>
+<p>pycbc_splitbank is a pycbc python code that can be used from splitting any table in an input xml file. Normally this splits the sngl_inspiral table that holds the template bank. The help message for pycbc_splitbank is as follows</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ pycbc_splitbank --help
+No CuPy
+No CuPy or GPU PhenomHM module.
+No CuPy or GPU response available.
+No CuPy or GPU interpolation available.
+usage: pycbc_splitbank [-h] [-v] [--version [VERSION]]
+                       (--templates-per-bank SAMPLES | -n N | -O [OUTPUT_FILENAME ...])
+                       [-o OUTPUT_PREFIX] -t INPUT_FILE
+                       [--sort-frequency-cutoff SORT_FREQUENCY_CUTOFF]
+                       [--sort-mchirp] [--random-sort]
+                       [--random-seed RANDOM_SEED]
+
+Splits a table in an xml file into multiple pieces.
+
+options:
+  -h, --help            show this help message and exit
+  --templates-per-bank SAMPLES
+                        number of templates in the output banks
+  -n N, --number-of-banks N
+                        Split template bank into N files
+  -O [OUTPUT_FILENAME ...], --output-filenames [OUTPUT_FILENAME ...]
+                        Directly specify the names of the output files. The
+                        number of files specified here will dictate how to
+                        split the bank. It will be split equally between all
+                        specified files.
+  -o OUTPUT_PREFIX, --output-prefix OUTPUT_PREFIX
+                        Prefix to add to the template bank name (name becomes
+                        output#.xml[.gz])
+  -t INPUT_FILE, --bank-file INPUT_FILE
+                        Template bank to split
+  --sort-frequency-cutoff SORT_FREQUENCY_CUTOFF
+                        Frequency cutoff to use for sorting the sub banks
+  --sort-mchirp         Sort templates by chirp mass before splitting
+  --random-sort         Sort templates randomly before splitting
+  --random-seed RANDOM_SEED
+                        Random seed to use when sorting randomly
+
+PyCBC common options:
+  Common options for PyCBC executables.
+
+  -v, --verbose         Add verbosity to logging. Adding the option multiple
+                        times makes logging progressively more verbose, e.g.
+                        --verbose or -v provides logging at the info level,
+                        but -vv or --verbose --verbose provides debug logging.
+  --version [VERSION]   Display PyCBC version information and exit. Can
+                        optionally supply a modifier integer to control the
+                        verbosity of the version information. 0 and 1 are the
+                        same as --version; 2 provides more detailed PyCBC
+                        library information; 3 provides information about
+                        PyCBC, LAL and LALSimulation packages (if installed)
+</pre></div>
+</div>
+<p>An example of a pycbc_splitbank call is given below</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/home/spxiwh/lscsoft_git/executables_master/bin/pycbc_splitbank<span class="w"> </span>--random-sort<span class="w">  </span>--bank-file<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/datafind/H1-TMPLTBANK-961585551-2048.xml.gz<span class="w"> </span>--output-filenames<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/datafind/H1-TMPLTBANK_SPLITTABLE_BANK0-961585551-2048.xml.gz<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/datafind/H1-TMPLTBANK_SPLITTABLE_BANK1-961585551-2048.xml.gz<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/datafind/H1-TMPLTBANK_SPLITTABLE_BANK2-961585551-2048.xml.gz<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/datafind/H1-TMPLTBANK_SPLITTABLE_BANK3-961585551-2048.xml.gz<span class="w"> </span>/home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671944/datafind/H1-TMPLTBANK_SPLITTABLE_BANK4-961585551-2048.xml.gz
+</pre></div>
+</div>
+<p>The following options are added by the workflow module and <strong>must not</strong> be provided in the configuration file</p>
+<ul class="simple">
+<li><p>–bank-file</p></li>
+<li><p>–output-filenames</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="pycbc-workflow-splittable-module">
+<h2><a class="reference internal" href="../pycbc.workflow.html#module-pycbc.workflow.splittable" title="pycbc.workflow.splittable"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.workflow.splittable</span></code></a> Module<a class="headerlink" href="#pycbc-workflow-splittable-module" title="Link to this heading"></a></h2>
+<p>This is complete documentation of this module’s code</p>
+<p>This module is responsible for setting up the splitting output files stage of
+workflows. For details about this module and its capabilities see here:
+<a class="reference external" href="https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html</a></p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.splittable.</span></span><span class="sig-name descname"><span class="pre">select_splitfilejob_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curr_exe</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/splittable.html#select_splitfilejob_instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function returns an instance of the class that is appropriate for
+splitting an output file up within workflow (for e.g. splitbank).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>curr_exe</strong> (<em>string</em>) – The name of the Executable that is being used.</p></li>
+<li><p><strong>curr_section</strong> (<em>string</em>) – The name of the section storing options for this executble</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>exe class</strong> – The class that holds the utility functions appropriate
+for the given Executable. This class <strong>must</strong> contain
+* exe_class.create_job()
+and the job returned by this <strong>must</strong> contain
+* job.create_node()</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sub-class of <a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Executable" title="pycbc.workflow.core.Executable">pycbc.workflow.core.Executable</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.splittable.</span></span><span class="sig-name descname"><span class="pre">setup_splittable_dax_generated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_tables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/splittable.html#setup_splittable_dax_generated"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Function for setting up the splitting jobs as part of the workflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The Workflow instance that the jobs will be added to.</p></li>
+<li><p><strong>input_tables</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The input files to be split up.</p></li>
+<li><p><strong>out_dir</strong> (<em>path</em>) – The directory in which output will be written.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>split_table_outs</strong> – The list of split up files as output from this job.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.splittable.</span></span><span class="sig-name descname"><span class="pre">setup_splittable_workflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_tables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/splittable.html#setup_splittable_workflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function aims to be the gateway for code that is responsible for taking
+some input file containing some table, and splitting into multiple files
+containing different parts of that table. For now the only supported operation
+is using lalapps_splitbank to split a template bank xml file into multiple
+template bank xml files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The Workflow instance that the jobs will be added to.</p></li>
+<li><p><strong>input_tables</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The input files to be split up.</p></li>
+<li><p><strong>out_dir</strong> (<em>path</em>) – The directory in which output will be written.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>split_table_outs</strong> – The list of split up files as output from this job.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="template_bank.html" class="btn btn-neutral float-left" title="The workflow template bank generation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="matched_filter.html" class="btn btn-neutral float-right" title="The workflow matched-filter module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

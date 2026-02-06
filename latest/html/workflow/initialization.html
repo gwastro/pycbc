@@ -1,0 +1,621 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pycbc’s workflow module configuration file(s) and command line interface &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The workflow segment generation module" href="segments.html" />
+    <link rel="prev" title="Workflow: the inspiral analysis workflow generator (pycbc.workflow)" href="../workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../devs.html">Documentation for Developers</a></li>
+          <li class="breadcrumb-item"><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+      <li class="breadcrumb-item active">Pycbc’s workflow module configuration file(s) and command line interface</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/initialization.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-s-workflow-module-configuration-file-s-and-command-line-interface">
+<span id="workflowconfigparsermod"></span><h1>Pycbc’s workflow module configuration file(s) and command line interface<a class="headerlink" href="#pycbc-s-workflow-module-configuration-file-s-and-command-line-interface" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The workflow module at its core is designed to be flexible and allow the user
+to do what they
+want to create the pipeline that they want to run. One of the ways to allow
+this is by having a, sometimes large, configuration file that serves two
+purposes</p>
+<ul class="simple">
+<li><p>Tell the workflow planner, how to run the various stages specified in
+the top-level workflow script.</p></li>
+<li><p>Specify, as completely as possible, all command line options that will be
+sent to every executable that is run in the pipeline. Tags are used to
+identify options sent a subset of jobs, as described more fully later.</p></li>
+</ul>
+<p>The idea is that the only input that a user <em>needs</em> is the configuration file.
+However, it may often be useful for certain options, such as user-specific
+locations and analysis start/end times, to be supplied on the command line.
+To allow this we allow a method by which configuration file options can be
+supplied, or overridden, on the command line.</p>
+<p>Ihope used similar .ini files in every analysis. However, it was noted that these files grew huge and it becomes difficult for a novice to understand which options can be safely changed and which ones to leave well alone. It is also difficult so see which options are going to which job, inspiral.c for example looks for options in &gt; 10 places and it isn’t clear where those places are.</p>
+<p>To attempt to solve this the workflow module has a number of features</p>
+<ul class="simple">
+<li><p>Multiple configuration files: You can now supply multiple configuration files to, for e.g. identify a file containing only injection generation parameters, which a user may want to change often. It is even possible to have sections split across files, so one could have a configuration file of key options, ones that might be changed, and another file of “leave alone” options.</p></li>
+<li><p>Direct command line options: In the workflow module command line options are not drawn from obscure sections, they correspond one-to-one with the executables. Options in the [inspiral] section will be sent to the inspiral executable and <em>only</em> to the inspiral executable.</p></li>
+<li><p>Combined sections: To avoid the issue of specifiying common options repeatedly we have allowed the ability of combined sections. So if you have two executables with a large set of shared options you can specify a [exe1&amp;exe2] section to provide the shared options and [exe1] and [exe2] sections to supply the individual options. One can also use the [sharedoptions-NAME] sections to acheive the same thing.</p></li>
+<li><p>Interpolation: As in configparser 3.0+ we have the ability to specify an option in one place and use an interpolation string to also provide it in other places, this is described below.</p></li>
+<li><p>Tags/subsections: In some cases options may only need to be sent to certain jobs, or you may want to call individual modules multiple times and do different things. To accomodate this the workflow module includes a tagging (or subsections) system to provide options to only a subset of jobs, or to a specific call to a module. For example, options in [inspiral] are sent to all inspiral jobs, options in [inspiral-h1] would be sent to inspiral jobs running only on h1 data.</p></li>
+<li><p>Executable expanding: The workflow module includes macros to enable the user to more easily specify executable paths. For example $(which:exe1} will be expanded to the location of exe1 in the users path automatically.</p></li>
+</ul>
+<p>most of these features will be applied directly after reading in the configuration file. The workflow module will then dump the parser configuration back to disk so the user/reviewer can more easily see what the analysis is actually doing.</p>
+<p>In this page we describe the layout of the workflow module .ini configuration file and what the various sections mean, how they are used, and how an ini file should be set out.</p>
+<p><strong>NOTE</strong>: A number of features that have been put in here, are available in the python 3.X version of ConfigParser. In addition this version also has a duplicate option check. In python 2.X if I do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">inspiral</span><span class="p">]</span>
+<span class="n">detect</span><span class="o">-</span><span class="n">gravitational</span><span class="o">-</span><span class="n">waves</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">LOTS</span> <span class="n">OF</span> <span class="n">GARBAGE</span>
+<span class="n">detect</span><span class="o">-</span><span class="n">gravitational</span><span class="o">-</span><span class="n">waves</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+<p>it will set the value to False, and proceed happily. THERE IS NO WAY TO CATCH THIS! There is a python 2.X backport of this new version, it is available in pypi, but not in macports. It would be good to pick up this new version and have some of these features available natively.</p>
+</section>
+<section id="supplying-the-config-file-on-the-command-line-and-overriding-options">
+<h2>Supplying the config file on the command line and overriding options<a class="headerlink" href="#supplying-the-config-file-on-the-command-line-and-overriding-options" title="Link to this heading"></a></h2>
+<p>The workflow module only uses two command line options, one to specify the
+configuration files
+and one to specify and overriding options. First the config files:</p>
+<ul class="simple">
+<li><p>–config-files FILE1 [FILE2 FILE3 ….]</p></li>
+</ul>
+<p>where FILEX corresponds to the configuration files. Second the overriding options:</p>
+<ul class="simple">
+<li><p>–config-overrides section1:option1:value1 [section2:option2:value2 …]</p></li>
+</ul>
+<p>These specify options that should be <em>added</em> to the config files, or if already present <em>overwritten</em>. The section, option and value refer to the section option and value to be added. If the section doesn’t already exist in the configuration file it will be added. In some cases you will want to supply an option without a value. This can be done with either</p>
+<p>section:option:</p>
+<p>or</p>
+<p>section:option</p>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h3>
+<p>Here is an example of running a workflow from the command line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>python weekly_ahope.py --config-files weekly_ahope.ini pipedown.ini inj.ini --config-overrides workflow:start-time:${GPS_START_TIME} workflow:end-time:${GPS_END_TIME}
+</pre></div>
+</div>
+<p>Here the analysis start and end times are being overriden with values from the user’s environment.</p>
+</section>
+</section>
+<section id="global-options-the-workflow-section">
+<h2>Global options - the [workflow] section<a class="headerlink" href="#global-options-the-workflow-section" title="Link to this heading"></a></h2>
+<p>The [workflow] section and [workflow-XXX] subsections should appear at the top of a configuration file.</p>
+<p>The [workflow] section and [workflow-XXX] subsections of the configuration file are used to store options that the workflow module uses to make decisions on what paths to take when deciding how to construct the workflow. Options in here are <em>not</em> going to end up supplied to any executable on the command line.</p>
+<p>The [workflow] section must contain two entries</p>
+<ul class="simple">
+<li><p>start-time=START</p></li>
+<li><p>end-time=END</p></li>
+</ul>
+<p>which are used to tell the workflow that is only to consider times in [START,END) for analysis. These will often be supplied as override options directly on the command line.</p>
+<p>Another optional entry in the [workflow] section, that we recommend be used is the:</p>
+<ul class="simple">
+<li><p>file-retention-level = all_files</p></li>
+</ul>
+<p>entry. This can take one of 4 values: “all_files”, “all_triggers”, “merged_triggers” or “results”. These specify how many files produced during the workflow should be stored after the workflow finishes. With “all_files”, which is the default value, everything produced in the workflow will be stored. With “results” only the critical result files are stored. “all_triggers” and “merged_triggers” store some subset of the full set of files. Defining whether a file should be stored under each of these levels is the job of the Executable class, which carries a current_retention_level attribute (one of executable.INTERMEDIATE_PRODUCT, executable.ALL_TRIGGERS, executable.MERGED_TRIGGERS or executable.FINAL_RESULT). When building workflows one can set this atrribute when creating executable instances to set under what conditions a file should be stored.</p>
+<p>It is okay to store other <em>important and widely used</em> values in here. You might often see cases where channel names are given here as these are sent to a number of codes on the command line, and it is easier to refer to them here, at the very top of the .ini file, so that the user can more easily see and change such values.</p>
+<section id="workflow-xxx-subsections">
+<h3>[workflow-XXX] subsections<a class="headerlink" href="#workflow-xxx-subsections" title="Link to this heading"></a></h3>
+<p>Each module that you use when setting up your workflow will need an [workflow-XXX] subsection. The name of the subsection and the particular options needed can be found in each module’s documentation page.</p>
+<p>If you want to call any module more than once you will need to use the workflow module’s tagging system. As an example let’s say I want to call the template bank module twice, once to set up a pycbc template bank and once to set up a SVD template bank. I could then create [workflow-tmpltbank-pycbc] and [workflow-tmpltbank-svd] sections to provide options that are unique to each tag. I could also use [exename-pycbc] and [exename-svd] sections if the two methods are using the same executable, but need different options. In both cases options in [workflow-tmpltbank] and [exename] would be used for <em>both</em> tags. (If the two codes were using different executables then [exename1] and [exename2] sections would suffice.)</p>
+<p>An example of where this section might be used is in the template bank stage where one can either run with a pre-generated bank or generate banks within the workflow. This information would be provided in this section.</p>
+</section>
+<section id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h3>
+<p>The [workflow] section in <em>every</em> .ini file should contain a link to this page to see what options are needed.</p>
+<p>The [workflow-XXX] sections in <em>every</em> .ini file should start with a link to that module’s documentation to see what options/values are relevant for that section.</p>
+</section>
+<section id="id1">
+<h3>Example<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>Here is an example of the [workflow] section of a .ini file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[workflow]
+; https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/initialization.html
+; provides details of how to set up a pycbc workflow configuration .ini file
+h1-channel-name = H1:LDAS-STRAIN
+l1-channel-name = L1:LDAS-STRAIN
+;h2-channel-name = H2:LDAS-STRAIN
+workflow-html-basedir = /home/spxiwh/public_html/workflow/development/weekly_ahope/test
+
+[workflow-ifos]
+; This is the list of ifos to analyse
+h1 =
+l1 =
+
+[workflow-datafind]
+; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/datafind.html
+datafind-method = AT_RUNTIME_SINGLE_FRAMES
+datafind-h1-frame-type = H1_LDAS_C02_L2
+datafind-l1-frame-type = L1_LDAS_C02_L2
+;datafind-h2-frame-type = H2_LDAS_C02_L2
+datafind-check-segment-gaps = update_times
+datafind-check-frames-exist = raise_error
+datafind-check-segment-summary = no_test
+; Set this to sepcify the datafind server. If this is not set the code will
+; use the value in ${LIGO_DATAFIND_SERVER}
+;datafind-ligo-datafind-server = &quot;&quot;
+
+[workflow-segments]
+; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/segments.html
+; PIPEDOWN demands we use AT_RUNTIME
+segments-method = AT_RUNTIME
+segments-H1-science-name = H1:DMT-SCIENCE:4
+segments-L1-science-name = L1:DMT-SCIENCE:4
+;segments-V1-science-name = V1:ITF_SCIENCEMODE:6
+segments-database-url = https://segdb.ligo.caltech.edu
+segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S6/H1L1V1-S6_CBC_LOWMASS_B_OFFLINE-937473702-0.xml
+segments-veto-categories = 2,3,4
+segments-minimum-segment-length = 2000
+segments-generate-coincident-segments =
+
+[workflow-tmpltbank]
+; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/template_bank.html
+tmpltbank-method=WORKFLOW_INDEPENDENT_IFOS
+; Remove the option below to disable linking with matchedfilter_utils
+tmpltbank-link-to-matchedfltr=
+
+[workflow-injections]
+; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/injections.html
+injections-method=IN_WORKFLOW
+
+[workflow-timeslides]
+; See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/workflow/time_slides.html
+timeslides-method=AT_RUNTIME
+</pre></div>
+</div>
+</section>
+</section>
+<section id="executable-locations-the-executables-section">
+<h2>Executable locations - the [executables] section<a class="headerlink" href="#executable-locations-the-executables-section" title="Link to this heading"></a></h2>
+<p>This section should contain the names of each of the executables that will be used in the workflow and their locations.  The section might look something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">executables</span><span class="p">]</span>
+<span class="n">tmpltbank</span> <span class="o">=</span> <span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">lalapps_tmpltbank</span>
+<span class="n">inspiral</span> <span class="o">=</span> <span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">lalapps_inspiral</span>
+</pre></div>
+</div>
+<p>Note that one can give remote URLs here and the workflow generator will download the code to the workflow directory when it is run.</p>
+<p>One can also give a URL indicating singularity as the scheme. This will indicate that the executable will be run within a singularity container, and therefore the executables would not be directly accessible from the head node:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">executables</span><span class="p">]</span>
+<span class="n">tmpltbank</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">url</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">lalapps_tmpltbank</span>
+<span class="n">inspiral</span> <span class="o">=</span> <span class="n">singularity</span><span class="p">:</span><span class="o">///</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">lalapps_inspiral</span>
+</pre></div>
+</div>
+<section id="executable-macros">
+<h3>executable macros<a class="headerlink" href="#executable-macros" title="Link to this heading"></a></h3>
+<p>The following macros can be used <strong>only</strong> within this section to automatically fill in full path names</p>
+<section id="which-executable">
+<h4>which(executable)<a class="headerlink" href="#which-executable" title="Link to this heading"></a></h4>
+<p>In the following example tmpltbank’s value will be replaced with the output of which(lalapps_tmpltbank):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[executables]
+tmpltbank = ${which:lalapps_tmpltbank}
+inspiral = /full/path/to/lalapps_inspiral
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id2">
+<h3>Requirements<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>All executables used in the workflow should be supplied in this section, and <em>only</em> in this section.</p>
+</section>
+<section id="id3">
+<h3>Example<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<p>Here is an example of the [executables] section of a pycbc workflow .ini file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[executables]
+tmpltbank         = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_tmpltbank
+inspiral          = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspiral
+inspinj           = /home/cbc/opt/s6b/ab577e4e5dad14e46fce511cffdb04917836ba36/bin/lalapps_inspinj
+thinca            = ${which:ligolw_thinca}
+</pre></div>
+</div>
+</section>
+</section>
+<section id="executable-options">
+<h2>Executable options<a class="headerlink" href="#executable-options" title="Link to this heading"></a></h2>
+<p>For each of the executables in the [executables] section, options for that executable should be listed under the section corresponding to that executable. Options in the [tmpltbank] section are sent to lalapps_tmpltbank, options in the [inspiral] section are sent to lalapps_inspiral etc.</p>
+<p>It is possible to have more than one [tmpltbank] section, ConfigParser will simply combine them together when reading in. Therefore ‘’’important options’’’ and ‘’’options that a novice user might want to change’’’ could be supplied in a first [tmpltbank] section near the top of the .ini file. This section could be commented accordingly. The modules documentation page should also include instructions for each of the supported executables (usually the code’s own help message). Options that are not so important and ones that a novice user would not want to change could be placed in a second [tmpltbank] section at the bottom of the ini file, this section would be labelled accordingly and also contain a link to documentation for that executable.</p>
+<p>Some options are only sent to a subset of jobs using a given executable. For example those running on H1 data. Options like these will be provided in sections labelled [executable_name-subset_tag]. So for the H1 example the section would be called [tmpltbank-H1]. As well as obeying the rules above these section must clearly state ‘’which’’ jobs will be sent those options. This can also be used when calling a section multiple times with different tags. Nested tags are not supported (ie [tmpltbank-H1-pycbc])</p>
+<p>Some options need to be sent to more than one executable, for example the channel names are used by any code that reads the data. Such sections should be given as the combination of executable names separated by the &amp; token. So options sent to tmpltbank ‘’’and’’’ inspiral would go in a section called [tmpltbank&amp;inspiral]. The code parsing the .ini file will automatically separate and duplicate these options in memory. All of the above rules apply. If I want to send an option to all tmpltbank and inspiral jobs running on H1 data, I might do something like [tmpltbank-H1&amp;inspiral-H1].</p>
+<p>If an option is given in more than one section (ie. if I specify –time-window 0.5 in [inspiral] and –time-window 1.0 in another [inspiral] or [inspiral&amp;tmpltbank] or [inspiral-H1] the code will throw an error. Specifying –time-window 1.0 in [inspiral-H1] and –time-window 0.5 in [inspiral-L1] is valid as long as the subset of H1 jobs and the subset of L1 jobs do not overlap.</p>
+<p>If a particular code (let’s say inspiral) wants to use an option supplied in the [workflow] section (for e.g. the channel names) it can do this by using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[inspiral-h1]
+channel-name = ${workflow|h1-channel}
+
+[inspiral-l1]
+channel-name = ${workflow|l1-channel}
+
+[inspiral-v1]
+channel-name = ${workflow|v1-channel}
+</pre></div>
+</div>
+<p>Similar macros can be added as needed, but these should be limited to avoid namespace confusion.</p>
+<section id="example-complete-workflow-ini-file">
+<h3>Example complete workflow .ini file<a class="headerlink" href="#example-complete-workflow-ini-file" title="Link to this heading"></a></h3>
+<p>Please see individual workflow documentation pages for some examples of complete .ini files and example workflows.</p>
+</section>
+</section>
+<section id="other-special-sections">
+<h2>Other special sections<a class="headerlink" href="#other-special-sections" title="Link to this heading"></a></h2>
+<section id="environment-section">
+<h3>[environment] section<a class="headerlink" href="#environment-section" title="Link to this heading"></a></h3>
+<p>We have access to environment variables present when generating the workflow (with the exception of any variable containing a <cite>$</cite> or a <cite>%</cite> as these are special characters). These are automatically accessed and stored in the <cite>[environment]</cite> section of the config file when creating a PyCBC ConfigParser object.</p>
+<p>Values in this section can be accessed in the configuration file like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[inspiral-h1]
+channel-name = ${environment|H1_CHANNEL_NAME}
+</pre></div>
+</div>
+<p>which would take the value from <cite>${H1_CHANNEL_NAME}</cite> in the environment.</p>
+<p>These values will also be written out for later reference in the config file produced when generating a workflow.</p>
+</section>
+</section>
+<section id="sharedoptions-section">
+<h2>[sharedoptions] section<a class="headerlink" href="#sharedoptions-section" title="Link to this heading"></a></h2>
+<p>An alternative to the [exe1&amp;exe2] section, especially when options are split
+well into groups of options, is to use the [sharedoptions] section. An example of this follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">sharedoptions</span><span class="p">]</span>
+<span class="n">massranges</span> <span class="o">=</span> <span class="n">exe1</span><span class="p">,</span><span class="n">exe2</span><span class="p">,</span><span class="n">exe3</span><span class="o">-</span><span class="n">mass</span>
+<span class="n">metric</span> <span class="o">=</span> <span class="n">exe1</span><span class="p">,</span><span class="n">exe2</span><span class="o">-</span><span class="nb">range</span><span class="p">,</span><span class="n">exe3</span><span class="o">-</span><span class="n">metric</span><span class="p">,</span> <span class="n">exe5</span>
+
+<span class="p">[</span><span class="n">sharedoptions</span><span class="o">-</span><span class="n">massranges</span><span class="p">]</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mass1</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mass1</span> <span class="o">=</span> <span class="mf">48.0</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mass2</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mass2</span> <span class="o">=</span> <span class="mf">48.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">total</span><span class="o">-</span><span class="n">mass</span> <span class="o">=</span> <span class="mf">4.2</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">total</span><span class="o">-</span><span class="n">mass</span> <span class="o">=</span> <span class="mf">4.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">eta</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">ns</span><span class="o">-</span><span class="n">spin</span><span class="o">-</span><span class="n">mag</span> <span class="o">=</span> <span class="mf">0.9899</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">bh</span><span class="o">-</span><span class="n">spin</span><span class="o">-</span><span class="n">mag</span> <span class="o">=</span> <span class="mf">0.9899</span>
+
+<span class="p">[</span><span class="n">sharedoptions</span><span class="o">-</span><span class="n">metric</span><span class="p">]</span>
+<span class="n">pn</span><span class="o">-</span><span class="n">order</span> <span class="o">=</span> <span class="n">threePointFivePN</span>
+<span class="n">f0</span> <span class="o">=</span> <span class="mf">70.0</span>
+<span class="n">f</span><span class="o">-</span><span class="n">low</span> <span class="o">=</span> <span class="mf">30.0</span>
+<span class="n">f</span><span class="o">-</span><span class="n">upper</span> <span class="o">=</span> <span class="mf">1100.0</span>
+<span class="n">delta</span><span class="o">-</span><span class="n">f</span> <span class="o">=</span> <span class="mf">0.01</span>
+</pre></div>
+</div>
+<p>This will ensure that all options in [sharedoptions-massranges] are added to the [exe1], [exe2] and [exe3-mass] sections. All options in [sharedoptions-metric] are added to [exe1], [exe2-range], [exe-metric] and [exe5].</p>
+</section>
+<section id="code-documentation">
+<h2>Code documentation<a class="headerlink" href="#code-documentation" title="Link to this heading"></a></h2>
+<p>The parsing of .ini files and command line parsing is done from within the pycbc.workflow.configuration module. The functions in this module are shown below</p>
+<section id="pycbc-workflow-configuration-module">
+<h3><a class="reference internal" href="../pycbc.workflow.html#module-pycbc.workflow.configuration" title="pycbc.workflow.configuration"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.workflow.configuration</span></code></a> Module<a class="headerlink" href="#pycbc-workflow-configuration-module" title="Link to this heading"></a></h3>
+<p>This module provides a wrapper to the ConfigParser utilities for pycbc
+workflow construction. This module is described in the page here:
+<a class="reference external" href="https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html</a></p>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.workflow.configuration.</span></span><span class="sig-name descname"><span class="pre">WorkflowConfigParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configFiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overrideTuples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parsedFilePath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deleteTuples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_to_cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser" title="pycbc.types.config.InterpolatingConfigParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">InterpolatingConfigParser</span></code></a></p>
+<p>This is a sub-class of InterpolatingConfigParser, which lets
+us add a few additional helper features that are useful in workflows.</p>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_cli_option</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser.get_cli_option"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Return option using CLI action parsing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Section to find option to parse</p></li>
+<li><p><strong>option_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the option to parse from the config file</p></li>
+<li><p><strong>kwds</strong> (<em>keywords</em>) – Additional keywords are passed directly to the argument parser.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The parsed value for this option</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">interpolate_exe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">testString</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser.interpolate_exe"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Replace testString with a path to an executable based on the format.</p>
+<p>If this looks like</p>
+<p>${which:lalapps_tmpltbank}</p>
+<p>it will return the equivalent of which(lalapps_tmpltbank)</p>
+<p>Otherwise it will return an unchanged string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>testString</strong> (<em>string</em>) – The input string</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>newString</strong> – The output string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">perform_exe_expansion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser.perform_exe_expansion"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will look through the executables section of the
+ConfigParser object and replace any values using macros with full paths.</p>
+<p>For any values that look like</p>
+<p>${which:lalapps_tmpltbank}</p>
+<p>will be replaced with the equivalent of which(lalapps_tmpltbank)</p>
+<p>Otherwise values will be unchanged.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">resolve_file_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser.resolve_file_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Replace test_string with a path to an executable based on the format.</p>
+<p>If this looks like</p>
+<p>${which:lalapps_tmpltbank}</p>
+<p>it will return the equivalent of which(lalapps_tmpltbank)</p>
+<p>Otherwise it will return an unchanged string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>test_string</strong> (<em>string</em>) – The input string</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>new_string</strong> – The output string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">resolve_urls</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser.resolve_urls"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>This function will look through all sections of the
+ConfigParser object and replace any URLs that are given the resolve
+magic flag with a path on the local drive.</p>
+<p>Specifically for any values that look like</p>
+<p>${resolve:https://git.ligo.org/detchar/SOME_GATING_FILE.txt}</p>
+<p>the file will be replaced with the output of resolve_url(URL)</p>
+<p>Otherwise values will be unchanged.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">section_to_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_opts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#WorkflowConfigParser.section_to_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Converts a section into a command-line string.</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span>
+<span class="n">foo</span> <span class="o">=</span>
+<span class="n">bar</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>yields: <cite>‘–foo –bar 10’</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to convert.</p></li>
+<li><p><strong>skip_opts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – List of options to skip. Default (None) results in all options
+in the section being converted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The options as a command-line string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.configuration.</span></span><span class="sig-name descname"><span class="pre">add_workflow_command_line_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#add_workflow_command_line_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>The standard way of initializing a ConfigParser object in workflow will be
+to do it from the command line. This is done by giving a</p>
+<p>–local-config-files filea.ini fileb.ini filec.ini</p>
+<p>command. You can also set config file override commands on the command
+line. This will be most useful when setting (for example) start and
+end times, or active ifos. This is done by</p>
+<p>–config-overrides section1:option1:value1 section2:option2:value2 …</p>
+<p>This can also be given as</p>
+<p>–config-overrides section1:option1</p>
+<p>where the value will be left as ‘’.</p>
+<p>To remove a configuration option, use the command line argument</p>
+<p>–config-delete section1:option1</p>
+<p>which will delete option1 from [section1] or</p>
+<p>–config-delete section1</p>
+<p>to delete all of the options in [section1]</p>
+<p>Deletes are implemented before overrides.</p>
+<p>This function returns an argparse OptionGroup to ensure these options are
+parsed correctly and can then be sent directly to initialize an
+WorkflowConfigParser.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parser</strong> (<em>argparse.ArgumentParser instance</em>) – The initialized argparse instance to add the workflow option group to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.configuration.</span></span><span class="sig-name descname"><span class="pre">hash_compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#hash_compare"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Calculate the sha1 hash of a file, or of part of a file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename_1</strong> (<em>string</em><em> or </em><em>path</em>) – the first file to be hashed / compared</p></li>
+<li><p><strong>filename_2</strong> (<em>string</em><em> or </em><em>path</em>) – the second file to be hashed / compared</p></li>
+<li><p><strong>chunk_size</strong> (<em>integer</em>) – This size of chunks to be read in and hashed. If not given, will read
+the whole file (may be slow for large files).</p></li>
+<li><p><strong>max_chunks</strong> (<em>integer</em>) – This many chunks to be compared. If all chunks so far have been the
+same, then just assume its the same file. Default 10</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>hash</strong> – The hexdigest() after a sha1 hash of (part of) the file</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.configuration.</span></span><span class="sig-name descname"><span class="pre">resolve_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permissions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_to_cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_max_chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hash_chunk_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#resolve_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Resolves a URL to a local file, and returns the path to that file.</p>
+<p>If a URL is given, the file will be copied to the current working
+directory. If a local file path is given, the file will only be copied
+to the current working directory if <code class="docutils literal notranslate"><span class="pre">copy_to_cwd</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>
+(the default).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.configuration.</span></span><span class="sig-name descname"><span class="pre">resolve_url_http</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/configuration.html#resolve_url_http"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Helper function used by <cite>resolve_url()</cite> to handle HTTP and HTTPS URLs.</p>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../workflow.html" class="btn btn-neutral float-left" title="Workflow: the inspiral analysis workflow generator (pycbc.workflow)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="segments.html" class="btn btn-neutral float-right" title="The workflow segment generation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

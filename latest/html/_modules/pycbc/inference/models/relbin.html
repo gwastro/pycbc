@@ -1,0 +1,1088 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.relbin &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.relbin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.relbin</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2020  Daniel Finstad</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;This module provides model classes and functions for implementing</span>
+<span class="sd">a relative binning likelihood for parameter estimation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">get_fd_waveform_sequence</span><span class="p">,</span>
+                            <span class="n">get_fd_det_waveform_sequence</span><span class="p">,</span> <span class="n">fd_det_sequence</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">TimeSeries</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">BaseGaussianNoise</span><span class="p">,</span> <span class="n">catch_waveform_error</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">FailedWaveformError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relbin_cpu</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">likelihood_parts</span><span class="p">,</span> <span class="n">likelihood_parts_v</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_multi</span><span class="p">,</span> <span class="n">likelihood_parts_multi_v</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_det</span><span class="p">,</span> <span class="n">likelihood_parts_det_multi</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_vector</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_v_pol</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_v_time</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_v_pol_time</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_vectorp</span><span class="p">,</span> <span class="n">snr_predictor</span><span class="p">,</span>
+                         <span class="n">likelihood_parts_vectort</span><span class="p">,</span>
+                         <span class="n">snr_predictor_dom</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistMarg</span>
+
+
+<div class="viewcode-block" id="setup_bins">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.setup_bins">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_bins</span><span class="p">(</span><span class="n">f_full</span><span class="p">,</span> <span class="n">f_lo</span><span class="p">,</span> <span class="n">f_hi</span><span class="p">,</span> <span class="n">chi</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+               <span class="n">eps</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">gammas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct frequency bins for use in a relative likelihood</span>
+<span class="sd">    model. For details, see [Barak, Dai &amp; Venumadhav 2018].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f_full : array</span>
+<span class="sd">        The full resolution array of frequencies being used in the analysis.</span>
+<span class="sd">    f_lo : float</span>
+<span class="sd">        The starting frequency used in matched filtering. This will be the</span>
+<span class="sd">        left edge of the first frequency bin.</span>
+<span class="sd">    f_hi : float</span>
+<span class="sd">        The ending frequency used in matched filtering. This will be the right</span>
+<span class="sd">        edge of the last frequency bin.</span>
+<span class="sd">    chi : float, optional</span>
+<span class="sd">        Tunable parameter, see [Barak, Dai &amp; Venumadhav 2018]</span>
+<span class="sd">    eps : float, optional</span>
+<span class="sd">        Tunable parameter, see [Barak, Dai &amp; Venumadhav 2018]. Lower values</span>
+<span class="sd">        result in larger number of bins.</span>
+<span class="sd">    gammas : array, optional</span>
+<span class="sd">        Frequency powerlaw indices to be used in computing bins.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nbin : int</span>
+<span class="sd">        Number of bins.</span>
+<span class="sd">    fbin : numpy.array of floats</span>
+<span class="sd">        Bin edge frequencies.</span>
+<span class="sd">    fbin_ind : numpy.array of ints</span>
+<span class="sd">        Indices of bin edges in full frequency array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">f_lo</span><span class="p">,</span> <span class="n">f_hi</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+    <span class="c1"># f^ga power law index</span>
+    <span class="n">ga</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">gammas</span>
+        <span class="k">if</span> <span class="n">gammas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">5.0</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">7.0</span> <span class="o">/</span> <span class="mi">3</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using powerlaw indices: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ga</span><span class="p">)</span>
+    <span class="n">dalp</span> <span class="o">=</span> <span class="n">chi</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">absolute</span><span class="p">((</span><span class="n">f_lo</span> <span class="o">**</span> <span class="n">ga</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">f_hi</span> <span class="o">**</span> <span class="n">ga</span><span class="p">))</span>
+    <span class="n">dphi</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">numpy</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">*</span> <span class="n">d</span> <span class="o">*</span> <span class="p">(</span><span class="n">f</span> <span class="o">**</span> <span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ga</span><span class="p">,</span> <span class="n">dalp</span><span class="p">)]),</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">dphi_diff</span> <span class="o">=</span> <span class="n">dphi</span> <span class="o">-</span> <span class="n">dphi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># now construct frequency bins</span>
+    <span class="n">nbin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dphi_diff</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">eps</span><span class="p">)</span>
+    <span class="n">dphi2f</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span>
+        <span class="n">dphi_diff</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;slinear&quot;</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span>
+    <span class="p">)</span>
+    <span class="n">dphi_grid</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">dphi_diff</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dphi_diff</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">nbin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># frequency grid points</span>
+    <span class="n">fbin</span> <span class="o">=</span> <span class="n">dphi2f</span><span class="p">(</span><span class="n">dphi_grid</span><span class="p">)</span>
+    <span class="c1"># indices of frequency grid points in the FFT array</span>
+    <span class="n">fbin_ind</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">f_full</span><span class="p">,</span> <span class="n">fbin</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx_fbin</span><span class="p">,</span> <span class="n">idx_f_full</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fbin_ind</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">idx_f_full</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">curr_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">idx_f_full</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_full</span><span class="p">):</span>
+            <span class="n">curr_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_full</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">abs1</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">f_full</span><span class="p">[</span><span class="n">idx_f_full</span><span class="p">]</span> <span class="o">-</span> <span class="n">fbin</span><span class="p">[</span><span class="n">idx_fbin</span><span class="p">])</span>
+            <span class="n">abs2</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">f_full</span><span class="p">[</span><span class="n">idx_f_full</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">fbin</span><span class="p">[</span><span class="n">idx_fbin</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">abs1</span> <span class="o">&gt;</span> <span class="n">abs2</span><span class="p">:</span>
+                <span class="n">curr_idx</span> <span class="o">=</span> <span class="n">idx_f_full</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">curr_idx</span> <span class="o">=</span> <span class="n">idx_f_full</span>
+        <span class="n">fbin_ind</span><span class="p">[</span><span class="n">idx_fbin</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_idx</span>
+    <span class="n">fbin_ind</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">fbin_ind</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fbin_ind</span></div>
+
+
+
+<div class="viewcode-block" id="Relative">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Relative</span><span class="p">(</span><span class="n">DistMarg</span><span class="p">,</span> <span class="n">BaseGaussianNoise</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Model that assumes the likelihood in a region around the peak</span>
+<span class="sd">    is slowly varying such that a linear approximation can be made, and</span>
+<span class="sd">    likelihoods can be calculated at a coarser frequency resolution. For</span>
+<span class="sd">    more details on the implementation, see https://arxiv.org/abs/1806.08792.</span>
+
+<span class="sd">    This model requires the use of a fiducial waveform whose parameters are</span>
+<span class="sd">    near the peak of the likelihood. The fiducial waveform and all template</span>
+<span class="sd">    waveforms used in likelihood calculation are currently generated using</span>
+<span class="sd">    the SPAtmplt approximant.</span>
+
+<span class="sd">    For more details on initialization parameters and definition of terms, see</span>
+<span class="sd">    :py:class:`BaseGaussianNoise`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_params : (tuple of) string(s)</span>
+<span class="sd">        A tuple of parameter names that will be varied.</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        A dictionary of data, in which the keys are the detector names and the</span>
+<span class="sd">        values are the data (assumed to be unwhitened). All data must have the</span>
+<span class="sd">        same frequency resolution.</span>
+<span class="sd">    low_frequency_cutoff : dict</span>
+<span class="sd">        A dictionary of starting frequencies, in which the keys are the</span>
+<span class="sd">        detector names and the values are the starting frequencies for the</span>
+<span class="sd">        respective detectors to be used for computing inner products.</span>
+<span class="sd">    figucial_params : dict</span>
+<span class="sd">        A dictionary of waveform parameters to be used for generating the</span>
+<span class="sd">        fiducial waveform. Keys must be parameter names in the form</span>
+<span class="sd">        &#39;PARAM_ref&#39; where PARAM is a recognized extrinsic parameter or</span>
+<span class="sd">        an intrinsic parameter compatible with the chosen approximant.</span>
+<span class="sd">    gammas : array of floats, optional</span>
+<span class="sd">        Frequency powerlaw indices to be used in computing frequency bins.</span>
+<span class="sd">    epsilon : float, optional</span>
+<span class="sd">        Tuning parameter used in calculating the frequency bins. Lower values</span>
+<span class="sd">        will result in higher resolution and more bins.</span>
+<span class="sd">    earth_rotation: boolean, optional</span>
+<span class="sd">        Default is False. If True, then vary the fp/fc polarization values</span>
+<span class="sd">        as a function of frequency bin, using a predetermined PN approximation</span>
+<span class="sd">        for the time offsets.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to</span>
+<span class="sd">        :py:class:`BaseGaussianNoise`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;relative&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variable_params</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">low_frequency_cutoff</span><span class="p">,</span>
+        <span class="n">fiducial_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">gammas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">earth_rotation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">earth_rotation_mode</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">marginalize_phase</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+
+        <span class="n">variable_params</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_marginalization</span><span class="p">(</span>
+                               <span class="n">variable_params</span><span class="p">,</span>
+                               <span class="n">marginalize_phase</span><span class="o">=</span><span class="n">marginalize_phase</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Relative</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+        <span class="c1"># If the waveform needs us to apply the detector response,</span>
+        <span class="c1"># set flag to true (most cases for ground-based observatories).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fd_det_sequence</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># reference waveform and bin edges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{},</span> <span class="p">{},</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h00</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_time</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+
+        <span class="c1"># filtered summary data for linear approximation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sdat</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># store fiducial waveform params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fiducial_params</span><span class="p">)</span>
+
+        <span class="c1"># the flag used in `_loglr`</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;REPLACE&#39;</span><span class="p">:</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="c1"># store data and frequencies</span>
+            <span class="n">d0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">d0</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">d0</span><span class="o">.</span><span class="n">delta_f</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">d0</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+
+            <span class="c1"># generate fiducial waveform</span>
+            <span class="n">f_lo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmin</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">f_hi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmax</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: Generating fiducial waveform from </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2"> Hz&quot;</span><span class="p">,</span>
+                <span class="n">ifo</span><span class="p">,</span> <span class="n">f_lo</span><span class="p">,</span> <span class="n">f_hi</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># prune low frequency samples to avoid waveform errors</span>
+            <span class="n">fpoints</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">))</span>
+            <span class="n">fpoints</span> <span class="o">=</span> <span class="n">fpoints</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kmin</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span><span class="bp">self</span><span class="o">.</span><span class="n">kmax</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span><span class="p">:</span>
+                <span class="n">wave</span> <span class="o">=</span> <span class="n">get_fd_det_waveform_sequence</span><span class="p">(</span><span class="n">ifos</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span>
+                                                    <span class="n">sample_points</span><span class="o">=</span><span class="n">fpoints</span><span class="p">,</span>
+                                                    <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">)</span>
+                <span class="n">curr_wav</span> <span class="o">=</span> <span class="n">wave</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fid_hp</span><span class="p">,</span> <span class="n">fid_hc</span> <span class="o">=</span> <span class="n">get_fd_waveform_sequence</span><span class="p">(</span><span class="n">sample_points</span><span class="o">=</span><span class="n">fpoints</span><span class="p">,</span>
+                                                          <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">)</span>
+                <span class="c1"># Apply detector response if not handled by</span>
+                <span class="c1"># the waveform generator</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">],</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;polarization&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">])</span>
+                <span class="n">curr_wav</span> <span class="o">=</span> <span class="p">(</span><span class="n">fid_hp</span> <span class="o">*</span> <span class="n">fp</span> <span class="o">+</span> <span class="n">fid_hc</span> <span class="o">*</span> <span class="n">fc</span><span class="p">)</span>
+
+            <span class="c1"># check for zeros at low and high frequencies</span>
+            <span class="c1"># make sure only nonzero samples are included in bins</span>
+            <span class="n">numzeros_lo</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">curr_wav</span> <span class="o">!=</span> <span class="mi">0</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">numzeros_lo</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_kmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmin</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">+</span> <span class="n">numzeros_lo</span>
+                <span class="n">f_lo</span> <span class="o">=</span> <span class="n">new_kmin</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;WARNING! Fiducial waveform starts above &quot;</span>
+                    <span class="s2">&quot;low-frequency-cutoff, initial bin frequency &quot;</span>
+                    <span class="s2">&quot;will be </span><span class="si">%s</span><span class="s2"> Hz&quot;</span><span class="p">,</span> <span class="n">f_lo</span><span class="p">)</span>
+            <span class="n">numzeros_hi</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">curr_wav</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">numzeros_hi</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">new_kmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmax</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">numzeros_hi</span>
+                <span class="n">f_hi</span> <span class="o">=</span> <span class="n">new_kmax</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;WARNING! Fiducial waveform terminates below &quot;</span>
+                    <span class="s2">&quot;high-frequency-cutoff, final bin frequency &quot;</span>
+                    <span class="s2">&quot;will be </span><span class="si">%s</span><span class="s2"> Hz&quot;</span><span class="p">,</span> <span class="n">f_hi</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">curr_wav</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">]))</span>
+            <span class="n">curr_wav</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">curr_wav</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kmin</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+
+            <span class="c1"># We&#39;ll apply this to the data, in lieu of the ref waveform</span>
+            <span class="c1"># This makes it easier to compare target signal to reference later</span>
+            <span class="n">tshift</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">curr_wav</span><span class="p">)</span> <span class="c1"># * tshift</span>
+            <span class="n">data_shifted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">tshift</span><span class="p">)</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Computing frequency bins&quot;</span><span class="p">)</span>
+            <span class="n">fbin_ind</span> <span class="o">=</span> <span class="n">setup_bins</span><span class="p">(</span>
+                <span class="n">f_full</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">f_lo</span><span class="o">=</span><span class="n">f_lo</span><span class="p">,</span> <span class="n">f_hi</span><span class="o">=</span><span class="n">f_hi</span><span class="p">,</span>
+                <span class="n">gammas</span><span class="o">=</span><span class="n">gammas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">epsilon</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using </span><span class="si">%s</span><span class="s2"> bins for this model&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">fbin_ind</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">fbin_ind</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">fbin_ind</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_from_frequencies</span><span class="p">(</span><span class="n">data_shifted</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">h00</span><span class="p">,</span> <span class="n">fbin_ind</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">antenna_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_antenna</span><span class="p">(</span>
+                                        <span class="n">earth_rotation</span><span class="p">,</span>
+                                        <span class="nb">int</span><span class="p">(</span><span class="n">earth_rotation_mode</span><span class="p">),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">combine_layout</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Relative.init_from_frequencies">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.init_from_frequencies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_from_frequencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span> <span class="n">fbin_ind</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="n">fbin_ind</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">fbin_ind</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fbin_ind</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># store low res copy of fiducial waveform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">fbin_ind</span><span class="p">)</span>
+
+        <span class="c1"># compute summary data</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Calculating summary data at frequency resolution </span><span class="si">%s</span><span class="s2"> Hz&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_product</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+        <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_product</span><span class="p">(</span><span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sdat</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;a0&quot;</span><span class="p">:</span> <span class="n">a0</span><span class="p">,</span> <span class="s2">&quot;a1&quot;</span><span class="p">:</span> <span class="n">a1</span><span class="p">,</span> <span class="s2">&quot;b0&quot;</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">b0</span><span class="p">),</span> <span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">b1</span><span class="p">)}</span></div>
+
+
+<div class="viewcode-block" id="Relative.combine_layout">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.combine_layout">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">combine_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># determine the unique ifo layouts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_map</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_map</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ifo_map</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> unique ifo layouts&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Relative.setup_antenna">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.setup_antenna">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_antenna</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">earth_rotation</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">fedges</span><span class="p">):</span>
+        <span class="c1"># Calculate the times to evaluate fp/fc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">earth_rotation</span> <span class="o">=</span> <span class="n">earth_rotation</span>
+        <span class="k">if</span> <span class="n">earth_rotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Enabling frequency-dependent earth rotation&quot;</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.spa_tmplt</span><span class="w"> </span><span class="kn">import</span> <span class="n">spa_length_in_time</span>
+
+            <span class="n">times</span> <span class="o">=</span> <span class="n">spa_length_in_time</span><span class="p">(</span>
+                <span class="n">phase_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">mass1</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span>
+                <span class="n">mass2</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                <span class="n">f_lower</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fedges</span><span class="p">)</span> <span class="o">/</span> <span class="n">mode</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">atimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">times</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lik</span> <span class="o">=</span> <span class="n">likelihood_parts_v</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mlik</span> <span class="o">=</span> <span class="n">likelihood_parts_multi_v</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">atimes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lik</span> <span class="o">=</span> <span class="n">likelihood_parts_det</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mlik</span> <span class="o">=</span> <span class="n">likelihood_parts_det_multi</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lik</span> <span class="o">=</span> <span class="n">likelihood_parts</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mlik</span> <span class="o">=</span> <span class="n">likelihood_parts_multi</span>
+        <span class="k">return</span> <span class="n">atimes</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">likelihood_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_vector_params</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+
+            <span class="n">vmarg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_vector_params</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">earth_rotation</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">,</span> <span class="s1">&#39;polarization&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">=</span> <span class="s1">&#39;earth_time_pol&#39;</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_v_pol_time</span>
+                <span class="k">elif</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">=</span> <span class="s1">&#39;earth_pol&#39;</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_v_pol</span>
+                <span class="k">elif</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">=</span> <span class="s1">&#39;earth_time&#39;</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_v_time</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;tc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_vector</span>
+                <span class="k">elif</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">,</span> <span class="s1">&#39;polarization&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_vector</span>
+                <span class="k">elif</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;tc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_vectort</span>
+                <span class="k">elif</span> <span class="nb">set</span><span class="p">([</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">vmarg</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">likelihood_parts_vectorp</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lik</span>
+
+<div class="viewcode-block" id="Relative.summary_product">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.summary_product">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate the summary values for the inner product &lt;h1|h2&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># calculate coefficients</span>
+        <span class="n">h12</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span> <span class="o">*</span> <span class="n">h2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">psds</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+        <span class="c1"># constant terms</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="mf">4.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="n">h12</span><span class="p">[</span><span class="n">l</span><span class="p">:</span><span class="n">h</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">bins</span>
+            <span class="p">])</span>
+
+        <span class="c1"># linear terms</span>
+        <span class="n">a1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="mf">4.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">h</span> <span class="o">-</span> <span class="n">l</span><span class="p">)</span> <span class="o">*</span>
+                <span class="p">(</span><span class="n">h12</span><span class="p">[</span><span class="n">l</span><span class="p">:</span><span class="n">h</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">l</span><span class="p">:</span><span class="n">h</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">l</span><span class="p">]))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">bins</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span></div>
+
+
+<div class="viewcode-block" id="Relative.get_waveforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.get_waveforms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Get the waveform polarizations for each ifo</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span><span class="p">:</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">wfs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">get_fd_det_waveform_sequence</span><span class="p">(</span>
+                        <span class="n">ifos</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span> <span class="n">sample_points</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="o">**</span><span class="n">params</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">wfs</span>
+
+        <span class="n">wfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_unique</span><span class="p">:</span>
+            <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_fd_waveform_sequence</span><span class="p">(</span><span class="n">sample_points</span><span class="o">=</span><span class="n">edge</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+            <span class="n">wfs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">))</span>
+        <span class="n">wf_ret</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="n">wfs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_map</span><span class="p">[</span><span class="n">ifo</span><span class="p">]]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wf_ret</span> <span class="o">=</span> <span class="n">wf_ret</span>
+        <span class="k">return</span> <span class="n">wf_ret</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_signal_support</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; The list of classes that this model supports in a multi-signal</span>
+<span class="sd">        likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if this model *can* be included in a multi-signal model.</span>
+        <span class="c1"># All marginalizations must currently be disabled to work!</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">marginalize_vector_params</span> <span class="ow">or</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_distance</span> <span class="ow">or</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_phase</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cannot use single template model inside of&quot;</span>
+                         <span class="s2">&quot;multi_signal if marginalizations are enabled&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="Relative.calculate_hihjs">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.calculate_hihjs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_hihjs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Pre-calculate the hihj inner products on a grid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                <span class="n">h1</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">h2</span> <span class="o">=</span> <span class="n">m2</span><span class="o">.</span><span class="n">h00</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+                <span class="c1"># Combine the grids</span>
+                <span class="n">edge</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">([</span><span class="n">m1</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">m2</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]])</span>
+
+                <span class="c1"># Remove any points where either reference is zero</span>
+                <span class="n">keep</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">h1</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">h2</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">edge</span> <span class="o">=</span> <span class="n">edge</span><span class="p">[</span><span class="n">keep</span><span class="p">]</span>
+                <span class="n">fedge</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">edge</span><span class="p">]</span>
+
+                <span class="n">bins</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                        <span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="p">])</span>
+                <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_product</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)][</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">fedge</span></div>
+
+
+<div class="viewcode-block" id="Relative.multi_loglikelihood">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.multi_loglikelihood">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate a multi-model (signal) likelihood</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="n">models</span>
+        <span class="n">loglr</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># handle sum[&lt;d|h_i&gt; - 0.5 &lt;h_i|h_i&gt;]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+            <span class="n">loglr</span> <span class="o">+=</span> <span class="n">m</span><span class="o">.</span><span class="n">loglr</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;hihj&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_hihjs</span><span class="p">(</span><span class="n">models</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                    <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">fedge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)][</span><span class="n">det</span><span class="p">]</span>
+
+                    <span class="n">dtc</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">h00</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">_current_wf_parts</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                    <span class="n">dtc2</span><span class="p">,</span> <span class="n">channel2</span><span class="p">,</span> <span class="n">h002</span> <span class="o">=</span> <span class="n">m2</span><span class="o">.</span><span class="n">_current_wf_parts</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+
+                    <span class="n">c1c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlik</span><span class="p">(</span><span class="n">fedge</span><span class="p">,</span>
+                                     <span class="n">dtc</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                     <span class="n">dtc2</span><span class="p">,</span> <span class="n">channel2</span><span class="p">,</span> <span class="n">h002</span><span class="p">,</span>
+                                     <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">)</span>
+                    <span class="n">loglr</span> <span class="o">+=</span> <span class="o">-</span> <span class="n">c1c2</span><span class="o">.</span><span class="n">real</span> <span class="c1"># This is -0.5 * re(&lt;h1|h2&gt; + &lt;h2|h1&gt;)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># finally add in the lognl term from this model</span>
+            <span class="k">for</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                    <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">fedge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hihj</span><span class="p">[(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)][</span><span class="n">det</span><span class="p">]</span>
+
+                    <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span> <span class="o">=</span> <span class="n">m1</span><span class="o">.</span><span class="n">_current_wf_parts</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                    <span class="n">fp2</span><span class="p">,</span> <span class="n">fc2</span><span class="p">,</span> <span class="n">dtc2</span><span class="p">,</span> <span class="n">hp2</span><span class="p">,</span> <span class="n">hc2</span><span class="p">,</span> <span class="n">h002</span> <span class="o">=</span> <span class="n">m2</span><span class="o">.</span><span class="n">_current_wf_parts</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+
+                    <span class="n">h1h2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlik</span><span class="p">(</span><span class="n">fedge</span><span class="p">,</span>
+                                     <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                     <span class="n">fp2</span><span class="p">,</span> <span class="n">fc2</span><span class="p">,</span> <span class="n">dtc2</span><span class="p">,</span> <span class="n">hp2</span><span class="p">,</span> <span class="n">hc2</span><span class="p">,</span> <span class="n">h002</span><span class="p">,</span>
+                                     <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">)</span>
+                    <span class="n">loglr</span> <span class="o">+=</span> <span class="o">-</span> <span class="n">h1h2</span><span class="o">.</span><span class="n">real</span> <span class="c1"># This is -0.5 * re(&lt;h1|h2&gt; + &lt;h2|h1&gt;)</span>
+        <span class="k">return</span> <span class="n">loglr</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lognl</span></div>
+
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+<span class="sd">        or inner product &lt;s|h&gt; and &lt;h|h&gt; if `self.return_sh_hh` is True.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        or</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The inner product (&lt;s|h&gt;, &lt;h|h&gt;).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get model params</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">lik</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood_function</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">filt</span> <span class="o">=</span> <span class="mi">0</span><span class="n">j</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_wf_parts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">pol_phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">freqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">sdat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdat</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">h00</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+            <span class="c1"># project waveform to detector frame if waveform does not deal</span>
+            <span class="c1"># with detector response. Otherwise, skip detector response.</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">still_needs_det_response</span><span class="p">:</span>
+                <span class="n">dtc</span> <span class="o">=</span> <span class="mf">0.</span>
+
+                <span class="n">channel</span> <span class="o">=</span> <span class="n">wfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+                <span class="n">filter_i</span><span class="p">,</span> <span class="n">norm_i</span> <span class="o">=</span> <span class="n">lik</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                       <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                       <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_wf_parts</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">dtc</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">h00</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">wfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">det</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span>
+                                             <span class="mf">0.0</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span> <span class="n">times</span><span class="p">)</span>
+                <span class="n">dtc</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">-</span> <span class="n">end_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">==</span> <span class="s1">&#39;earth_pol&#39;</span><span class="p">:</span>
+                    <span class="n">filter_i</span><span class="p">,</span> <span class="n">norm_i</span> <span class="o">=</span> <span class="n">lik</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span> <span class="n">pol_phase</span><span class="p">,</span>
+                                           <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">fc</span><span class="p">)</span> <span class="o">*</span> <span class="n">pol_phase</span>
+                    <span class="n">fp</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">fc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">imag</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">filter_i</span><span class="p">,</span> <span class="n">norm_i</span> <span class="o">=</span> <span class="n">lik</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span>
+                                           <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_wf_parts</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">)</span>
+
+            <span class="n">filt</span> <span class="o">+=</span> <span class="n">filter_i</span>
+            <span class="n">norm</span> <span class="o">+=</span> <span class="n">norm_i</span>
+
+        <span class="n">loglr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="n">norm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="n">norm</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">loglr</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns -inf for loglr if no waveform generated.</span>
+
+<span class="sd">        If `return_sh_hh` is set to True, a FailedWaveformError will be raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FailedWaveformError</span><span class="p">(</span><span class="s2">&quot;Waveform failed to generate and &quot;</span>
+                                      <span class="s2">&quot;return_sh_hh set to True! I don&#39;t know &quot;</span>
+                                      <span class="s2">&quot;what to return in this case.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+
+<div class="viewcode-block" id="Relative.write_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.write_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds writing the fiducial parameters and epsilon to file&#39;s attrs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.BaseInferenceFile instance</span>
+<span class="sd">            The inference file to write to.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            If provided, the metadata will be written to the attrs specified</span>
+<span class="sd">            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is</span>
+<span class="sd">            written to the top-level attrs (``fp.attrs``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fid_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_ref&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span> <span class="o">=</span> <span class="n">v</span></div>
+
+
+<div class="viewcode-block" id="Relative.max_curvature_from_reference">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.max_curvature_from_reference">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_curvature_from_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the maximum change in slope between frequency bins</span>
+<span class="sd">        relative to the reference waveform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dmax</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wf_ret</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">r</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">dmax</span> <span class="o">=</span> <span class="n">d</span> <span class="k">if</span> <span class="n">dmax</span> <span class="o">&lt;</span> <span class="n">d</span> <span class="k">else</span> <span class="n">dmax</span>
+        <span class="k">return</span> <span class="n">dmax</span></div>
+
+
+<div class="viewcode-block" id="Relative.extra_args_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative.extra_args_from_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extra_args_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtypes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds reading fiducial waveform parameters from config file.&quot;&quot;&quot;</span>
+        <span class="c1"># add fiducial params to skip list</span>
+        <span class="n">skip_args</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="n">option</span> <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">)</span> <span class="k">if</span> <span class="n">option</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_ref&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="c1"># get frequency power-law indices if specified</span>
+        <span class="c1"># NOTE these should be supplied in units of 1/3</span>
+        <span class="n">gammas</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;gammas&quot;</span><span class="p">):</span>
+            <span class="n">skip_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;gammas&quot;</span><span class="p">)</span>
+            <span class="n">gammas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s2">&quot;gammas&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+            <span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">Relative</span><span class="p">,</span> <span class="n">Relative</span><span class="p">)</span><span class="o">.</span><span class="n">extra_args_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="n">skip_args</span><span class="p">,</span> <span class="n">dtypes</span><span class="o">=</span><span class="n">dtypes</span>
+        <span class="p">)</span>
+
+        <span class="c1"># get fiducial params from config</span>
+        <span class="n">fid_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_ref&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_ref&quot;</span><span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="c1"># add optional params with default values if not specified</span>
+        <span class="n">opt_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ra&quot;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+            <span class="s2">&quot;dec&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;inclination&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;polarization&quot;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">fid_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">opt_params</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">opt_params</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fid_params</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;fiducial_params&quot;</span><span class="p">:</span> <span class="n">fid_params</span><span class="p">,</span> <span class="s2">&quot;gammas&quot;</span><span class="p">:</span> <span class="n">gammas</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">args</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RelativeTime">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTime">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RelativeTime</span><span class="p">(</span><span class="n">Relative</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Heterodyne likelihood optimized for time marginalization. In addition</span>
+<span class="sd">    it supports phase (dominant-mode), sky location, and polarization</span>
+<span class="sd">    marginalization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;relative_time&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+                 <span class="n">sample_rate</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RelativeTime</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_peak_lock</span><span class="p">(</span><span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw_ifos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_snr</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ref_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_ref_snr&#39;</span><span class="p">):</span>
+            <span class="n">wfs</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ref_snr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_snr</span><span class="p">(</span><span class="n">wfs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref_snr</span>
+
+<div class="viewcode-block" id="RelativeTime.get_snr">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTime.get_snr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wfs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return hp/hc maximized SNR time series</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">snrs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">:</span>
+            <span class="n">sdat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdat</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">dtc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tstart</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+            <span class="n">snr</span> <span class="o">=</span> <span class="n">snr_predictor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                <span class="n">dtc</span> <span class="o">-</span> <span class="n">delta_t</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span>
+                                <span class="n">wfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">wfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+            <span class="n">snrs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span>
+                                   <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tstart</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">delta_t</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">snrs</span></div>
+
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get model params</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">lik</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood_function</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">filt</span> <span class="o">=</span> <span class="mi">0</span><span class="n">j</span>
+        <span class="n">pol_phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr_draw</span><span class="p">(</span><span class="n">wfs</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">freqs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">sdat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdat</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">h00</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">antenna_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+            <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">wfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">det</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span>
+                                         <span class="mi">0</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span>
+            <span class="n">times</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;ra&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;dec&quot;</span><span class="p">],</span> <span class="n">times</span><span class="p">)</span>
+            <span class="n">dtc</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">end_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">==</span> <span class="s1">&#39;earth_time_pol&#39;</span><span class="p">:</span>
+                <span class="n">filter_i</span><span class="p">,</span> <span class="n">norm_i</span> <span class="o">=</span> <span class="n">lik</span><span class="p">(</span>
+                                       <span class="n">freqs</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span> <span class="n">pol_phase</span><span class="p">,</span>
+                                       <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                       <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                       <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">fc</span><span class="p">)</span> <span class="o">*</span> <span class="n">pol_phase</span>
+                <span class="n">fp</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">fc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">imag</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lformat</span> <span class="o">==</span> <span class="s1">&#39;earth_time&#39;</span><span class="p">:</span>
+                    <span class="n">filter_i</span><span class="p">,</span> <span class="n">norm_i</span> <span class="o">=</span> <span class="n">lik</span><span class="p">(</span>
+                                           <span class="n">freqs</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">dtc</span><span class="p">,</span>
+                                           <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">filter_i</span><span class="p">,</span> <span class="n">norm_i</span> <span class="o">=</span> <span class="n">lik</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">times</span> <span class="o">+</span> <span class="n">dtc</span><span class="p">,</span>
+                                           <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">h00</span><span class="p">,</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                           <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+            <span class="n">filt</span> <span class="o">+=</span> <span class="n">filter_i</span>
+            <span class="n">norm</span> <span class="o">+=</span> <span class="n">norm_i</span>
+        <span class="n">loglr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="n">norm</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loglr</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets loglr values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span></div>
+
+
+
+<div class="viewcode-block" id="RelativeTimeDom">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTimeDom">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RelativeTimeDom</span><span class="p">(</span><span class="n">RelativeTime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Heterodyne likelihood optimized for time marginalization and only</span>
+<span class="sd">    dominant-mode waveforms. This enables the ability to do inclination</span>
+<span class="sd">    marginalization in addition to the other forms supportedy by RelativeTime.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;relative_time_dom&quot;</span>
+
+<div class="viewcode-block" id="RelativeTimeDom.get_snr">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.relbin.RelativeTimeDom.get_snr">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wfs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return hp/hc maximized SNR time series</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">snrs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sh</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hh</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">wfs</span><span class="p">:</span>
+            <span class="n">sdat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sdat</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">dtc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tstart</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ta</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+            <span class="n">sh</span><span class="p">,</span> <span class="n">hh</span> <span class="o">=</span> <span class="n">snr_predictor_dom</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fedges</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                       <span class="n">dtc</span> <span class="o">-</span> <span class="n">delta_t</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span>
+                                       <span class="n">wfs</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">h00_sparse</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                       <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">],</span>
+                                       <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">],</span> <span class="n">sdat</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+            <span class="n">snr</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sh</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">hh</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span>
+                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tstart</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">sh</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span>
+                                      <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tstart</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">delta_t</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">hh</span>
+            <span class="n">snrs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">snr</span>
+
+        <span class="k">return</span> <span class="n">snrs</span></div>
+
+
+    <span class="nd">@catch_waveform_error</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the log likelihood ratio,</span>
+<span class="sd">        or inner product &lt;s|h&gt; and &lt;h|h&gt; if `self.return_sh_hh` is True.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \log \mathcal{L}(\Theta) = \sum_i</span>
+<span class="sd">                \left&lt;h_i(\Theta)|d_i\right&gt; -</span>
+<span class="sd">                \frac{1}{2}\left&lt;h_i(\Theta)|h_i(\Theta)\right&gt;,</span>
+
+<span class="sd">        at the current parameter values :math:`\Theta`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the log likelihood ratio.</span>
+<span class="sd">        or</span>
+<span class="sd">        tuple</span>
+<span class="sd">            The inner product (&lt;s|h&gt;, &lt;h|h&gt;).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># calculate &lt;d-h|d-h&gt; = &lt;h|h&gt; - 2&lt;h|d&gt; + &lt;d|d&gt; up to a constant</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_params</span>
+
+        <span class="n">p2</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">p2</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;inclination&#39;</span><span class="p">)</span>
+        <span class="n">wfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_waveforms</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+
+        <span class="n">sh_total</span> <span class="o">=</span> <span class="n">hh_total</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ic</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">])</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">ic</span> <span class="o">*</span> <span class="n">ic</span><span class="p">)</span>
+        <span class="n">pol_phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;polarization&#39;</span><span class="p">])</span>
+
+        <span class="n">snrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_snr</span><span class="p">(</span><span class="n">wfs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr_draw</span><span class="p">(</span><span class="n">snrs</span><span class="o">=</span><span class="n">snrs</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sh</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">precalc_antenna_factors</span><span class="p">:</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_precalc_antenna_factors</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">],</span>
+                                                                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">],</span>
+                                                                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">])</span>
+                <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">],</span>
+                                                       <span class="mi">0</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">])</span>
+            <span class="n">dts</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;tc&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">fc</span><span class="p">)</span> <span class="o">*</span> <span class="n">pol_phase</span>
+            <span class="c1"># Note, this includes complex conjugation already</span>
+            <span class="c1"># as our stored inner products were hp* x data</span>
+            <span class="n">htf</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">real</span> <span class="o">*</span> <span class="n">ip</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">f</span><span class="o">.</span><span class="n">imag</span> <span class="o">*</span> <span class="n">ic</span><span class="p">)</span>
+            <span class="n">sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">at_time</span><span class="p">(</span><span class="n">dts</span><span class="p">,</span> 
+                                      <span class="n">interpolate</span><span class="o">=</span><span class="s1">&#39;quadratic&#39;</span><span class="p">,</span>
+                                      <span class="n">extrapolate</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">)</span>
+            <span class="n">sh_total</span> <span class="o">+=</span> <span class="n">sh</span> <span class="o">*</span> <span class="n">htf</span>
+            <span class="n">hh_total</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hh</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">htf</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.0</span>
+
+        <span class="n">loglr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">marginalize_loglr</span><span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">loglr</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nowaveform_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets loglr values if no waveform generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loglr</span> <span class="o">=</span> <span class="n">sh_total</span> <span class="o">=</span> <span class="n">hh_total</span> <span class="o">=</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_sh_hh</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">(</span><span class="n">sh_total</span><span class="p">,</span> <span class="n">hh_total</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">loglr</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

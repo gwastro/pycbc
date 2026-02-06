@@ -1,0 +1,1281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.strain package" href="pycbc.strain.html" />
+    <link rel="prev" title="pycbc.psd package" href="pycbc.psd.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.results package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.results.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-results-package">
+<h1>pycbc.results package<a class="headerlink" href="#pycbc-results-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.results.color">
+<span id="pycbc-results-color-module"></span><h2>pycbc.results.color module<a class="headerlink" href="#module-pycbc.results.color" title="Link to this heading"></a></h2>
+<p>Utilities for managing matplotlib colors and mapping ifos to color</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.color.ifo_color">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.color.</span></span><span class="sig-name descname"><span class="pre">ifo_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/color.html#ifo_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.color.ifo_color" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.color.source_color">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.color.</span></span><span class="sig-name descname"><span class="pre">source_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/color.html#source_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.color.source_color" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.results.dq">
+<span id="pycbc-results-dq-module"></span><h2>pycbc.results.dq module<a class="headerlink" href="#module-pycbc.results.dq" title="Link to this heading"></a></h2>
+<p>This module contains utilities for following up search triggers</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.dq.get_summary_page_link">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.dq.</span></span><span class="sig-name descname"><span class="pre">get_summary_page_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">utc_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/dq.html#get_summary_page_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.dq.get_summary_page_link" title="Link to this definition"></a></dt>
+<dd><p>Return a string that links to the summary page and aLOG for this ifo</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ifo</strong> (<em>string</em>) – The detector name</p></li>
+<li><p><strong>utc_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.date" title="(in Python v3.14)"><em>datetime.date</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.14)"><em>datetime.datetime</em></a><em> or </em><em>sequence</em>) – Either a datetime.date/datetime.datetime object, or a sequence whose
+first three elements are year, month, day (in that order).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>return_string</strong> – String containing HTML for links to summary page and aLOG search</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.followup">
+<span id="pycbc-results-followup-module"></span><h2>pycbc.results.followup module<a class="headerlink" href="#module-pycbc.results.followup" title="Link to this heading"></a></h2>
+<p>This module provides functions to generate followup plots and trigger
+time series.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.followup.coinc_timeseries_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.followup.</span></span><span class="sig-name descname"><span class="pre">coinc_timeseries_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coinc_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#coinc_timeseries_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.followup.coinc_timeseries_plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.followup.columns_from_file_list">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.followup.</span></span><span class="sig-name descname"><span class="pre">columns_from_file_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#columns_from_file_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.followup.columns_from_file_list" title="Link to this definition"></a></dt>
+<dd><p>Return columns of information stored in single detector trigger
+files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_list_file</strong> (<em>string</em>) – pickle file containing the list of single detector</p></li>
+<li><p><strong>triggers.</strong></p></li>
+<li><p><strong>ifo</strong> (<em>string</em>) – The ifo to return triggers for.</p></li>
+<li><p><strong>columns</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – The list of columns to read from the trigger files.</p></li>
+<li><p><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The start time to get triggers from</p></li>
+<li><p><strong>end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The end time to get triggers from</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>trigger_dict</strong> – A dictionary of column vectors with column names as keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.followup.get_gracedb_search_link">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.followup.</span></span><span class="sig-name descname"><span class="pre">get_gracedb_search_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#get_gracedb_search_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.followup.get_gracedb_search_link" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.followup.times_to_links">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.followup.</span></span><span class="sig-name descname"><span class="pre">times_to_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#times_to_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.followup.times_to_links" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.followup.times_to_urls">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.followup.</span></span><span class="sig-name descname"><span class="pre">times_to_urls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#times_to_urls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.followup.times_to_urls" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.followup.trigger_timeseries_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.followup.</span></span><span class="sig-name descname"><span class="pre">trigger_timeseries_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#trigger_timeseries_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.followup.trigger_timeseries_plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.results.layout">
+<span id="pycbc-results-layout-module"></span><h2>pycbc.results.layout module<a class="headerlink" href="#module-pycbc.results.layout" title="Link to this heading"></a></h2>
+<p>This module contains result page layout and numbering helper functions</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.results.layout.SectionNumber">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.results.layout.</span></span><span class="sig-name descname"><span class="pre">SectionNumber</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#SectionNumber"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.layout.SectionNumber" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class to help with numbering sections in an output page.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.layout.group_layout">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.layout.</span></span><span class="sig-name descname"><span class="pre">group_layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#group_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.layout.group_layout" title="Link to this definition"></a></dt>
+<dd><p>Make a well layout in chunks of two from a list of files</p>
+<dl class="simple">
+<dt>path: str</dt><dd><p>Location to make the well html file</p>
+</dd>
+<dt>files: list of pycbc.workflow.core.Files</dt><dd><p>This list of images to show in order within the well layout html file.
+Every two are placed on the same row.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.layout.grouper">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.layout.</span></span><span class="sig-name descname"><span class="pre">grouper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillvalue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#grouper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.layout.grouper" title="Link to this definition"></a></dt>
+<dd><p>Group items into chunks of n length</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.layout.single_layout">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.layout.</span></span><span class="sig-name descname"><span class="pre">single_layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#single_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.layout.single_layout" title="Link to this definition"></a></dt>
+<dd><p>Make a well layout in  single column format</p>
+<dl class="simple">
+<dt>path: str</dt><dd><p>Location to make the well html file</p>
+</dd>
+<dt>files: list of pycbc.workflow.core.Files</dt><dd><p>This list of images to show in order within the well layout html file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.layout.two_column_layout">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.layout.</span></span><span class="sig-name descname"><span class="pre">two_column_layout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unique</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#two_column_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.layout.two_column_layout" title="Link to this definition"></a></dt>
+<dd><p>Make a well layout in a two column format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Location to make the well html file</p></li>
+<li><p><strong>unique</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – String to add to end of well name. Used if you want more than one well.</p></li>
+<li><p><strong>cols</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>tuples</em>) – The format of the items on the well result section. Each tuple
+contains the two files that are shown in the left and right hand
+side of a row in the well.html page.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.metadata">
+<span id="pycbc-results-metadata-module"></span><h2>pycbc.results.metadata module<a class="headerlink" href="#module-pycbc.results.metadata" title="Link to this heading"></a></h2>
+<p>This Module contains generic utility functions for creating plots within
+PyCBC.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.results.metadata.MetaParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">MetaParser</span></span><a class="reference internal" href="_modules/pycbc/results/metadata.html#MetaParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.MetaParser" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/html.parser.html#html.parser.HTMLParser" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">HTMLParser</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.results.metadata.MetaParser.handle_data">
+<span class="sig-name descname"><span class="pre">handle_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#MetaParser.handle_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.MetaParser.handle_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.results.metadata.MetaParser.handle_starttag">
+<span class="sig-name descname"><span class="pre">handle_starttag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#MetaParser.handle_starttag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.MetaParser.handle_starttag" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.html_escape">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">html_escape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#html_escape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.html_escape" title="Link to this definition"></a></dt>
+<dd><p>Sanitize text for html parsing</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.load_html_metadata">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">load_html_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#load_html_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.load_html_metadata" title="Link to this definition"></a></dt>
+<dd><p>Get metadata from html file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.load_metadata_from_file">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">load_metadata_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#load_metadata_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.load_metadata_from_file" title="Link to this definition"></a></dt>
+<dd><p>Load the plot related metadata saved in a file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of file load metadata from.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>cp</strong> – A configparser object containing the metadata</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ConfigParser</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.load_png_metadata">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">load_png_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#load_png_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.load_png_metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.save_fig_with_metadata">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">save_fig_with_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_kwds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_fig_with_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.save_fig_with_metadata" title="Link to this definition"></a></dt>
+<dd><p>Save plot to file with metadata included. Kewords translate to metadata
+that is stored directly in the plot file. Limited format types available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fig</strong> (<em>matplotlib figure</em>) – The matplotlib figure to save to the file</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of file to store the plot.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.save_html_with_metadata">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">save_html_with_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_kwds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_html_with_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.save_html_with_metadata" title="Link to this definition"></a></dt>
+<dd><p>Save a html output to file with metadata</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.save_pdf_with_metadata">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">save_pdf_with_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_kwds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_pdf_with_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.save_pdf_with_metadata" title="Link to this definition"></a></dt>
+<dd><p>Save a matplotlib figure to a PDF file with metadata.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.metadata.save_png_with_metadata">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.metadata.</span></span><span class="sig-name descname"><span class="pre">save_png_with_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_kwds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_png_with_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.metadata.save_png_with_metadata" title="Link to this definition"></a></dt>
+<dd><p>Save a matplotlib figure to a png with metadata</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.mpld3_utils">
+<span id="pycbc-results-mpld3-utils-module"></span><h2>pycbc.results.mpld3_utils module<a class="headerlink" href="#module-pycbc.results.mpld3_utils" title="Link to this heading"></a></h2>
+<p>This module provides functionality to extend mpld3</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.ClickLink">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.results.mpld3_utils.</span></span><span class="sig-name descname"><span class="pre">ClickLink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#ClickLink"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.ClickLink" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PluginBase</span></code></p>
+<p>Plugin for following a link on click</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.ClickLink.JAVASCRIPT">
+<span class="sig-name descname"><span class="pre">JAVASCRIPT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">mpld3.register_plugin(&quot;clicklink&quot;,</span> <span class="pre">ClickLink);\n</span>&#160;&#160;&#160; <span class="pre">ClickLink.prototype</span> <span class="pre">=</span> <span class="pre">Object.create(mpld3.Plugin.prototype);\n</span>&#160;&#160;&#160; <span class="pre">ClickLink.prototype.constructor</span> <span class="pre">=</span> <span class="pre">ClickLink;\n</span>&#160;&#160;&#160; <span class="pre">ClickLink.prototype.requiredProps</span> <span class="pre">=</span> <span class="pre">[&quot;id&quot;];\n</span>&#160;&#160;&#160; <span class="pre">ClickLink.prototype.defaultProps</span> <span class="pre">=</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">links:</span> <span class="pre">null\n</span>&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160; <span class="pre">function</span> <span class="pre">ClickLink(fig,</span> <span class="pre">props){\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3.Plugin.call(this,</span> <span class="pre">fig,</span> <span class="pre">props);\n</span>&#160;&#160;&#160; <span class="pre">};\n\n</span>&#160;&#160;&#160; <span class="pre">ClickLink.prototype.draw</span> <span class="pre">=</span> <span class="pre">function(){\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">obj</span> <span class="pre">=</span> <span class="pre">mpld3.get_element(this.props.id);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">links</span> <span class="pre">=</span> <span class="pre">this.props.links;\n\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">obj.elements().on(&quot;mousedown&quot;,\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">function(d,</span> <span class="pre">i){\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">window.open(links[i]);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">);\n</span>&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160; <span class="pre">'</span></em><a class="headerlink" href="#pycbc.results.mpld3_utils.ClickLink.JAVASCRIPT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.LineTooltip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.results.mpld3_utils.</span></span><span class="sig-name descname"><span class="pre">LineTooltip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hoffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">css</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#LineTooltip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.LineTooltip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LineHTMLTooltip</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.LineTooltip.JAVASCRIPT">
+<span class="sig-name descname"><span class="pre">JAVASCRIPT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#pycbc.results.mpld3_utils.LineTooltip.JAVASCRIPT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.MPLSlide">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.results.mpld3_utils.</span></span><span class="sig-name descname"><span class="pre">MPLSlide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">button</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#MPLSlide"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.MPLSlide" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PluginBase</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.MPLSlide.JAVASCRIPT">
+<span class="sig-name descname"><span class="pre">JAVASCRIPT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3.Axes.prototype.zoomed</span> <span class="pre">=</span> <span class="pre">function(propagate)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">propagate</span> <span class="pre">=</span> <span class="pre">typeof</span> <span class="pre">propagate</span> <span class="pre">==</span> <span class="pre">&quot;undefined&quot;</span> <span class="pre">?</span> <span class="pre">true</span> <span class="pre">:</span> <span class="pre">propagate;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">if</span> <span class="pre">(propagate)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">dt0</span> <span class="pre">=</span> <span class="pre">this.zoom.translate()[0]</span> <span class="pre">-</span> <span class="pre">this.zoom.last_t[0];\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">dt1</span> <span class="pre">=</span> <span class="pre">this.zoom.translate()[1]</span> <span class="pre">-</span> <span class="pre">this.zoom.last_t[1];\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">ds</span> <span class="pre">=</span> <span class="pre">this.zoom.scale()</span> <span class="pre">/</span> <span class="pre">this.zoom.last_s;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.zoom_x.translate([</span> <span class="pre">this.zoom_x.translate()[0]</span> <span class="pre">+</span> <span class="pre">dt0,</span> <span class="pre">0</span> <span class="pre">]);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.zoom_x.scale(this.zoom_x.scale()</span> <span class="pre">*</span> <span class="pre">ds);\n\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.zoom.last_t</span> <span class="pre">=</span> <span class="pre">this.zoom.translate();\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.zoom.last_s</span> <span class="pre">=</span> <span class="pre">this.zoom.scale();\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.sharex.forEach(function(ax)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">ax.zoom_x.translate(this.zoom_x.translate()).scale(this.zoom_x.scale());\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}.bind(this));\n\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.sharex.forEach(function(ax)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">ax.zoomed(false);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">});\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">for</span> <span class="pre">(var</span> <span class="pre">i</span> <span class="pre">=</span> <span class="pre">0;</span> <span class="pre">i</span> <span class="pre">&lt;</span> <span class="pre">this.elements.length;</span> <span class="pre">i++)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.elements[i].zoomed();\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">};\n\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3.ZoomPlugin</span> <span class="pre">=</span> <span class="pre">mpld3_ZoomPlugin;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3.register_plugin(&quot;zoom&quot;,</span> <span class="pre">mpld3_ZoomPlugin);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype</span> <span class="pre">=</span> <span class="pre">Object.create(mpld3.Plugin.prototype);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype.constructor</span> <span class="pre">=</span> <span class="pre">mpld3_ZoomPlugin;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype.requiredProps</span> <span class="pre">=</span> <span class="pre">[];\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype.defaultProps</span> <span class="pre">=</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">button:</span> <span class="pre">true,\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">enabled:</span> <span class="pre">null\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">};\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">function</span> <span class="pre">mpld3_ZoomPlugin(fig,</span> <span class="pre">props)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3.Plugin.call(this,</span> <span class="pre">fig,</span> <span class="pre">props);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">if</span> <span class="pre">(this.props.enabled</span> <span class="pre">===</span> <span class="pre">null)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.props.enabled</span> <span class="pre">=</span> <span class="pre">!this.props.button;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">enabled</span> <span class="pre">=</span> <span class="pre">this.props.enabled;\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">if</span> <span class="pre">(this.props.button)</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">var</span> <span class="pre">ZoomButton</span> <span class="pre">=</span> <span class="pre">mpld3.ButtonFactory({\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">buttonID:</span> <span class="pre">&quot;zoom&quot;,\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">sticky:</span> <span class="pre">true,\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">actions:</span> <span class="pre">[</span> <span class="pre">&quot;scroll&quot;,</span> <span class="pre">&quot;drag&quot;</span> <span class="pre">],\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">onActivate:</span> <span class="pre">this.activate.bind(this),\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">onDeactivate:</span> <span class="pre">this.deactivate.bind(this),\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">onDraw:</span> <span class="pre">function()</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.setState(enabled);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">},\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">icon:</span> <span class="pre">function()</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">return</span> <span class="pre">mpld3.icons[&quot;move&quot;];\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">});\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.fig.buttons.push(ZoomButton);\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">}\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype.activate</span> <span class="pre">=</span> <span class="pre">function()</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.fig.enable_zoom();\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">};\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype.deactivate</span> <span class="pre">=</span> <span class="pre">function()</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">this.fig.disable_zoom();\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">};\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">mpld3_ZoomPlugin.prototype.draw</span> <span class="pre">=</span> <span class="pre">function()</span> <span class="pre">{\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">if</span> <span class="pre">(this.props.enabled)</span> <span class="pre">this.fig.enable_zoom();</span> <span class="pre">else</span> <span class="pre">this.fig.disable_zoom();\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">};\n</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">'</span></em><a class="headerlink" href="#pycbc.results.mpld3_utils.MPLSlide.JAVASCRIPT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.Tooltip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.results.mpld3_utils.</span></span><span class="sig-name descname"><span class="pre">Tooltip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hoffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">voffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">css</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#Tooltip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.Tooltip" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PointHTMLTooltip</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.results.mpld3_utils.Tooltip.JAVASCRIPT">
+<span class="sig-name descname"><span class="pre">JAVASCRIPT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#pycbc.results.mpld3_utils.Tooltip.JAVASCRIPT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.plot">
+<span id="pycbc-results-plot-module"></span><h2>pycbc.results.plot module<a class="headerlink" href="#module-pycbc.results.plot" title="Link to this heading"></a></h2>
+<p>Plotting utilities and premade plot configurations</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.plot.add_style_opt_to_parser">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.plot.</span></span><span class="sig-name descname"><span class="pre">add_style_opt_to_parser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/plot.html#add_style_opt_to_parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.plot.add_style_opt_to_parser" title="Link to this definition"></a></dt>
+<dd><p>Adds an option to set the matplotlib style to a parser.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.14)"><em>argparse.ArgumentParser</em></a>) – The parser to add the option to.</p></li>
+<li><p><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The default style to use. Default, None, will result in the default
+matplotlib style to be used.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.plot.hist_overflow">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.plot.</span></span><span class="sig-name descname"><span class="pre">hist_overflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_max</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/plot.html#hist_overflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.plot.hist_overflow" title="Link to this definition"></a></dt>
+<dd><p>Make a histogram with an overflow bar above val_max</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.plot.set_style_from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.plot.</span></span><span class="sig-name descname"><span class="pre">set_style_from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/plot.html#set_style_from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.plot.set_style_from_cli" title="Link to this definition"></a></dt>
+<dd><p>Uses the mpl-style option to set the style for plots.</p>
+<p>Note: This will change the global rcParams.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.psd">
+<span id="pycbc-results-psd-module"></span><h2>pycbc.results.psd module<a class="headerlink" href="#module-pycbc.results.psd" title="Link to this heading"></a></h2>
+<p>Module to generate PSD figures</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.psd.generate_asd_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.psd.</span></span><span class="sig-name descname"><span class="pre">generate_asd_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">psddict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/psd.html#generate_asd_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.psd.generate_asd_plot" title="Link to this definition"></a></dt>
+<dd><p>Generate an ASD plot as used for upload to GraceDB.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>psddict</strong> (<em>dictionary</em>) – A dictionary keyed on ifo containing the PSDs as
+FrequencySeries objects</p></li>
+<li><p><strong>output_filename</strong> (<em>string</em>) – The filename for the plot to be saved to</p></li>
+<li><p><strong>f_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Minimum frequency at which anything should be plotted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.pygrb_plotting_utils">
+<span id="pycbc-results-pygrb-plotting-utils-module"></span><h2>pycbc.results.pygrb_plotting_utils module<a class="headerlink" href="#module-pycbc.results.pygrb_plotting_utils" title="Link to this heading"></a></h2>
+<p>Module to generate PyGRB figures: scatter plots and timeseries.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_plotting_utils.axis_max_value">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_plotting_utils.</span></span><span class="sig-name descname"><span class="pre">axis_max_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trig_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#axis_max_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.axis_max_value" title="Link to this definition"></a></dt>
+<dd><p>Deterime the maximum of a quantity in the trigger and injection data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_plotting_utils.axis_min_value">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_plotting_utils.</span></span><span class="sig-name descname"><span class="pre">axis_min_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trig_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#axis_min_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.axis_min_value" title="Link to this definition"></a></dt>
+<dd><p>Deterime the minimum of a quantity in the trigger and injection data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_plotting_utils.contour_plotter">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_plotting_utils.</span></span><span class="sig-name descname"><span class="pre">contour_plotter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_vals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contours</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vert_spike</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#contour_plotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.contour_plotter" title="Link to this definition"></a></dt>
+<dd><p>Plot contours in a scatter plot where SNR is on the horizontal axis</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_plotting_utils.make_grb_segments_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_plotting_utils.</span></span><span class="sig-name descname"><span class="pre">make_grb_segments_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wkflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">science_segs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigger_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigger_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coherent_seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fail_criterion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#make_grb_segments_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.make_grb_segments_plot" title="Link to this definition"></a></dt>
+<dd><p>Plot trigger time and offsource extent over segments</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_plotting_utils.pygrb_plotter">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_plotting_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_plotter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">injs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snr_vals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shade_cont_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vert_spike</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#pygrb_plotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.pygrb_plotter" title="Link to this definition"></a></dt>
+<dd><p>Master function to plot PyGRB results</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.pygrb_postprocessing_utils">
+<span id="pycbc-results-pygrb-postprocessing-utils-module"></span><h2>pycbc.results.pygrb_postprocessing_utils module<a class="headerlink" href="#module-pycbc.results.pygrb_postprocessing_utils" title="Link to this heading"></a></h2>
+<p>Module to generate PyGRB figures: scatter plots and timeseries.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.apply_vetoes_to_found_injs">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">apply_vetoes_to_found_injs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">found_missed_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">found_injs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">veto_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#apply_vetoes_to_found_injs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.apply_vetoes_to_found_injs" title="Link to this definition"></a></dt>
+<dd><p>Separate injections surviving vetoes from vetoed injections.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>found_missed_file</strong> (<em>injections results File</em>)</p></li>
+<li><p><strong>found_injs</strong> (<em>dictionary</em><em> of </em><em>found injections</em>)</p></li>
+<li><p><strong>ifos</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>interferometers to use in vetoing</em>)</p></li>
+<li><p><strong>veto_file</strong> (<em>vetoed segments File</em><em> (</em><em>optional</em><em>)</em>)</p></li>
+<li><p><strong>keys</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>desired dataset names</em><em> (</em><em>optional</em><em>)</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>found_after_vetoes</strong> (<em>dictionary of injections surviving vetoes</em>)</p></li>
+<li><p><strong>missed_after_vetoes</strong> (<em>dictionary of vetoed injections</em>)</p></li>
+<li><p><strong>found_idx</strong> (<em>numpy.array of indices of surviving injections</em>)</p></li>
+<li><p><strong>veto_idx</strong> (<em>numpy.array of indices of vetoed injections</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.construct_trials">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">construct_trials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seg_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slide_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">veto_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hide_onsource</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#construct_trials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.construct_trials" title="Link to this definition"></a></dt>
+<dd><p>Constructs trials from segments, timeslides, and vetoes</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.extract_ifos">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">extract_ifos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trig_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#extract_ifos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.extract_ifos" title="Link to this definition"></a></dt>
+<dd><p>Extracts IFOs from hdf file and checks for presence of a specific IFO</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.extract_trig_properties">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">extract_trig_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slide_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#extract_trig_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.extract_trig_properties" title="Link to this definition"></a></dt>
+<dd><p>Extract and store as dictionaries specific keys of time-slid
+triggers (trigs) compatibly with the trials dictionary (trial_dict)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.get_antenna_dist_factor">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">get_antenna_dist_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">antenna</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geocent_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#get_antenna_dist_factor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.get_antenna_dist_factor" title="Link to this definition"></a></dt>
+<dd><p>Returns the antenna factors (defined as eq. 4.3 on page 57 of
+Duncan Brown’s Ph.D.) for an IFO (passed as pycbc Detector type) at
+a given sky location and time.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.get_coinc_snr">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">get_coinc_snr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigs_or_injs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#get_coinc_snr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.get_coinc_snr" title="Link to this definition"></a></dt>
+<dd><p>Calculate coincident SNR using coherent and null SNRs</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.load_data">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rw_snr_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slide_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.load_data" title="Link to this definition"></a></dt>
+<dd><p>Load data from a trigger/injection PyGRB output file, returning a
+dictionary. If the input_file is None, None is returned. data_tag enables
+logging information about the number of triggers/injections found, so the
+user should not set it to ‘trigs’/’injs’ when processing the onsource.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.load_segment_dict">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">load_segment_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf_file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#load_segment_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.load_segment_dict" title="Link to this definition"></a></dt>
+<dd><p>Loads the segment dictionary with the format
+{slide_id: segmentlist(segments analyzed)}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.load_time_slides">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">load_time_slides</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdf_file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#load_time_slides"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.load_time_slides" title="Link to this definition"></a></dt>
+<dd><p>Loads timeslides from PyGRB output file as a dictionary</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.max_median_stat">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">max_median_stat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slide_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_veto_max_stat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trig_stat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_trials</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#max_median_stat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.max_median_stat" title="Link to this definition"></a></dt>
+<dd><p>Return maximum and median of trig_stat and sorted time_veto_max_stat</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.mc_cal_wf_errs">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">mc_cal_wf_errs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_mc_injs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inj_dists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cal_err</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wf_err</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_dc_cal_err</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#mc_cal_wf_errs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.mc_cal_wf_errs" title="Link to this definition"></a></dt>
+<dd><p>Includes calibration and waveform errors by running an MC</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.pygrb_add_bestnr_cut_opt">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_add_bestnr_cut_opt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#pygrb_add_bestnr_cut_opt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.pygrb_add_bestnr_cut_opt" title="Link to this definition"></a></dt>
+<dd><p>Add to the parser object an argument to place a threshold on BestNR.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.pygrb_add_bestnr_opts">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_add_bestnr_opts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#pygrb_add_bestnr_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.pygrb_add_bestnr_opts" title="Link to this definition"></a></dt>
+<dd><p>Add to the parser object the arguments used for BestNR calculation</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.pygrb_add_injmc_opts">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_add_injmc_opts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#pygrb_add_injmc_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.pygrb_add_injmc_opts" title="Link to this definition"></a></dt>
+<dd><p>Add to parser object the arguments used for Monte-Carlo on distance.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.pygrb_add_null_snr_opts">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_add_null_snr_opts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#pygrb_add_null_snr_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.pygrb_add_null_snr_opts" title="Link to this definition"></a></dt>
+<dd><p>Add to the parser object the arguments used for null SNR calculation
+and null SNR cut.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.pygrb_add_slide_opts">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_add_slide_opts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#pygrb_add_slide_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.pygrb_add_slide_opts" title="Link to this definition"></a></dt>
+<dd><p>Add to parser object arguments related to short timeslides</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.pygrb_initialize_plot_parser">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">pygrb_initialize_plot_parser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#pygrb_initialize_plot_parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.pygrb_initialize_plot_parser" title="Link to this definition"></a></dt>
+<dd><p>Sets up a basic argument parser object for PyGRB plotting scripts</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.slide_opts_helper">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">slide_opts_helper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#slide_opts_helper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.slide_opts_helper" title="Link to this definition"></a></dt>
+<dd><p>This function overwrites the types of input slide_id information
+when loading data in postprocessing scripts.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.sort_stat">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">sort_stat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_veto_max_stat</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#sort_stat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.sort_stat" title="Link to this definition"></a></dt>
+<dd><p>Sort a dictionary of loudest SNRs/BestNRs</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.sort_trigs">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">sort_trigs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trial_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slide_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#sort_trigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.sort_trigs" title="Link to this definition"></a></dt>
+<dd><p>Constructs sorted triggers from a trials dictionary for the slides
+requested via slide_dict.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.pygrb_postprocessing_utils.template_hash_to_id">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.pygrb_postprocessing_utils.</span></span><span class="sig-name descname"><span class="pre">template_hash_to_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trigger_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_postprocessing_utils.html#template_hash_to_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.pygrb_postprocessing_utils.template_hash_to_id" title="Link to this definition"></a></dt>
+<dd><p>This function converts the template hashes from a trigger file
+into ‘template_id’s that represent indices of the
+templates within the bank.
+:param trigger_file:
+:type trigger_file: HFile object for trigger file
+:param bank_file:
+:type bank_file: filepath for template bank</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.render">
+<span id="pycbc-results-render-module"></span><h2>pycbc.results.render module<a class="headerlink" href="#module-pycbc.results.render" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.get_embedded_config">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">get_embedded_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#get_embedded_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.get_embedded_config" title="Link to this definition"></a></dt>
+<dd><p>Attempt to load config data attached to file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.render_default">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">render_default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.render_default" title="Link to this definition"></a></dt>
+<dd><p>This is the default function that will render a template to a string of HTML. The
+string will be for a drop-down tab that contains a link to the file.</p>
+<p>If the file extension requires information to be read, then that is passed to the
+content variable (eg. a segmentlistdict).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.render_glitchgram">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">render_glitchgram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_glitchgram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.render_glitchgram" title="Link to this definition"></a></dt>
+<dd><p>Render a glitchgram file template.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.render_ignore">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">render_ignore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_ignore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.render_ignore" title="Link to this definition"></a></dt>
+<dd><p>Does not render anything.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.render_text">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">render_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.render_text" title="Link to this definition"></a></dt>
+<dd><p>Render a file as text.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.render_tmplt">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">render_tmplt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_tmplt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.render_tmplt" title="Link to this definition"></a></dt>
+<dd><p>Render a file as text.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.render_workflow_html_template">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">render_workflow_html_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtemplate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filelists</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_workflow_html_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.render_workflow_html_template" title="Link to this definition"></a></dt>
+<dd><p>Writes a template given inputs from the workflow generator. Takes
+a list of tuples. Each tuple is a pycbc File object. Also the name of the
+subtemplate to render and the filename of the output.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.render.setup_template_render">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.render.</span></span><span class="sig-name descname"><span class="pre">setup_template_render</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#setup_template_render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.render.setup_template_render" title="Link to this definition"></a></dt>
+<dd><p>This function is the gateway for rendering a template for a file.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.scatter_histograms">
+<span id="pycbc-results-scatter-histograms-module"></span><h2>pycbc.results.scatter_histograms module<a class="headerlink" href="#module-pycbc.results.scatter_histograms" title="Link to this heading"></a></h2>
+<p>Module to generate figures with scatter plots and histograms.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.construct_kde">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">construct_kde</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_kombine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdeargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#construct_kde"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.construct_kde" title="Link to this definition"></a></dt>
+<dd><p>Constructs a KDE from the given samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>samples_array</strong> (<em>array</em>) – Array of values to construct the KDE for.</p></li>
+<li><p><strong>use_kombine</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Use kombine’s clustered KDE instead of scipy’s. Default is False.</p></li>
+<li><p><strong>kdeargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Additional arguments to pass to the KDE. Can be any argument recognized
+by <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.gaussian_kde()</span></code> or
+<code class="xref py py-func docutils literal notranslate"><span class="pre">kombine.clustered_kde.optimized_kde()</span></code>. In either case, you can
+also set <code class="docutils literal notranslate"><span class="pre">max_kde_samples</span></code> to limit the number of samples that are
+used for KDE construction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The KDE.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>kde</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.create_axes_grid">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">create_axes_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height_ratios</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width_ratios</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_diagonals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_axes_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_axes_grid" title="Link to this definition"></a></dt>
+<dd><p>Given a list of parameters, creates a figure with an axis for
+every possible combination of the parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Names of the variables to be plotted.</p></li>
+<li><p><strong>labels</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – A dictionary of parameters -&gt; parameter labels.</p></li>
+<li><p><strong>height_ratios</strong> (<em>{None</em><em>, </em><em>list}</em><em>, </em><em>optional</em>) – Set the height ratios of the axes; see <cite>matplotlib.gridspec.GridSpec</cite>
+for details.</p></li>
+<li><p><strong>width_ratios</strong> (<em>{None</em><em>, </em><em>list}</em><em>, </em><em>optional</em>) – Set the width ratios of the axes; see <cite>matplotlib.gridspec.GridSpec</cite>
+for details.</p></li>
+<li><p><strong>no_diagonals</strong> (<em>{False</em><em>, </em><em>bool}</em><em>, </em><em>optional</em>) – Do not produce axes for the same parameter on both axes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>pyplot.figure</em>) – The figure that was created.</p></li>
+<li><p><strong>axis_dict</strong> (<em>dict</em>) – A dictionary mapping the parameter combinations to the axis and their
+location in the subplots grid; i.e., the key, values are:
+<cite>{(‘param1’, ‘param2’): (pyplot.axes, row index, column index)}</cite></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.create_density_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">create_density_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xparam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yparam</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_contours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contour_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_contours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contour_linestyles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_region</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_kombine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdeargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_density_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_density_plot" title="Link to this definition"></a></dt>
+<dd><p>Computes and plots posterior density and confidence intervals using the
+given samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xparam</strong> (<em>string</em>) – The parameter to plot on the x-axis.</p></li>
+<li><p><strong>yparam</strong> (<em>string</em>) – The parameter to plot on the y-axis.</p></li>
+<li><p><strong>samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>numpy structured array</em><em>, or </em><a class="reference internal" href="pycbc.io.html#pycbc.io.record.FieldArray" title="pycbc.io.record.FieldArray"><em>FieldArray</em></a>) – The samples to plot.</p></li>
+<li><p><strong>plot_density</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot a color map of the density.</p></li>
+<li><p><strong>plot_contours</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot contours showing the n-th percentiles of the density.</p></li>
+<li><p><strong>percentiles</strong> (<em>{None</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>array}</em>) – What percentile contours to draw. If None, will plot the 50th
+and 90th percentiles.</p></li>
+<li><p><strong>cmap</strong> (<em>{'viridis'</em><em>, </em><em>string}</em>) – The name of the colormap to use for the density plot.</p></li>
+<li><p><strong>contour_color</strong> (<em>{None</em><em>, </em><em>string}</em>) – What color to make the contours. Default is white for density
+plots and black for other plots.</p></li>
+<li><p><strong>label_contours</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to label the contours. Default is True.</p></li>
+<li><p><strong>contour_linestyles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – Linestyles to use for the contours. Default (None) will use solid.</p></li>
+<li><p><strong>xmin</strong> (<em>{None</em><em>, </em><em>float}</em>) – Minimum value to plot on x-axis.</p></li>
+<li><p><strong>xmax</strong> (<em>{None</em><em>, </em><em>float}</em>) – Maximum value to plot on x-axis.</p></li>
+<li><p><strong>ymin</strong> (<em>{None</em><em>, </em><em>float}</em>) – Minimum value to plot on y-axis.</p></li>
+<li><p><strong>ymax</strong> (<em>{None</em><em>, </em><em>float}</em>) – Maximum value to plot on y-axis.</p></li>
+<li><p><strong>exclue_region</strong> (<em>{None</em><em>, </em><em>str}</em>) – Exclude the specified region when plotting the density or contours.
+Must be a string in terms of <cite>xparam</cite> and <cite>yparam</cite> that is
+understandable by numpy’s logical evaluation. For example, if
+<cite>xparam = m_1</cite> and <cite>yparam = m_2</cite>, and you want to exclude the region
+for which <cite>m_2</cite> is greater than <cite>m_1</cite>, then exclude region should be
+<cite>‘m_2 &gt; m_1’</cite>.</p></li>
+<li><p><strong>fig</strong> (<em>{None</em><em>, </em><em>pyplot.figure}</em>) – Add the plot to the given figure. If None and ax is None, will create
+a new figure.</p></li>
+<li><p><strong>ax</strong> (<em>{None</em><em>, </em><em>pyplot.axes}</em>) – Draw plot on the given axis. If None, will create a new axis from
+<cite>fig</cite>.</p></li>
+<li><p><strong>use_kombine</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Use kombine’s KDE to calculate density. Otherwise, will use
+<cite>scipy.stats.gaussian_kde.</cite> Default is False.</p></li>
+<li><p><strong>kdeargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Pass the given keyword arguments to the KDE.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>pyplot.figure</em>) – The figure the plot was made on.</p></li>
+<li><p><strong>ax</strong> (<em>pyplot.axes</em>) – The axes the plot was drawn on.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.create_marginalized_hist">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">create_marginalized_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percentiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'k'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillcolor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linecolor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'navy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linestyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_marginal_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_marginalized_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_marginalized_hist" title="Link to this definition"></a></dt>
+<dd><p>Plots a 1D marginalized histogram of the given param from the given
+samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>pyplot.Axes</em>) – The axes on which to draw the plot.</p></li>
+<li><p><strong>values</strong> (<em>array</em>) – The parameter values to plot.</p></li>
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – A label to use for the title.</p></li>
+<li><p><strong>percentiles</strong> (<em>{None</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><em>array}</em>) – What percentiles to draw lines at. If None, will draw lines at
+<cite>[5, 50, 95]</cite> (i.e., the bounds on the upper 90th percentile and the
+median).</p></li>
+<li><p><strong>color</strong> (<em>{'k'</em><em>, </em><em>string}</em>) – What color to make the histogram; default is black.</p></li>
+<li><p><strong>fillcolor</strong> (<em>{'gray'</em><em>, </em><em>string</em><em>, or </em><em>None}</em>) – What color to fill the histogram with. Set to None to not fill the
+histogram. Default is ‘gray’.</p></li>
+<li><p><strong>plot_marginal_lines</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Put vertical lines at the marginal percentiles. Default is True.</p></li>
+<li><p><strong>linestyle</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – What line style to use for the histogram. Default is ‘-‘.</p></li>
+<li><p><strong>linecolor</strong> (<em>{'navy'</em><em>, </em><em>string}</em>) – What color to use for the percentile lines. Default is ‘navy’.</p></li>
+<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Add a title with a estimated value +/- uncertainty. The estimated value
+is the pecentile halfway between the max/min of <code class="docutils literal notranslate"><span class="pre">percentiles</span></code>, while
+the uncertainty is given by the max/min of the <code class="docutils literal notranslate"><span class="pre">percentiles</span></code>. If no
+percentiles are specified, defaults to quoting the median +/- 95/5
+percentiles.</p></li>
+<li><p><strong>rotated</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Plot the histogram on the y-axis instead of the x. Default is False.</p></li>
+<li><p><strong>plot_min</strong> (<em>{None</em><em>, </em><em>float}</em>) – The minimum value to plot. If None, will default to whatever <cite>pyplot</cite>
+creates.</p></li>
+<li><p><strong>plot_max</strong> (<em>{None</em><em>, </em><em>float}</em>) – The maximum value to plot. If None, will default to whatever <cite>pyplot</cite>
+creates.</p></li>
+<li><p><strong>scalefac</strong> (<em>{1.</em><em>, </em><em>float}</em>) – Factor to scale the default font sizes by. Default is 1 (no scaling).</p></li>
+<li><p><strong>log_scale</strong> (<em>boolean</em>) – Should the histogram bins be logarithmically spaced</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.create_multidim_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">create_multidim_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_parameters_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_marginal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_scatter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_maxl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_marginal_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginal_percentiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contour_percentiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginal_title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginal_linestyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zvals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_colorbar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbar_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scatter_cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plasma'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scatter_log_cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_contours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density_cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contour_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_contours</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contour_linestyles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hist_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_kombine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kdeargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_multidim_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_multidim_plot" title="Link to this definition"></a></dt>
+<dd><p>Generate a figure with several plots and histograms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Names of the variables to be plotted.</p></li>
+<li><p><strong>samples</strong> (<a class="reference internal" href="pycbc.io.html#pycbc.io.record.FieldArray" title="pycbc.io.record.FieldArray"><em>FieldArray</em></a>) – A field array of the samples to plot.</p></li>
+<li><p><strong>labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – A dictionary mapping parameters to labels. If none provided, will just
+use the parameter strings as the labels.</p></li>
+<li><p><strong>mins</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – Minimum value for the axis of each variable in <cite>parameters</cite>.
+If None, it will use the minimum of the corresponding variable in
+<cite>samples</cite>.</p></li>
+<li><p><strong>maxs</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – Maximum value for the axis of each variable in <cite>parameters</cite>.
+If None, it will use the maximum of the corresponding variable in
+<cite>samples</cite>.</p></li>
+<li><p><strong>expected_parameters</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – Expected values of <cite>parameters</cite>, as a dictionary mapping parameter
+names -&gt; values. A cross will be plotted at the location of the
+expected parameters on axes that plot any of the expected parameters.</p></li>
+<li><p><strong>expected_parameters_color</strong> (<em>{'r'</em><em>, </em><em>string}</em><em>, </em><em>optional</em>) – What color to make the expected parameters cross.</p></li>
+<li><p><strong>plot_marginal</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot the marginalized distribution on the diagonals. If False, the
+diagonal axes will be turned off.</p></li>
+<li><p><strong>plot_scatter</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot each sample point as a scatter plot.</p></li>
+<li><p><strong>marginal_percentiles</strong> (<em>{None</em><em>, </em><em>array}</em>) – What percentiles to draw lines at on the 1D histograms.
+If None, will draw lines at <cite>[5, 50, 95]</cite> (i.e., the bounds on the
+upper 90th percentile and the median).</p></li>
+<li><p><strong>marginal_title</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Add a title over the 1D marginal plots that gives an estimated value
++/- uncertainty. The estimated value is the pecentile halfway between
+the max/min of <code class="docutils literal notranslate"><span class="pre">maginal_percentiles</span></code>, while the uncertainty is given
+by the max/min of the <code class="docutils literal notranslate"><span class="pre">marginal_percentiles.</span> <span class="pre">If</span> <span class="pre">no</span>
+<span class="pre">``marginal_percentiles</span></code> are specified, the median +/- 95/5 percentiles
+will be quoted.</p></li>
+<li><p><strong>marginal_linestyle</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – What line style to use for the marginal histograms.</p></li>
+<li><p><strong>contour_percentiles</strong> (<em>{None</em><em>, </em><em>array}</em>) – What percentile contours to draw on the scatter plots. If None,
+will plot the 50th and 90th percentiles.</p></li>
+<li><p><strong>zvals</strong> (<em>{None</em><em>, </em><em>array}</em>) – An array to use for coloring the scatter plots. If None, scatter points
+will be the same color.</p></li>
+<li><p><strong>show_colorbar</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Show the colorbar of zvalues used for the scatter points. A ValueError
+will be raised if zvals is None and this is True.</p></li>
+<li><p><strong>cbar_label</strong> (<em>{None</em><em>, </em><em>str}</em>) – Specify a label to add to the colorbar.</p></li>
+<li><p><strong>vmin</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Minimum value for the colorbar. If None, will use the minimum of zvals.</p></li>
+<li><p><strong>vmax</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Maximum value for the colorbar. If None, will use the maxmimum of
+zvals.</p></li>
+<li><p><strong>scatter_cmap</strong> (<em>{'plasma'</em><em>, </em><em>string}</em>) – The color map to use for the scatter points. Default is ‘plasma’.</p></li>
+<li><p><strong>scatter_log_cmap</strong> (<em>boolean</em>) – Should the scatter point coloring be on a log scale? Default False</p></li>
+<li><p><strong>log_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> or </em><em>None</em>) – Which parameters should be plotted on a log scale</p></li>
+<li><p><strong>plot_density</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Plot the density of points as a color map.</p></li>
+<li><p><strong>plot_contours</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Draw contours showing the 50th and 90th percentile confidence regions.</p></li>
+<li><p><strong>density_cmap</strong> (<em>{'viridis'</em><em>, </em><em>string}</em>) – The color map to use for the density plot.</p></li>
+<li><p><strong>contour_color</strong> (<em>{None</em><em>, </em><em>string}</em>) – The color to use for the contour lines. Defaults to white for
+density plots, navy for scatter plots without zvals, and black
+otherwise.</p></li>
+<li><p><strong>label_contours</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to label the contours. Default is True.</p></li>
+<li><p><strong>contour_linestyles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – Linestyles to use for the contours. Default (None) will use solid.</p></li>
+<li><p><strong>use_kombine</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Use kombine’s KDE to calculate density. Otherwise, will use
+<cite>scipy.stats.gaussian_kde.</cite> Default is False.</p></li>
+<li><p><strong>kdeargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Pass the given keyword arguments to the KDE.</p></li>
+<li><p><strong>fig</strong> (<em>pyplot.figure</em>) – Use the given figure instead of creating one.</p></li>
+<li><p><strong>axis_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Use the given dictionary of axes instead of creating one.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>fig</strong> (<em>pyplot.figure</em>) – The figure that was created.</p></li>
+<li><p><strong>axis_dict</strong> (<em>dict</em>) – A dictionary mapping the parameter combinations to the axis and their
+location in the subplots grid; i.e., the key, values are:
+<cite>{(‘param1’, ‘param2’): (pyplot.axes, row index, column index)}</cite></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.get_scale_fac">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">get_scale_fac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fiducial_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fiducial_height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#get_scale_fac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.get_scale_fac" title="Link to this definition"></a></dt>
+<dd><p>Gets a factor to scale fonts by for the given figure. The scale
+factor is relative to a figure with dimensions
+(<cite>fiducial_width</cite>, <cite>fiducial_height</cite>).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.reduce_ticks">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">reduce_ticks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">which</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxticks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#reduce_ticks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.reduce_ticks" title="Link to this definition"></a></dt>
+<dd><p>Given a pyplot axis, resamples its <cite>which</cite>-axis ticks such that are at most
+<cite>maxticks</cite> left.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>axis</em>) – The axis to adjust.</p></li>
+<li><p><strong>which</strong> (<em>{'x'</em><em> | </em><em>'y'}</em>) – Which axis to adjust.</p></li>
+<li><p><strong>maxticks</strong> (<em>{3</em><em>, </em><em>int}</em>) – Maximum number of ticks to use.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An array of the selected ticks.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.remove_common_offset">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">remove_common_offset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#remove_common_offset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.remove_common_offset" title="Link to this definition"></a></dt>
+<dd><p>Given an array of data, removes a common offset &gt; 1000, returning the
+removed value.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.scatter_histograms.set_marginal_histogram_title">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.scatter_histograms.</span></span><span class="sig-name descname"><span class="pre">set_marginal_histogram_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#set_marginal_histogram_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.set_marginal_histogram_title" title="Link to this definition"></a></dt>
+<dd><p>Sets the title of the marginal histograms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>Axes</em>) – The <cite>Axes</cite> instance for the plot.</p></li>
+<li><p><strong>fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The string to add to the title.</p></li>
+<li><p><strong>color</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The color of the text to add to the title.</p></li>
+<li><p><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – If title does not exist, then include label at beginning of the string.</p></li>
+<li><p><strong>rotated</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – If <cite>True</cite> then rotate the text 270 degrees for sideways title.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.snr">
+<span id="pycbc-results-snr-module"></span><h2>pycbc.results.snr module<a class="headerlink" href="#module-pycbc.results.snr" title="Link to this heading"></a></h2>
+<p>Module to generate SNR figures</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.snr.generate_snr_plot">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.snr.</span></span><span class="sig-name descname"><span class="pre">generate_snr_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">snrdict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triggers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/snr.html#generate_snr_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.snr.generate_snr_plot" title="Link to this definition"></a></dt>
+<dd><p>Generate an SNR timeseries plot as used for upload to GraceDB.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>snrdict</strong> (<em>dictionary</em>) – A dictionary keyed on ifo containing the SNR
+TimeSeries objects</p></li>
+<li><p><strong>output_filename</strong> (<em>string</em>) – The filename for the plot to be saved to</p></li>
+<li><p><strong>triggers</strong> (<em>dictionary</em><em> of </em><em>tuples</em>) – A dictionary keyed on IFO, containing (trigger time, trigger snr)</p></li>
+<li><p><strong>ref_time</strong> (<em>number</em><em>, </em><em>GPS seconds</em>) – Reference time which will be used as the zero point of the plot
+This should be an integer value, but doesn’t need to be an integer</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.str_utils">
+<span id="pycbc-results-str-utils-module"></span><h2>pycbc.results.str_utils module<a class="headerlink" href="#module-pycbc.results.str_utils" title="Link to this heading"></a></h2>
+<p>This modules provides functions for formatting values into strings for display.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.str_utils.drop_trailing_zeros">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.str_utils.</span></span><span class="sig-name descname"><span class="pre">drop_trailing_zeros</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#drop_trailing_zeros"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.str_utils.drop_trailing_zeros" title="Link to this definition"></a></dt>
+<dd><p>Drops the trailing zeros in a float that is printed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.str_utils.format_value">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.str_utils.</span></span><span class="sig-name descname"><span class="pre">format_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plus_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_scientific_notation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_relative_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndecs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#format_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.str_utils.format_value" title="Link to this definition"></a></dt>
+<dd><p>Given a numerical value and some bound on it, formats the number into a
+string such that the value is rounded to the nearest significant figure,
+which is determined by the error = abs(value-bound).</p>
+<p>Note: if either use_scientific_notation or include_error are True, the
+returned string will include LaTeX characters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The value to format.</p></li>
+<li><p><strong>error</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The uncertainty in the value. This is used to determine the
+number of significant figures to print. If the value has no
+uncertainty, you can just do value*1e-k, where k+1 is the number
+of significant figures you want.</p></li>
+<li><p><strong>plus_error</strong> (<em>{None</em><em>, </em><em>float}</em>) – The upper uncertainty on the value; i.e., what you need to add to the
+value to get its upper bound. If provided, <code class="docutils literal notranslate"><span class="pre">error</span></code> is assumed to be
+the negative; i.e., value +plus_error -error. The number of
+significant figures printed is determined from min(error,
+plus_error).</p></li>
+<li><p><strong>use_scientific_notation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">abs(log10(value))</span></code> is greater than the given, the return string
+will be formated to “%.1f \times 10^{p}”, where p is the powers of 10
+needed for the leading number in the value to be in the singles spot.
+Otherwise will return “%.(p+1)f”. Default is 3.  To turn off, set to
+<code class="docutils literal notranslate"><span class="pre">numpy.inf</span></code>. Note: using scientific notation assumes that the
+returned value will be enclosed in LaTeX math mode.</p></li>
+<li><p><strong>include_error</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Include the error in the return string; the output will be formated
+val \pm err, where err is the error rounded to the same
+power of 10 as val. Otherwise, just the formatted value will
+be returned. If plus_error is provided then the return text will be
+formatted as <code class="docutils literal notranslate"><span class="pre">val^{+plus_error}_{-error}</span></code>.</p></li>
+<li><p><strong>use_relative_error</strong> (<em>{False</em><em>, </em><em>bool}</em>) – If include_error, the error will be formatted as a percentage of the
+the value.</p></li>
+<li><p><strong>ndecs</strong> (<em>{None</em><em>, </em><em>int}</em>) – Number of values after the decimal point. If not provided,
+it will default to the number of values in the error.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value (and error, if include_error is True) formatted as a string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Given a value and its uncertainty:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">val</span><span class="p">,</span> <span class="n">err</span>
+<span class="go">(3.9278372067613837e-22, 2.2351435286500487e-23)</span>
+</pre></div>
+</div>
+<p>Format with error quoted:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+<span class="go">&#39;3.93 \\pm 0.22\\times 10^{-22}&#39;</span>
+</pre></div>
+</div>
+<p>Quote error as a relative error:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">use_relative_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">&#39;3.93 \\times 10^{-22} \\pm5.6\\%&#39;</span>
+</pre></div>
+</div>
+<p>Format without the error and without scientific notation:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">use_scientific_notation</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
+<span class="go">                 include_error=False)</span>
+<span class="go">&#39;0.000000000000000000000393&#39;</span>
+</pre></div>
+</div>
+<p>Given an plus error:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">err_plus</span>
+<span class="go">8.2700310560051804e-24</span>
+</pre></div>
+</div>
+<p>Format with both bounds quoted:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">plus_error</span><span class="o">=</span><span class="n">err_plus</span><span class="p">)</span>
+<span class="go">&#39;3.928^{+0.083}_{-0.224}\\times 10^{-22}&#39;</span>
+</pre></div>
+</div>
+<p>Format with both bounds quoted as a relative error:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">plus_error</span><span class="o">=</span><span class="n">err_plus</span><span class="p">,</span> <span class="n">use_relative_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">&#39;3.928\\times 10^{-22}\\,^{+2.1\\%}_{-5.7\\%}&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.str_utils.get_signum">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.str_utils.</span></span><span class="sig-name descname"><span class="pre">get_signum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">err</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_sig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#get_signum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.str_utils.get_signum" title="Link to this definition"></a></dt>
+<dd><p>Given an error, returns a string for val formated to the appropriate
+number of significant figures.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.str_utils.mathjax_html_header">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.str_utils.</span></span><span class="sig-name descname"><span class="pre">mathjax_html_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#mathjax_html_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.str_utils.mathjax_html_header" title="Link to this definition"></a></dt>
+<dd><p>Standard header to use for html pages to display latex math.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>header</strong> – The necessary html head needed to use latex on an html page.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.table_utils">
+<span id="pycbc-results-table-utils-module"></span><h2>pycbc.results.table_utils module<a class="headerlink" href="#module-pycbc.results.table_utils" title="Link to this heading"></a></h2>
+<p>This module provides functions to generate sortable html tables</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.table_utils.html_table">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.table_utils.</span></span><span class="sig-name descname"><span class="pre">html_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_strings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/table_utils.html#html_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.table_utils.html_table" title="Link to this definition"></a></dt>
+<dd><p>Return an HTML table of this data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>columns</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>numpy arrays</em>)</p></li>
+<li><p><strong>names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – The list of columns names</p></li>
+<li><p><strong>page_size</strong> (<em>{int</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – The number of items to show on each page of the table</p></li>
+<li><p><strong>format_strings</strong> (<em>{lists</em><em> of </em><em>strings</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – The ICU format string for this column, None for no formatting.
+All columns must have a format string if provided.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>html_table</strong> – A str containing the html code to display a table of this data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.table_utils.static_table">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.table_utils.</span></span><span class="sig-name descname"><span class="pre">static_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/table_utils.html#static_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.table_utils.static_table" title="Link to this definition"></a></dt>
+<dd><p>Return an html table of this data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>two-dimensional string array</em>) – Array containing the cell values</p></li>
+<li><p><strong>titles</strong> (<em>numpy array</em>) – Vector str of titles, must be the same length as data</p></li>
+<li><p><strong>columns_max</strong> (<em>integer</em><em> or </em><em>None</em>) – If given, will restrict the number of columns in the table</p></li>
+<li><p><strong>row_labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – Optional list of row labels to be given as the first cell in
+each data row. Does not count towards columns_max</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>html_table</strong> – A string containing the html table.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results.versioning">
+<span id="pycbc-results-versioning-module"></span><h2>pycbc.results.versioning module<a class="headerlink" href="#module-pycbc.results.versioning" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.versioning.get_code_version_numbers">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.versioning.</span></span><span class="sig-name descname"><span class="pre">get_code_version_numbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">executable_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">executable_files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#get_code_version_numbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.versioning.get_code_version_numbers" title="Link to this definition"></a></dt>
+<dd><p>Will extract the version information from the executables listed in
+the executable section of the supplied ConfigParser object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary keyed by the executable name with values giving the
+version string for each executable.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.results.versioning.get_library_version_info">
+<span class="sig-prename descclassname"><span class="pre">pycbc.results.versioning.</span></span><span class="sig-name descname"><span class="pre">get_library_version_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#get_library_version_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.results.versioning.get_library_version_info" title="Link to this definition"></a></dt>
+<dd><p>This will return a list of dictionaries containing versioning
+information about the various LIGO libraries that PyCBC will use in an
+analysis run.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.results">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.results" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.psd.html" class="btn btn-neutral float-left" title="pycbc.psd package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.strain.html" class="btn btn-neutral float-right" title="pycbc.strain package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+<map id="inheritance3b4a8626f3" name="inheritance3b4a8626f3">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="15,5,200,26"/>
+<area shape="rect" id="node4" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="5,67,210,89"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO" target="_top" title="Provides functions for reading/writing MCMC metadata to file." alt="" coords="231,67,485,89"/>
+<area shape="rect" id="node5" href="../pycbc.inference.io.html#pycbc.inference.io.emcee.EmceeFile" target="_top" title="Class to handle file IO for the ``emcee`` sampler." alt="" coords="292,130,423,151"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.EnsembleMCMCMetadataIO" target="_top" title="Provides functions for reading/writing metadata to file for ensemble" alt="" coords="505,67,763,89"/>
+</map>

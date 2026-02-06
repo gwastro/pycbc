@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.sky_grid &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.sky_grid</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.sky_grid</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Functionality for handling grids of points in the sky for coherent SNR</span>
+<span class="sd">calculation via `pycbc_multi_inspiral`. The main operation to be performed on</span>
+<span class="sd">these points is calculating the antenna pattern functions and time delays from</span>
+<span class="sd">the Earth center for a network of detectors.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensurearray</span>
+
+
+<div class="viewcode-block" id="SkyGrid">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.sky_grid.SkyGrid">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SkyGrid</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">detectors</span><span class="p">,</span> <span class="n">ref_gps_time</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a sky grid from a list of RA/dec coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ra: iterable of floats</span>
+<span class="sd">            Right ascensions for each point in radians, in the interval [0,2π).</span>
+<span class="sd">        dec: iterable of floats</span>
+<span class="sd">            Declination for each point in radians, where π/2 is the North pole,</span>
+<span class="sd">            -π/2 is the South pole, and 0 is the celestial equator.</span>
+<span class="sd">        detectors: iterable of str</span>
+<span class="sd">            List of detector names associated with the sky grid, typically the</span>
+<span class="sd">            detectors for which the grid has been placed or is to be placed.</span>
+<span class="sd">            The detectors will be used when calculating the antenna pattern</span>
+<span class="sd">            functions and time delays from Earth center.</span>
+<span class="sd">        ref_gps_time: float</span>
+<span class="sd">            Reference GPS time associated with the sky grid. This will be used</span>
+<span class="sd">            when calculating the antenna pattern functions and time delays from</span>
+<span class="sd">            Earth center.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># We store the points in a 2D array internally, first dimension runs</span>
+        <span class="c1"># over the list of points, second dimension is RA/dec.</span>
+        <span class="c1"># Question: should we use Astropy sky positions instead?</span>
+        <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ensurearray</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span><span class="n">dec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ra</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ra</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;RA must be in the range [0,2π]&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dec</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">dec</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;DEC must be in the range [-π/2, π/2]&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">detectors</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_gps_time</span> <span class="o">=</span> <span class="n">ref_gps_time</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of points in the sky grid.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the coordinates of a single point in the grid.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ras</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all right ascensions in radians, in the interval [0,2π).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all declinations in radians, where π/2 is the North pole,</span>
+<span class="sd">        -π/2 is the South pole, and 0 is the celestial equator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SkyGrid.from_cli">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.sky_grid.SkyGrid.from_cli">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cli_parser</span><span class="p">,</span> <span class="n">cli_args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a sky grid from command-line interface, via argparse</span>
+<span class="sd">        objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">sky_grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">ra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">dec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">cli_parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                    <span class="s1">&#39;Please provide either a sky grid via --sky-grid or a &#39;</span>
+                    <span class="s1">&#39;single sky position via --ra and --dec, not both&#39;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">cli_args</span><span class="o">.</span><span class="n">sky_grid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">ra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cli_args</span><span class="o">.</span><span class="n">dec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">cli_args</span><span class="o">.</span><span class="n">ra</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">cli_args</span><span class="o">.</span><span class="n">dec</span><span class="p">],</span>
+                <span class="n">cli_args</span><span class="o">.</span><span class="n">instruments</span><span class="p">,</span>
+                <span class="n">cli_args</span><span class="o">.</span><span class="n">trigger_time</span>
+            <span class="p">)</span>
+        <span class="n">cli_parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s1">&#39;Please specify a sky grid via --sky-grid or a single sky &#39;</span>
+            <span class="s1">&#39;position via --ra and --dec&#39;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SkyGrid.read_from_file">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.sky_grid.SkyGrid.read_from_file">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a sky grid from a given HDF5 file.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hf</span><span class="p">:</span>
+            <span class="n">ra</span> <span class="o">=</span> <span class="n">hf</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">][:]</span>
+            <span class="n">dec</span> <span class="o">=</span> <span class="n">hf</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">][:]</span>
+            <span class="n">detectors</span> <span class="o">=</span> <span class="n">hf</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;detectors&#39;</span><span class="p">]</span>
+            <span class="n">ref_gps_time</span> <span class="o">=</span> <span class="n">hf</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ref_gps_time&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">detectors</span><span class="p">,</span> <span class="n">ref_gps_time</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SkyGrid.write_to_file">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.sky_grid.SkyGrid.write_to_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">extra_attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_datasets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes a sky grid to an HDF5 file.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">hf</span><span class="p">:</span>
+            <span class="n">hf</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ras</span>
+            <span class="n">hf</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decs</span>
+            <span class="n">hf</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;detectors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span>
+            <span class="n">hf</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ref_gps_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_gps_time</span>
+            <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="p">(</span><span class="n">extra_attrs</span> <span class="ow">or</span> <span class="p">{}):</span>
+                <span class="n">hf</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">extra_attrs</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="p">(</span><span class="n">extra_datasets</span> <span class="ow">or</span> <span class="p">{}):</span>
+                <span class="n">hf</span><span class="p">[</span><span class="n">dataset</span><span class="p">]</span> <span class="o">=</span> <span class="n">extra_datasets</span><span class="p">[</span><span class="n">dataset</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="SkyGrid.calculate_antenna_patterns">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.sky_grid.SkyGrid.calculate_antenna_patterns">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_antenna_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the antenna pattern functions at each point in the grid</span>
+<span class="sd">        for the list of GW detectors specified at instantiation. Return a dict,</span>
+<span class="sd">        keyed by detector name, whose items are 2-dimensional Numpy arrays.</span>
+<span class="sd">        The first dimension of these arrays runs over the sky grid, and the</span>
+<span class="sd">        second dimension runs over the plus and cross polarizations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">:</span>
+            <span class="n">det</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det_name</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">det_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">det_name</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span>
+                    <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">t_gps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_gps_time</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="SkyGrid.calculate_time_delays">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.sky_grid.SkyGrid.calculate_time_delays">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_time_delays</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the time delays from the Earth center to each GW detector</span>
+<span class="sd">        specified at instantiation, for each point in the grid. Return a dict,</span>
+<span class="sd">        keyed by detector name, whose items are 1-dimensional Numpy arrays</span>
+<span class="sd">        containing the time delays for each sky point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">detectors</span><span class="p">:</span>
+            <span class="n">det</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">det_name</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">det_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">det_name</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">det</span><span class="o">.</span><span class="n">time_delay_from_earth_center</span><span class="p">(</span>
+                    <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">t_gps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_gps_time</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SkyGrid&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

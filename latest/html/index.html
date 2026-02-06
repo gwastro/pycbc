@@ -1,0 +1,269 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyCBC: Powering Gravitational-wave Astronomy &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="_static/bootstrap-carousel.min.css?v=fd277c8b" />
+      <link rel="stylesheet" type="text/css" href="_static/carousel-custom.css?v=6fe5d8c5" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="_static/bootstrap-carousel.min.js?v=9a6c5d3e"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installing PyCBC" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="#">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PyCBC: Powering Gravitational-wave Astronomy</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/index.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-powering-gravitational-wave-astronomy">
+<h1>PyCBC: Powering Gravitational-wave Astronomy<a class="headerlink" href="#pycbc-powering-gravitational-wave-astronomy" title="Link to this heading"></a></h1>
+<p>PyCBC is the result of a community effort to build
+a set of core libraries and application suites
+used to study gravitational-wave data and astrophysics.
+It contains algorithms that can detect coalescing compact binaries and measure
+the astrophysical parameters of detected sources. PyCBC was used
+in the <a class="reference external" href="https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102">first direct detection of gravitational waves (GW150914) by
+LIGO</a> and
+is used in the ongoing analysis of LIGO and Virgo data.</p>
+<p>If you are interesting in building community tools for
+gravitational-wave astronomy, please consider <a class="reference external" href="https://github.com/gwastro/pycbc">contributing</a>, whether it is
+providing feedback, examples, documentation or helping to improve the core
+library and application suite.</p>
+<div class="scbs-carousel scbs-slide scbs-carousel-dark" id="carousel-0">
+<div class="scbs-carousel-indicators">
+<button aria-current="true" aria-label="Slide 1" class="scbs-active scc-shadow-indicator" data-bs-slide-to="0" data-bs-target="#carousel-0" type="button"></button>
+<button aria-label="Slide 2" class="scc-shadow-indicator" data-bs-slide-to="1" data-bs-target="#carousel-0" type="button"></button>
+<button aria-label="Slide 3" class="scc-shadow-indicator" data-bs-slide-to="2" data-bs-target="#carousel-0" type="button"></button>
+<button aria-label="Slide 4" class="scc-shadow-indicator" data-bs-slide-to="3" data-bs-target="#carousel-0" type="button"></button>
+</div>
+<div class="scbs-carousel-inner">
+<div class="scbs-carousel-item scbs-active">
+<a class="reference external image-reference" href="catalog.html"><img alt="https://pycbc.org/pycbc/latest/html/_images/data.png" class="scbs-d-block scbs-w-100" src="https://pycbc.org/pycbc/latest/html/_images/data.png" style="height: 400px;" />
+</a>
+<div class="scbs-carousel-caption scbs-bg-light scbs-d-sm-block scc-below-control">
+<h5>Working with gravitational wave data</h5>
+</div>
+</div>
+<div class="scbs-carousel-item">
+<a class="reference external image-reference" href="waveform.html"><img alt="https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png" class="scbs-d-block scbs-w-100" src="https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png" style="height: 400px;" />
+</a>
+<div class="scbs-carousel-caption scbs-bg-light scbs-d-sm-block scc-below-control">
+<h5>Your interface to generating gravitational wave signals</h5>
+</div>
+</div>
+<div class="scbs-carousel-item">
+<a class="reference external image-reference" href="inference.html"><img alt="https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png" class="scbs-d-block scbs-w-100" src="https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png" style="height: 400px;" />
+</a>
+<div class="scbs-carousel-caption scbs-bg-light scbs-d-sm-block scc-below-control">
+<h5>Flexible, easy-to-use, parameter estimation for GW Astronomy</h5>
+</div>
+</div>
+<div class="scbs-carousel-item">
+<a class="reference external image-reference" href="inference/examples/margtime.html"><img alt="https://pycbc.org/pycbc/latest/html/_images/demarg_150914.png" class="scbs-d-block scbs-w-100" src="https://pycbc.org/pycbc/latest/html/_images/demarg_150914.png" style="height: 400px;" />
+</a>
+<div class="scbs-carousel-caption scbs-bg-light scbs-d-sm-block scc-below-control">
+<h5>Fast Parameter Estimation with Advanced Marginalizations</h5>
+</div>
+</div>
+</div>
+<button class="scbs-carousel-control-prev scc-shadow-control" data-bs-slide="prev" data-bs-target="#carousel-0" type="button">
+<span aria-hidden="true" class="scbs-carousel-control-prev-icon"></span>
+<span class="scbs-visually-hidden">Previous</span>
+</button>
+<button class="scbs-carousel-control-next scc-shadow-control" data-bs-slide="next" data-bs-target="#carousel-0" type="button">
+<span aria-hidden="true" class="scbs-carousel-control-next-icon"></span>
+<span class="scbs-visually-hidden">Next</span>
+</button>
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Core Library Examples</div>
+<p class="sd-card-text">The core library provides the tools to do GW data analysis.
+See examples of how to use PyCBC core tools to read gravitational-wave
+data, query detector status, filter data, generate waveforms, estimate
+PSDs, calculate SNRs, and much more.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="tutorials.html#tutorials"><span class="std std-ref">Library Examples and Interactive Tutorials</span></a></div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+PyCBC Inference</div>
+<p class="sd-card-text">Easy-to-use, configurable, and robust Parameter Estimation for Gravitational-wave Astronomy and Multi-messenger analysis.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="inference.html#inference"><span class="std std-ref">PyCBC inference documentation (pycbc.inference)</span></a></div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Detect Signals in Archival Data</div>
+<p class="sd-card-text">The deep analysis used to detect gravitational-wave sources in
+archival data.</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Documentation may be out of data. Please help us improve it!</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="workflow/pycbc_make_offline_search_workflow.html#search-workflow"><span class="std std-ref">pycbc_make_offline_search_workflow: A workflow to search for gravitational waves</span></a></div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Detect Signals in association with GRBs</div>
+<p class="sd-card-text">Targeted analysis to detect gravitational-wave sources in association
+with gamma-ray bursts and other transient sources.</p>
+</div>
+<div class="sd-card-footer docutils">
+<p class="sd-card-text">Expected for full implementation in PyCBC in the next year.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="workflow/pygrb.html#pygrb"><span class="std std-ref">pycbc_make_offline_grb_workflow: A GRB triggered CBC analysis workflow generator</span></a></div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Other applications</div>
+<p class="sd-card-text">Documentation for a select sample of the pycbc software suite. These
+include for generating template banks, hardware injections, etc.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="apps.html#apps"><span class="std std-ref">Applications and Workflows</span></a></div>
+</section>
+<section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<blockquote>
+<div><ul>
+<li><p>Use the PyCBC Library within your Browser</p>
+<p><a class="reference external" href="https://github.com/gwastro/PyCBC-Tutorials">Try out our tutorials</a>.</p>
+</li>
+</ul>
+</div></blockquote>
+</section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<p>You may also install PyCBC directly with pip or conda.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pycbc
+</pre></div>
+</div>
+<p>Detailed instructions are found <a class="reference internal" href="install.html#installing-pycbc"><span class="std std-ref">here</span></a>.</p>
+<p>Note, if you are a LIGO / Virgo member with access to IGWN resources, PyCBC is <em>already</em>
+installed on your cluster through CVMFS! Instructions to source any release of PyCBC
+is available from the <a class="reference external" href="https://github.com/gwastro/pycbc/releases">releases page</a>.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-right" title="Installing PyCBC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

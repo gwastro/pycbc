@@ -1,0 +1,316 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.splittable &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.splittable</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.splittable</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Ian Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for setting up the splitting output files stage of</span>
+<span class="sd">workflows. For details about this module and its capabilities see here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileList</span><span class="p">,</span> <span class="n">make_analysis_dir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.jobsetup</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">PycbcSplitBankExecutable</span><span class="p">,</span>
+        <span class="n">PycbcSplitBankXmlExecutable</span><span class="p">,</span> <span class="n">PycbcSplitInspinjExecutable</span><span class="p">,</span>
+        <span class="n">PycbcHDFSplitInjExecutable</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.splittable&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="select_splitfilejob_instance">
+<a class="viewcode-back" href="../../../workflow/splittable.html#pycbc.workflow.splittable.select_splitfilejob_instance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">select_splitfilejob_instance</span><span class="p">(</span><span class="n">curr_exe</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function returns an instance of the class that is appropriate for</span>
+<span class="sd">    splitting an output file up within workflow (for e.g. splitbank).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    curr_exe : string</span>
+<span class="sd">        The name of the Executable that is being used.</span>
+<span class="sd">    curr_section : string</span>
+<span class="sd">        The name of the section storing options for this executble</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    exe class : sub-class of pycbc.workflow.core.Executable</span>
+<span class="sd">        The class that holds the utility functions appropriate</span>
+<span class="sd">        for the given Executable. This class **must** contain</span>
+<span class="sd">        * exe_class.create_job()</span>
+<span class="sd">        and the job returned by this **must** contain</span>
+<span class="sd">        * job.create_node()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">curr_exe</span> <span class="o">==</span> <span class="s1">&#39;pycbc_hdf5_splitbank&#39;</span><span class="p">:</span>
+        <span class="n">exe_class</span> <span class="o">=</span> <span class="n">PycbcSplitBankExecutable</span>
+    <span class="k">elif</span> <span class="n">curr_exe</span> <span class="o">==</span> <span class="s1">&#39;pycbc_splitbank&#39;</span><span class="p">:</span>
+        <span class="n">exe_class</span> <span class="o">=</span> <span class="n">PycbcSplitBankXmlExecutable</span>
+    <span class="k">elif</span> <span class="n">curr_exe</span> <span class="o">==</span> <span class="s1">&#39;pycbc_split_inspinj&#39;</span><span class="p">:</span>
+        <span class="n">exe_class</span> <span class="o">=</span> <span class="n">PycbcSplitInspinjExecutable</span>
+    <span class="k">elif</span> <span class="n">curr_exe</span> <span class="o">==</span> <span class="s1">&#39;pycbc_hdf_splitinj&#39;</span><span class="p">:</span>
+        <span class="n">exe_class</span> <span class="o">=</span> <span class="n">PycbcHDFSplitInjExecutable</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Should we try some sort of default class??</span>
+        <span class="n">err_string</span> <span class="o">=</span> <span class="s2">&quot;No class exists for Executable </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">curr_exe</span><span class="p">,)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">err_string</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exe_class</span></div>
+
+
+<div class="viewcode-block" id="setup_splittable_workflow">
+<a class="viewcode-back" href="../../../workflow/splittable.html#pycbc.workflow.splittable.setup_splittable_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_splittable_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">input_tables</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    This function aims to be the gateway for code that is responsible for taking</span>
+<span class="sd">    some input file containing some table, and splitting into multiple files</span>
+<span class="sd">    containing different parts of that table. For now the only supported operation</span>
+<span class="sd">    is using lalapps_splitbank to split a template bank xml file into multiple</span>
+<span class="sd">    template bank xml files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The Workflow instance that the jobs will be added to.</span>
+<span class="sd">    input_tables : pycbc.workflow.core.FileList</span>
+<span class="sd">        The input files to be split up.</span>
+<span class="sd">    out_dir : path</span>
+<span class="sd">        The directory in which output will be written.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    split_table_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        The list of split up files as output from this job.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Entering split output files module.&quot;</span><span class="p">)</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="c1"># Parse for options in .ini file</span>
+    <span class="n">splitMethod</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-splittable&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;splittable-method&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">splitMethod</span> <span class="o">==</span> <span class="s2">&quot;IN_WORKFLOW&quot;</span><span class="p">:</span>
+        <span class="c1"># Scope here for choosing different options</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding split output file jobs to workflow.&quot;</span><span class="p">)</span>
+        <span class="n">split_table_outs</span> <span class="o">=</span> <span class="n">setup_splittable_dax_generated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span>
+                <span class="n">input_tables</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">splitMethod</span> <span class="o">==</span> <span class="s2">&quot;NOOP&quot;</span><span class="p">:</span>
+        <span class="c1"># Probably better not to call the module at all, but this option will</span>
+        <span class="c1"># return the input file list.</span>
+        <span class="n">split_table_outs</span> <span class="o">=</span> <span class="n">input_tables</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Splittable method not recognized. Must be one of &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;IN_WORKFLOW or NOOP.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leaving split output files module.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">split_table_outs</span></div>
+
+
+<div class="viewcode-block" id="setup_splittable_dax_generated">
+<a class="viewcode-back" href="../../../workflow/splittable.html#pycbc.workflow.splittable.setup_splittable_dax_generated">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_splittable_dax_generated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">input_tables</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Function for setting up the splitting jobs as part of the workflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The Workflow instance that the jobs will be added to.</span>
+<span class="sd">    input_tables : pycbc.workflow.core.FileList</span>
+<span class="sd">        The input files to be split up.</span>
+<span class="sd">    out_dir : path</span>
+<span class="sd">        The directory in which output will be written.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    split_table_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        The list of split up files as output from this job.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+
+    <span class="c1"># Get values from ini file</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">num_splits</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-splittable&quot;</span><span class="p">,</span>
+                                     <span class="s2">&quot;splittable-num-banks&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+        <span class="n">inj_interval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-splittable&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;splitinjtable-interval&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;em_bright_filter&quot;</span><span class="p">,</span> <span class="s2">&quot;max-keep&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow-injections&quot;</span><span class="p">,</span> <span class="s2">&quot;em-bright-only&quot;</span><span class="p">):</span>
+            <span class="n">num_injs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;em_bright_filter&quot;</span><span class="p">,</span> <span class="s2">&quot;max-keep&quot;</span><span class="p">,</span>
+                                           <span class="n">tags</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># This needed to be changed from num-injs to ninjections in order</span>
+            <span class="c1"># to work properly with pycbc_create_injections</span>
+            <span class="n">num_injs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-injections&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;ninjections&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">))</span>
+        <span class="n">inj_tspace</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">))</span> <span class="o">/</span> <span class="n">num_injs</span>
+        <span class="n">num_splits</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">inj_interval</span> <span class="o">//</span> <span class="n">inj_tspace</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">split_exe_tag</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-splittable&quot;</span><span class="p">,</span>
+                                    <span class="s2">&quot;splittable-exe-tag&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">split_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;executables&quot;</span><span class="p">,</span> <span class="n">split_exe_tag</span><span class="p">))</span>
+    <span class="c1"># Select the appropriate class</span>
+    <span class="n">exe_class</span> <span class="o">=</span> <span class="n">select_splitfilejob_instance</span><span class="p">(</span><span class="n">split_exe</span><span class="p">)</span>
+
+    <span class="c1"># Set up output structure</span>
+    <span class="n">out_file_groups</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="c1"># Set up the condorJob class for the current executable</span>
+    <span class="n">curr_exe_job</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">split_exe_tag</span><span class="p">,</span> <span class="n">num_splits</span><span class="p">,</span>
+                             <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="nb">input</span> <span class="ow">in</span> <span class="n">input_tables</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">curr_exe_job</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">out_file_groups</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">out_file_groups</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

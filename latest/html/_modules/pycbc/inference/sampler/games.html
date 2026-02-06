@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.games &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.games</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.games</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Direct monte carlo sampling using pregenerated mapping files that</span>
+<span class="sd">encode the intrinsic parameter space.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">logsumexp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldArray</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.pool</span><span class="w"> </span><span class="kn">import</span> <span class="n">choose_pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dummy</span><span class="w"> </span><span class="kn">import</span> <span class="n">DummySampler</span>
+
+
+<div class="viewcode-block" id="call_likelihood">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.games.call_likelihood">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">call_likelihood</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Accessor to update the global model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span><span class="o">.</span><span class="n">loglikelihood</span></div>
+
+
+
+<div class="viewcode-block" id="OutOfSamples">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.games.OutOfSamples">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OutOfSamples</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception if we ran out of samples&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="GameSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GameSampler</span><span class="p">(</span><span class="n">DummySampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Direct importance sampling using a preconstructed parameter space</span>
+<span class="sd">    mapping file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Model</span>
+<span class="sd">        An instance of a model from ``pycbc.inference.models``.</span>
+<span class="sd">    mapfile : str</span>
+<span class="sd">        Path to the pre-generated file containing the pre-mapped prior volume</span>
+<span class="sd">    loglr_region: int</span>
+<span class="sd">        Only use regions from the prior volume tiling that are within</span>
+<span class="sd">        this loglr difference of the maximum tile.</span>
+<span class="sd">    target_likelihood_calls: int</span>
+<span class="sd">        Try to use this many likelihood calls in each round of the analysis.</span>
+<span class="sd">    rounds: int</span>
+<span class="sd">        The number of iterations to use before terminated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;games&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">mapfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">loglr_region</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+                 <span class="n">target_likelihood_calls</span><span class="o">=</span><span class="mf">1e5</span><span class="p">,</span>
+                 <span class="n">rounds</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapfile</span> <span class="o">=</span> <span class="n">mapfile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rounds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rounds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dmap</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">models</span><span class="o">.</span><span class="n">_global_instance</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">choose_pool</span><span class="p">(</span><span class="n">mpi</span><span class="o">=</span><span class="n">use_mpi</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="n">nprocesses</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_likelihood_calls</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">target_likelihood_calls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loglr_region</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">loglr_region</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GameSampler.draw_samples_from_bin">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler.draw_samples_from_bin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw_samples_from_bin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Get samples from the binned prior space &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dmap</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="n">OutOfSamples</span>
+
+        <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">][:</span><span class="n">size</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">size</span><span class="p">:]</span>
+
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">remain</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Drew </span><span class="si">%i</span><span class="s1">, </span><span class="si">%i</span><span class="s1"> remains in bin </span><span class="si">%i</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">remain</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dmap</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">selected</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="GameSampler.sample_round">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler.sample_round">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_round</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_weight</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">,</span> <span class="n">lengths</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Sample from the posterior using pre-binned sets of points and</span>
+<span class="sd">        the weighting factor of each bin.</span>
+
+<span class="sd">        bin_weight: Array</span>
+<span class="sd">            The weighting importance factor of each bin of the prior space</span>
+<span class="sd">        node_idx: Array</span>
+<span class="sd">            The set of ids into the prebinned prior volume to use. This should</span>
+<span class="sd">            map to the given weights.</span>
+<span class="sd">        lengths: Array</span>
+<span class="sd">            The size of each bin, used to self-normalize</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;...draw template bins&quot;</span><span class="p">)</span>
+        <span class="n">drawcount</span> <span class="o">=</span> <span class="p">(</span><span class="n">bin_weight</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_likelihood_calls</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="n">dorder</span> <span class="o">=</span> <span class="n">bin_weight</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">remainder</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dorder</span><span class="p">:</span>
+            <span class="n">bincount</span> <span class="o">=</span> <span class="n">drawcount</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">binlen</span> <span class="o">=</span> <span class="n">lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">bincount</span> <span class="o">&gt;</span> <span class="n">binlen</span><span class="p">:</span>
+                <span class="n">drawcount</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">binlen</span>
+                <span class="n">remainder</span> <span class="o">+=</span> <span class="n">bincount</span> <span class="o">-</span> <span class="n">binlen</span>
+            <span class="k">elif</span> <span class="n">bincount</span> <span class="o">&lt;</span> <span class="n">binlen</span><span class="p">:</span>
+                <span class="n">asize</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">binlen</span> <span class="o">-</span> <span class="n">bincount</span><span class="p">,</span> <span class="n">remainder</span><span class="p">)</span>
+                <span class="n">drawcount</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">asize</span>
+                <span class="n">remainder</span> <span class="o">-=</span> <span class="n">asize</span>
+
+        <span class="n">drawweight</span> <span class="o">=</span> <span class="n">bin_weight</span> <span class="o">/</span> <span class="n">drawcount</span>
+        <span class="n">total_draw</span> <span class="o">=</span> <span class="n">drawcount</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;...drawn random points within bins&#39;</span><span class="p">)</span>
+        <span class="n">psamp</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="n">total_draw</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">pweight</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_draw</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">bin_id</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">total_draw</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">drawcount</span><span class="p">,</span> <span class="n">drawweight</span><span class="p">)):</span>
+            <span class="n">bdraw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">draw_samples_from_bin</span><span class="p">(</span><span class="n">node_idx</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">c</span><span class="p">)</span>
+            <span class="n">psamp</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">bdraw</span><span class="p">)]</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">bdraw</span><span class="p">,</span>
+                                                            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">pweight</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">bdraw</span><span class="p">)]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">bin_weight</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">bin_id</span><span class="p">[</span><span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">bdraw</span><span class="p">)]</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bdraw</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Possible unique values </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">lengths</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Templates drawn from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lengths</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unique values first draw </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">psamp</span><span class="p">))</span>
+
+        <span class="c1"># Calculate the likelihood values for the unique parameter space</span>
+        <span class="c1"># points</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psamp</span><span class="p">)):</span>
+            <span class="n">pset</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">psamp</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">}</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pset</span><span class="p">)</span>
+
+        <span class="n">loglr_samp</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">imap</span><span class="p">(</span><span class="n">call_likelihood</span><span class="p">,</span> <span class="n">args</span><span class="p">),</span>
+                                    <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+        <span class="n">loglr_samp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">loglr_samp</span><span class="p">)</span>
+
+        <span class="c1"># Calculate the weights from the actual likelihood relative to the</span>
+        <span class="c1"># initial weights</span>
+        <span class="n">logw3</span> <span class="o">=</span> <span class="n">loglr_samp</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="n">bin_id</span><span class="p">])</span> <span class="o">-</span> <span class="n">pweight</span>
+        <span class="n">logw3</span> <span class="o">-=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">logw3</span><span class="p">)</span>
+        <span class="n">weight2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logw3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">psamp</span><span class="p">,</span> <span class="n">loglr_samp</span><span class="p">,</span> <span class="n">weight2</span><span class="p">,</span> <span class="n">bin_id</span></div>
+
+
+<div class="viewcode-block" id="GameSampler.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Produce posterior samples &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Retrieving params of parameter space nodes&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapfile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mapfile</span><span class="p">:</span>
+            <span class="n">bparams</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">mapfile</span><span class="p">[</span><span class="s1">&#39;bank&#39;</span><span class="p">][</span><span class="n">p</span><span class="p">][:]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">}</span>
+            <span class="n">num_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bparams</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">bparams</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="n">lengths</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">mapfile</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)])</span>
+                                   <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_nodes</span><span class="p">)])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">mapfile</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">][</span><span class="s1">&#39;0&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Calculating likelihood at nodes&#39;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_nodes</span><span class="p">):</span>
+            <span class="n">pset</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">bparams</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">}</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pset</span><span class="p">)</span>
+
+        <span class="n">node_loglrs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">imap</span><span class="p">(</span><span class="n">call_likelihood</span><span class="p">,</span> <span class="n">args</span><span class="p">),</span>
+                                     <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+        <span class="n">node_loglrs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">node_loglrs</span><span class="p">)</span>
+        <span class="n">loglr_bound</span> <span class="o">=</span> <span class="n">node_loglrs</span><span class="p">[</span><span class="o">~</span><span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">node_loglrs</span><span class="p">)]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">loglr_bound</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglr_region</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Drawing proposal samples from node regions&#39;</span><span class="p">)</span>
+        <span class="n">logw</span> <span class="o">=</span> <span class="n">node_loglrs</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>
+        <span class="n">passed</span> <span class="o">=</span> <span class="p">(</span><span class="n">node_loglrs</span> <span class="o">&gt;</span> <span class="n">loglr_bound</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">node_loglrs</span><span class="p">)</span>
+        <span class="n">passed</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">passed</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logw2</span> <span class="o">=</span> <span class="n">logw</span><span class="p">[</span><span class="n">passed</span><span class="p">]</span>
+        <span class="n">logw2</span> <span class="o">-=</span> <span class="n">logsumexp</span><span class="p">(</span><span class="n">logw2</span><span class="p">)</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logw2</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;...reading template bins&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapfile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mapfile</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">passed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dmap</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapfile</span><span class="p">[</span><span class="s1">&#39;map&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)][:]</span>
+
+        <span class="c1"># Sample from posterior</span>
+        <span class="n">psamp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">loglr_samp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">weight2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">bin_ids</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">lengths</span><span class="p">[</span><span class="n">passed</span><span class="p">]</span> <span class="o">/</span> <span class="n">lengths</span><span class="p">[</span><span class="n">passed</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rounds</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">psamp_v</span><span class="p">,</span> <span class="n">loglr_samp_v</span><span class="p">,</span> <span class="n">weight2_v</span><span class="p">,</span> <span class="n">bin_id</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sample_round</span><span class="p">(</span><span class="n">weight</span> <span class="o">/</span> <span class="n">weight</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+                                      <span class="n">passed</span><span class="p">,</span> <span class="n">lengths</span><span class="p">[</span><span class="n">passed</span><span class="p">])</span>
+            <span class="k">except</span> <span class="n">OutOfSamples</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No more samples to draw from&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bin_id</span><span class="p">,</span> <span class="n">weight2_v</span><span class="p">):</span>
+                <span class="n">weight</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
+
+            <span class="k">if</span> <span class="n">psamp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">psamp</span> <span class="o">=</span> <span class="n">psamp_v</span>
+                <span class="n">loglr_samp</span> <span class="o">=</span> <span class="n">loglr_samp_v</span>
+                <span class="n">weight2</span> <span class="o">=</span> <span class="n">weight2_v</span>
+                <span class="n">bin_ids</span> <span class="o">=</span> <span class="n">bin_id</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">psamp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">psamp_v</span><span class="p">,</span> <span class="n">psamp</span><span class="p">])</span>
+                <span class="n">loglr_samp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">loglr_samp_v</span><span class="p">,</span> <span class="n">loglr_samp</span><span class="p">])</span>
+                <span class="n">weight2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">weight2_v</span><span class="p">,</span> <span class="n">weight2</span><span class="p">])</span>
+                <span class="n">bin_ids</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">bin_id</span><span class="p">,</span> <span class="n">bin_ids</span><span class="p">])</span>
+
+            <span class="n">ess</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">((</span><span class="n">weight2</span><span class="o">/</span><span class="n">weight2</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ESS = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ess</span><span class="p">)</span>
+
+        <span class="c1"># Prepare the equally weighted output samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ncalls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weight2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">&#39;ess&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ess</span>
+
+        <span class="n">weight2</span> <span class="o">/=</span> <span class="n">weight2</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">draw2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psamp</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">ess</span> <span class="o">*</span> <span class="mi">1</span><span class="p">),</span>
+                                    <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">weight2</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unique values second draw </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                     <span class="nb">len</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">psamp</span><span class="p">[</span><span class="n">draw2</span><span class="p">])))</span>
+
+        <span class="n">fsamp</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">draw2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">draw2</span><span class="p">):</span>
+            <span class="n">fsamp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">psamp</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">fsamp</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loglr_samp</span><span class="p">[</span><span class="n">draw2</span><span class="p">]</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

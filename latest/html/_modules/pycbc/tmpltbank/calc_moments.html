@@ -1,0 +1,682 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.calc_moments &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.calc_moments</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.calc_moments</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013 Ian W. Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank.lambda_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_mapping</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.calc_moments&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="determine_eigen_directions">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.calc_moments.determine_eigen_directions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">determine_eigen_directions</span><span class="p">(</span><span class="n">metricParams</span><span class="p">,</span> <span class="n">preserveMoments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">vary_fmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will calculate the coordinate transfomations that are needed</span>
+<span class="sd">    to rotate from a coordinate system described by the various Lambda</span>
+<span class="sd">    components in the frequency expansion, to a coordinate system where the</span>
+<span class="sd">    metric is Cartesian.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric.</span>
+<span class="sd">    preserveMoments : boolean, optional (default False)</span>
+<span class="sd">        Currently only used for debugging.</span>
+<span class="sd">        If this is given then if the moments structure is already set</span>
+<span class="sd">        within metricParams then they will not be recalculated.</span>
+<span class="sd">    vary_fmax : boolean, optional (default False)</span>
+<span class="sd">        If set to False the metric and rotations are calculated once, for the</span>
+<span class="sd">        full range of frequency [f_low,f_upper).</span>
+<span class="sd">        If set to True the metric and rotations are calculated multiple times,</span>
+<span class="sd">        for frequency ranges [f_low,f_low + i*vary_density), where i starts at</span>
+<span class="sd">        1 and runs up until f_low + (i+1)*vary_density &gt; f_upper.</span>
+<span class="sd">        Thus values greater than f_upper are *not* computed.</span>
+<span class="sd">        The calculation for the full range [f_low,f_upper) is also done.</span>
+<span class="sd">    vary_density : float, optional</span>
+<span class="sd">        If vary_fmax is True, this will be used in computing the frequency</span>
+<span class="sd">        ranges as described for vary_fmax.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric.</span>
+<span class="sd">        **THIS FUNCTION ONLY RETURNS THE CLASS**</span>
+<span class="sd">        The following will be **added** to this structure</span>
+<span class="sd">    metricParams.evals : Dictionary of numpy.array</span>
+<span class="sd">        Each entry in the dictionary corresponds to the different frequency</span>
+<span class="sd">        ranges described in vary_fmax. If vary_fmax = False, the only entry</span>
+<span class="sd">        will be f_upper, this corresponds to integrals in [f_low,f_upper). This</span>
+<span class="sd">        entry is always present. Each other entry will use floats as keys to</span>
+<span class="sd">        the dictionary. These floats give the upper frequency cutoff when it is</span>
+<span class="sd">        varying.</span>
+<span class="sd">        Each numpy.array contains the eigenvalues which, with the eigenvectors</span>
+<span class="sd">        in evecs, are needed to rotate the</span>
+<span class="sd">        coordinate system to one in which the metric is the identity matrix.</span>
+<span class="sd">    metricParams.evecs : Dictionary of numpy.matrix</span>
+<span class="sd">        Each entry in the dictionary is as described under evals.</span>
+<span class="sd">        Each numpy.matrix contains the eigenvectors which, with the eigenvalues</span>
+<span class="sd">        in evals, are needed to rotate the</span>
+<span class="sd">        coordinate system to one in which the metric is the identity matrix.</span>
+<span class="sd">    metricParams.metric : Dictionary of numpy.matrix</span>
+<span class="sd">        Each entry in the dictionary is as described under evals.</span>
+<span class="sd">        Each numpy.matrix contains the metric of the parameter space in the</span>
+<span class="sd">        Lambda_i coordinate system.</span>
+<span class="sd">    metricParams.moments : Moments structure</span>
+<span class="sd">        See the structure documentation for a description of this. This</span>
+<span class="sd">        contains the result of all the integrals used in computing the metrics</span>
+<span class="sd">        above. It can be used for the ethinca components calculation, or other</span>
+<span class="sd">        similar calculations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">evals</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">evecs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">metric</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">unmax_metric</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># First step is to get the moments needed to calculate the metric</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span> <span class="ow">and</span> <span class="n">preserveMoments</span><span class="p">):</span>
+        <span class="n">get_moments</span><span class="p">(</span><span class="n">metricParams</span><span class="p">,</span> <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span>
+                    <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="c1"># What values are going to be in the moments</span>
+    <span class="c1"># J7 is the normalization factor so it *MUST* be present</span>
+    <span class="nb">list</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;J7&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="c1"># We start looping over every item in the list of metrics</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="c1"># Here we convert the moments into a form easier to use here</span>
+        <span class="n">Js</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+            <span class="n">Js</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;J</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">item</span><span class="p">]</span>
+
+        <span class="n">logJs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+            <span class="n">logJs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;log</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">item</span><span class="p">]</span>
+
+        <span class="n">loglogJs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+            <span class="n">loglogJs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;loglog</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">item</span><span class="p">]</span>
+
+        <span class="n">logloglogJs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+            <span class="n">logloglogJs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;logloglog</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">item</span><span class="p">]</span>
+
+        <span class="n">loglogloglogJs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+            <span class="n">loglogloglogJs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span><span class="p">[</span><span class="s1">&#39;loglogloglog</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">item</span><span class="p">]</span>
+
+        <span class="n">mapping</span> <span class="o">=</span> <span class="n">generate_mapping</span><span class="p">(</span><span class="n">metricParams</span><span class="o">.</span><span class="n">pnOrder</span><span class="p">)</span>
+
+        <span class="c1"># Calculate the metric</span>
+        <span class="n">gs</span><span class="p">,</span> <span class="n">unmax_metric_curr</span> <span class="o">=</span> <span class="n">calculate_metric</span><span class="p">(</span><span class="n">Js</span><span class="p">,</span> <span class="n">logJs</span><span class="p">,</span> <span class="n">loglogJs</span><span class="p">,</span>
+                                          <span class="n">logloglogJs</span><span class="p">,</span> <span class="n">loglogloglogJs</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+        <span class="n">metric</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">gs</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">unmax_metric_curr</span>
+
+        <span class="c1"># And the eigenvalues</span>
+        <span class="n">evals</span><span class="p">[</span><span class="n">item</span><span class="p">],</span> <span class="n">evecs</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">gs</span><span class="p">)</span>
+
+        <span class="c1"># Numerical error can lead to small negative eigenvalues.</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evals</span><span class="p">[</span><span class="n">item</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="n">evals</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Due to numerical imprecision the very small eigenvalues can</span>
+                <span class="c1"># be negative. Make these positive.</span>
+                <span class="n">evals</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">evals</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">evecs</span><span class="p">[</span><span class="n">item</span><span class="p">][</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># We demand a convention that all diagonal terms in the matrix</span>
+                <span class="c1"># of eigenvalues are positive.</span>
+                <span class="c1"># This is done to help visualization of the spaces (increasing</span>
+                <span class="c1"># mchirp always goes the same way)</span>
+                <span class="n">evecs</span><span class="p">[</span><span class="n">item</span><span class="p">][:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">evecs</span><span class="p">[</span><span class="n">item</span><span class="p">][:,</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="n">metricParams</span><span class="o">.</span><span class="n">evals</span> <span class="o">=</span> <span class="n">evals</span>
+    <span class="n">metricParams</span><span class="o">.</span><span class="n">evecs</span> <span class="o">=</span> <span class="n">evecs</span>
+    <span class="n">metricParams</span><span class="o">.</span><span class="n">metric</span> <span class="o">=</span> <span class="n">metric</span>
+    <span class="n">metricParams</span><span class="o">.</span><span class="n">time_unprojected_metric</span> <span class="o">=</span> <span class="n">unmax_metric</span>
+
+    <span class="k">return</span> <span class="n">metricParams</span></div>
+
+
+<div class="viewcode-block" id="get_moments">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.calc_moments.get_moments">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_moments</span><span class="p">(</span><span class="n">metricParams</span><span class="p">,</span> <span class="n">vary_fmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will calculate the various integrals (moments) that are</span>
+<span class="sd">    needed to compute the metric used in template bank placement and</span>
+<span class="sd">    coincidence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric.</span>
+<span class="sd">    vary_fmax : boolean, optional (default False)</span>
+<span class="sd">        If set to False the metric and rotations are calculated once, for the</span>
+<span class="sd">        full range of frequency [f_low,f_upper).</span>
+<span class="sd">        If set to True the metric and rotations are calculated multiple times,</span>
+<span class="sd">        for frequency ranges [f_low,f_low + i*vary_density), where i starts at</span>
+<span class="sd">        1 and runs up until f_low + (i+1)*vary_density &gt; f_upper.</span>
+<span class="sd">        Thus values greater than f_upper are *not* computed.</span>
+<span class="sd">        The calculation for the full range [f_low,f_upper) is also done.</span>
+<span class="sd">    vary_density : float, optional</span>
+<span class="sd">        If vary_fmax is True, this will be used in computing the frequency</span>
+<span class="sd">        ranges as described for vary_fmax.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    None : None</span>
+<span class="sd">        **THIS FUNCTION RETURNS NOTHING**</span>
+<span class="sd">        The following will be **added** to the metricParams structure</span>
+<span class="sd">    metricParams.moments : Moments structure</span>
+<span class="sd">        This contains the result of all the integrals used in computing the</span>
+<span class="sd">        metrics above. It can be used for the ethinca components calculation,</span>
+<span class="sd">        or other similar calculations. This is composed of two compound</span>
+<span class="sd">        dictionaries. The first entry indicates which moment is being</span>
+<span class="sd">        calculated and the second entry indicates the upper frequency cutoff</span>
+<span class="sd">        that was used.</span>
+
+<span class="sd">        In all cases x = f/f0.</span>
+
+<span class="sd">        For the first entries the options are:</span>
+
+<span class="sd">        moments[&#39;J%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of</span>
+<span class="sd">        x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;log%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of</span>
+<span class="sd">        (numpy.log(x**(1./3.))) x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;loglog%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of</span>
+<span class="sd">        (numpy.log(x**(1./3.)))**2 x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;loglog%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of</span>
+<span class="sd">        (numpy.log(x**(1./3.)))**3 x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        moments[&#39;loglog%d&#39; %(i)][f_cutoff]</span>
+<span class="sd">        This stores the integral of</span>
+<span class="sd">        (numpy.log(x**(1./3.)))**4 x**((-i)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        The second entry stores the frequency cutoff used when computing</span>
+<span class="sd">        the integral. See description of the vary_fmax option above.</span>
+
+<span class="sd">        All of these values are nomralized by a factor of</span>
+
+<span class="sd">        x**((-7)/3.) * delta X / PSD(x)</span>
+
+<span class="sd">        The normalization factor can be obtained in</span>
+
+<span class="sd">        moments[&#39;I7&#39;][f_cutoff]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># NOTE: Unless the TaylorR2F4 metric is used the log^3 and log^4 terms are</span>
+    <span class="c1"># not needed. As this calculation is not too slow compared to bank</span>
+    <span class="c1"># placement we just do this anyway.</span>
+
+    <span class="n">psd_amp</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">psd_f</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psd_amp</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">deltaF</span>
+    <span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span> <span class="o">=</span> <span class="n">interpolate_psd</span><span class="p">(</span><span class="n">psd_f</span><span class="p">,</span> <span class="n">psd_amp</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">deltaF</span><span class="p">)</span>
+
+    <span class="c1"># Need I7 first as this is the normalization factor</span>
+    <span class="n">funct</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">f0</span><span class="p">:</span> <span class="mi">1</span>
+    <span class="n">I7</span> <span class="o">=</span> <span class="n">calculate_moment</span><span class="p">(</span><span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">,</span> \
+                          <span class="n">metricParams</span><span class="o">.</span><span class="n">fUpper</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span>\
+                          <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="c1"># Do all the J moments</span>
+    <span class="n">moments</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">moments</span><span class="p">[</span><span class="s1">&#39;I7&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">I7</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">7</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">funct</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">f0</span><span class="p">:</span> <span class="n">x</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="n">i</span><span class="o">+</span><span class="mi">7</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">moments</span><span class="p">[</span><span class="s1">&#39;J</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">calculate_moment</span><span class="p">(</span><span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fUpper</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">I7</span><span class="p">,</span> \
+                                <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="c1"># Do the logx multiplied by some power terms</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">funct</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">f0</span><span class="p">:</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">x</span><span class="o">*</span><span class="n">f0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)))</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="n">i</span><span class="o">+</span><span class="mi">7</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">moments</span><span class="p">[</span><span class="s1">&#39;log</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">calculate_moment</span><span class="p">(</span><span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fUpper</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">I7</span><span class="p">,</span> \
+                                <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="c1"># Do the loglog term</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">funct</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">f0</span><span class="p">:</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">x</span><span class="o">*</span><span class="n">f0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)))</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="n">i</span><span class="o">+</span><span class="mi">7</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">moments</span><span class="p">[</span><span class="s1">&#39;loglog</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">calculate_moment</span><span class="p">(</span><span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fUpper</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">I7</span><span class="p">,</span> \
+                                <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="c1"># Do the logloglog term</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">funct</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">f0</span><span class="p">:</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">x</span><span class="o">*</span><span class="n">f0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)))</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="n">i</span><span class="o">+</span><span class="mi">7</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">moments</span><span class="p">[</span><span class="s1">&#39;logloglog</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">calculate_moment</span><span class="p">(</span><span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fUpper</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">I7</span><span class="p">,</span> \
+                                <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="c1"># Do the logloglog term</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">18</span><span class="p">):</span>
+        <span class="n">funct</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">f0</span><span class="p">:</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">x</span><span class="o">*</span><span class="n">f0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)))</span><span class="o">**</span><span class="mi">4</span> <span class="o">*</span> <span class="n">x</span><span class="o">**</span><span class="p">((</span><span class="o">-</span><span class="n">i</span><span class="o">+</span><span class="mi">7</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">moments</span><span class="p">[</span><span class="s1">&#39;loglogloglog</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">calculate_moment</span><span class="p">(</span><span class="n">new_f</span><span class="p">,</span> <span class="n">new_amp</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">fLow</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">fUpper</span><span class="p">,</span> \
+                                <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">I7</span><span class="p">,</span> \
+                                <span class="n">vary_fmax</span><span class="o">=</span><span class="n">vary_fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="n">vary_density</span><span class="p">)</span>
+
+    <span class="n">metricParams</span><span class="o">.</span><span class="n">moments</span> <span class="o">=</span> <span class="n">moments</span></div>
+
+
+<div class="viewcode-block" id="interpolate_psd">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.calc_moments.interpolate_psd">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">interpolate_psd</span><span class="p">(</span><span class="n">psd_f</span><span class="p">,</span> <span class="n">psd_amp</span><span class="p">,</span> <span class="n">deltaF</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to interpolate a PSD to a different value of deltaF. Uses linear</span>
+<span class="sd">    interpolation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    psd_f : numpy.array or list or similar</span>
+<span class="sd">        List of the frequencies contained within the PSD.</span>
+<span class="sd">    psd_amp : numpy.array or list or similar</span>
+<span class="sd">        List of the PSD values at the frequencies in psd_f.</span>
+<span class="sd">    deltaF : float</span>
+<span class="sd">        Value of deltaF to interpolate the PSD to.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    new_psd_f : numpy.array</span>
+<span class="sd">       Array of the frequencies contained within the interpolated PSD</span>
+<span class="sd">    new_psd_amp : numpy.array</span>
+<span class="sd">       Array of the interpolated PSD values at the frequencies in new_psd_f.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># In some cases this will be a no-op. I thought about removing this, but</span>
+    <span class="c1"># this function can take unequally sampled PSDs and it is difficult to</span>
+    <span class="c1"># check for this. As this function runs quickly anyway (compared to the</span>
+    <span class="c1"># moment calculation) I decided to always interpolate.</span>
+
+    <span class="n">new_psd_f</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">new_psd_amp</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fcurr</span> <span class="o">=</span> <span class="n">psd_f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">psd_f</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">f_low</span> <span class="o">=</span> <span class="n">psd_f</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">f_high</span> <span class="o">=</span> <span class="n">psd_f</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">amp_low</span> <span class="o">=</span> <span class="n">psd_amp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">amp_high</span> <span class="o">=</span> <span class="n">psd_amp</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">fcurr</span> <span class="o">&gt;</span> <span class="n">f_high</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">new_psd_f</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fcurr</span><span class="p">)</span>
+            <span class="n">gradient</span> <span class="o">=</span> <span class="p">(</span><span class="n">amp_high</span> <span class="o">-</span> <span class="n">amp_low</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">f_high</span> <span class="o">-</span> <span class="n">f_low</span><span class="p">)</span>
+            <span class="n">fDiff</span> <span class="o">=</span> <span class="n">fcurr</span> <span class="o">-</span> <span class="n">f_low</span>
+            <span class="n">new_psd_amp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">amp_low</span> <span class="o">+</span> <span class="n">fDiff</span> <span class="o">*</span> <span class="n">gradient</span><span class="p">)</span>
+            <span class="n">fcurr</span> <span class="o">=</span> <span class="n">fcurr</span> <span class="o">+</span> <span class="n">deltaF</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">new_psd_f</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">new_psd_amp</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_moment">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.calc_moments.calculate_moment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_moment</span><span class="p">(</span><span class="n">psd_f</span><span class="p">,</span> <span class="n">psd_amp</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">f0</span><span class="p">,</span> <span class="n">funct</span><span class="p">,</span>
+                     <span class="n">norm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vary_fmax</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">vary_density</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function for calculating one of the integrals used to construct a template</span>
+<span class="sd">    bank placement metric. The integral calculated will be</span>
+
+<span class="sd">    \int funct(x) * (psd_x)**(-7./3.) * delta_x / PSD(x)</span>
+
+<span class="sd">    where x = f / f0. The lower frequency cutoff is given by fmin, see</span>
+<span class="sd">    the parameters below for details on how the upper frequency cutoff is</span>
+<span class="sd">    chosen</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    psd_f : numpy.array</span>
+<span class="sd">       numpy array holding the set of evenly spaced frequencies used in the PSD</span>
+<span class="sd">    psd_amp : numpy.array</span>
+<span class="sd">       numpy array holding the PSD values corresponding to the psd_f</span>
+<span class="sd">       frequencies</span>
+<span class="sd">    fmin : float</span>
+<span class="sd">        The lower frequency cutoff used in the calculation of the integrals</span>
+<span class="sd">        used to obtain the metric.</span>
+<span class="sd">    fmax : float</span>
+<span class="sd">        The upper frequency cutoff used in the calculation of the integrals</span>
+<span class="sd">        used to obtain the metric. This can be varied (see the vary_fmax</span>
+<span class="sd">        option below).</span>
+<span class="sd">    f0 : float</span>
+<span class="sd">        This is an arbitrary scaling factor introduced to avoid the potential</span>
+<span class="sd">        for numerical overflow when calculating this. Generally the default</span>
+<span class="sd">        value (70) is safe here. **IMPORTANT, if you want to calculate the</span>
+<span class="sd">        ethinca metric components later this MUST be set equal to f_low.**</span>
+<span class="sd">    funct : Lambda function</span>
+<span class="sd">        The function to use when computing the integral as described above.</span>
+<span class="sd">    norm : Dictionary of floats</span>
+<span class="sd">        If given then moment[f_cutoff] will be divided by norm[f_cutoff]</span>
+<span class="sd">    vary_fmax : boolean, optional (default False)</span>
+<span class="sd">        If set to False the metric and rotations are calculated once, for the</span>
+<span class="sd">        full range of frequency [f_low,f_upper).</span>
+<span class="sd">        If set to True the metric and rotations are calculated multiple times,</span>
+<span class="sd">        for frequency ranges [f_low,f_low + i*vary_density), where i starts at</span>
+<span class="sd">        1 and runs up until f_low + (i+1)*vary_density &gt; f_upper.</span>
+<span class="sd">        Thus values greater than f_upper are *not* computed.</span>
+<span class="sd">        The calculation for the full range [f_low,f_upper) is also done.</span>
+<span class="sd">    vary_density : float, optional</span>
+<span class="sd">        If vary_fmax is True, this will be used in computing the frequency</span>
+<span class="sd">        ranges as described for vary_fmax.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    moment : Dictionary of floats</span>
+<span class="sd">        moment[f_cutoff] will store the value of the moment at the frequency</span>
+<span class="sd">        cutoff given by f_cutoff.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Must ensure deltaF in psd_f is constant</span>
+    <span class="n">psd_x</span> <span class="o">=</span> <span class="n">psd_f</span> <span class="o">/</span> <span class="n">f0</span>
+    <span class="n">deltax</span> <span class="o">=</span> <span class="n">psd_x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">psd_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">psd_f</span> <span class="o">&gt;</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">psd_f</span> <span class="o">&lt;</span> <span class="n">fmax</span><span class="p">)</span>
+    <span class="n">psdf_red</span> <span class="o">=</span> <span class="n">psd_f</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">comps_red</span> <span class="o">=</span> <span class="n">psd_x</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">7.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span> <span class="o">*</span> <span class="n">funct</span><span class="p">(</span><span class="n">psd_x</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">f0</span><span class="p">)</span> <span class="o">*</span> <span class="n">deltax</span> <span class="o">/</span> \
+                <span class="n">psd_amp</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">moment</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">moment</span><span class="p">[</span><span class="n">fmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">comps_red</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+        <span class="n">moment</span><span class="p">[</span><span class="n">fmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">moment</span><span class="p">[</span><span class="n">fmax</span><span class="p">]</span> <span class="o">/</span> <span class="n">norm</span><span class="p">[</span><span class="n">fmax</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">vary_fmax</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">t_fmax</span> <span class="ow">in</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fmin</span> <span class="o">+</span> <span class="n">vary_density</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">vary_density</span><span class="p">):</span>
+            <span class="n">moment</span><span class="p">[</span><span class="n">t_fmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">comps_red</span><span class="p">[</span><span class="n">psdf_red</span> <span class="o">&lt;</span> <span class="n">t_fmax</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+                <span class="n">moment</span><span class="p">[</span><span class="n">t_fmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">moment</span><span class="p">[</span><span class="n">t_fmax</span><span class="p">]</span> <span class="o">/</span> <span class="n">norm</span><span class="p">[</span><span class="n">t_fmax</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">moment</span></div>
+
+
+<div class="viewcode-block" id="calculate_metric">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.calc_moments.calculate_metric">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_metric</span><span class="p">(</span><span class="n">Js</span><span class="p">,</span> <span class="n">logJs</span><span class="p">,</span> <span class="n">loglogJs</span><span class="p">,</span> <span class="n">logloglogJs</span><span class="p">,</span> <span class="n">loglogloglogJs</span><span class="p">,</span> \
+                     <span class="n">mapping</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will take the various integrals calculated by get_moments and</span>
+<span class="sd">    convert this into a metric for the appropriate parameter space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    Js : Dictionary</span>
+<span class="sd">        The list of (log^0 x) * x**(-i/3) integrals computed by get_moments()</span>
+<span class="sd">        The index is Js[i]</span>
+<span class="sd">    logJs : Dictionary</span>
+<span class="sd">        The list of (log^1 x) * x**(-i/3) integrals computed by get_moments()</span>
+<span class="sd">        The index is logJs[i]</span>
+<span class="sd">    loglogJs : Dictionary</span>
+<span class="sd">        The list of (log^2 x) * x**(-i/3) integrals computed by get_moments()</span>
+<span class="sd">        The index is loglogJs[i]</span>
+<span class="sd">    logloglogJs : Dictionary</span>
+<span class="sd">        The list of (log^3 x) * x**(-i/3) integrals computed by get_moments()</span>
+<span class="sd">        The index is logloglogJs[i]</span>
+<span class="sd">    loglogloglogJs : Dictionary</span>
+<span class="sd">        The list of (log^4 x) * x**(-i/3) integrals computed by get_moments()</span>
+<span class="sd">        The index is loglogloglogJs[i]</span>
+<span class="sd">    mapping : dictionary</span>
+<span class="sd">        Used to identify which Lambda components are active in this parameter</span>
+<span class="sd">        space and map these to entries in the metric matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    metric : numpy.matrix</span>
+<span class="sd">        The resulting metric.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># How many dimensions in the parameter space?</span>
+    <span class="n">maxLen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">metric</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">maxLen</span><span class="p">,</span><span class="n">maxLen</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">unmax_metric</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">maxLen</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">maxLen</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+            <span class="n">calculate_metric_comp</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">unmax_metric</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">Js</span><span class="p">,</span>
+                                           <span class="n">logJs</span><span class="p">,</span> <span class="n">loglogJs</span><span class="p">,</span> <span class="n">logloglogJs</span><span class="p">,</span>
+                                           <span class="n">loglogloglogJs</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">metric</span><span class="p">,</span> <span class="n">unmax_metric</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_metric_comp">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.calc_moments.calculate_metric_comp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_metric_comp</span><span class="p">(</span><span class="n">gs</span><span class="p">,</span> <span class="n">unmax_metric</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">Js</span><span class="p">,</span> <span class="n">logJs</span><span class="p">,</span> <span class="n">loglogJs</span><span class="p">,</span>
+                          <span class="n">logloglogJs</span><span class="p">,</span> <span class="n">loglogloglogJs</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Used to compute part of the metric. Only call this from within</span>
+<span class="sd">    calculate_metric(). Please see the documentation for that function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Time term in unmax_metric. Note that these terms are recomputed a bunch</span>
+    <span class="c1"># of time, but this cost is insignificant compared to computing the moments</span>
+    <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+
+    <span class="c1"># Normal terms</span>
+    <span class="k">if</span> <span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span> <span class="ow">in</span> <span class="n">mapping</span> <span class="ow">and</span> <span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+        <span class="n">gammaij</span> <span class="o">=</span> <span class="n">Js</span><span class="p">[</span><span class="mi">17</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">gamma0i</span> <span class="o">=</span> <span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">gamma0j</span> <span class="o">=</span> <span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gammaij</span> <span class="o">-</span> <span class="n">gamma0i</span><span class="o">*</span><span class="n">gamma0j</span><span class="o">/</span><span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gammaij</span>
+    <span class="c1"># Normal,log cross terms</span>
+    <span class="k">if</span> <span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span> <span class="ow">in</span> <span class="n">mapping</span> <span class="ow">and</span> <span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+        <span class="n">gammaij</span> <span class="o">=</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">17</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">gamma0i</span> <span class="o">=</span> <span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">gamma0j</span> <span class="o">=</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gammaij</span> <span class="o">-</span> <span class="n">gamma0i</span><span class="o">*</span><span class="n">gamma0j</span><span class="o">/</span><span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gammaij</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gammaij</span>
+    <span class="c1"># Log,log terms</span>
+    <span class="k">if</span> <span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span> <span class="ow">in</span> <span class="n">mapping</span> <span class="ow">and</span> <span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+        <span class="n">gammaij</span> <span class="o">=</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">17</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">gamma0i</span> <span class="o">=</span> <span class="p">(</span><span class="n">logJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">gamma0j</span> <span class="o">=</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gammaij</span> <span class="o">-</span> <span class="n">gamma0i</span><span class="o">*</span><span class="n">gamma0j</span><span class="o">/</span><span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span>\
+            <span class="n">gammaij</span>
+
+    <span class="c1"># Normal,loglog cross terms</span>
+    <span class="k">if</span> <span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span> <span class="ow">in</span> <span class="n">mapping</span> <span class="ow">and</span> <span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+        <span class="n">gammaij</span> <span class="o">=</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">17</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">gamma0i</span> <span class="o">=</span> <span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">gamma0j</span> <span class="o">=</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gammaij</span> <span class="o">-</span> <span class="n">gamma0i</span><span class="o">*</span><span class="n">gamma0j</span><span class="o">/</span><span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gammaij</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;Lambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gammaij</span>
+
+    <span class="c1"># log,loglog cross terms</span>
+    <span class="k">if</span> <span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span> <span class="ow">in</span> <span class="n">mapping</span> <span class="ow">and</span> <span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+        <span class="n">gammaij</span> <span class="o">=</span> <span class="n">logloglogJs</span><span class="p">[</span><span class="mi">17</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">gamma0i</span> <span class="o">=</span> <span class="p">(</span><span class="n">logJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">logJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">gamma0j</span> <span class="o">=</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gammaij</span> <span class="o">-</span> <span class="n">gamma0i</span><span class="o">*</span><span class="n">gamma0j</span><span class="o">/</span><span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gammaij</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="n">gammaij</span>
+
+    <span class="c1"># Loglog,loglog terms</span>
+    <span class="k">if</span> <span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span> <span class="ow">in</span> <span class="n">mapping</span> <span class="ow">and</span> <span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+        <span class="n">gammaij</span> <span class="o">=</span> <span class="n">loglogloglogJs</span><span class="p">[</span><span class="mi">17</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">gamma0i</span> <span class="o">=</span> <span class="p">(</span><span class="n">loglogJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">gamma0j</span> <span class="o">=</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">9</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">loglogJs</span><span class="p">[</span><span class="mi">12</span><span class="o">-</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">gs</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> \
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">gammaij</span> <span class="o">-</span> <span class="n">gamma0i</span><span class="o">*</span><span class="n">gamma0j</span><span class="o">/</span><span class="p">(</span><span class="n">Js</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="n">Js</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gamma0i</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">gamma0j</span>
+        <span class="n">unmax_metric</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">i</span><span class="p">],</span><span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;LogLogLambda</span><span class="si">%d</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span>\
+            <span class="n">gammaij</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

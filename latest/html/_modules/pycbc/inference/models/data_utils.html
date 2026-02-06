@@ -1,0 +1,711 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.data_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.data_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.data_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;Utilities for loading data for models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">MPI</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDetOptionAction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">insert_psd_option_group_multi_ifo</span><span class="p">,</span>
+                       <span class="n">from_cli_multi_ifos</span> <span class="k">as</span> <span class="n">psd_from_cli_multi_ifos</span><span class="p">,</span>
+                       <span class="n">verify_psd_options_multi_ifo</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">strain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.strain</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">gates_from_cli</span><span class="p">,</span> <span class="n">psd_gates_from_cli</span><span class="p">,</span>
+                          <span class="n">apply_gates_to_td</span><span class="p">,</span> <span class="n">apply_gates_to_fd</span><span class="p">,</span>
+                          <span class="n">verify_strain_options_multi_ifo</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">dq</span>
+
+
+<div class="viewcode-block" id="strain_from_cli_multi_ifos">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.strain_from_cli_multi_ifos">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">strain_from_cli_multi_ifos</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around strain.from_cli_multi_ifos that tries a few times before</span>
+<span class="sd">    quiting.</span>
+
+<span class="sd">    When running in a parallel environment, multiple concurrent queries to the</span>
+<span class="sd">    segment data base can cause time out errors. If that happens, this will</span>
+<span class="sd">    sleep for a few seconds, then try again a few times before giving up.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">strain</span><span class="o">.</span><span class="n">from_cli_multi_ifos</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">exception</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="c1"># if get to here, we&#39;ve tries 3 times and still got an error, so exit</span>
+    <span class="k">raise</span> <span class="n">exception</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                   Utilities for gravitational-wave data</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="NoValidDataError">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.NoValidDataError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoValidDataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This should be raised if a continous segment of valid data could not be</span>
+<span class="sd">    found.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="create_data_parser">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.create_data_parser">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_data_parser</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an argument parser for loading GW data.&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="c1"># add data options</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--instruments&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Instruments to analyze, eg. H1 L1.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--trigger-time&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Reference GPS time (at geocenter) from which &quot;</span>
+                             <span class="s2">&quot;the (anlaysis|psd)-(start|end)-time options are &quot;</span>
+                             <span class="s2">&quot;measured. The integer seconds will be used. &quot;</span>
+                             <span class="s2">&quot;Default is 0; i.e., if not provided, &quot;</span>
+                             <span class="s2">&quot;the analysis and psd times should be in GPS &quot;</span>
+                             <span class="s2">&quot;seconds.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--analysis-start-time&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:TIME&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The start time to use for the analysis, &quot;</span>
+                             <span class="s2">&quot;measured with respect to the trigger-time. &quot;</span>
+                             <span class="s2">&quot;If psd-inverse-length is provided, the given &quot;</span>
+                             <span class="s2">&quot;start time will be padded by half that length &quot;</span>
+                             <span class="s2">&quot;to account for wrap-around effects.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--analysis-end-time&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:TIME&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The end time to use for the analysis, &quot;</span>
+                             <span class="s2">&quot;measured with respect to the trigger-time. &quot;</span>
+                             <span class="s2">&quot;If psd-inverse-length is provided, the given &quot;</span>
+                             <span class="s2">&quot;end time will be padded by half that length &quot;</span>
+                             <span class="s2">&quot;to account for wrap-around effects.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-start-time&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:TIME&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Start time to use for PSD estimation, measured &quot;</span>
+                             <span class="s2">&quot;with respect to the trigger-time.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-end-time&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:TIME&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;End time to use for PSD estimation, measured &quot;</span>
+                             <span class="s2">&quot;with respect to the trigger-time.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--data-conditioning-low-freq&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:FLOW&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;low_frequency_cutoff&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Low frequency cutoff of the data. Needed for &quot;</span>
+                             <span class="s2">&quot;PSD estimation and when creating fake strain. &quot;</span>
+                             <span class="s2">&quot;If not provided, will use the model&#39;s &quot;</span>
+                             <span class="s2">&quot;low-frequency-cutoff.&quot;</span><span class="p">)</span>
+    <span class="n">insert_psd_option_group_multi_ifo</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">strain</span><span class="o">.</span><span class="n">insert_strain_option_group_multi_ifo</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">gps_times</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">strain</span><span class="o">.</span><span class="n">add_gate_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="c1"># add arguments for dq</span>
+    <span class="n">dqgroup</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Options for quering data quality &quot;</span>
+                                        <span class="s2">&quot;(DQ)&quot;</span><span class="p">)</span>
+    <span class="n">dqgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dq-segment-name&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;DATA&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The status flag to query for data quality. &#39;</span>
+                              <span class="s1">&#39;Default is &quot;DATA&quot;.&#39;</span><span class="p">)</span>
+    <span class="n">dqgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dq-source&#39;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;any&#39;</span><span class="p">,</span> <span class="s1">&#39;GWOSC&#39;</span><span class="p">,</span> <span class="s1">&#39;dqsegdb&#39;</span><span class="p">],</span>
+                         <span class="n">default</span><span class="o">=</span><span class="s1">&#39;any&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Where to look for DQ information. If &quot;any&quot; &#39;</span>
+                              <span class="s1">&#39;(the default) will first try GWOSC, then &#39;</span>
+                              <span class="s1">&#39;dqsegdb.&#39;</span><span class="p">)</span>
+    <span class="n">dqgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dq-server&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;https://segments.ligo.org&#39;</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The server to use for dqsegdb.&#39;</span><span class="p">)</span>
+    <span class="n">dqgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--veto-definer&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path to a veto definer file that defines &#39;</span>
+                              <span class="s1">&#39;groups of flags, which themselves define a set &#39;</span>
+                              <span class="s1">&#39;of DQ segments.&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span></div>
+
+
+
+<div class="viewcode-block" id="check_validtimes">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.check_validtimes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_validtimes</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">gps_start</span><span class="p">,</span> <span class="n">gps_end</span><span class="p">,</span> <span class="n">shift_to_valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">max_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">segment_name</span><span class="o">=</span><span class="s1">&#39;DATA&#39;</span><span class="p">,</span>
+                     <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Checks DQ server to see if the given times are in a valid segment.</span>
+
+<span class="sd">    If the ``shift_to_valid`` flag is provided, the times will be shifted left</span>
+<span class="sd">    or right to try to find a continous valid block nearby. The shifting starts</span>
+<span class="sd">    by shifting the times left by 1 second. If that does not work, it shifts</span>
+<span class="sd">    the times right by one second. This continues, increasing the shift time by</span>
+<span class="sd">    1 second, until a valid block could be found, or until the shift size</span>
+<span class="sd">    exceeds ``max_shift``.</span>
+
+<span class="sd">    If the given times are not in a continuous valid segment, or a valid block</span>
+<span class="sd">    cannot be found nearby, a ``NoValidDataError`` is raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detector : str</span>
+<span class="sd">        The name of the detector to query; e.g., &#39;H1&#39;.</span>
+<span class="sd">    gps_start : int</span>
+<span class="sd">        The GPS start time of the segment to query.</span>
+<span class="sd">    gps_end : int</span>
+<span class="sd">        The GPS end time of the segment to query.</span>
+<span class="sd">    shift_to_valid : bool, optional</span>
+<span class="sd">        If True, will try to shift the gps start and end times to the nearest</span>
+<span class="sd">        continous valid segment of data. Default is False.</span>
+<span class="sd">    max_shift : int, optional</span>
+<span class="sd">        The maximum number of seconds to try to shift left or right to find</span>
+<span class="sd">        a valid segment. Default is ``gps_end - gps_start``.</span>
+<span class="sd">    segment_name : str, optional</span>
+<span class="sd">        The status flag to query; passed to :py:func:`pycbc.dq.query_flag`.</span>
+<span class="sd">        Default is &quot;DATA&quot;.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to</span>
+<span class="sd">        :py:func:`pycbc.dq.query_flag`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    use_start : int</span>
+<span class="sd">        The start time to use. If ``shift_to_valid`` is True, this may differ</span>
+<span class="sd">        from the given GPS start time.</span>
+<span class="sd">    use_end : int</span>
+<span class="sd">        The end time to use. If ``shift_to_valid`` is True, this may differ</span>
+<span class="sd">        from the given GPS end time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># expand the times checked encase we need to shift</span>
+    <span class="k">if</span> <span class="n">max_shift</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">max_shift</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gps_end</span> <span class="o">-</span> <span class="n">gps_start</span><span class="p">)</span>
+    <span class="n">check_start</span> <span class="o">=</span> <span class="n">gps_start</span> <span class="o">-</span> <span class="n">max_shift</span>
+    <span class="n">check_end</span> <span class="o">=</span> <span class="n">gps_end</span> <span class="o">+</span> <span class="n">max_shift</span>
+    <span class="c1"># if we&#39;re running in an mpi enviornment and we&#39;re not the parent process,</span>
+    <span class="c1"># we&#39;ll wait before quering the segment database. This will result in</span>
+    <span class="c1"># getting the segments from the cache, so as not to overload the database</span>
+    <span class="k">if</span> <span class="n">MPI</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span>
+                            <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="o">.</span><span class="n">Get_rank</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># we&#39;ll wait for 2 minutes</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="mi">120</span><span class="p">)</span>
+    <span class="n">validsegs</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">query_flag</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">segment_name</span><span class="p">,</span> <span class="n">check_start</span><span class="p">,</span>
+                              <span class="n">check_end</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">use_start</span> <span class="o">=</span> <span class="n">gps_start</span>
+    <span class="n">use_end</span> <span class="o">=</span> <span class="n">gps_end</span>
+    <span class="c1"># shift if necessary</span>
+    <span class="k">if</span> <span class="n">shift_to_valid</span><span class="p">:</span>
+        <span class="n">shiftsize</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">use_start</span><span class="p">,</span> <span class="n">use_end</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">validsegs</span> <span class="ow">and</span> <span class="n">shiftsize</span> <span class="o">&lt;</span> <span class="n">max_shift</span><span class="p">:</span>
+            <span class="c1"># try shifting left</span>
+            <span class="n">use_start</span> <span class="o">=</span> <span class="n">gps_start</span> <span class="o">-</span> <span class="n">shiftsize</span>
+            <span class="n">use_end</span> <span class="o">=</span> <span class="n">gps_end</span> <span class="o">-</span> <span class="n">shiftsize</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">use_start</span><span class="p">,</span> <span class="n">use_end</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">validsegs</span><span class="p">:</span>
+                <span class="c1"># try shifting right</span>
+                <span class="n">use_start</span> <span class="o">=</span> <span class="n">gps_start</span> <span class="o">+</span> <span class="n">shiftsize</span>
+                <span class="n">use_end</span> <span class="o">=</span> <span class="n">gps_end</span> <span class="o">+</span> <span class="n">shiftsize</span>
+            <span class="n">shiftsize</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># check that we have a valid range</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">use_start</span><span class="p">,</span> <span class="n">use_end</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">validsegs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NoValidDataError</span><span class="p">(</span><span class="s2">&quot;Could not find a continous valid segment in &quot;</span>
+                               <span class="s2">&quot;in detector </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">use_start</span><span class="p">,</span> <span class="n">use_end</span></div>
+
+
+
+<div class="viewcode-block" id="detectors_with_valid_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.detectors_with_valid_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">detectors_with_valid_data</span><span class="p">(</span><span class="n">detectors</span><span class="p">,</span> <span class="n">gps_start_times</span><span class="p">,</span> <span class="n">gps_end_times</span><span class="p">,</span>
+                              <span class="n">pad_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">err_on_missing_detectors</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Determines which detectors have valid data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detectors : list of str</span>
+<span class="sd">        Names of the detector names to check.</span>
+<span class="sd">    gps_start_times : dict</span>
+<span class="sd">        Dictionary of detector name -&gt; start time listing the GPS start times</span>
+<span class="sd">        of the segment to check for each detector.</span>
+<span class="sd">    gps_end_times : dict</span>
+<span class="sd">        Dictionary of detector name -&gt; end time listing the GPS end times of</span>
+<span class="sd">        the segment to check for each detector.</span>
+<span class="sd">    pad_data : dict, optional</span>
+<span class="sd">        Dictionary of detector name -&gt; pad time to add to the beginning/end of</span>
+<span class="sd">        the GPS start/end times before checking. A pad time for every detector</span>
+<span class="sd">        in ``detectors`` must be given. Default (None) is to apply no pad to</span>
+<span class="sd">        the times.</span>
+<span class="sd">    err_on_missing_detectors : bool, optional</span>
+<span class="sd">        If True, a ``NoValidDataError`` will be raised if any detector does not</span>
+<span class="sd">        have continous valid data in its requested segment. Otherwise, the</span>
+<span class="sd">        detector will not be included in the returned list of detectors with</span>
+<span class="sd">        valid data. Default is False.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to ``check_validtimes``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        A dictionary of detector name -&gt; valid times giving the detectors with</span>
+<span class="sd">        valid data and their segments. If ``shift_to_valid`` was passed to</span>
+<span class="sd">        ``check_validtimes`` this may not be the same as the input segments. If</span>
+<span class="sd">        no valid times could be found for a detector (and</span>
+<span class="sd">        ``err_on_missing_detectors`` is False), it will not be included in the</span>
+<span class="sd">        returned dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pad_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pad_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">detectors</span><span class="p">}</span>
+    <span class="n">dets_with_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">detectors</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking that </span><span class="si">%s</span><span class="s2"> has valid data in the requested &quot;</span>
+                     <span class="s2">&quot;segment&quot;</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pad</span> <span class="o">=</span> <span class="n">pad_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">check_validtimes</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">gps_start_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">-</span><span class="n">pad</span><span class="p">,</span>
+                                          <span class="n">gps_end_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">+</span><span class="n">pad</span><span class="p">,</span>
+                                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">dets_with_data</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span><span class="o">+</span><span class="n">pad</span><span class="p">,</span> <span class="n">end</span><span class="o">-</span><span class="n">pad</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoValidDataError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">err_on_missing_detectors</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;WARNING: Detector </span><span class="si">%s</span><span class="s2"> will not be used in &quot;</span>
+                            <span class="s2">&quot;the analysis, as it does not have &quot;</span>
+                            <span class="s2">&quot;continuous valid data that spans the &quot;</span>
+                            <span class="s2">&quot;segment [</span><span class="si">%d</span><span class="s2">, </span><span class="si">%d</span><span class="s2">).&quot;</span><span class="p">,</span> <span class="n">det</span><span class="p">,</span> <span class="n">gps_start_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">-</span><span class="n">pad</span><span class="p">,</span>
+                            <span class="n">gps_end_times</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">+</span><span class="n">pad</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dets_with_data</span></div>
+
+
+
+<div class="viewcode-block" id="check_for_nans">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.check_for_nans">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_for_nans</span><span class="p">(</span><span class="n">strain_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks if any data in a dictionary of strains has NaNs.</span>
+
+<span class="sd">    If any NaNs are found, a ``ValueError`` is raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt;</span>
+<span class="sd">        :py:class:`pycbc.types.timeseries.TimeSeries`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">strain_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;NaN found in strain from </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="data_opts_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.data_opts_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">data_opts_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">filter_flow</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads data options from a section in a config file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : WorkflowConfigParser</span>
+<span class="sd">        Config file to read.</span>
+<span class="sd">    section : str</span>
+<span class="sd">        The section to read. All options in the section will be loaded as-if</span>
+<span class="sd">        they wre command-line arguments.</span>
+<span class="sd">    filter_flow : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; inner product low frequency cutoffs.</span>
+<span class="sd">        If a `data-conditioning-low-freq` cutoff wasn&#39;t provided for any</span>
+<span class="sd">        of the detectors, these values will be used. Otherwise, the</span>
+<span class="sd">        data-conditioning-low-freq must be less than the inner product cutoffs.</span>
+<span class="sd">        If any are not, a ``ValueError`` is raised.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    opts : parsed argparse.ArgumentParser</span>
+<span class="sd">        An argument parser namespace that was constructed as if the options</span>
+<span class="sd">        were specified on the command line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># convert the section options into a command-line options</span>
+    <span class="n">optstr</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">section_to_cli</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+    <span class="c1"># create a fake parser to parse them</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">create_data_parser</span><span class="p">()</span>
+    <span class="c1"># parse the options</span>
+    <span class="n">opts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">optstr</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="c1"># figure out the times to use</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Determining analysis times to use&quot;</span><span class="p">)</span>
+    <span class="n">opts</span><span class="o">.</span><span class="n">trigger_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">trigger_time</span><span class="p">)</span>
+    <span class="n">gps_start</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">analysis_start_time</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">gps_end</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">analysis_end_time</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">instruments</span><span class="p">:</span>
+        <span class="n">gps_start</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+=</span> <span class="n">opts</span><span class="o">.</span><span class="n">trigger_time</span>
+        <span class="n">gps_end</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+=</span> <span class="n">opts</span><span class="o">.</span><span class="n">trigger_time</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_inverse_length</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pad</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">psd_inverse_length</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Padding </span><span class="si">%s</span><span class="s2"> analysis start and end times by </span><span class="si">%d</span><span class="s2"> &quot;</span>
+                         <span class="s2">&quot;(= psd-inverse-length/2) seconds to &quot;</span>
+                         <span class="s2">&quot;account for PSD wrap around effects.&quot;</span><span class="p">,</span>
+                         <span class="n">det</span><span class="p">,</span> <span class="n">pad</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pad</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">gps_start</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">-=</span> <span class="n">pad</span>
+        <span class="n">gps_end</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+=</span> <span class="n">pad</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_start_time</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">psd_start_time</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+=</span> <span class="n">opts</span><span class="o">.</span><span class="n">trigger_time</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_end_time</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">psd_end_time</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">+=</span> <span class="n">opts</span><span class="o">.</span><span class="n">trigger_time</span>
+    <span class="n">opts</span><span class="o">.</span><span class="n">gps_start_time</span> <span class="o">=</span> <span class="n">gps_start</span>
+    <span class="n">opts</span><span class="o">.</span><span class="n">gps_end_time</span> <span class="o">=</span> <span class="n">gps_end</span>
+    <span class="c1"># check for the frequencies</span>
+    <span class="n">low_freq_cutoff</span> <span class="o">=</span> <span class="n">filter_flow</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span><span class="p">:</span>
+        <span class="c1"># add in any missing detectors</span>
+        <span class="n">low_freq_cutoff</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">det</span><span class="p">:</span> <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">instruments</span>
+                                <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+        <span class="c1"># make sure the data conditioning low frequency cutoff is &lt; than</span>
+        <span class="c1"># the matched filter cutoff</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">low_freq_cutoff</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">filter_flow</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">filter_flow</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;data conditioning low frequency cutoff must &quot;</span>
+                             <span class="s2">&quot;be less than the filter low frequency &quot;</span>
+                             <span class="s2">&quot;cutoff&quot;</span><span class="p">)</span>
+    <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span> <span class="o">=</span> <span class="n">low_freq_cutoff</span>
+
+    <span class="c1"># verify options are sane</span>
+    <span class="n">verify_psd_options_multi_ifo</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">instruments</span><span class="p">)</span>
+    <span class="n">verify_strain_options_multi_ifo</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">instruments</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">opts</span></div>
+
+
+
+<div class="viewcode-block" id="data_from_cli">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.data_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">data_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">check_for_valid_times</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">shift_psd_times_to_valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">err_on_missing_detectors</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads the data needed for a model from the given command-line options.</span>
+
+<span class="sd">    Gates specifed on the command line are also applied.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : ArgumentParser parsed args</span>
+<span class="sd">        Argument options parsed from a command line string (the sort of thing</span>
+<span class="sd">        returned by `parser.parse_args`).</span>
+<span class="sd">    check_for_valid_times : bool, optional</span>
+<span class="sd">        Check that valid data exists in the requested gps times. Default is</span>
+<span class="sd">        False.</span>
+<span class="sd">    shift_psd_times_to_valid : bool, optional</span>
+<span class="sd">        If estimating the PSD from data, shift the PSD times to a valid</span>
+<span class="sd">        segment if needed. Default is False.</span>
+<span class="sd">    err_on_missing_detectors : bool, optional</span>
+<span class="sd">        Raise a NoValidDataError if any detector does not have valid data.</span>
+<span class="sd">        Otherwise, a warning is printed, and that detector is skipped.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    strain_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; time series strain.</span>
+<span class="sd">    psd_strain_dict : dict or None</span>
+<span class="sd">        If ``opts.psd_(start|end)_time`` were set, a dctionary of</span>
+<span class="sd">        detectors -&gt; time series data to use for PSD estimation. Otherwise,</span>
+<span class="sd">        ``None``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get gates to apply</span>
+    <span class="n">gates</span> <span class="o">=</span> <span class="n">gates_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+    <span class="n">psd_gates</span> <span class="o">=</span> <span class="n">psd_gates_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+
+    <span class="c1"># get strain time series</span>
+    <span class="n">instruments</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">instruments</span>
+
+    <span class="c1"># validate times</span>
+    <span class="k">if</span> <span class="n">check_for_valid_times</span><span class="p">:</span>
+        <span class="n">dets_with_data</span> <span class="o">=</span> <span class="n">detectors_with_valid_data</span><span class="p">(</span>
+            <span class="n">instruments</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">gps_start_time</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">gps_end_time</span><span class="p">,</span>
+            <span class="n">pad_data</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">pad_data</span><span class="p">,</span>
+            <span class="n">err_on_missing_detectors</span><span class="o">=</span><span class="n">err_on_missing_detectors</span><span class="p">,</span>
+            <span class="n">shift_to_valid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">segment_name</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">dq_segment_name</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">dq_source</span><span class="p">,</span>
+            <span class="n">server</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">dq_server</span><span class="p">,</span> <span class="n">veto_definer</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">veto_definer</span><span class="p">)</span>
+        <span class="c1"># reset instruments to only be those with valid data</span>
+        <span class="n">instruments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dets_with_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">strain_dict</span> <span class="o">=</span> <span class="n">strain_from_cli_multi_ifos</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">instruments</span><span class="p">,</span>
+                                             <span class="n">precision</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">)</span>
+    <span class="c1"># apply gates if not waiting to overwhiten</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">opts</span><span class="o">.</span><span class="n">gate_overwhitened</span><span class="p">:</span>
+        <span class="n">strain_dict</span> <span class="o">=</span> <span class="n">apply_gates_to_td</span><span class="p">(</span><span class="n">strain_dict</span><span class="p">,</span> <span class="n">gates</span><span class="p">)</span>
+
+    <span class="c1"># check that there aren&#39;t nans in the data</span>
+    <span class="n">check_for_nans</span><span class="p">(</span><span class="n">strain_dict</span><span class="p">)</span>
+
+    <span class="c1"># get strain time series to use for PSD estimation</span>
+    <span class="c1"># if user has not given the PSD time options then use same data as analysis</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_start_time</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_end_time</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Will generate a different time series for PSD &quot;</span>
+                     <span class="s2">&quot;estimation&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">check_for_valid_times</span><span class="p">:</span>
+            <span class="n">psd_times</span> <span class="o">=</span> <span class="n">detectors_with_valid_data</span><span class="p">(</span>
+                <span class="n">instruments</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_start_time</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_end_time</span><span class="p">,</span>
+                <span class="n">pad_data</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">pad_data</span><span class="p">,</span>
+                <span class="n">err_on_missing_detectors</span><span class="o">=</span><span class="n">err_on_missing_detectors</span><span class="p">,</span>
+                <span class="n">shift_to_valid</span><span class="o">=</span><span class="n">shift_psd_times_to_valid</span><span class="p">,</span>
+                <span class="n">segment_name</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">dq_segment_name</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">dq_source</span><span class="p">,</span>
+                <span class="n">server</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">dq_server</span><span class="p">,</span> <span class="n">veto_definer</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">veto_definer</span><span class="p">)</span>
+            <span class="c1"># remove detectors from the strain dict that did not have valid</span>
+            <span class="c1"># times for PSD estimation</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">strain_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">-</span><span class="nb">set</span><span class="p">(</span><span class="n">psd_times</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="n">_</span> <span class="o">=</span> <span class="n">strain_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+            <span class="c1"># reset instruments to only be those with valid data</span>
+            <span class="n">instruments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">psd_times</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">psd_times</span> <span class="o">=</span> <span class="p">{</span><span class="n">det</span><span class="p">:</span> <span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">psd_start_time</span><span class="p">[</span><span class="n">det</span><span class="p">],</span>
+                               <span class="n">opts</span><span class="o">.</span><span class="n">psd_end_time</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+                         <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">}</span>
+        <span class="n">psd_strain_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="p">(</span><span class="n">psd_start</span><span class="p">,</span> <span class="n">psd_end</span><span class="p">)</span> <span class="ow">in</span> <span class="n">psd_times</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">gps_start_time</span> <span class="o">=</span> <span class="n">psd_start</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">gps_end_time</span> <span class="o">=</span> <span class="n">psd_end</span>
+            <span class="n">psd_strain_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="n">strain_from_cli_multi_ifos</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="p">[</span><span class="n">det</span><span class="p">],</span> <span class="n">precision</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">))</span>
+        <span class="c1"># apply any gates</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying gates to PSD data&quot;</span><span class="p">)</span>
+        <span class="n">psd_strain_dict</span> <span class="o">=</span> <span class="n">apply_gates_to_td</span><span class="p">(</span><span class="n">psd_strain_dict</span><span class="p">,</span> <span class="n">psd_gates</span><span class="p">)</span>
+        <span class="c1"># check that there aren&#39;t nans in the psd data</span>
+        <span class="n">check_for_nans</span><span class="p">(</span><span class="n">psd_strain_dict</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_start_time</span> <span class="ow">or</span> <span class="n">opts</span><span class="o">.</span><span class="n">psd_end_time</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must give psd-start-time and psd-end-time&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">psd_strain_dict</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># check that we have data left to analyze</span>
+    <span class="k">if</span> <span class="n">instruments</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="k">raise</span> <span class="n">NoValidDataError</span><span class="p">(</span><span class="s2">&quot;No valid data could be found in any of the &quot;</span>
+                               <span class="s2">&quot;requested instruments.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">strain_dict</span><span class="p">,</span> <span class="n">psd_strain_dict</span></div>
+
+
+
+<div class="viewcode-block" id="fd_data_from_strain_dict">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.fd_data_from_strain_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_data_from_strain_dict</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">strain_dict</span><span class="p">,</span> <span class="n">psd_strain_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a dictionary of time series to the frequency domain, and gets</span>
+<span class="sd">    the PSDs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : ArgumentParser parsed args</span>
+<span class="sd">        Argument options parsed from a command line string (the sort of thing</span>
+<span class="sd">        returned by `parser.parse_args`).</span>
+<span class="sd">    strain_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; time series data.</span>
+<span class="sd">    psd_strain_dict : dict, optional</span>
+<span class="sd">        Dictionary of detectors -&gt; time series data to use for PSD estimation.</span>
+<span class="sd">        If not provided, will use the ``strain_dict``. This is</span>
+<span class="sd">        ignored if ``opts.psd_estimation`` is not set. See</span>
+<span class="sd">        :py:func:`pycbc.psd.psd_from_cli_multi_ifos` for details.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stilde_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; frequency series data.</span>
+<span class="sd">    psd_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; frequency-domain PSDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># FFT strain and save each of the length of the FFT, delta_f, and</span>
+    <span class="c1"># low frequency cutoff to a dict</span>
+    <span class="n">stilde_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">length_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">delta_f_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">det</span><span class="p">,</span> <span class="n">tsdata</span> <span class="ow">in</span> <span class="n">strain_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">stilde_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">tsdata</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+        <span class="n">length_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stilde_dict</span><span class="p">[</span><span class="n">det</span><span class="p">])</span>
+        <span class="n">delta_f_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">stilde_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">delta_f</span>
+
+    <span class="k">if</span> <span class="n">psd_strain_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">psd_strain_dict</span> <span class="o">=</span> <span class="n">strain_dict</span>
+
+    <span class="c1"># get PSD as frequency series</span>
+    <span class="n">psd_dict</span> <span class="o">=</span> <span class="n">psd_from_cli_multi_ifos</span><span class="p">(</span>
+        <span class="n">opts</span><span class="p">,</span> <span class="n">length_dict</span><span class="p">,</span> <span class="n">delta_f_dict</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+        <span class="nb">list</span><span class="p">(</span><span class="n">psd_strain_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">strain_dict</span><span class="o">=</span><span class="n">psd_strain_dict</span><span class="p">,</span>
+        <span class="n">precision</span><span class="o">=</span><span class="s2">&quot;double&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stilde_dict</span><span class="p">,</span> <span class="n">psd_dict</span></div>
+
+
+
+<div class="viewcode-block" id="gate_overwhitened_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.data_utils.gate_overwhitened_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gate_overwhitened_data</span><span class="p">(</span><span class="n">stilde_dict</span><span class="p">,</span> <span class="n">psd_dict</span><span class="p">,</span> <span class="n">gates</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies gates to overwhitened data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stilde_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; frequency series data to apply the gates to.</span>
+<span class="sd">    psd_dict : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; PSD to use for overwhitening.</span>
+<span class="sd">    gates : dict</span>
+<span class="sd">        Dictionary of detectors -&gt; gates.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of detectors -&gt; frequency series data with the gates</span>
+<span class="sd">        applied after overwhitening. The returned data is not overwhitened.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying gates to overwhitened data&quot;</span><span class="p">)</span>
+    <span class="c1"># overwhiten the data</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">gates</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">=</span> <span class="n">stilde_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">/</span> <span class="n">psd_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+    <span class="c1"># now apply the gate</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">apply_gates_to_fd</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">gates</span><span class="p">)</span>
+    <span class="c1"># now unwhiten</span>
+    <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">gates</span><span class="p">:</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">det</span><span class="p">]</span> <span class="o">*=</span> <span class="n">psd_dict</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

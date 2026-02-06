@@ -1,0 +1,662 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.angular &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.angular</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.angular</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes for evaluating angular distributions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">Error</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">VARARGS_DELIM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">boundaries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">bounded</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">uniform</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.angular&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UniformAngle">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.UniformAngle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UniformAngle</span><span class="p">(</span><span class="n">uniform</span><span class="o">.</span><span class="n">Uniform</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A uniform distribution in which the dependent variable is between</span>
+<span class="sd">    `[0,2pi)`.</span>
+
+<span class="sd">    The domain of the distribution may optionally be made cyclic using the</span>
+<span class="sd">    `cyclic_domain` parameter.</span>
+
+<span class="sd">    Bounds may be provided to limit the range for which the pdf has support.</span>
+<span class="sd">    If provided, the parameter bounds are in radians.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cyclic_domain : {False, bool}</span>
+<span class="sd">        If True, cyclic bounds on [0, 2pi) are applied to all values when</span>
+<span class="sd">        evaluating the pdf. This is done prior to any additional bounds</span>
+<span class="sd">        specified for a parameter are applied. Default is False.</span>
+<span class="sd">    \**params :</span>
+<span class="sd">        The keyword arguments should provide the names of parameters and</span>
+<span class="sd">        (optionally) their corresponding bounds, as either</span>
+<span class="sd">        `boundaries.Bounds` instances or tuples. The bounds must be</span>
+<span class="sd">        in [0,2PI). These are converted to radians for storage. None may also</span>
+<span class="sd">        be passed; in that case, the domain bounds will be used.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    ------</span>
+<span class="sd">    For more information, see Uniform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;uniform_angle&#39;</span>
+
+    <span class="n">_domainbounds</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cyclic_domain</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="c1"># _domain is a bounds instance used to apply cyclic conditions; this is</span>
+        <span class="c1"># applied first, before any bounds specified in the initialization</span>
+        <span class="c1"># are used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_domainbounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_domainbounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cyclic</span><span class="o">=</span><span class="n">cyclic_domain</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">bnds</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">bnds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">bnds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bnds</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">):</span>
+                <span class="c1"># convert to radians</span>
+                <span class="n">bnds</span><span class="o">.</span><span class="n">_min</span> <span class="o">=</span> <span class="n">bnds</span><span class="o">.</span><span class="n">_min</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">bnds</span><span class="o">.</span><span class="n">_min</span><span class="p">)</span>
+                <span class="n">bnds</span><span class="o">.</span><span class="n">_max</span> <span class="o">=</span> <span class="n">bnds</span><span class="o">.</span><span class="n">_max</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">bnds</span><span class="o">.</span><span class="n">_max</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># create a Bounds instance from the given tuple</span>
+                <span class="n">bnds</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span><span class="n">bnds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bnds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># check that the bounds are in the domain</span>
+            <span class="k">if</span> <span class="n">bnds</span><span class="o">.</span><span class="n">min</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">min</span> <span class="ow">or</span> <span class="n">bnds</span><span class="o">.</span><span class="n">max</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">max</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;bounds must be in [</span><span class="si">{x}</span><span class="s2">,</span><span class="si">{y}</span><span class="s2">); &quot;</span>
+                    <span class="s2">&quot;got [</span><span class="si">{a}</span><span class="s2">,</span><span class="si">{b}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">max</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">bnds</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+                    <span class="n">b</span><span class="o">=</span><span class="n">bnds</span><span class="o">.</span><span class="n">max</span><span class="p">))</span>
+
+            <span class="c1"># update</span>
+            <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">bnds</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">UniformAngle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">domain</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the domain of the distribution.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span>
+
+<div class="viewcode-block" id="UniformAngle.apply_boundary_conditions">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.UniformAngle.apply_boundary_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_boundary_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Maps values to be in [0, 2pi) (the domain) first, before applying</span>
+<span class="sd">        any additional boundary conditions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            The keyword args should be the name of a parameter and value to</span>
+<span class="sd">            apply its boundary conditions to. The arguments need not include</span>
+<span class="sd">            all of the parameters in self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of the parameter names and the conditioned values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># map values to be within the domain</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([[</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">val</span><span class="p">)]</span>
+                      <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">])</span>
+        <span class="c1"># now apply additional conditions</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">UniformAngle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UniformAngle.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.UniformAngle.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a distribution based on a configuration file.</span>
+
+<span class="sd">        The parameters for the distribution are retrieved from the section</span>
+<span class="sd">        titled &quot;[`section`-`variable_args`]&quot; in the config file. By default,</span>
+<span class="sd">        only the name of the distribution (`uniform_angle`) needs to be</span>
+<span class="sd">        specified. This will results in a uniform prior on `[0, 2pi)`. To</span>
+<span class="sd">        make the domain cyclic, add `cyclic_domain =`. To specify boundaries</span>
+<span class="sd">        that are not `[0, 2pi)`, add `(min|max)-var` arguments, where `var`</span>
+<span class="sd">        is the name of the variable.</span>
+
+<span class="sd">        For example, this will initialize a variable called `theta` with a</span>
+<span class="sd">        uniform distribution on `[0, 2pi)` without cyclic boundaries:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [{section}-theta]</span>
+<span class="sd">            name = uniform_angle</span>
+
+<span class="sd">        This will make the domain cyclic on `[0, 2pi)`:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [{section}-theta]</span>
+<span class="sd">            name = uniform_angle</span>
+<span class="sd">            cyclic_domain =</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : pycbc.workflow.WorkflowConfigParser</span>
+<span class="sd">            A parsed configuration file that contains the distribution</span>
+<span class="sd">            options.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            Name of the section in the configuration file.</span>
+<span class="sd">        variable_args : str</span>
+<span class="sd">            The names of the parameters for this distribution, separated by</span>
+<span class="sd">            ``VARARGS_DELIM``. These must appear in the &quot;tag&quot; part</span>
+<span class="sd">            of the section header.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        UniformAngle</span>
+<span class="sd">            A distribution instance from the pycbc.inference.prior module.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># we&#39;ll retrieve the setting for cyclic_domain directly</span>
+        <span class="n">additional_opts</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cyclic_domain&#39;</span><span class="p">:</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span>
+                                            <span class="s1">&#39;cyclic_domain&#39;</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="n">bounded</span><span class="o">.</span><span class="n">bounded_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">,</span>
+                                           <span class="n">bounds_required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">additional_opts</span><span class="o">=</span><span class="n">additional_opts</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SinAngle">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.SinAngle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SinAngle</span><span class="p">(</span><span class="n">UniformAngle</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A sine distribution; the pdf of each parameter `\theta` is given by:</span>
+
+<span class="sd">    ..math::</span>
+<span class="sd">        p(\theta) = \frac{\sin \theta}{\cos\theta_0 - \cos\theta_1}, \theta_0 \leq \theta &lt; \theta_1,</span>
+
+<span class="sd">    and 0 otherwise. Here, :math:`\theta_0, \theta_1` are the bounds of the</span>
+<span class="sd">    parameter.</span>
+
+<span class="sd">    The domain of this distribution is `[0, pi]`. This is accomplished by</span>
+<span class="sd">    putting hard boundaries at `[0, pi]`. Bounds may be provided to further</span>
+<span class="sd">    limit the range for which the pdf has support.  As with `UniformAngle`,</span>
+<span class="sd">    these are initialized in radians.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    \**params :</span>
+<span class="sd">        The keyword arguments should provide the names of parameters and</span>
+<span class="sd">        (optionally) their corresponding bounds, as either</span>
+<span class="sd">        `boundaries.Bounds` instances or tuples. The bounds must be</span>
+<span class="sd">        in [0,PI]. These are converted to radians for storage. None may also</span>
+<span class="sd">        be passed; in that case, the domain bounds will be used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;sin_angle&#39;</span>
+    <span class="n">_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span>
+    <span class="n">_dfunc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span>
+    <span class="n">_arcfunc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span>
+    <span class="n">_domainbounds</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SinAngle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="c1"># replace the domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_domain</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_domainbounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_domainbounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">btype_min</span><span class="o">=</span><span class="s1">&#39;closed&#39;</span><span class="p">,</span> <span class="n">btype_max</span><span class="o">=</span><span class="s1">&#39;closed&#39;</span><span class="p">,</span>
+            <span class="n">cyclic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span> <span class="o">=</span> <span class="o">-</span><span class="nb">sum</span><span class="p">([</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="n">bnd</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_func</span><span class="p">(</span><span class="n">bnd</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span> \
+            <span class="k">for</span> <span class="n">bnd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cdfinv_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return inverse of cdf for mapping unit interval to parameter bounds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">arg</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                 <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">arg</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">arg</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">scale</span>
+        <span class="n">new_value</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="o">-</span><span class="n">scale</span> <span class="o">*</span> <span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="n">offset</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">new_value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the pdf at the given values. The keyword arguments must</span>
+<span class="sd">        contain all of parameters in self&#39;s params. Unrecognized arguments are</span>
+<span class="sd">        ignored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span> <span class="o">*</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dfunc</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">]))</span><span class="o">.</span><span class="n">prod</span><span class="p">()</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_logpdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the log of the pdf at the given values. The keyword</span>
+<span class="sd">        arguments must contain all of parameters in self&#39;s params. Unrecognized</span>
+<span class="sd">        arguments are ignored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">return</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span> <span class="o">+</span> \
+            <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dfunc</span><span class="p">(</span>
+                <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">kwargs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">])))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="CosAngle">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.CosAngle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CosAngle</span><span class="p">(</span><span class="n">SinAngle</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A cosine distribution. This is the same thing as a sine distribution,</span>
+<span class="sd">    but with the domain shifted to `[-pi/2, pi/2]`. See SinAngle for more</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    \**params :</span>
+<span class="sd">        The keyword arguments should provide the names of parameters and</span>
+<span class="sd">        (optionally) their corresponding bounds, as either</span>
+<span class="sd">        `boundaries.Bounds` instances or tuples. The bounds must be</span>
+<span class="sd">        in [-PI/2, PI/2].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;cos_angle&#39;</span>
+    <span class="n">_func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span>
+    <span class="n">_dfunc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span>
+    <span class="n">_arcfunc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arcsin</span>
+    <span class="n">_domainbounds</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cdfinv_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="n">param</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+        <span class="n">new_value</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arcsin</span><span class="p">((</span><span class="n">value</span> <span class="o">-</span> <span class="n">offset</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_value</span></div>
+
+
+
+<div class="viewcode-block" id="UniformSolidAngle">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UniformSolidAngle</span><span class="p">(</span><span class="n">bounded</span><span class="o">.</span><span class="n">BoundedDist</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A distribution that is uniform in the solid angle of a sphere. The names</span>
+<span class="sd">    of the two angluar parameters can be specified on initalization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    polar_angle : {&#39;theta&#39;, str}</span>
+<span class="sd">        The name of the polar angle.</span>
+<span class="sd">    azimuthal_angle : {&#39;phi&#39;, str}</span>
+<span class="sd">        The name of the azimuthal angle.</span>
+<span class="sd">    polar_bounds : {None, tuple}</span>
+<span class="sd">        Limit the polar angle to the given bounds. If None provided, the polar</span>
+<span class="sd">        angle will vary from 0 (the north pole) to pi (the south pole). The</span>
+<span class="sd">        bounds should be specified as factors of pi. For example, to limit</span>
+<span class="sd">        the distribution to the northern hemisphere, set</span>
+<span class="sd">        `polar_bounds=(0,0.5)`.</span>
+<span class="sd">    azimuthal_bounds : {None, tuple}</span>
+<span class="sd">        Limit the azimuthal angle to the given bounds. If None provided, the</span>
+<span class="sd">        azimuthal angle will vary from 0 to 2pi. The</span>
+<span class="sd">        bounds should be specified as factors of pi. For example, to limit</span>
+<span class="sd">        the distribution to the one hemisphere, set `azimuthal_bounds=(0,1)`.</span>
+<span class="sd">    azimuthal_cyclic_domain : {False, bool}</span>
+<span class="sd">        Make the domain of the azimuthal angle be cyclic; i.e., azimuthal</span>
+<span class="sd">        values are constrained to be in [0, 2pi) using cyclic boundaries prior</span>
+<span class="sd">        to applying any other boundary conditions and prior to evaluating the</span>
+<span class="sd">        pdf. Default is False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;uniform_solidangle&#39;</span>
+    <span class="n">_polardistcls</span> <span class="o">=</span> <span class="n">SinAngle</span>
+    <span class="n">_azimuthaldistcls</span> <span class="o">=</span> <span class="n">UniformAngle</span>
+    <span class="n">_default_polar_angle</span> <span class="o">=</span> <span class="s1">&#39;theta&#39;</span>
+    <span class="n">_default_azimuthal_angle</span> <span class="o">=</span> <span class="s1">&#39;phi&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">polar_angle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuthal_angle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">polar_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">azimuthal_bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">azimuthal_cyclic_domain</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">polar_angle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">polar_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_polar_angle</span>
+        <span class="k">if</span> <span class="n">azimuthal_angle</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">azimuthal_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_azimuthal_angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_polardist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polardistcls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+            <span class="n">polar_angle</span><span class="p">:</span> <span class="n">polar_bounds</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldistcls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+            <span class="n">azimuthal_angle</span><span class="p">:</span> <span class="n">azimuthal_bounds</span><span class="p">,</span>
+            <span class="s1">&#39;cyclic_domain&#39;</span><span class="p">:</span> <span class="n">azimuthal_cyclic_domain</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_polar_angle</span> <span class="o">=</span> <span class="n">polar_angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthal_angle</span> <span class="o">=</span> <span class="n">azimuthal_angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polardist</span><span class="o">.</span><span class="n">bounds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldist</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;dict: The bounds on each angle. The keys are the names of the polar</span>
+<span class="sd">        and azimuthal angles, the values are the minimum and maximum of each,</span>
+<span class="sd">        in radians. For example, if the distribution was initialized with</span>
+<span class="sd">        `polar_angle=&#39;theta&#39;, polar_bounds=(0,0.5)` then the bounds will have</span>
+<span class="sd">        `&#39;theta&#39;: 0, 1.5707963267948966` as an entry.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">polar_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: The name of the polar angle.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polar_angle</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">azimuthal_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;str: The name of the azimuthal angle.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthal_angle</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cdfinv_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the cdfinv for a single given parameter &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">param</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">polar_angle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polardist</span><span class="o">.</span><span class="n">_cdfinv_param</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">param</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">azimuthal_angle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldist</span><span class="o">.</span><span class="n">_cdfinv_param</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UniformSolidAngle.apply_boundary_conditions">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle.apply_boundary_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_boundary_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Maps the given values to be within the domain of the azimuthal and</span>
+<span class="sd">        polar angles, before applying any other boundary conditions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            The keyword args must include values for both the azimuthal and</span>
+<span class="sd">            polar angle, using the names they were initilialized with. For</span>
+<span class="sd">            example, if `polar_angle=&#39;theta&#39;` and `azimuthal_angle=`phi`, then</span>
+<span class="sd">            the keyword args must be `theta={val1}, phi={val2}`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of the parameter names and the conditioned values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">polarval</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_polar_angle</span><span class="p">]</span>
+        <span class="n">azval</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_azimuthal_angle</span><span class="p">]</span>
+        <span class="c1"># constrain each angle to its domain</span>
+        <span class="n">polarval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polardist</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">polarval</span><span class="p">)</span>
+        <span class="n">azval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldist</span><span class="o">.</span><span class="n">_domain</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">azval</span><span class="p">)</span>
+        <span class="c1"># apply any other boundary conditions</span>
+        <span class="n">polarval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_polar_angle</span><span class="p">]</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">polarval</span><span class="p">)</span>
+        <span class="n">azval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bounds</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_azimuthal_angle</span><span class="p">]</span><span class="o">.</span><span class="n">apply_conditions</span><span class="p">(</span><span class="n">azval</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_polar_angle</span><span class="p">:</span> <span class="n">polarval</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthal_angle</span><span class="p">:</span> <span class="n">azval</span><span class="p">}</span></div>
+
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the pdf at the given angles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**kwargs:</span>
+<span class="sd">            The keyword arguments should specify the value for each angle,</span>
+<span class="sd">            using the names of the polar and azimuthal angles as the keywords.</span>
+<span class="sd">            Unrecognized arguments are ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the pdf at the given values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polardist</span><span class="o">.</span><span class="n">_pdf</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">*</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldist</span><span class="o">.</span><span class="n">_pdf</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_logpdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the logpdf at the given angles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**kwargs:</span>
+<span class="sd">            The keyword arguments should specify the value for each angle,</span>
+<span class="sd">            using the names of the polar and azimuthal angles as the keywords.</span>
+<span class="sd">            Unrecognized arguments are ignored.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The value of the pdf at the given values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polardist</span><span class="o">.</span><span class="n">_logpdf</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">+</span>\
+            <span class="bp">self</span><span class="o">.</span><span class="n">_azimuthaldist</span><span class="o">.</span><span class="n">_logpdf</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UniformSolidAngle.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a distribution based on a configuration file.</span>
+
+<span class="sd">        The section must have the names of the polar and azimuthal angles in</span>
+<span class="sd">        the tag part of the section header. For example:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [prior-theta+phi]</span>
+<span class="sd">            name = uniform_solidangle</span>
+
+<span class="sd">        If nothing else is provided, the default names and bounds of the polar</span>
+<span class="sd">        and azimuthal angles will be used. To specify a different name for</span>
+<span class="sd">        each angle, set the `polar-angle` and `azimuthal-angle` attributes. For</span>
+<span class="sd">        example:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [prior-foo+bar]</span>
+<span class="sd">            name = uniform_solidangle</span>
+<span class="sd">            polar-angle = foo</span>
+<span class="sd">            azimuthal-angle = bar</span>
+
+<span class="sd">        Note that the names of the variable args in the tag part of the section</span>
+<span class="sd">        name must match the names of the polar and azimuthal angles.</span>
+
+<span class="sd">        Bounds may also be specified for each angle, as factors of pi. For</span>
+<span class="sd">        example:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [prior-theta+phi]</span>
+<span class="sd">            polar-angle = theta</span>
+<span class="sd">            azimuthal-angle = phi</span>
+<span class="sd">            min-theta = 0</span>
+<span class="sd">            max-theta = 0.5</span>
+
+<span class="sd">        This will return a distribution that is uniform in the upper</span>
+<span class="sd">        hemisphere.</span>
+
+<span class="sd">        By default, the domain of the azimuthal angle is `[0, 2pi)`. To make</span>
+<span class="sd">        this domain cyclic, add `azimuthal_cyclic_domain =`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : ConfigParser instance</span>
+<span class="sd">            The config file.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section.</span>
+<span class="sd">        variable_args : str</span>
+<span class="sd">            The names of the parameters for this distribution, separated by</span>
+<span class="sd">            ``VARARGS_DELIM``. These must appear in the &quot;tag&quot; part</span>
+<span class="sd">            of the section header.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        UniformSolidAngle</span>
+<span class="sd">            A distribution instance from the pycbc.inference.prior module.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+        <span class="n">variable_args</span> <span class="o">=</span> <span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+
+        <span class="c1"># get the variables that correspond to the polar/azimuthal angles</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">polar_angle</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;polar-angle&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+            <span class="n">polar_angle</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_default_polar_angle</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">azimuthal_angle</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;azimuthal-angle&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">Error</span><span class="p">:</span>
+            <span class="n">azimuthal_angle</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_default_azimuthal_angle</span>
+
+        <span class="k">if</span> <span class="n">polar_angle</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Error</span><span class="p">(</span><span class="s2">&quot;polar-angle </span><span class="si">%s</span><span class="s2"> is not one of the variable args (</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="o">%</span><span class="p">(</span>
+                <span class="n">polar_angle</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">azimuthal_angle</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">variable_args</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Error</span><span class="p">(</span><span class="s2">&quot;azimuthal-angle </span><span class="si">%s</span><span class="s2"> is not one of the variable args &quot;</span><span class="o">%</span><span class="p">(</span>
+                <span class="n">azimuthal_angle</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;(</span><span class="si">%s</span><span class="s2">)&quot;</span><span class="o">%</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)))</span>
+
+        <span class="c1"># get the bounds, if provided</span>
+        <span class="n">polar_bounds</span> <span class="o">=</span> <span class="n">bounded</span><span class="o">.</span><span class="n">get_param_bounds_from_config</span><span class="p">(</span>
+                                                   <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span>
+                                                   <span class="n">polar_angle</span><span class="p">)</span>
+        <span class="n">azimuthal_bounds</span> <span class="o">=</span> <span class="n">bounded</span><span class="o">.</span><span class="n">get_param_bounds_from_config</span><span class="p">(</span>
+                                                   <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span>
+                                                   <span class="n">azimuthal_angle</span><span class="p">)</span>
+
+        <span class="c1"># see if the a cyclic domain is desired for the azimuthal angle</span>
+        <span class="n">azimuthal_cyclic_domain</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span>
+            <span class="s1">&#39;azimuthal_cyclic_domain&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">polar_angle</span><span class="o">=</span><span class="n">polar_angle</span><span class="p">,</span> <span class="n">azimuthal_angle</span><span class="o">=</span><span class="n">azimuthal_angle</span><span class="p">,</span>
+                   <span class="n">polar_bounds</span><span class="o">=</span><span class="n">polar_bounds</span><span class="p">,</span>
+                   <span class="n">azimuthal_bounds</span><span class="o">=</span><span class="n">azimuthal_bounds</span><span class="p">,</span>
+                   <span class="n">azimuthal_cyclic_domain</span><span class="o">=</span><span class="n">azimuthal_cyclic_domain</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;UniformAngle&#39;</span><span class="p">,</span> <span class="s1">&#39;SinAngle&#39;</span><span class="p">,</span> <span class="s1">&#39;CosAngle&#39;</span><span class="p">,</span> <span class="s1">&#39;UniformSolidAngle&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

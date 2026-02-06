@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.sampler.base &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../sampler.html">pycbc.inference.sampler</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.sampler.base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.sampler.base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Christopher M. Biwer, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Defines the base sampler class to be inherited by all samplers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">,</span> <span class="n">abstractproperty</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">six</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_metaclass</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_checkpoint_files</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                           Base Sampler definition</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="BaseSampler">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler">[docs]</a>
+<span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">ABCMeta</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseSampler</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for all inference samplers.</span>
+
+<span class="sd">    All sampler classes must inherit from this class and implement its abstract</span>
+<span class="sd">    methods.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Model</span>
+<span class="sd">        An instance of a model from ``pycbc.inference.models``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backup_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_checkpoint</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># @classmethod &lt;--uncomment when we move to python 3.3</span>
+<div class="viewcode-block" id="BaseSampler.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.from_config">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">output_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nprocesses</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">use_mpi</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This should initialize the sampler given a config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the parameters varied in the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variable_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sampling_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the sampling params used by the model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the model&#39;s fixed parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">static_params</span>
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dict mapping variable_params to arrays of samples currently</span>
+<span class="sd">        in memory. The dictionary may also contain sampling_params.</span>
+
+<span class="sd">        The sample arrays may have any shape, and may or may not be thinned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">model_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A dict mapping model&#39;s metadata fields to arrays of values for</span>
+<span class="sd">        each sample in ``raw_samples``.</span>
+
+<span class="sd">        The arrays may have any shape, and may or may not be thinned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="BaseSampler.run">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.run">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This function should run the sampler.</span>
+
+<span class="sd">        Any checkpointing should be done internally in this function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="nd">@abstractproperty</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">io</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A class that inherits from ``BaseInferenceFile`` to handle IO with</span>
+<span class="sd">        an hdf file.</span>
+
+<span class="sd">        This should be a class, not an instance of class, so that the sampler</span>
+<span class="sd">        can initialize it when needed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="BaseSampler.checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.checkpoint">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The sampler must have a checkpoint method for dumping raw samples</span>
+<span class="sd">        and stats to the file type defined by ``io``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseSampler.finalize">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.finalize">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do any finalization to the samples file before exiting.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseSampler.resume_from_checkpoint">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.resume_from_checkpoint">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume_from_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resume the sampler from the output file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                           Convenience functions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="setup_output">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.setup_output">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_output</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">check_nsamples</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Sets up the sampler&#39;s checkpoint and output files.</span>
+
+<span class="sd">    The checkpoint file has the same name as the output file, but with</span>
+<span class="sd">    ``.checkpoint`` appended to the name. A backup file will also be</span>
+<span class="sd">    created.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampler : sampler instance</span>
+<span class="sd">        Sampler</span>
+<span class="sd">    output_file : str</span>
+<span class="sd">        Name of the output file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check for backup file(s)</span>
+    <span class="n">checkpoint_file</span> <span class="o">=</span> <span class="n">output_file</span> <span class="o">+</span> <span class="s1">&#39;.checkpoint&#39;</span>
+    <span class="n">backup_file</span> <span class="o">=</span> <span class="n">output_file</span> <span class="o">+</span> <span class="s1">&#39;.bkup&#39;</span>
+    <span class="c1"># check if we have a good checkpoint and/or backup file</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Looking for checkpoint file&quot;</span><span class="p">)</span>
+    <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">validate</span><span class="p">:</span>
+        <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="n">validate_checkpoint_files</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">,</span>
+                                                     <span class="n">backup_file</span><span class="p">,</span>
+                                                     <span class="n">check_nsamples</span><span class="p">)</span>
+    <span class="c1"># Create a new file if the checkpoint doesn&#39;t exist, or if it is</span>
+    <span class="c1"># corrupted</span>
+    <span class="n">sampler</span><span class="o">.</span><span class="n">new_checkpoint</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># keeps track if this is a new file or not</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">checkpoint_valid</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpoint not found or not valid&quot;</span><span class="p">)</span>
+        <span class="n">create_new_output_file</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="c1"># now the checkpoint is valid</span>
+        <span class="n">sampler</span><span class="o">.</span><span class="n">new_checkpoint</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># copy to backup</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="n">backup_file</span><span class="p">)</span>
+    <span class="c1"># write the command line, startup</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="n">backup_file</span><span class="p">]:</span>
+        <span class="k">with</span> <span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_command_line</span><span class="p">()</span>
+
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_resume_point</span><span class="p">()</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_run_start_time</span><span class="p">()</span>
+    <span class="c1"># store</span>
+    <span class="n">sampler</span><span class="o">.</span><span class="n">checkpoint_file</span> <span class="o">=</span> <span class="n">checkpoint_file</span>
+    <span class="n">sampler</span><span class="o">.</span><span class="n">backup_file</span> <span class="o">=</span> <span class="n">backup_file</span></div>
+
+
+
+<div class="viewcode-block" id="create_new_output_file">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.create_new_output_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_new_output_file</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Creates a new output file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sampler : sampler instance</span>
+<span class="sd">        Sampler</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of the file to create.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed through to the file&#39;s</span>
+<span class="sd">        ``write_metadata`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Creating file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="c1"># create the samples group and sampler info group</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">)</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span>
+        <span class="c1"># save the sampler&#39;s metadata</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write_sampler_metadata</span><span class="p">(</span><span class="n">sampler</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="initial_dist_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.sampler.html#pycbc.inference.sampler.base.initial_dist_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">initial_dist_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Loads a distribution for the sampler start from the given config file.</span>
+
+<span class="sd">    A distribution will only be loaded if the config file has a [initial-\*]</span>
+<span class="sd">    section(s).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : Config parser</span>
+<span class="sd">        The config parser to try to load from.</span>
+<span class="sd">    variable_params : list of str</span>
+<span class="sd">        The variable parameters for the distribution.</span>
+<span class="sd">    static_params : dict, optional</span>
+<span class="sd">        The static parameters used to place constraints on the</span>
+<span class="sd">        distribution.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    JointDistribution or None :</span>
+<span class="sd">        The initial distribution. If no [initial-\*] section found in the</span>
+<span class="sd">        config file, will just return None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s2">&quot;initial&quot;</span><span class="p">)):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using a different distribution for the starting points &quot;</span>
+                     <span class="s2">&quot;than the prior.&quot;</span><span class="p">)</span>
+        <span class="n">initial_dists</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_distributions_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="o">=</span><span class="s2">&quot;initial&quot;</span><span class="p">)</span>
+        <span class="n">constraints</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_constraints_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">constraint_section</span><span class="o">=</span><span class="s2">&quot;initial_constraint&quot;</span><span class="p">,</span>
+            <span class="n">static_args</span><span class="o">=</span><span class="n">static_params</span><span class="p">)</span>
+        <span class="n">init_dist</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">JointDistribution</span><span class="p">(</span>
+            <span class="n">variable_params</span><span class="p">,</span> <span class="o">*</span><span class="n">initial_dists</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">{</span><span class="s2">&quot;constraints&quot;</span><span class="p">:</span> <span class="n">constraints</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">init_dist</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">init_dist</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

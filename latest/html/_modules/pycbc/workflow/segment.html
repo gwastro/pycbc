@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.segment &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.segment</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.segment</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Ian Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for setting up the segment generation stage of</span>
+<span class="sd">workflows. For details about this module and its capabilities see here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">segments</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">segmentsUtils</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SegFile</span><span class="p">,</span> <span class="n">make_analysis_dir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_url</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.segment&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="save_veto_definer">
+<a class="viewcode-back" href="../../../workflow/segments.html#pycbc.workflow.segment.save_veto_definer">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_veto_definer</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Retrieve the veto definer file and save it locally</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    cp : ConfigParser instance</span>
+<span class="sd">    out_dir : path</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        Used to retrieve subsections of the ini file for</span>
+<span class="sd">        configuration options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">veto_def_url</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;segments-veto-definer-url&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">veto_def_base_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">veto_def_url</span><span class="p">)</span>
+    <span class="n">veto_def_new_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span>
+                                        <span class="n">veto_def_base_name</span><span class="p">))</span>
+    <span class="c1"># Don&#39;t need to do this if already done</span>
+    <span class="n">resolve_url</span><span class="p">(</span><span class="n">veto_def_url</span><span class="p">,</span><span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="c1"># and update location</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-veto-definer-file&quot;</span><span class="p">,</span> <span class="n">veto_def_new_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">veto_def_new_path</span></div>
+
+
+
+<div class="viewcode-block" id="get_segments_file">
+<a class="viewcode-back" href="../../../workflow/segments.html#pycbc.workflow.segment.get_segments_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_segments_file</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">option_name</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get cumulative segments from option name syntax for each ifo.</span>
+
+<span class="sd">    Use syntax of configparser string to define the resulting segment_file</span>
+<span class="sd">    e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2</span>
+<span class="sd">    Each ifo may have a different string and is stored separately in the file.</span>
+<span class="sd">    Flags which add time must precede flags which subtract time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">    name: string</span>
+<span class="sd">        Name of the segment list being created</span>
+<span class="sd">    option_name: str</span>
+<span class="sd">        Name of option in the associated config parser to get the flag list</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        Used to retrieve subsections of the ini file for</span>
+<span class="sd">        configuration options.</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    seg_file: pycbc.workflow.SegFile</span>
+<span class="sd">        SegFile intance that points to the segment xml file on disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.dq</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_str</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Check for veto definer file</span>
+    <span class="n">veto_definer</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-veto-definer-url&quot;</span><span class="p">):</span>
+        <span class="n">veto_definer</span> <span class="o">=</span> <span class="n">save_veto_definer</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="c1"># Check for provided server</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://segments.ligo.org&quot;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-database-url&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">server</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;segments-database-url&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-source&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-source&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span>
+
+    <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span><span class="p">:</span>
+        <span class="n">local_file_path</span> <span class="o">=</span> \
+            <span class="n">resolve_url</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span>
+                                       <span class="n">option_name</span><span class="o">+</span><span class="s2">&quot;-file&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">))</span>
+        <span class="n">pfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">local_file_path</span><span class="p">))</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">local_file_path</span><span class="p">,</span> <span class="n">pfn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SegFile</span><span class="o">.</span><span class="n">from_segment_xml</span><span class="p">(</span><span class="n">pfn</span><span class="p">)</span>
+
+    <span class="n">segs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+        <span class="n">flag_str</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="n">option_name</span><span class="p">,</span> <span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">name</span>
+        
+        <span class="k">if</span> <span class="n">flag_str</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;OFF&quot;</span><span class="p">:</span>
+            <span class="n">segs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([])</span>
+        <span class="k">elif</span> <span class="n">flag_str</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ON&quot;</span><span class="p">:</span>
+            <span class="n">all_seg</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
+            <span class="n">segs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">all_seg</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">segs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">query_str</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">flag_str</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span>
+                                  <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
+                                  <span class="n">veto_definer</span><span class="o">=</span><span class="n">veto_definer</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: got </span><span class="si">%s</span><span class="s2"> flags&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">option_name</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">SegFile</span><span class="o">.</span><span class="n">from_segment_list_dict</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">segs</span><span class="p">,</span>
+                                          <span class="n">extension</span><span class="o">=</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span>
+                                          <span class="n">valid_segment</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+                                          <span class="n">directory</span><span class="o">=</span><span class="n">out_dir</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_triggered_coherent_segment">
+<a class="viewcode-back" href="../../../workflow/segments.html#pycbc.workflow.segment.get_triggered_coherent_segment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_triggered_coherent_segment</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">sciencesegs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct the coherent network on and off source segments. Can switch to</span>
+<span class="sd">    construction of segments for a single IFO search when coherent segments</span>
+<span class="sd">    are insufficient for a search.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The workflow instance that the calculated segments belong to.</span>
+<span class="sd">    sciencesegs : dict</span>
+<span class="sd">        Dictionary of all science segments within analysis time.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    onsource : igwn_segments.segmentlistdict</span>
+<span class="sd">        A dictionary containing the on source segments for network IFOs</span>
+
+<span class="sd">    offsource : igwn_segments.segmentlistdict</span>
+<span class="sd">        A dictionary containing the off source segments for network IFOs</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Load parsed workflow config options</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">triggertime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-time&#39;</span><span class="p">)))</span>
+    <span class="n">minduration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                              <span class="s1">&#39;min-duration&#39;</span><span class="p">)))</span>
+    <span class="n">maxduration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                              <span class="s1">&#39;max-duration&#39;</span><span class="p">)))</span>
+    <span class="n">onbefore</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;on-before&#39;</span><span class="p">)))</span>
+    <span class="n">onafter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;on-after&#39;</span><span class="p">)))</span>
+    <span class="n">padding</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;pad-data&#39;</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow-condition_strain&quot;</span><span class="p">,</span> <span class="s2">&quot;do-gating&quot;</span><span class="p">):</span>
+        <span class="n">padding</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;condition_strain&quot;</span><span class="p">,</span>
+                                               <span class="s2">&quot;pad-data&quot;</span><span class="p">)))</span>
+    <span class="n">quanta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                         <span class="s1">&#39;quanta&#39;</span><span class="p">)))</span>
+
+    <span class="c1"># Check available data segments meet criteria specified in arguments</span>
+    <span class="n">commonsegs</span> <span class="o">=</span> <span class="n">sciencesegs</span><span class="o">.</span><span class="n">extract_common</span><span class="p">(</span><span class="n">sciencesegs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">offsrclist</span> <span class="o">=</span> <span class="n">commonsegs</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">commonsegs</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">offsrclist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Removing network segments that do not contain trigger &quot;</span>
+                    <span class="s2">&quot;time&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">offsrclist</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">triggertime</span> <span class="ow">in</span> <span class="n">seg</span><span class="p">:</span>
+                <span class="n">offsrc</span> <span class="o">=</span> <span class="n">seg</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">offsrc</span> <span class="o">=</span> <span class="n">offsrclist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Force int boundaries in case we get floats as input,</span>
+    <span class="c1"># which can create problems downstream</span>
+    <span class="n">offsrc</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">minduration</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span><span class="p">:</span>
+        <span class="n">fail</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">([</span><span class="n">triggertime</span> <span class="o">-</span> <span class="n">minduration</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">-</span> <span class="n">padding</span><span class="p">,</span>
+                                 <span class="n">triggertime</span> <span class="o">+</span> <span class="n">minduration</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">+</span> <span class="n">padding</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Available network segment shorter than minimum &quot;</span>
+                       <span class="s2">&quot;allowed duration.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">fail</span>
+
+    <span class="c1"># Will segment duration be the maximum desired length or not?</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">maxduration</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Available network science segment duration (</span><span class="si">%d</span><span class="s2">s) is &quot;</span>
+                    <span class="s2">&quot;greater than the maximum allowed segment length (</span><span class="si">%d</span><span class="s2">s). &quot;</span>
+                    <span class="s2">&quot;Truncating...&quot;</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">),</span> <span class="n">maxduration</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Available network science segment duration (</span><span class="si">%d</span><span class="s2">s) is &quot;</span>
+                    <span class="s2">&quot;less than the maximum allowed segment length (</span><span class="si">%d</span><span class="s2">s).&quot;</span><span class="p">,</span>
+                    <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">),</span> <span class="n">maxduration</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">s of padding applied at beginning and end of segment.&quot;</span><span class="p">,</span>
+                <span class="n">padding</span><span class="p">)</span>
+
+    <span class="c1"># Construct on-source</span>
+    <span class="n">onstart</span> <span class="o">=</span> <span class="n">triggertime</span> <span class="o">-</span> <span class="n">onbefore</span>
+    <span class="n">onend</span> <span class="o">=</span> <span class="n">triggertime</span> <span class="o">+</span> <span class="n">onafter</span>
+    <span class="n">oncentre</span> <span class="o">=</span> <span class="n">onstart</span> <span class="o">+</span> <span class="p">((</span><span class="n">onbefore</span> <span class="o">+</span> <span class="n">onafter</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">onsrc</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">onstart</span><span class="p">,</span> <span class="n">onend</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructed ON-SOURCE: duration </span><span class="si">%d</span><span class="s2">s (</span><span class="si">%d</span><span class="s2">s before to </span><span class="si">%d</span><span class="s2">s after&quot;</span>
+                <span class="s2">&quot; trigger).&quot;</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">onsrc</span><span class="p">),</span> <span class="n">triggertime</span> <span class="o">-</span> <span class="n">onsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">onsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">triggertime</span><span class="p">)</span>
+    <span class="n">onsrc</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">onsrc</span><span class="p">])</span>
+
+    <span class="c1"># Maximal, centred coherent network segment</span>
+    <span class="n">idealsegment</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">oncentre</span> <span class="o">-</span> <span class="n">padding</span> <span class="o">-</span>
+                                    <span class="mf">0.5</span> <span class="o">*</span> <span class="n">maxduration</span><span class="p">),</span>
+                                    <span class="nb">int</span><span class="p">(</span><span class="n">oncentre</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">+</span>
+                                    <span class="mf">0.5</span> <span class="o">*</span> <span class="n">maxduration</span><span class="p">))</span>
+
+    <span class="c1"># Construct off-source</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">idealsegment</span> <span class="ow">in</span> <span class="n">offsrc</span><span class="p">):</span>
+        <span class="n">offsrc</span> <span class="o">=</span> <span class="n">idealsegment</span>
+
+    <span class="k">elif</span> <span class="n">idealsegment</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">offsrc</span><span class="p">:</span>
+        <span class="n">offsrc</span> <span class="o">&amp;=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">maxduration</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span><span class="p">,</span>
+                                   <span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">elif</span> <span class="n">idealsegment</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">offsrc</span><span class="p">:</span>
+        <span class="n">offsrc</span> <span class="o">&amp;=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                   <span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">maxduration</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span><span class="p">)</span>
+
+    <span class="c1"># Trimming off-source</span>
+    <span class="n">excess</span> <span class="o">=</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span><span class="p">)</span> <span class="o">%</span> <span class="n">quanta</span>
+    <span class="k">if</span> <span class="n">excess</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Trimming </span><span class="si">%d</span><span class="s2">s excess time to make OFF-SOURCE duration a &quot;</span>
+                    <span class="s2">&quot;multiple of </span><span class="si">%d</span><span class="s2">s&quot;</span><span class="p">,</span> <span class="n">excess</span><span class="p">,</span> <span class="n">quanta</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">-</span> <span class="n">oncentre</span>
+        <span class="k">if</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">excess</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">offsrc</span> <span class="o">&amp;=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">excess</span><span class="p">,</span>
+                                           <span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">offset</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">offsrc</span> <span class="o">&amp;=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                           <span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">excess</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">%</span> <span class="n">quanta</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;This will make OFF-SOURCE symmetrical about trigger &quot;</span>
+                        <span class="s2">&quot;time.&quot;</span><span class="p">)</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">excess</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">offset</span> <span class="o">-</span> <span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">excess</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">offsrc</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">%</span> <span class="n">quanta</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructed OFF-SOURCE: duration </span><span class="si">%d</span><span class="s2">s (</span><span class="si">%d</span><span class="s2">s before to </span><span class="si">%d</span><span class="s2">s &quot;</span>
+                <span class="s2">&quot;after trigger).&quot;</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsrc</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">padding</span><span class="p">,</span>
+                <span class="n">triggertime</span> <span class="o">-</span> <span class="n">offsrc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">padding</span><span class="p">,</span>
+                <span class="n">offsrc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">triggertime</span> <span class="o">-</span> <span class="n">padding</span><span class="p">)</span>
+    <span class="n">offsrc</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">offsrc</span><span class="p">])</span>
+
+    <span class="c1"># Put segments into segmentlistdicts</span>
+    <span class="n">onsource</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">()</span>
+    <span class="n">offsource</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">()</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">iifo</span> <span class="ow">in</span> <span class="n">sciencesegs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">ifos</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">iifo</span><span class="p">)</span>
+        <span class="n">onsource</span><span class="p">[</span><span class="n">iifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">onsrc</span>
+        <span class="n">offsource</span><span class="p">[</span><span class="n">iifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">offsrc</span>
+
+    <span class="k">return</span> <span class="n">onsource</span><span class="p">,</span> <span class="n">offsource</span></div>
+
+
+
+<div class="viewcode-block" id="generate_triggered_segment">
+<a class="viewcode-back" href="../../../workflow/segments.html#pycbc.workflow.segment.generate_triggered_segment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_triggered_segment</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">sciencesegs</span><span class="p">):</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow&quot;</span><span class="p">,</span> <span class="s2">&quot;allow-single-ifo-search&quot;</span><span class="p">):</span>
+        <span class="n">min_ifos</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">min_ifos</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="n">triggertime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;trigger-time&#39;</span><span class="p">)))</span>
+    <span class="n">minbefore</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                            <span class="s1">&#39;min-before&#39;</span><span class="p">)))</span>
+    <span class="n">minafter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;min-after&#39;</span><span class="p">)))</span>
+    <span class="n">minduration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                              <span class="s1">&#39;min-duration&#39;</span><span class="p">)))</span>
+    <span class="n">onbefore</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;on-before&#39;</span><span class="p">)))</span>
+    <span class="n">onafter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;on-after&#39;</span><span class="p">)))</span>
+    <span class="n">padding</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;pad-data&#39;</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow-condition_strain&quot;</span><span class="p">,</span> <span class="s2">&quot;do-gating&quot;</span><span class="p">):</span>
+        <span class="n">padding</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;condition_strain&quot;</span><span class="p">,</span>
+                                               <span class="s2">&quot;pad-data&quot;</span><span class="p">)))</span>
+
+    <span class="c1"># How many IFOs meet minimum data requirements?</span>
+    <span class="n">min_seg</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">triggertime</span> <span class="o">-</span> <span class="n">onbefore</span> <span class="o">-</span> <span class="n">minbefore</span> <span class="o">-</span> <span class="n">padding</span><span class="p">,</span>
+                               <span class="n">triggertime</span> <span class="o">+</span> <span class="n">onafter</span> <span class="o">+</span> <span class="n">minafter</span> <span class="o">+</span> <span class="n">padding</span><span class="p">)</span>
+    <span class="n">scisegs</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">({</span><span class="n">ifo</span><span class="p">:</span> <span class="n">sciencesegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">sciencesegs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">min_seg</span> <span class="ow">in</span> <span class="n">sciencesegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sciencesegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">minduration</span><span class="p">})</span>
+    <span class="c1"># Find highest number of IFOs that give an acceptable coherent segment</span>
+    <span class="n">num_ifos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">scisegs</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">num_ifos</span> <span class="o">&gt;=</span> <span class="n">min_ifos</span><span class="p">:</span>
+        <span class="c1"># Consider all combinations for a given number of IFOs</span>
+        <span class="n">ifo_combos</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">scisegs</span><span class="p">,</span> <span class="n">num_ifos</span><span class="p">)</span>
+        <span class="n">onsource</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">offsource</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ifo_combo</span> <span class="ow">in</span> <span class="n">ifo_combos</span><span class="p">:</span>
+            <span class="n">ifos</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ifo_combo</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calculating optimal segment for </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ifos</span><span class="p">)</span>
+            <span class="n">segs</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">({</span><span class="n">ifo</span><span class="p">:</span> <span class="n">scisegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                                             <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifo_combo</span><span class="p">})</span>
+            <span class="n">onsource</span><span class="p">[</span><span class="n">ifos</span><span class="p">],</span> <span class="n">offsource</span><span class="p">[</span><span class="n">ifos</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_triggered_coherent_segment</span><span class="p">(</span>\
+                    <span class="n">workflow</span><span class="p">,</span> <span class="n">segs</span><span class="p">)</span>
+
+        <span class="c1"># Which combination gives the longest coherent segment?</span>
+        <span class="n">valid_combs</span> <span class="o">=</span> <span class="p">[</span><span class="n">iifos</span> <span class="k">for</span> <span class="n">iifos</span> <span class="ow">in</span> <span class="n">onsource</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                       <span class="k">if</span> <span class="n">onsource</span><span class="p">[</span><span class="n">iifos</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_combs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># If none, offsource dict will contain segments showing criteria</span>
+            <span class="c1"># that have not been met, for use in plotting</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">offsource</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">seg_lens</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifos</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">offsource</span><span class="p">[</span><span class="n">ifos</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="k">for</span> <span class="n">ifos</span> <span class="ow">in</span> <span class="n">offsource</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+                <span class="n">best_comb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">seg_lens</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">(),</span>
+                                <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="n">seg_lens</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">best_comb</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">offsource</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No combination of </span><span class="si">%d</span><span class="s2"> IFOs with suitable science &quot;</span>
+                        <span class="s2">&quot;segment.&quot;</span><span class="p">,</span> <span class="n">num_ifos</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Identify best analysis segment</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_combs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">seg_lens</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifos</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">offsource</span><span class="p">[</span><span class="n">ifos</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="k">for</span> <span class="n">ifos</span> <span class="ow">in</span> <span class="n">valid_combs</span><span class="p">}</span>
+                <span class="n">best_comb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">seg_lens</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">(),</span>
+                                <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">key</span><span class="p">:</span> <span class="n">seg_lens</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">best_comb</span> <span class="o">=</span> <span class="n">valid_combs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calculated science segments.&quot;</span><span class="p">)</span>
+
+            <span class="n">offsourceSegfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="s2">&quot;offSourceSeg.txt&quot;</span><span class="p">)</span>
+            <span class="n">segmentsUtils</span><span class="o">.</span><span class="n">tosegwizard</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">offsourceSegfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">),</span>
+                                      <span class="nb">list</span><span class="p">(</span><span class="n">offsource</span><span class="p">[</span><span class="n">best_comb</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="n">onsourceSegfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="s2">&quot;onSourceSeg.txt&quot;</span><span class="p">)</span>
+            <span class="n">segmentsUtils</span><span class="o">.</span><span class="n">tosegwizard</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">onsourceSegfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">),</span>
+                                      <span class="nb">list</span><span class="p">(</span><span class="n">onsource</span><span class="p">[</span><span class="n">best_comb</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="n">bufferleft</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;num-buffer-before&#39;</span><span class="p">))</span>
+            <span class="n">bufferright</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow-exttrig_segments&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;num-buffer-after&#39;</span><span class="p">))</span>
+            <span class="n">onlen</span> <span class="o">=</span> <span class="n">onbefore</span> <span class="o">+</span> <span class="n">onafter</span>
+            <span class="n">bufferSegment</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span>\
+                    <span class="n">triggertime</span> <span class="o">-</span> <span class="n">onbefore</span> <span class="o">-</span> <span class="n">bufferleft</span> <span class="o">*</span> <span class="n">onlen</span><span class="p">,</span>
+                    <span class="n">triggertime</span> <span class="o">+</span> <span class="n">onafter</span> <span class="o">+</span> <span class="n">bufferright</span> <span class="o">*</span> <span class="n">onlen</span><span class="p">)</span>
+            <span class="n">bufferSegfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="s2">&quot;bufferSeg.txt&quot;</span><span class="p">)</span>
+            <span class="n">segmentsUtils</span><span class="o">.</span><span class="n">tosegwizard</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">bufferSegfile</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">),</span>
+                                      <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">bufferSegment</span><span class="p">]))</span>
+
+            <span class="k">return</span> <span class="n">onsource</span><span class="p">[</span><span class="n">best_comb</span><span class="p">],</span> <span class="n">offsource</span><span class="p">[</span><span class="n">best_comb</span><span class="p">],</span> <span class="n">bufferSegment</span>
+
+        <span class="n">num_ifos</span> <span class="o">-=</span> <span class="mi">1</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No suitable science segments available.&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">offsource</span><span class="p">[</span><span class="n">best_comb</span><span class="p">],</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">UnboundLocalError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">min_seg</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="get_flag_segments_file">
+<a class="viewcode-back" href="../../../workflow/segments.html#pycbc.workflow.segment.get_flag_segments_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_flag_segments_file</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">option_name</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get segments from option name syntax for each ifo for indivudal flags.</span>
+
+<span class="sd">    Use syntax of configparser string to define the resulting segment_file</span>
+<span class="sd">    e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2</span>
+<span class="sd">    Each ifo may have a different string and is stored separately in the file.</span>
+<span class="sd">    Each flag is stored separately in the file.</span>
+<span class="sd">    Flags which add time must precede flags which subtract time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">    name: string</span>
+<span class="sd">        Name of the segment list being created</span>
+<span class="sd">    option_name: str</span>
+<span class="sd">        Name of option in the associated config parser to get the flag list</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">       Used to retrieve subsections of the ini file for</span>
+<span class="sd">       configuration options.</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    seg_file: pycbc.workflow.SegFile</span>
+<span class="sd">        SegFile intance that points to the segment xml file on disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.dq</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_str</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Check for veto definer file</span>
+    <span class="n">veto_definer</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-veto-definer-url&quot;</span><span class="p">):</span>
+        <span class="n">veto_definer</span> <span class="o">=</span> <span class="n">save_veto_definer</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="c1"># Check for provided server</span>
+    <span class="n">server</span> <span class="o">=</span> <span class="s2">&quot;https://segments.ligo.org&quot;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-database-url&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">server</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;segments-database-url&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">source</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-source&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="s2">&quot;segments-source&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span><span class="p">:</span>
+        <span class="n">local_file_path</span> <span class="o">=</span> \
+            <span class="n">resolve_url</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span>
+                                        <span class="n">option_name</span><span class="o">+</span><span class="s2">&quot;-file&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">))</span>
+        <span class="n">pfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">local_file_path</span><span class="p">))</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">local_file_path</span><span class="p">,</span> <span class="n">pfn</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SegFile</span><span class="o">.</span><span class="n">from_segment_xml</span><span class="p">(</span><span class="n">pfn</span><span class="p">)</span>
+
+    <span class="n">segs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="n">option_name</span><span class="p">,</span> <span class="p">[</span><span class="n">ifo</span><span class="p">]):</span>
+            <span class="n">flag_str</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-segments&quot;</span><span class="p">,</span> <span class="n">option_name</span><span class="p">,</span> <span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+            <span class="n">flag_list</span> <span class="o">=</span> <span class="n">flag_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">flag</span> <span class="ow">in</span> <span class="n">flag_list</span><span class="p">:</span>
+                <span class="n">flag_name</span> <span class="o">=</span> <span class="n">flag</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flag_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">flag_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">flag_name</span>
+                <span class="n">segs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">query_str</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">flag</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span>
+                                      <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="n">server</span><span class="p">,</span>
+                                      <span class="n">veto_definer</span><span class="o">=</span><span class="n">veto_definer</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: got </span><span class="si">%s</span><span class="s2"> segments&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">flag_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: no segments requested&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">SegFile</span><span class="o">.</span><span class="n">from_segment_list_dict</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">segs</span><span class="p">,</span>
+                                          <span class="n">extension</span><span class="o">=</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span>
+                                          <span class="n">valid_segment</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+                                          <span class="n">directory</span><span class="o">=</span><span class="n">out_dir</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

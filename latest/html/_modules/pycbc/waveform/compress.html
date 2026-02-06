@@ -1,0 +1,1104 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.compress &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.compress</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.compress</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Alex Nitz, Collin Capano</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                           Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; Utilities for handling frequency compressed an unequally spaced frequency</span>
+<span class="sd">domain waveforms.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="o">,</span><span class="w"> </span><span class="nn">logging</span><span class="o">,</span><span class="w"> </span><span class="nn">h5py</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="nb">filter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">real_same_precision_as</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="kn">import</span> <span class="n">schemed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MTSUN_SI</span>
+
+<div class="viewcode-block" id="rough_time_estimate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.rough_time_estimate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rough_time_estimate</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">fudge_length</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">fudge_min</span><span class="o">=</span><span class="mf">0.02</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A very rough estimate of the duration of the waveform.</span>
+
+<span class="sd">    An estimate of the waveform duration starting from flow. This is intended</span>
+<span class="sd">    to be fast but not necessarily accurate. It should be an overestimate of</span>
+<span class="sd">    the length. It is derived from a simplification of the 0PN post-newtonian</span>
+<span class="sd">    terms and includes a fudge factor for possible ringdown, etc.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1: float</span>
+<span class="sd">        mass of first component object in solar masses</span>
+<span class="sd">    m2: float</span>
+<span class="sd">        mass of second component object in solar masses</span>
+<span class="sd">    flow: float</span>
+<span class="sd">        starting frequency of the waveform</span>
+<span class="sd">    fudge_length: optional, {1.1, float}</span>
+<span class="sd">        Factor to multiply length estimate by to ensure it is a convservative</span>
+<span class="sd">        value</span>
+<span class="sd">    fudge_min: optional, {0.2, float}</span>
+<span class="sd">        Minimum signal duration that can be returned. This should be long</span>
+<span class="sd">        enough to encompass the ringdown and errors in the precise end time.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    time: float</span>
+<span class="sd">        Time from flow untill the end of the waveform</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+    <span class="n">msun</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">MTSUN_SI</span>
+    <span class="n">t</span> <span class="o">=</span>  <span class="mf">5.0</span> <span class="o">/</span> <span class="mf">256.0</span> <span class="o">*</span> <span class="n">m</span> <span class="o">*</span> <span class="n">m</span> <span class="o">*</span> <span class="n">msun</span> <span class="o">/</span> <span class="p">(</span><span class="n">m1</span> <span class="o">*</span> <span class="n">m2</span><span class="p">)</span> <span class="o">/</span> \
+        <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">msun</span> <span class="o">*</span> <span class="n">flow</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mf">8.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">)</span>
+
+    <span class="c1"># fudge factoriness</span>
+    <span class="k">return</span> <span class="mf">.022</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="n">fudge_min</span><span class="p">)</span> <span class="o">*</span> <span class="n">fudge_length</span></div>
+
+
+<div class="viewcode-block" id="mchirp_compression">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.mchirp_compression">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_compression</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span>
+                       <span class="n">min_seglen</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> 
+                       <span class="n">df_multiple</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the frequencies needed to compress a waveform with the given</span>
+<span class="sd">    chirp mass. This is based on the estimate in rough_time_estimate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1: float</span>
+<span class="sd">        mass of first component object in solar masses</span>
+<span class="sd">    m2: float</span>
+<span class="sd">        mass of second component object in solar masses</span>
+<span class="sd">    fmin : float</span>
+<span class="sd">        The starting frequency of the compressed waveform.</span>
+<span class="sd">    fmax : float</span>
+<span class="sd">        The ending frequency of the compressed waveform.</span>
+<span class="sd">    min_seglen : float</span>
+<span class="sd">        The inverse of this gives the maximum frequency step that is used.</span>
+<span class="sd">    df_multiple : {None, float}</span>
+<span class="sd">        Make the compressed sampling frequencies a multiple of the given value.</span>
+<span class="sd">        If None provided, the returned sample points can have any floating</span>
+<span class="sd">        point value.</span>
+<span class="sd">    scale: float</span>
+<span class="sd">        Factor to scale the initial frequency step size by.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    array</span>
+<span class="sd">        The frequencies at which to evaluate the compressed waveform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_points</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">fmin</span>
+    <span class="k">while</span> <span class="n">f</span> <span class="o">&lt;</span> <span class="n">fmax</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">df_multiple</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">/</span><span class="n">df_multiple</span><span class="p">)</span><span class="o">*</span><span class="n">df_multiple</span>
+        <span class="n">sample_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">+=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">rough_time_estimate</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">fudge_min</span><span class="o">=</span><span class="n">min_seglen</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span>
+    <span class="c1"># add the last point</span>
+    <span class="k">if</span> <span class="n">sample_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">fmax</span><span class="p">:</span>
+        <span class="n">sample_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fmax</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample_points</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="spa_compression">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.spa_compression">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spa_compression</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">min_seglen</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+        <span class="n">sample_frequencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the frequencies needed to compress the given frequency domain</span>
+<span class="sd">    waveform. This is done by estimating t(f) of the waveform using the</span>
+<span class="sd">    stationary phase approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform to compress.</span>
+<span class="sd">    fmin : float</span>
+<span class="sd">        The starting frequency of the compressed waveform.</span>
+<span class="sd">    fmax : float</span>
+<span class="sd">        The ending frequency of the compressed waveform.</span>
+<span class="sd">    min_seglen : float</span>
+<span class="sd">        The inverse of this gives the maximum frequency step that is used.</span>
+<span class="sd">    sample_frequencies : {None, array}</span>
+<span class="sd">        The frequencies that the waveform is evaluated at. If None, will</span>
+<span class="sd">        retrieve the frequencies from the waveform&#39;s sample_frequencies</span>
+<span class="sd">        attribute.</span>
+<span class="sd">    scale: float</span>
+<span class="sd">        Factor to scale the initial frequency step size by.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    array</span>
+<span class="sd">        The frequencies at which to evaluate the compressed waveform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sample_frequencies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sample_frequencies</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fmin</span><span class="o">/</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fmax</span><span class="o">/</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">time_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span>
+        <span class="n">sample_frequencies</span><span class="o">=</span><span class="n">sample_frequencies</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">])</span>
+    <span class="n">sample_frequencies</span> <span class="o">=</span> <span class="n">sample_frequencies</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">]</span>
+    <span class="n">sample_points</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">fmin</span>
+    <span class="k">while</span> <span class="n">f</span> <span class="o">&lt;</span> <span class="n">fmax</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">/</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span><span class="o">*</span><span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span>
+        <span class="n">sample_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">jj</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">+=</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">tf</span><span class="p">[</span><span class="n">jj</span><span class="p">:]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">+</span><span class="n">min_seglen</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span>
+    <span class="c1"># add the last point</span>
+    <span class="k">if</span> <span class="n">sample_points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">fmax</span><span class="p">:</span>
+        <span class="n">sample_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fmax</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample_points</span><span class="p">)</span></div>
+
+
+<span class="n">compression_algorithms</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;mchirp&#39;</span><span class="p">:</span> <span class="n">mchirp_compression</span><span class="p">,</span>
+        <span class="s1">&#39;spa&#39;</span><span class="p">:</span> <span class="n">spa_compression</span>
+        <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_vecdiff</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">hinterp</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">filter</span><span class="o">.</span><span class="n">overlap_cplx</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">htilde</span><span class="p">,</span>
+                          <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span>
+                          <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">fmax</span><span class="p">,</span>
+                          <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">)</span>
+               <span class="o">-</span> <span class="nb">filter</span><span class="o">.</span><span class="n">overlap_cplx</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">hinterp</span><span class="p">,</span>
+                          <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span>
+                          <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">fmax</span><span class="p">,</span>
+                          <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">))</span>
+
+<div class="viewcode-block" id="vecdiff">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.vecdiff">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vecdiff</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">hinterp</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a statistic indicating between which sample points a waveform</span>
+<span class="sd">    and the interpolated waveform differ the most.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vecdiffs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sample_points</span><span class="o">.</span><span class="n">size</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">kk</span><span class="p">,</span><span class="n">thisf</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sample_points</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">nextf</span> <span class="o">=</span> <span class="n">sample_points</span><span class="p">[</span><span class="n">kk</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">vecdiffs</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">_vecdiff</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">hinterp</span><span class="p">,</span> <span class="n">thisf</span><span class="p">,</span> <span class="n">nextf</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">vecdiffs</span></div>
+
+
+<div class="viewcode-block" id="compress_waveform">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.compress_waveform">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compress_waveform</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">,</span> <span class="n">interpolation</span><span class="p">,</span>
+                      <span class="n">precision</span><span class="p">,</span> <span class="n">decomp_scratch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieves the amplitude and phase at the desired sample points, and adds</span>
+<span class="sd">    frequency points in order to ensure that the interpolated waveform</span>
+<span class="sd">    has a mismatch with the full waveform that is &lt;= the desired tolerance. The</span>
+<span class="sd">    mismatch is computed by finding 1-overlap between `htilde` and the</span>
+<span class="sd">    decompressed waveform; no maximimization over phase/time is done, a</span>
+<span class="sd">    PSD may be used.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        The decompressed waveform is only garaunteed to have a true mismatch</span>
+<span class="sd">        &lt;= the tolerance for the given `interpolation` and for no PSD.</span>
+<span class="sd">        However, since no maximization over time/phase is performed when</span>
+<span class="sd">        adding points, the actual mismatch between the decompressed waveform</span>
+<span class="sd">        and `htilde` is better than the tolerance, using no PSD. Using a PSD</span>
+<span class="sd">        does increase the mismatch, and can lead to mismatches &gt; than the</span>
+<span class="sd">        desired tolerance, but typically by only a factor of a few worse.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    htilde : FrequencySeries</span>
+<span class="sd">        The waveform to compress.</span>
+<span class="sd">    sample_points : array</span>
+<span class="sd">        The frequencies at which to store the amplitude and phase. More points</span>
+<span class="sd">        may be added to this, depending on the desired tolerance.</span>
+<span class="sd">    tolerance : float</span>
+<span class="sd">        The maximum mismatch to allow between a decompressed waveform and</span>
+<span class="sd">        `htilde`.</span>
+<span class="sd">    interpolation : str</span>
+<span class="sd">        The interpolation to use for decompressing the waveform when computing</span>
+<span class="sd">        overlaps.</span>
+<span class="sd">    precision : str</span>
+<span class="sd">        The precision being used to generate and store the compressed waveform</span>
+<span class="sd">        points.</span>
+<span class="sd">    decomp_scratch : {None, FrequencySeries}</span>
+<span class="sd">        Optionally provide scratch space for decompressing the waveform. The</span>
+<span class="sd">        provided frequency series must have the same `delta_f` and length</span>
+<span class="sd">        as `htilde`.</span>
+<span class="sd">    psd : {None, FrequencySeries}</span>
+<span class="sd">        The psd to use for calculating the overlap between the decompressed</span>
+<span class="sd">        waveform and the original full waveform.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    CompressedWaveform</span>
+<span class="sd">        The compressed waveform data; see `CompressedWaveform` for details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fmin</span> <span class="o">=</span> <span class="n">sample_points</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">htilde</span><span class="o">.</span><span class="n">delta_f</span>
+    <span class="n">sample_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample_points</span> <span class="o">/</span> <span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">amplitude_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">phase_from_frequencyseries</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span>
+
+    <span class="n">comp_amp</span> <span class="o">=</span> <span class="n">amp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sample_index</span><span class="p">)</span>
+    <span class="n">comp_phase</span> <span class="o">=</span> <span class="n">phase</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sample_index</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">decomp_scratch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">outdf</span> <span class="o">=</span> <span class="n">df</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outdf</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">hdecomp</span> <span class="o">=</span> <span class="n">fd_decompress</span><span class="p">(</span><span class="n">comp_amp</span><span class="p">,</span> <span class="n">comp_phase</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span>
+                            <span class="n">out</span><span class="o">=</span><span class="n">decomp_scratch</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">outdf</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span>
+                            <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span>
+    <span class="n">htime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t1</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">htilde</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hdecomp</span><span class="p">))</span>
+    <span class="n">htilde</span> <span class="o">=</span> <span class="n">htilde</span><span class="p">[:</span><span class="n">kmax</span><span class="p">]</span>
+    <span class="n">hdecomp</span> <span class="o">=</span> <span class="n">hdecomp</span><span class="p">[:</span><span class="n">kmax</span><span class="p">]</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">sigma</span><span class="p">(</span><span class="n">hdecomp</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">)</span>    
+    <span class="n">s2</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">sigma</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">)</span>
+    <span class="n">htilde2</span> <span class="o">=</span> <span class="n">htilde</span> <span class="o">/</span> <span class="n">psd</span> <span class="o">/</span> <span class="n">s2</span>
+    <span class="n">mismatch</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">filter</span><span class="o">.</span><span class="n">overlap_cplx</span><span class="p">(</span><span class="n">hdecomp</span> <span class="o">/</span> <span class="n">s1</span><span class="p">,</span> <span class="n">htilde2</span><span class="p">,</span>
+                                  <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">mismatch</span> <span class="o">&gt;</span> <span class="n">tolerance</span><span class="p">:</span>
+        <span class="c1"># we&#39;ll need the difference in the waveforms as a function of frequency</span>
+        <span class="n">vecdiffs</span> <span class="o">=</span> <span class="n">vecdiff</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">hdecomp</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">)</span>
+
+    <span class="c1"># We will find where in the frequency series the interpolated waveform</span>
+    <span class="c1"># has the smallest overlap with the full waveform, add a sample point</span>
+    <span class="c1"># there, and re-interpolate. We repeat this until the overall mismatch</span>
+    <span class="c1"># is &gt; than the desired tolerance</span>
+    <span class="n">added_points</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">mismatch</span> <span class="o">&gt;</span> <span class="n">tolerance</span><span class="p">:</span>
+        <span class="n">minpt</span> <span class="o">=</span> <span class="n">vecdiffs</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+        <span class="c1"># add a point at the frequency halfway between minpt and minpt+1</span>
+        <span class="n">add_freq</span> <span class="o">=</span> <span class="n">sample_points</span><span class="p">[[</span><span class="n">minpt</span><span class="p">,</span> <span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">addidx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">add_freq</span><span class="o">/</span><span class="n">df</span><span class="p">))</span>
+        <span class="c1"># ensure that only new points are added</span>
+        <span class="k">if</span> <span class="n">addidx</span> <span class="ow">in</span> <span class="n">sample_index</span><span class="p">:</span>
+            <span class="n">diffidx</span> <span class="o">=</span> <span class="n">vecdiffs</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+            <span class="n">addpt</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">while</span> <span class="n">addidx</span> <span class="ow">in</span> <span class="n">sample_index</span><span class="p">:</span>
+                <span class="n">addpt</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">minpt</span> <span class="o">=</span> <span class="n">diffidx</span><span class="p">[</span><span class="n">addpt</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unable to compress to desired tolerance&quot;</span><span class="p">)</span>
+                <span class="n">add_freq</span> <span class="o">=</span> <span class="n">sample_points</span><span class="p">[[</span><span class="n">minpt</span><span class="p">,</span> <span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">addidx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">add_freq</span><span class="o">/</span><span class="n">df</span><span class="p">))</span>
+        <span class="n">new_index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sample_index</span><span class="o">.</span><span class="n">size</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">new_index</span><span class="p">[:</span><span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_index</span><span class="p">[:</span><span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">new_index</span><span class="p">[</span><span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">addidx</span>
+        <span class="n">new_index</span><span class="p">[</span><span class="n">minpt</span><span class="o">+</span><span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="n">sample_index</span><span class="p">[</span><span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">sample_index</span> <span class="o">=</span> <span class="n">new_index</span>
+        <span class="n">sample_points</span> <span class="o">=</span> <span class="p">(</span><span class="n">sample_index</span> <span class="o">*</span> <span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+            <span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">htilde</span><span class="p">))</span>
+            
+        <span class="c1"># get the new compressed points</span>
+        <span class="n">comp_amp</span> <span class="o">=</span> <span class="n">amp</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sample_index</span><span class="p">)</span>
+        <span class="n">comp_phase</span> <span class="o">=</span> <span class="n">phase</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sample_index</span><span class="p">)</span>
+        <span class="c1"># update the vecdiffs and mismatch</span>
+        
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">hdecomp</span> <span class="o">=</span> <span class="n">fd_decompress</span><span class="p">(</span><span class="n">comp_amp</span><span class="p">,</span> <span class="n">comp_phase</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span>
+                                <span class="n">out</span><span class="o">=</span><span class="n">decomp_scratch</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">outdf</span><span class="p">,</span>
+                                <span class="n">f_lower</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span>
+        <span class="n">htime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t1</span>
+        <span class="n">hdecomp</span> <span class="o">=</span> <span class="n">hdecomp</span><span class="p">[:</span><span class="n">kmax</span><span class="p">]</span>
+        <span class="n">new_vecdiffs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">vecdiffs</span><span class="o">.</span><span class="n">size</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">new_vecdiffs</span><span class="p">[:</span><span class="n">minpt</span><span class="p">]</span> <span class="o">=</span> <span class="n">vecdiffs</span><span class="p">[:</span><span class="n">minpt</span><span class="p">]</span>
+        <span class="n">new_vecdiffs</span><span class="p">[</span><span class="n">minpt</span><span class="o">+</span><span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="n">vecdiffs</span><span class="p">[</span><span class="n">minpt</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">new_vecdiffs</span><span class="p">[</span><span class="n">minpt</span><span class="p">:</span><span class="n">minpt</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">vecdiff</span><span class="p">(</span><span class="n">htilde</span><span class="p">,</span> <span class="n">hdecomp</span><span class="p">,</span>
+                                              <span class="n">sample_points</span><span class="p">[</span><span class="n">minpt</span><span class="p">:</span><span class="n">minpt</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span>
+                                              <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">)</span>
+        <span class="n">vecdiffs</span> <span class="o">=</span> <span class="n">new_vecdiffs</span>
+  
+        <span class="n">mismatch</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">filter</span><span class="o">.</span><span class="n">overlap_cplx</span><span class="p">(</span><span class="n">hdecomp</span> <span class="o">/</span> <span class="n">s2</span><span class="p">,</span> <span class="n">htilde2</span><span class="p">,</span>
+                                            <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span>
+                                            <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">mismatch</span> <span class="o">&lt;=</span> <span class="n">tolerance</span><span class="p">:</span>
+            <span class="n">s1</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">sigma</span><span class="p">(</span><span class="n">hdecomp</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">)</span>
+            <span class="n">mismatch</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">filter</span><span class="o">.</span><span class="n">overlap_cplx</span><span class="p">(</span><span class="n">hdecomp</span> <span class="o">/</span> <span class="n">s1</span><span class="p">,</span> <span class="n">htilde2</span><span class="p">,</span>
+                                            <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span>
+                                            <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="p">))</span>
+        <span class="n">added_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">addidx</span><span class="p">)</span>
+    <span class="n">compression_factor</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">htilde</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_points</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="s2">&quot;mismatch: </span><span class="si">%f</span><span class="s2">, N points: </span><span class="si">%i</span><span class="s2"> (</span><span class="si">%i</span><span class="s2"> added), compression:</span><span class="si">%.3e</span><span class="s2">, time </span><span class="si">%.2f</span><span class="s2"> ms&quot;</span><span class="p">,</span>
+        <span class="n">mismatch</span><span class="p">,</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">comp_amp</span><span class="p">),</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">added_points</span><span class="p">),</span>
+        <span class="n">compression_factor</span><span class="p">,</span>
+        <span class="n">htime</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">CompressedWaveform</span><span class="p">(</span><span class="n">sample_points</span><span class="p">,</span> <span class="n">comp_amp</span><span class="p">,</span> <span class="n">comp_phase</span><span class="p">,</span>
+                              <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span>
+                              <span class="n">tolerance</span><span class="o">=</span><span class="n">tolerance</span><span class="p">,</span> <span class="n">mismatch</span><span class="o">=</span><span class="n">mismatch</span><span class="p">,</span>
+                              <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">,</span>
+                              <span class="n">compression_factor</span><span class="o">=</span><span class="n">compression_factor</span><span class="p">)</span></div>
+
+
+<span class="n">_precision_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="s1">&#39;single&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="s1">&#39;double&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="s1">&#39;single&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="s1">&#39;double&#39;</span>
+<span class="p">}</span>
+
+<span class="n">_complex_dtypes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;single&#39;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">,</span>
+    <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span>
+<span class="p">}</span>
+
+<span class="n">_real_dtypes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;single&#39;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+    <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="inline_cubic_interp">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.inline_cubic_interp">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="s2">&quot;pycbc.waveform.decompress_&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inline_cubic_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
+                         <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a frequency-domain waveform via cubic interpolation</span>
+<span class="sd">    from sampled amplitude and phase. The sample frequency locations</span>
+<span class="sd">    for the amplitude and phase must be the same. This function may</span>
+<span class="sd">    be less accurate than scipy&#39;s linear interpolation, but should be</span>
+<span class="sd">    much faster.  Additionally, it is &#39;schemed&#39; and so may run under</span>
+<span class="sd">    either CPU or GPU schemes.</span>
+
+<span class="sd">    This function is not ordinarily called directly, but rather by</span>
+<span class="sd">    giving the argument &#39;interpolation&#39; the value &#39;inline_linear&#39;</span>
+<span class="sd">    when calling the function &#39;fd_decompress&#39; below.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amp : array</span>
+<span class="sd">        The amplitude of the waveform at the sample frequencies.</span>
+<span class="sd">    phase : array</span>
+<span class="sd">        The phase of the waveform at the sample frequencies.</span>
+<span class="sd">    sample_frequencies : array</span>
+<span class="sd">        The frequency (in Hz) of the waveform at the sample frequencies.</span>
+<span class="sd">    output : {None, FrequencySeries}</span>
+<span class="sd">        The output array to save the decompressed waveform to. If this contains</span>
+<span class="sd">        slots for frequencies &gt; the maximum frequency in sample_frequencies,</span>
+<span class="sd">        the rest of the values are zeroed. If not provided, must provide a df.</span>
+<span class="sd">    df : {None, float}</span>
+<span class="sd">        The frequency step to use for the decompressed waveform. Must be</span>
+<span class="sd">        provided if out is None.</span>
+<span class="sd">    f_lower : float</span>
+<span class="sd">        The frequency to start the decompression at. All values at</span>
+<span class="sd">        frequencies less than this will be 0 in the decompressed waveform.</span>
+<span class="sd">    imin : int</span>
+<span class="sd">        The index at which to start in the sampled frequency series. Must</span>
+<span class="sd">        therefore be 0 &lt;= imin &lt; len(sample_frequencies)</span>
+<span class="sd">    start_index : int</span>
+<span class="sd">        The index at which to start in the output frequency;</span>
+<span class="sd">        i.e., ceil(f_lower/df).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : FrequencySeries</span>
+<span class="sd">        If out was provided, writes to that array. Otherwise, a new</span>
+<span class="sd">        FrequencySeries with the decompressed waveform.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span></div>
+
+    
+<div class="viewcode-block" id="inline_quadratic_interp">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.inline_quadratic_interp">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="s2">&quot;pycbc.waveform.decompress_&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inline_quadratic_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
+                         <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a frequency-domain waveform via quadratic interpolation</span>
+<span class="sd">    from sampled amplitude and phase. The sample frequency locations</span>
+<span class="sd">    for the amplitude and phase must be the same. This function may</span>
+<span class="sd">    be less accurate than scipy&#39;s linear interpolation, but should be</span>
+<span class="sd">    much faster.  Additionally, it is &#39;schemed&#39; and so may run under</span>
+<span class="sd">    either CPU or GPU schemes.</span>
+
+<span class="sd">    This function is not ordinarily called directly, but rather by</span>
+<span class="sd">    giving the argument &#39;interpolation&#39; the value &#39;inline_linear&#39;</span>
+<span class="sd">    when calling the function &#39;fd_decompress&#39; below.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amp : array</span>
+<span class="sd">        The amplitude of the waveform at the sample frequencies.</span>
+<span class="sd">    phase : array</span>
+<span class="sd">        The phase of the waveform at the sample frequencies.</span>
+<span class="sd">    sample_frequencies : array</span>
+<span class="sd">        The frequency (in Hz) of the waveform at the sample frequencies.</span>
+<span class="sd">    output : {None, FrequencySeries}</span>
+<span class="sd">        The output array to save the decompressed waveform to. If this contains</span>
+<span class="sd">        slots for frequencies &gt; the maximum frequency in sample_frequencies,</span>
+<span class="sd">        the rest of the values are zeroed. If not provided, must provide a df.</span>
+<span class="sd">    df : {None, float}</span>
+<span class="sd">        The frequency step to use for the decompressed waveform. Must be</span>
+<span class="sd">        provided if out is None.</span>
+<span class="sd">    f_lower : float</span>
+<span class="sd">        The frequency to start the decompression at. All values at</span>
+<span class="sd">        frequencies less than this will be 0 in the decompressed waveform.</span>
+<span class="sd">    imin : int</span>
+<span class="sd">        The index at which to start in the sampled frequency series. Must</span>
+<span class="sd">        therefore be 0 &lt;= imin &lt; len(sample_frequencies)</span>
+<span class="sd">    start_index : int</span>
+<span class="sd">        The index at which to start in the output frequency;</span>
+<span class="sd">        i.e., ceil(f_lower/df).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : FrequencySeries</span>
+<span class="sd">        If out was provided, writes to that array. Otherwise, a new</span>
+<span class="sd">        FrequencySeries with the decompressed waveform.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="inline_linear_interp">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.inline_linear_interp">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="s2">&quot;pycbc.waveform.decompress_&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inline_linear_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
+                         <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a frequency-domain waveform via linear interpolation</span>
+<span class="sd">    from sampled amplitude and phase. The sample frequency locations</span>
+<span class="sd">    for the amplitude and phase must be the same. This function may</span>
+<span class="sd">    be less accurate than scipy&#39;s linear interpolation, but should be</span>
+<span class="sd">    much faster.  Additionally, it is &#39;schemed&#39; and so may run under</span>
+<span class="sd">    either CPU or GPU schemes.</span>
+
+<span class="sd">    This function is not ordinarily called directly, but rather by</span>
+<span class="sd">    giving the argument &#39;interpolation&#39; the value &#39;inline_linear&#39;</span>
+<span class="sd">    when calling the function &#39;fd_decompress&#39; below.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amp : array</span>
+<span class="sd">        The amplitude of the waveform at the sample frequencies.</span>
+<span class="sd">    phase : array</span>
+<span class="sd">        The phase of the waveform at the sample frequencies.</span>
+<span class="sd">    sample_frequencies : array</span>
+<span class="sd">        The frequency (in Hz) of the waveform at the sample frequencies.</span>
+<span class="sd">    output : {None, FrequencySeries}</span>
+<span class="sd">        The output array to save the decompressed waveform to. If this contains</span>
+<span class="sd">        slots for frequencies &gt; the maximum frequency in sample_frequencies,</span>
+<span class="sd">        the rest of the values are zeroed. If not provided, must provide a df.</span>
+<span class="sd">    df : {None, float}</span>
+<span class="sd">        The frequency step to use for the decompressed waveform. Must be</span>
+<span class="sd">        provided if out is None.</span>
+<span class="sd">    f_lower : float</span>
+<span class="sd">        The frequency to start the decompression at. All values at</span>
+<span class="sd">        frequencies less than this will be 0 in the decompressed waveform.</span>
+<span class="sd">    imin : int</span>
+<span class="sd">        The index at which to start in the sampled frequency series. Must</span>
+<span class="sd">        therefore be 0 &lt;= imin &lt; len(sample_frequencies)</span>
+<span class="sd">    start_index : int</span>
+<span class="sd">        The index at which to start in the output frequency;</span>
+<span class="sd">        i.e., ceil(f_lower/df).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : FrequencySeries</span>
+<span class="sd">        If out was provided, writes to that array. Otherwise, a new</span>
+<span class="sd">        FrequencySeries with the decompressed waveform.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="inline_quartic_interp">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.inline_quartic_interp">[docs]</a>
+<span class="nd">@schemed</span><span class="p">(</span><span class="s2">&quot;pycbc.waveform.decompress_&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">inline_quartic_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span>
+                            <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a frequency-domain waveform via quartic interpolation</span>
+<span class="sd">    from sampled amplitude and phase. The sample frequency locations</span>
+<span class="sd">    for the amplitude and phase must be the same. This function may</span>
+<span class="sd">    be less accurate than scipy&#39;s quadratic interpolation, but should be</span>
+<span class="sd">    much faster.  Additionally, it is &#39;schemed&#39; and so may run under</span>
+<span class="sd">    either CPU or GPU schemes.</span>
+
+<span class="sd">    The first segment is interpolated linearly, as there are not enough</span>
+<span class="sd">    points for a centered quadratic.</span>
+
+<span class="sd">    This function is not ordinarily called directly, but rather by</span>
+<span class="sd">    giving the argument &#39;interpolation&#39; the value &#39;inline_quadratic&#39;</span>
+<span class="sd">    when calling the function &#39;fd_decompress&#39; below.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amp : array</span>
+<span class="sd">        The amplitude of the waveform at the sample frequencies.</span>
+<span class="sd">    phase : array</span>
+<span class="sd">        The phase of the waveform at the sample frequencies.</span>
+<span class="sd">    sample_frequencies : array</span>
+<span class="sd">        The frequency (in Hz) of the waveform at the sample frequencies.</span>
+<span class="sd">    output : {None, FrequencySeries}</span>
+<span class="sd">        The output array to save the decompressed waveform to. If this contains</span>
+<span class="sd">        slots for frequencies &gt; the maximum frequency in sample_frequencies,</span>
+<span class="sd">        the rest of the values are zeroed. If not provided, must provide a df.</span>
+<span class="sd">    df : {None, float}</span>
+<span class="sd">        The frequency step to use for the decompressed waveform. Must be</span>
+<span class="sd">        provided if out is None.</span>
+<span class="sd">    f_lower : float</span>
+<span class="sd">        The frequency to start the decompression at. All values at</span>
+<span class="sd">        frequencies less than this will be 0 in the decompressed waveform.</span>
+<span class="sd">    imin : int</span>
+<span class="sd">        The index at which to start in the sampled frequency series. Must</span>
+<span class="sd">        therefore be 0 &lt;= imin &lt; len(sample_frequencies)</span>
+<span class="sd">    start_index : int</span>
+<span class="sd">        The index at which to start in the output frequency;</span>
+<span class="sd">        i.e., ceil(f_lower/df).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output : FrequencySeries</span>
+<span class="sd">        If out was provided, writes to that array. Otherwise, a new</span>
+<span class="sd">        FrequencySeries with the decompressed waveform.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="fd_decompress">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.fd_decompress">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_decompress</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;inline_linear&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decompresses an FD waveform using the given amplitude, phase, and the</span>
+<span class="sd">    frequencies at which they are sampled at.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    amp : array</span>
+<span class="sd">        The amplitude of the waveform at the sample frequencies.</span>
+<span class="sd">    phase : array</span>
+<span class="sd">        The phase of the waveform at the sample frequencies.</span>
+<span class="sd">    sample_frequencies : array</span>
+<span class="sd">        The frequency (in Hz) of the waveform at the sample frequencies.</span>
+<span class="sd">    out : {None, FrequencySeries}</span>
+<span class="sd">        The output array to save the decompressed waveform to. If this contains</span>
+<span class="sd">        slots for frequencies &gt; the maximum frequency in sample_frequencies,</span>
+<span class="sd">        the rest of the values are zeroed. If not provided, must provide a df.</span>
+<span class="sd">    df : {None, float}</span>
+<span class="sd">        The frequency step to use for the decompressed waveform. Must be</span>
+<span class="sd">        provided if out is None.</span>
+<span class="sd">    f_lower : {None, float}</span>
+<span class="sd">        The frequency to start the decompression at. If None, will use whatever</span>
+<span class="sd">        the lowest frequency is in sample_frequencies. All values at</span>
+<span class="sd">        frequencies less than this will be 0 in the decompressed waveform.</span>
+<span class="sd">    interpolation : {&#39;inline_linear&#39;, &#39;inline_quadratic&#39;, str}</span>
+<span class="sd">        The interpolation to use for the amplitude and phase. Default is</span>
+<span class="sd">        &#39;inline_linear&#39;. If &#39;inline_linear&#39; or &#39;inline_quadratic&#39; a custom</span>
+<span class="sd">        interpolater is used.</span>
+<span class="sd">        Otherwise, ``scipy.interpolate.interp1d`` is used; for other options,</span>
+<span class="sd">        see possible values for that function&#39;s ``kind`` argument.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : FrequencySeries</span>
+<span class="sd">        If out was provided, writes to that array. Otherwise, a new</span>
+<span class="sd">        FrequencySeries with the decompressed waveform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">_precision_map</span><span class="p">[</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">_precision_map</span><span class="p">[</span><span class="n">amp</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">!=</span> <span class="n">precision</span> <span class="ow">or</span> \
+            <span class="n">_precision_map</span><span class="p">[</span><span class="n">phase</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">!=</span> <span class="n">precision</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;amp, phase, and sample_points must all have the &quot;</span>
+            <span class="s2">&quot;same precision&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either provide output memory or a df&quot;</span><span class="p">)</span>
+        <span class="n">hlen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">/</span><span class="n">df</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">hlen</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">_complex_dtypes</span><span class="p">[</span><span class="n">precision</span><span class="p">]),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">delta_f</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># check for precision compatibility</span>
+        <span class="k">if</span> <span class="n">out</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span> <span class="ow">and</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cannot cast single precision to double&quot;</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">delta_f</span>
+        <span class="n">hlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">f_lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">imin</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># pylint:disable=unused-variable</span>
+        <span class="n">f_lower</span> <span class="o">=</span> <span class="n">sample_frequencies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">f_lower</span> <span class="o">&gt;=</span> <span class="n">sample_frequencies</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;f_lower is &gt; than the maximum sample frequency&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">f_lower</span> <span class="o">&lt;</span> <span class="n">sample_frequencies</span><span class="o">.</span><span class="n">min</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;f_lower is &lt; than the minimum sample frequency&quot;</span><span class="p">)</span>
+        <span class="n">imin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span>
+            <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span> <span class="c1"># pylint:disable=unused-variable</span>
+        <span class="n">start_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">f_lower</span><span class="o">/</span><span class="n">df</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">start_index</span> <span class="o">&gt;=</span> <span class="n">hlen</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;requested f_lower &gt;= largest frequency in out&#39;</span><span class="p">)</span>
+    <span class="c1"># interpolate the amplitude and the phase</span>
+    <span class="k">if</span> <span class="n">interpolation</span> <span class="o">==</span> <span class="s2">&quot;inline_linear&quot;</span><span class="p">:</span>
+        <span class="c1"># Call the scheme-dependent function</span>
+        <span class="n">inline_linear_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span>
+                             <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">interpolation</span> <span class="o">==</span> <span class="s2">&quot;inline_quadratic&quot;</span><span class="p">:</span>
+        <span class="c1"># Call the scheme-dependent function</span>
+        <span class="n">inline_quadratic_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span>
+                                <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">interpolation</span> <span class="o">==</span> <span class="s2">&quot;inline_cubic&quot;</span><span class="p">:</span>
+        <span class="c1"># Call the scheme-dependent function</span>
+        <span class="n">inline_cubic_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span>
+                                <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">interpolation</span> <span class="o">==</span> <span class="s2">&quot;inline_quartic&quot;</span><span class="p">:</span>
+        <span class="c1"># Call the scheme-dependent function</span>
+        <span class="n">inline_quartic_interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span> <span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span>
+                                <span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># use scipy for fancier interpolation</span>
+        <span class="n">sample_frequencies</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="p">)</span>
+        <span class="n">amp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">amp</span><span class="p">)</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>
+        <span class="n">outfreq</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">amp_interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span>
+                                          <span class="n">kind</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span>
+                                          <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                          <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                                          <span class="n">assume_sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">phase_interp</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span>
+                                            <span class="n">kind</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span>
+                                            <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                            <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                                            <span class="n">assume_sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">amp_interp</span><span class="p">(</span><span class="n">outfreq</span><span class="p">)</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phase_interp</span><span class="p">(</span><span class="n">outfreq</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">A</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">A</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="CompressedWaveform">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CompressedWaveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class that stores information about a compressed waveform.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_points : {array, h5py.Dataset}</span>
+<span class="sd">        The frequency points at which the compressed waveform is sampled.</span>
+<span class="sd">    amplitude : {array, h5py.Dataset}</span>
+<span class="sd">        The amplitude of the waveform at the given `sample_points`.</span>
+<span class="sd">    phase : {array, h5py.Dataset}</span>
+<span class="sd">        The phase of the waveform at the given `sample_points`.</span>
+<span class="sd">    interpolation : {None, str}</span>
+<span class="sd">        The interpolation that was used when compressing the waveform for</span>
+<span class="sd">        computing tolerance. This is also the default interpolation used when</span>
+<span class="sd">        decompressing; see `decompress` for details.</span>
+<span class="sd">    tolerance : {None, float}</span>
+<span class="sd">        The tolerance that was used when compressing the waveform.</span>
+<span class="sd">    mismatch : {None, float}</span>
+<span class="sd">        The actual mismatch between the decompressed waveform (using the given</span>
+<span class="sd">        `interpolation`) and the full waveform.</span>
+<span class="sd">    precision : {&#39;double&#39;, str}</span>
+<span class="sd">        The precision used to generate the compressed waveform&#39;s amplitude and</span>
+<span class="sd">        phase points. Default is &#39;double&#39;.</span>
+<span class="sd">    load_to_memory : {True, bool}</span>
+<span class="sd">        If `sample_points`, `amplitude`, and/or `phase` is an hdf dataset, they</span>
+<span class="sd">        will be cached in memory the first time they are accessed. Default is</span>
+<span class="sd">        True.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    load_to_memory : bool</span>
+<span class="sd">        Whether or not to load `sample_points`/`amplitude`/`phase` into memory</span>
+<span class="sd">        the first time they are accessed, if they are hdf datasets. Can be</span>
+<span class="sd">        set directly to toggle this behavior.</span>
+<span class="sd">    interpolation : str</span>
+<span class="sd">        The interpolation that was used when compressing the waveform, for</span>
+<span class="sd">        checking the mismatch. Also the default interpolation used when</span>
+<span class="sd">        decompressing.</span>
+<span class="sd">    tolerance : {None, float}</span>
+<span class="sd">        The tolerance that was used when compressing the waveform.</span>
+<span class="sd">    mismatch : {None, float}</span>
+<span class="sd">        The mismatch between the decompressed waveform and the original</span>
+<span class="sd">        waveform.</span>
+<span class="sd">    precision : {&#39;double&#39;, str}</span>
+<span class="sd">        The precision used to generate and store the compressed waveform</span>
+<span class="sd">        points. Options are &#39;double&#39; or &#39;single&#39;; default is &#39;double</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_points</span><span class="p">,</span> <span class="n">amplitude</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span>
+                 <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mismatch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">precision</span><span class="o">=</span><span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="n">load_to_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">compression_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_points</span> <span class="o">=</span> <span class="n">sample_points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_amplitude</span> <span class="o">=</span> <span class="n">amplitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_phase</span> <span class="o">=</span> <span class="n">phase</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_to_memory</span> <span class="o">=</span> <span class="n">load_to_memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression_factor</span> <span class="o">=</span> <span class="n">compression_factor</span>
+        <span class="c1"># if sample points, amplitude, and/or phase are hdf datasets,</span>
+        <span class="c1"># save their filenames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filenames</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_groupnames</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">arrname</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;sample_points&#39;</span><span class="p">,</span> <span class="s1">&#39;amplitude&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arrname</span><span class="p">))</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">filename</span>
+                <span class="n">gname</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arrname</span><span class="p">))</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">gname</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filenames</span><span class="p">[</span><span class="n">arrname</span><span class="p">]</span> <span class="o">=</span> <span class="n">fname</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_groupnames</span><span class="p">[</span><span class="n">arrname</span><span class="p">]</span> <span class="o">=</span> <span class="n">gname</span>
+        <span class="c1"># metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span> <span class="o">=</span> <span class="n">tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mismatch</span> <span class="o">=</span> <span class="n">mismatch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">precision</span> <span class="o">=</span> <span class="n">precision</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:]</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="c1"># this can happen if the file is closed; if so, open it</span>
+                    <span class="c1"># and get the data</span>
+                    <span class="n">fp</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filenames</span><span class="p">[</span><span class="n">param</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_groupnames</span><span class="p">[</span><span class="n">param</span><span class="p">]][:]</span>
+                    <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_to_memory</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">amplitude</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The amplitude of the waveform at the `sample_points`.</span>
+
+<span class="sd">        This is always returned as an array; the same logic as for</span>
+<span class="sd">        `sample_points` is used to determine whether or not to cache in</span>
+<span class="sd">        memory.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        amplitude : Array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="s1">&#39;amplitude&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The phase of the waveform as the `sample_points`.</span>
+
+<span class="sd">        This is always returned as an array; the same logic as for</span>
+<span class="sd">        `sample_points` returned as an array; the same logic as for</span>
+<span class="sd">        `sample_points` is used to determine whether or not to cache in</span>
+<span class="sd">        memory.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        phase : Array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="s1">&#39;phase&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The frequencies at which the compressed waveform is sampled.</span>
+
+<span class="sd">        This is</span>
+<span class="sd">        always returned as an array, even if the stored `sample_points` is an</span>
+<span class="sd">        hdf dataset. If `load_to_memory` is True and the stored points are</span>
+<span class="sd">        an hdf dataset, the `sample_points` will cached in memory the first</span>
+<span class="sd">        time this attribute is accessed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sample_points : Array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="s1">&#39;sample_points&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CompressedWaveform.clear_cache">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.clear_cache">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear self&#39;s cache of amplitude, phase, and sample_points.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CompressedWaveform.decompress">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.decompress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decompress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decompress self.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        out : {None, FrequencySeries}</span>
+<span class="sd">            Write the decompressed waveform to the given frequency series. The</span>
+<span class="sd">            decompressed waveform will have the same `delta_f` as `out`.</span>
+<span class="sd">            Either this or `df` must be provided.</span>
+<span class="sd">        df : {None, float}</span>
+<span class="sd">            Decompress the waveform such that its `delta_f` has the given</span>
+<span class="sd">            value. Either this or `out` must be provided.</span>
+<span class="sd">        f_lower : {None, float}</span>
+<span class="sd">            The starting frequency at which to decompress the waveform. Cannot</span>
+<span class="sd">            be less than the minimum frequency in `sample_points`. If `None`</span>
+<span class="sd">            provided, will default to the minimum frequency in `sample_points`.</span>
+<span class="sd">        interpolation : {None, str}</span>
+<span class="sd">            The interpolation to use for decompressing the waveform. If `None`</span>
+<span class="sd">            provided, will default to `self.interpolation`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FrequencySeries</span>
+<span class="sd">            The decompressed waveform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">f_lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># use the minimum of the samlpe points</span>
+            <span class="n">f_lower</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_points</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">interpolation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span>
+        <span class="k">return</span> <span class="n">fd_decompress</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_points</span><span class="p">,</span>
+                             <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="n">f_lower</span><span class="p">,</span>
+                             <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CompressedWaveform.write_to_hdf">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.write_to_hdf">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_to_hdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">template_hash</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the compressed waveform to the given hdf file handler.</span>
+
+<span class="sd">        The waveform is written to:</span>
+<span class="sd">        `fp[&#39;[{root}/]compressed_waveforms/{template_hash}/{param}&#39;]`,</span>
+<span class="sd">        where `param` is the `sample_points`, `amplitude`, and `phase`. The</span>
+<span class="sd">        `interpolation`, `tolerance`, `mismatch` and `precision` are saved</span>
+<span class="sd">        to the group&#39;s attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : h5py.File</span>
+<span class="sd">            An open hdf file to write the compressed waveform to.</span>
+<span class="sd">        template_hash : {hash, int, str}</span>
+<span class="sd">            A hash, int, or string to map the template to the waveform.</span>
+<span class="sd">        root : {None, str}</span>
+<span class="sd">            Put the `compressed_waveforms` group in the given directory in the</span>
+<span class="sd">            hdf file. If `None`, `compressed_waveforms` will be the root</span>
+<span class="sd">            directory.</span>
+<span class="sd">        precision : {None, str}</span>
+<span class="sd">            Cast the saved parameters to the given precision before saving. If</span>
+<span class="sd">            None provided, will use whatever their current precision is. This</span>
+<span class="sd">            will raise an error if the parameters have single precision but the</span>
+<span class="sd">            requested precision is double.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">precision</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span>
+        <span class="k">elif</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cannot cast single precision to double&quot;</span><span class="p">)</span>
+        <span class="n">outdtype</span> <span class="o">=</span> <span class="n">_real_dtypes</span><span class="p">[</span><span class="n">precision</span><span class="p">]</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">compressed_waveforms/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">template_hash</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;amplitude&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">,</span> <span class="s1">&#39;sample_points&#39;</span><span class="p">]:</span>
+            <span class="n">fp</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">param</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">param</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">outdtype</span><span class="p">)</span>
+        <span class="n">fp_group</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="p">]</span>
+        <span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;mismatch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mismatch</span>
+        <span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;interpolation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span>
+        <span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;tolerance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span>
+        <span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;precision&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">precision</span>
+        <span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;compression_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_factor</span></div>
+
+
+<div class="viewcode-block" id="CompressedWaveform.from_hdf">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.from_hdf">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_hdf</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">template_hash</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">load_to_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">load_now</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a compressed waveform from the given hdf file handler.</span>
+
+<span class="sd">        The waveform is retrieved from:</span>
+<span class="sd">        `fp[&#39;[{root}/]compressed_waveforms/{template_hash}/{param}&#39;]`,</span>
+<span class="sd">        where `param` is the `sample_points`, `amplitude`, and `phase`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : h5py.File</span>
+<span class="sd">            An open hdf file to write the compressed waveform to.</span>
+<span class="sd">        template_hash : {hash, int, str}</span>
+<span class="sd">            The id of the waveform.</span>
+<span class="sd">        root : {None, str}</span>
+<span class="sd">            Retrieve the `compressed_waveforms` group from the given string.</span>
+<span class="sd">            If `None`, `compressed_waveforms` will be assumed to be in the</span>
+<span class="sd">            top level.</span>
+<span class="sd">        load_to_memory : {True, bool}</span>
+<span class="sd">            Set the `load_to_memory` attribute to the given value in the</span>
+<span class="sd">            returned instance.</span>
+<span class="sd">        load_now : {False, bool}</span>
+<span class="sd">            Immediately load the `sample_points`/`amplitude`/`phase` to memory.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        CompressedWaveform</span>
+<span class="sd">            An instance of this class with parameters loaded from the hdf file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">compressed_waveforms/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">template_hash</span><span class="p">))</span>
+        <span class="n">fp_group</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="p">]</span>
+        <span class="n">sample_points</span> <span class="o">=</span> <span class="n">fp_group</span><span class="p">[</span><span class="s1">&#39;sample_points&#39;</span><span class="p">]</span>
+        <span class="n">amp</span> <span class="o">=</span> <span class="n">fp_group</span><span class="p">[</span><span class="s1">&#39;amplitude&#39;</span><span class="p">]</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">fp_group</span><span class="p">[</span><span class="s1">&#39;phase&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">load_now</span><span class="p">:</span>
+            <span class="n">sample_points</span> <span class="o">=</span> <span class="n">sample_points</span><span class="p">[:]</span>
+            <span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[:]</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[:]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">sample_points</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">phase</span><span class="p">,</span>
+            <span class="n">interpolation</span><span class="o">=</span><span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;interpolation&#39;</span><span class="p">],</span>
+            <span class="n">tolerance</span><span class="o">=</span><span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;tolerance&#39;</span><span class="p">],</span>
+            <span class="n">mismatch</span><span class="o">=</span><span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;mismatch&#39;</span><span class="p">],</span>
+            <span class="n">precision</span><span class="o">=</span><span class="n">fp_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;precision&#39;</span><span class="p">],</span>
+            <span class="n">load_to_memory</span><span class="o">=</span><span class="n">load_to_memory</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.live_pastro_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.live_pastro_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.live_pastro_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">live_pastro</span> <span class="k">as</span> <span class="n">livepa</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.population.live_pastro_utils&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="insert_live_pastro_option_group">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro_utils.insert_live_pastro_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_live_pastro_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add low-latency p astro options to the argparser object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        ArgumentParser instance.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    live_pastro_group :</span>
+<span class="sd">        Argument group object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">live_pastro_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s1">&#39;Options for live p_astro&#39;</span><span class="p">)</span>
+    <span class="n">live_pastro_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--p-astro-spec&#39;</span><span class="p">,</span>
+                                   <span class="n">help</span><span class="o">=</span><span class="s1">&#39;File containing information to set &#39;</span>
+                                   <span class="s1">&#39;up p_astro calculation&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">live_pastro_group</span></div>
+
+
+
+<span class="c1"># Choices of p astro calc method</span>
+<span class="n">_check_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;template_param_bins&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">check_template_param_bin_data</span><span class="p">,</span>
+    <span class="s1">&#39;template_param_bins_types&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">check_template_param_bin_data</span><span class="p">,</span>
+    <span class="s1">&#39;template_param_bins_types_farlim&#39;</span><span class="p">:</span>
+        <span class="n">livepa</span><span class="o">.</span><span class="n">check_template_param_bin_farlim_data</span>
+<span class="p">}</span>
+
+<span class="n">_read_bank</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;template_param_bins&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">read_template_bank_param</span><span class="p">,</span>
+    <span class="s1">&#39;template_param_bins_types&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">read_template_bank_param</span><span class="p">,</span>
+    <span class="s1">&#39;template_param_bins_types_farlim&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">read_template_bank_param</span>
+<span class="p">}</span>
+
+<span class="n">_do_calc</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;template_param_bins&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">template_param_bin_pa</span><span class="p">,</span>
+    <span class="s1">&#39;template_param_bins_types&#39;</span><span class="p">:</span> <span class="n">livepa</span><span class="o">.</span><span class="n">template_param_bin_types_pa</span><span class="p">,</span>
+    <span class="s1">&#39;template_param_bins_types_farlim&#39;</span><span class="p">:</span>
+        <span class="n">livepa</span><span class="o">.</span><span class="n">template_param_bin_types_farlim_pa</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="PAstroData">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro_utils.PAstroData">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PAstroData</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Class for managing live p_astro calculation persistent info &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specfile</span><span class="p">,</span> <span class="n">bank</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read in spec file and extract relevant info from bank</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        specfile: str</span>
+<span class="sd">            Path to file giving method and static data used in calculation</span>
+<span class="sd">        bank: str</span>
+<span class="sd">            Path to hdf template bank file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">specfile</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">specfile</span><span class="p">)</span> <span class="k">as</span> <span class="n">specf</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">spec_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">specf</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec_json</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">ke</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t find &#39;method&#39; in p_astro spec file!&quot;</span><span class="p">)</span> \
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">ke</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Setting up p_astro data with method </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spec</span> <span class="o">=</span> <span class="n">_check_spec</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">spec_json</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bank</span> <span class="o">=</span> <span class="n">_read_bank</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">bank</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PAstroData.apply_significance_limits">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro_utils.PAstroData.apply_significance_limits">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_significance_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If the network SNR and FAR indicate saturation of the FAR estimate,</span>
+<span class="sd">        set them to the fixed values given in the specification.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This only happens for double or triple events</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;triggered&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">trigger_data</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;triggered&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">farlim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;limit_far&#39;</span><span class="p">]</span>
+            <span class="n">snrlim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;limit_snr&#39;</span><span class="p">]</span>
+            <span class="c1"># Only do anything if FAR and SNR are beyond given limits</span>
+            <span class="k">if</span> <span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">farlim</span> <span class="ow">or</span> \
+                    <span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">snrlim</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">trigger_data</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Truncating FAR and SNR from </span><span class="si">%f</span><span class="s1">, </span><span class="si">%f</span><span class="s1"> to </span><span class="si">%f</span><span class="s1">, </span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">,</span>
+                         <span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">],</span> <span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">],</span>
+                         <span class="n">farlim</span><span class="p">,</span> <span class="n">snrlim</span><span class="p">)</span>
+            <span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;network_snr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">snrlim</span>
+            <span class="n">trigger_data</span><span class="p">[</span><span class="s1">&#39;far&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">farlim</span>
+            <span class="k">return</span> <span class="n">trigger_data</span>
+
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Number of triggered ifos must be &gt;0 !&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PAstroData.do_pastro_calc">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.live_pastro_utils.PAstroData.do_pastro_calc">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">do_pastro_calc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger_data</span><span class="p">,</span> <span class="n">horizons</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; No-op, or call the despatch dictionary to evaluate p_astro &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">do</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Computing p_astro&#39;</span><span class="p">)</span>
+        <span class="n">p_astro</span><span class="p">,</span> <span class="n">p_terr</span> <span class="o">=</span> <span class="n">_do_calc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">](</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger_data</span><span class="p">,</span> <span class="n">horizons</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p_astro</span><span class="p">,</span> <span class="n">p_terr</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;insert_live_pastro_option_group&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PAstroData&quot;</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

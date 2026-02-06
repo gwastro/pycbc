@@ -1,0 +1,400 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.vetoes.bank_chisq &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.vetoes.bank_chisq</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.vetoes.bank_chisq</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Ian Harry, Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span><span class="o">,</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">real_same_precision_as</span><span class="p">,</span> <span class="n">TimeSeries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">overlap_cplx</span><span class="p">,</span> <span class="n">matched_filter_core</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilterBank</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">sqrt</span>
+
+<div class="viewcode-block" id="segment_snrs">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.segment_snrs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">segment_snrs</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This functions calculates the snr of each bank veto template against</span>
+<span class="sd">    the segment</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filters: list of FrequencySeries</span>
+<span class="sd">        The list of bank veto templates filters.</span>
+<span class="sd">    stilde: FrequencySeries</span>
+<span class="sd">        The current segment of data.</span>
+<span class="sd">    psd: FrequencySeries</span>
+<span class="sd">    low_frequency_cutoff: float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    snr (list): List of snr time series.</span>
+<span class="sd">    norm (list): List of normalizations factors for the snr time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">snrs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">norms</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">bank_template</span> <span class="ow">in</span> <span class="n">filters</span><span class="p">:</span>
+        <span class="c1"># For every template compute the snr against the stilde segment</span>
+        <span class="n">snr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">norm</span> <span class="o">=</span> <span class="n">matched_filter_core</span><span class="p">(</span>
+                <span class="n">bank_template</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">h_norm</span><span class="o">=</span><span class="n">bank_template</span><span class="o">.</span><span class="n">sigmasq</span><span class="p">(</span><span class="n">psd</span><span class="p">),</span>
+                <span class="n">psd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">)</span>
+        <span class="c1"># SNR time series stored here</span>
+        <span class="n">snrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">snr</span><span class="p">)</span>
+        <span class="c1"># Template normalization factor stored here</span>
+        <span class="n">norms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">snrs</span><span class="p">,</span> <span class="n">norms</span></div>
+
+
+<div class="viewcode-block" id="template_overlaps">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.template_overlaps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">template_overlaps</span><span class="p">(</span><span class="n">bank_filters</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This functions calculates the overlaps between the template and the</span>
+<span class="sd">    bank veto templates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bank_filters: List of FrequencySeries</span>
+<span class="sd">    template: FrequencySeries</span>
+<span class="sd">    psd: FrequencySeries</span>
+<span class="sd">    low_frequency_cutoff: float</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    overlaps: List of complex overlap values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">overlaps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">template_ow</span> <span class="o">=</span> <span class="n">template</span> <span class="o">/</span> <span class="n">psd</span>
+    <span class="k">for</span> <span class="n">bank_template</span> <span class="ow">in</span> <span class="n">bank_filters</span><span class="p">:</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="n">overlap_cplx</span><span class="p">(</span><span class="n">template_ow</span><span class="p">,</span> <span class="n">bank_template</span><span class="p">,</span>
+                <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">sigmasq</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span> <span class="o">/</span> <span class="n">bank_template</span><span class="o">.</span><span class="n">sigmasq</span><span class="p">(</span><span class="n">psd</span><span class="p">))</span>
+        <span class="n">overlaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">overlap</span> <span class="o">*</span> <span class="n">norm</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">overlaps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">0.99</span><span class="p">):</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Overlap &gt; 0.99 between bank template and filter. &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;This bank template will not be used to calculate &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;bank chisq for this filter template. The expected &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;value will be added to the chisq to account for &quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;the removal of this template.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;Masses of filter template: </span><span class="si">%e</span><span class="s2"> </span><span class="si">%e</span><span class="se">\n</span><span class="s2">&quot;</span> \
+                      <span class="o">%</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mass2</span><span class="p">)</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;Masses of bank filter template: </span><span class="si">%e</span><span class="s2"> </span><span class="si">%e</span><span class="se">\n</span><span class="s2">&quot;</span> \
+                      <span class="o">%</span><span class="p">(</span><span class="n">bank_template</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">bank_template</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mass2</span><span class="p">)</span>
+            <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;Overlap: </span><span class="si">%e</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">overlaps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">overlaps</span></div>
+
+
+<div class="viewcode-block" id="bank_chisq_from_filters">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.bank_chisq_from_filters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bank_chisq_from_filters</span><span class="p">(</span><span class="n">tmplt_snr</span><span class="p">,</span> <span class="n">tmplt_norm</span><span class="p">,</span> <span class="n">bank_snrs</span><span class="p">,</span> <span class="n">bank_norms</span><span class="p">,</span>
+        <span class="n">tmplt_bank_matches</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This function calculates and returns a TimeSeries object containing the</span>
+<span class="sd">    bank veto calculated over a segment.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tmplt_snr: TimeSeries</span>
+<span class="sd">        The SNR time series from filtering the segment against the current</span>
+<span class="sd">        search template</span>
+<span class="sd">    tmplt_norm: float</span>
+<span class="sd">        The normalization factor for the search template</span>
+<span class="sd">    bank_snrs: list of TimeSeries</span>
+<span class="sd">        The precomputed list of SNR time series between each of the bank veto</span>
+<span class="sd">        templates and the segment</span>
+<span class="sd">    bank_norms: list of floats</span>
+<span class="sd">        The normalization factors for the list of bank veto templates</span>
+<span class="sd">        (usually this will be the same for all bank veto templates)</span>
+<span class="sd">    tmplt_bank_matches: list of floats</span>
+<span class="sd">        The complex overlap between the search template and each</span>
+<span class="sd">        of the bank templates</span>
+<span class="sd">    indices: {None, Array}, optional</span>
+<span class="sd">        Array of indices into the snr time series. If given, the bank chisq</span>
+<span class="sd">        will only be calculated at these values.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bank_chisq: TimeSeries of the bank vetos</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tmplt_snr</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">tmplt_snr</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">bank_snrs_tmp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">bank_snr</span> <span class="ow">in</span> <span class="n">bank_snrs</span><span class="p">:</span>
+            <span class="n">bank_snrs_tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bank_snr</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+        <span class="n">bank_snrs</span><span class="o">=</span><span class="n">bank_snrs_tmp</span>
+
+    <span class="c1"># Initialise bank_chisq as 0s everywhere</span>
+    <span class="n">bank_chisq</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tmplt_snr</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="n">tmplt_snr</span><span class="p">))</span>
+
+    <span class="c1"># Loop over all the bank templates</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bank_snrs</span><span class="p">)):</span>
+        <span class="n">bank_match</span> <span class="o">=</span> <span class="n">tmplt_bank_matches</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">bank_match</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.99</span><span class="p">):</span>
+            <span class="c1"># Not much point calculating bank_chisquared if the bank template</span>
+            <span class="c1"># is very close to the filter template. Can also hit numerical</span>
+            <span class="c1"># error due to approximations made in this calculation.</span>
+            <span class="c1"># The value of 2 is the expected addition to the chisq for this</span>
+            <span class="c1"># template</span>
+            <span class="n">bank_chisq</span> <span class="o">+=</span> <span class="mf">2.</span>
+            <span class="k">continue</span>
+        <span class="n">bank_norm</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">bank_match</span><span class="o">*</span><span class="n">bank_match</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+
+        <span class="n">bank_SNR</span> <span class="o">=</span> <span class="n">bank_snrs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">bank_norms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">bank_norm</span><span class="p">)</span>
+        <span class="n">tmplt_SNR</span> <span class="o">=</span> <span class="n">tmplt_snr</span> <span class="o">*</span> <span class="p">(</span><span class="n">bank_match</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span> <span class="o">*</span> <span class="n">tmplt_norm</span> <span class="o">/</span> <span class="n">bank_norm</span><span class="p">)</span>
+
+        <span class="n">bank_SNR</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">bank_SNR</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">tmplt_SNR</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">tmplt_SNR</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">bank_chisq</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bank_SNR</span> <span class="o">-</span> <span class="n">tmplt_SNR</span><span class="p">)</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bank_chisq</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">bank_chisq</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">tmplt_snr</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span>
+                          <span class="n">epoch</span><span class="o">=</span><span class="n">tmplt_snr</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SingleDetBankVeto">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.SingleDetBankVeto">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleDetBankVeto</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class reads in a template bank file for a bank veto, handles the</span>
+<span class="sd">       memory management of its filters internally, and calculates the bank</span>
+<span class="sd">       veto TimeSeries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">f_low</span><span class="p">,</span> <span class="n">cdtype</span><span class="p">,</span> <span class="n">approximant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">bank_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">column_name</span> <span class="o">=</span> <span class="s2">&quot;bank_chisq&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">table_dof_name</span> <span class="o">=</span> <span class="s2">&quot;bank_chisq_dof&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">cdtype</span> <span class="o">=</span> <span class="n">cdtype</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">=</span> <span class="n">delta_f</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f_low</span> <span class="o">=</span> <span class="n">f_low</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seg_len_freq</span> <span class="o">=</span> <span class="n">flen</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seg_len_time</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seg_len_freq</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Read in bank veto template bank&quot;</span><span class="p">)</span>
+            <span class="n">bank_veto_bank</span> <span class="o">=</span> <span class="n">FilterBank</span><span class="p">(</span><span class="n">bank_file</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">seg_len_freq</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdtype</span><span class="p">,</span>
+                    <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">f_low</span><span class="p">,</span>
+                    <span class="n">approximant</span><span class="o">=</span><span class="n">approximant</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">filters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">bank_veto_bank</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dof</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">bank_veto_bank</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_overlaps_cache</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_segment_snrs_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="SingleDetBankVeto.cache_segment_snrs">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.SingleDetBankVeto.cache_segment_snrs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cache_segment_snrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">psd</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">stilde</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">psd</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_snrs_cache</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Precalculate the bank veto template snrs&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">segment_snrs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_low</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_segment_snrs_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_snrs_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="SingleDetBankVeto.cache_overlaps">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.SingleDetBankVeto.cache_overlaps">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cache_overlaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="n">psd</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overlaps_cache</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;...Calculate bank veto overlaps&quot;</span><span class="p">)</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">template_overlaps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_low</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_overlaps_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">o</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overlaps_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="SingleDetBankVeto.values">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.SingleDetBankVeto.values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bank_chisq_from_filters: TimeSeries of bank veto values - if indices</span>
+<span class="sd">        is None then evaluated at all time samples, if not then only at</span>
+<span class="sd">        requested sample indices</span>
+
+<span class="sd">        bank_chisq_dof: int, approx number of statistical degrees of freedom</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">do</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;...Doing bank veto&quot;</span><span class="p">)</span>
+        <span class="n">overlaps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_overlaps</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span>
+        <span class="n">bank_veto_snrs</span><span class="p">,</span> <span class="n">bank_veto_norms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_segment_snrs</span><span class="p">(</span><span class="n">stilde</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span>
+        <span class="n">chisq</span> <span class="o">=</span> <span class="n">bank_chisq_from_filters</span><span class="p">(</span><span class="n">snrv</span><span class="p">,</span> <span class="n">norm</span><span class="p">,</span> <span class="n">bank_veto_snrs</span><span class="p">,</span>
+                                        <span class="n">bank_veto_norms</span><span class="p">,</span> <span class="n">overlaps</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dof</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chisq</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">chisq</span><span class="p">,</span> <span class="n">dof</span></div>
+</div>
+
+
+<div class="viewcode-block" id="SingleDetSkyMaxBankVeto">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.SingleDetSkyMaxBankVeto">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleDetSkyMaxBankVeto</span><span class="p">(</span><span class="n">SingleDetBankVeto</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stub for precessing bank veto if anyone ever wants to code it up.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SingleDetSkyMaxBankVeto</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SingleDetSkyMaxBankVeto.values">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.bank_chisq.SingleDetSkyMaxBankVeto.values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Precessing single detector sky-max bank veto has not &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;been written. If you want to use it, why not help &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;write it?&quot;</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1019 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.burn_in &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.burn_in</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.burn_in</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2017  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes and functions for determining when Markov Chains</span>
+<span class="sd">have burned in.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">ks_2samp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.record</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_vars_from_arg</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.inference.burn_in&#39;</span><span class="p">)</span>
+
+<span class="c1"># The value to use for a burn-in iteration if a chain is not burned in</span>
+<span class="n">NOT_BURNED_IN_ITER</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                              Convenience functions</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="ks_test">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.ks_test">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ks_test</span><span class="p">(</span><span class="n">samples1</span><span class="p">,</span> <span class="n">samples2</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies a KS test to determine if two sets of samples are the same.</span>
+
+<span class="sd">    The ks test is applied parameter-by-parameter. If the two-tailed p-value</span>
+<span class="sd">    returned by the test is greater than ``threshold``, the samples are</span>
+<span class="sd">    considered to be the same.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples1 : dict</span>
+<span class="sd">        Dictionary of mapping parameters to the first set of samples.</span>
+<span class="sd">    samples2 : dict</span>
+<span class="sd">        Dictionary of mapping parameters to the second set of samples.</span>
+<span class="sd">    threshold : float</span>
+<span class="sd">        The thershold to use for the p-value. Default is 0.9.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary mapping parameter names to booleans indicating whether the</span>
+<span class="sd">        given parameter passes the KS test.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">is_the_same</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">samples1</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">samples2</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="p">(</span>
+        <span class="s2">&quot;samples1 and 2 must have the same parameters&quot;</span><span class="p">)</span>
+    <span class="c1"># iterate over the parameters</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">samples1</span><span class="p">:</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="n">samples1</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="n">samples2</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">ks_2samp</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span>
+        <span class="n">is_the_same</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_value</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+    <span class="k">return</span> <span class="n">is_the_same</span></div>
+
+
+
+<div class="viewcode-block" id="max_posterior">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.max_posterior">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">max_posterior</span><span class="p">(</span><span class="n">lnps_per_walker</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Burn in based on samples being within dim/2 of maximum posterior.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lnps_per_walker : 2D array</span>
+<span class="sd">        Array of values that are proportional to the log posterior values. Must</span>
+<span class="sd">        have shape ``nwalkers x niterations``.</span>
+<span class="sd">    dim : int</span>
+<span class="sd">        The dimension of the parameter space.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    burn_in_idx : array of int</span>
+<span class="sd">        The burn in indices of each walker. If a walker is not burned in, its</span>
+<span class="sd">        index will be be equal to the length of the chain.</span>
+<span class="sd">    is_burned_in : array of bool</span>
+<span class="sd">        Whether or not a walker is burned in.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lnps_per_walker</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;lnps_per_walker must have shape &quot;</span>
+                         <span class="s2">&quot;nwalkers x niterations&quot;</span><span class="p">)</span>
+    <span class="c1"># find the value to compare against</span>
+    <span class="n">max_p</span> <span class="o">=</span> <span class="n">lnps_per_walker</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">criteria</span> <span class="o">=</span> <span class="n">max_p</span> <span class="o">-</span> <span class="n">dim</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">nwalkers</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">lnps_per_walker</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">burn_in_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="c1"># find the first iteration in each chain where the logpost has exceeded</span>
+    <span class="c1"># max_p - dim/2</span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
+        <span class="n">chain</span> <span class="o">=</span> <span class="n">lnps_per_walker</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">passedidx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">chain</span> <span class="o">&gt;=</span> <span class="n">criteria</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">is_burned_in</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">passedidx</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">is_burned_in</span><span class="p">[</span><span class="n">ii</span><span class="p">]:</span>
+            <span class="n">burn_in_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">passedidx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">burn_in_idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+    <span class="k">return</span> <span class="n">burn_in_idx</span><span class="p">,</span> <span class="n">is_burned_in</span></div>
+
+
+
+<div class="viewcode-block" id="posterior_step">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.posterior_step">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">posterior_step</span><span class="p">(</span><span class="n">logposts</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the last time a chain made a jump &gt; dim/2.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    logposts : array</span>
+<span class="sd">        1D array of values that are proportional to the log posterior values.</span>
+<span class="sd">    dim : int</span>
+<span class="sd">        The dimension of the parameter space.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int</span>
+<span class="sd">        The index of the last time the logpost made a jump &gt; dim/2. If that</span>
+<span class="sd">        never happened, returns 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">logposts</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;logposts must be a 1D array&quot;</span><span class="p">)</span>
+    <span class="n">criteria</span> <span class="o">=</span> <span class="n">dim</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">dp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">logposts</span><span class="p">)</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dp</span> <span class="o">&gt;=</span> <span class="n">criteria</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">idx</span></div>
+
+
+
+<div class="viewcode-block" id="nacl">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.nacl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nacl</span><span class="p">(</span><span class="n">nsamples</span><span class="p">,</span> <span class="n">acls</span><span class="p">,</span> <span class="n">nacls</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Burn in based on ACL.</span>
+
+<span class="sd">    This applies the following test to determine burn in:</span>
+
+<span class="sd">    1. The first half of the chain is ignored.</span>
+
+<span class="sd">    2. An ACL is calculated from the second half.</span>
+
+<span class="sd">    3. If ``nacls`` times the ACL is &lt; the length of the chain / 2,</span>
+<span class="sd">       the chain is considered to be burned in at the half-way point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nsamples : int</span>
+<span class="sd">        The number of samples of in the chain(s).</span>
+<span class="sd">    acls : dict</span>
+<span class="sd">        Dictionary of parameter -&gt; ACL(s). The ACLs for each parameter may</span>
+<span class="sd">        be an integer or an array of integers (for multiple chains).</span>
+<span class="sd">    nacls : int, optional</span>
+<span class="sd">        The number of ACLs the chain(s) must have gone past the halfway point</span>
+<span class="sd">        in order to be considered burned in. Default is 5.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary of parameter -&gt; boolean(s) indicating if the chain(s) pass</span>
+<span class="sd">        the test. If an array of values was provided for the acls, the values</span>
+<span class="sd">        will be arrays of booleans.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kstart</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nsamples</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="p">(</span><span class="n">nacls</span> <span class="o">*</span> <span class="n">acl</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">kstart</span> <span class="k">for</span> <span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">acl</span><span class="p">)</span> <span class="ow">in</span> <span class="n">acls</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_tests">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.evaluate_tests">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_tests</span><span class="p">(</span><span class="n">burn_in_test</span><span class="p">,</span> <span class="n">test_is_burned_in</span><span class="p">,</span> <span class="n">test_burn_in_iter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluates burn in data from multiple tests.</span>
+
+<span class="sd">    The iteration to use for burn-in depends on the logic in the burn-in</span>
+<span class="sd">    test string. For example, if the test was &#39;max_posterior | nacl&#39; and</span>
+<span class="sd">    max_posterior burned-in at iteration 5000 while nacl burned in at</span>
+<span class="sd">    iteration 6000, we&#39;d want to use 5000 as the burn-in iteration.</span>
+<span class="sd">    However, if the test was &#39;max_posterior &amp; nacl&#39;, we&#39;d want to use</span>
+<span class="sd">    6000 as the burn-in iteration. This function handles all cases by</span>
+<span class="sd">    doing the following: first, take the collection of burn in iterations</span>
+<span class="sd">    from all the burn in tests that were applied.  Next, cycle over the</span>
+<span class="sd">    iterations in increasing order, checking which tests have burned in</span>
+<span class="sd">    by that point. Then evaluate the burn-in string at that point to see</span>
+<span class="sd">    if it passes, and if so, what the iteration is. The first point that</span>
+<span class="sd">    the test passes is used as the burn-in iteration.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    burn_in_test : str</span>
+<span class="sd">        The test to apply; e.g., ``&#39;max_posterior &amp; nacl&#39;``.</span>
+<span class="sd">    test_is_burned_in : dict</span>
+<span class="sd">        Dictionary of test name -&gt; boolean indicating whether a specific burn</span>
+<span class="sd">        in test has passed.</span>
+<span class="sd">    test_burn_in_iter : dict</span>
+<span class="sd">        Dictionary of test name -&gt; int indicating when a specific test burned</span>
+<span class="sd">        in.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    is_burned_in : bool</span>
+<span class="sd">        Whether or not the data passes all burn in tests.</span>
+<span class="sd">    burn_in_iteration :</span>
+<span class="sd">        The iteration at which all the tests pass. If the tests did not all</span>
+<span class="sd">        pass (``is_burned_in`` is false), then returns</span>
+<span class="sd">        :py:data:`NOT_BURNED_IN_ITER`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">burn_in_iters</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">test_burn_in_iter</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">burn_in_iters</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">burn_in_iters</span><span class="p">:</span>
+        <span class="n">test_results</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="p">(</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&amp;</span>
+                            <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">test_burn_in_iter</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">ii</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">test_is_burned_in</span><span class="p">}</span>
+        <span class="n">is_burned_in</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">burn_in_test</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;__builtins__&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+                            <span class="n">test_results</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_burned_in</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_burned_in</span><span class="p">:</span>
+        <span class="n">ii</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+    <span class="k">return</span> <span class="n">is_burned_in</span><span class="p">,</span> <span class="n">ii</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                              Burn in classes</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="BaseBurnInTests">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseBurnInTests</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for burn in tests.&quot;&quot;&quot;</span>
+
+    <span class="n">available_tests</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;halfchain&#39;</span><span class="p">,</span> <span class="s1">&#39;min_iterations&#39;</span><span class="p">,</span> <span class="s1">&#39;max_posterior&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;posterior_step&#39;</span><span class="p">,</span> <span class="s1">&#39;nacl&#39;</span><span class="p">,</span>
+                       <span class="p">)</span>
+
+    <span class="c1"># pylint: disable=unnecessary-pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">burn_in_test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">sampler</span>
+        <span class="c1"># determine the burn-in tests that are going to be done</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">do_tests</span> <span class="o">=</span> <span class="n">get_vars_from_arg</span><span class="p">(</span><span class="n">burn_in_test</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_test</span> <span class="o">=</span> <span class="n">burn_in_test</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># burn in status per test</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># burn in iter per test</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_aux_info</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># any additional information the test stores</span>
+        <span class="c1"># Arguments specific to each test...</span>
+        <span class="c1"># for nacl:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nacls</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;nacls&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="c1"># for max_posterior and posterior_step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ndim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;ndim&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sampler</span><span class="o">.</span><span class="n">variable_params</span><span class="p">)))</span>
+        <span class="c1"># for min iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_iterations</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;min_iterations&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<div class="viewcode-block" id="BaseBurnInTests.burn_in_index">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.burn_in_index">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">burn_in_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The burn in index (retrieved from the iteration).</span>
+
+<span class="sd">        This is an abstract method because how this is evaluated depends on</span>
+<span class="sd">        if this is an ensemble MCMC or not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getniters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to get the number of iterations in the file.</span>
+
+<span class="sd">        If `niterations` hasn&#39;t been written to the file yet, just returns 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">niters</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">niterations</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">niters</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">niters</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getnsamples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to get the number of samples saved in the file.</span>
+
+<span class="sd">        If no samples have been written to the file yet, just returns 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span>
+                <span class="c1"># we&#39;ll just use the first parameter</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">nsamples</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+                <span class="n">nsamples</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">nsamples</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_index2iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the index in some samples at which burn in occurs to the</span>
+<span class="sd">        iteration of the sampler that corresponds to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="k">return</span> <span class="n">index</span> <span class="o">*</span> <span class="n">thin_interval</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_iter2index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">iteration</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts an iteration to the index it corresponds to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="k">return</span> <span class="n">iteration</span> <span class="o">//</span> <span class="n">thin_interval</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getlogposts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for retrieving log posteriors.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The file to read.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">            The log posterior values. They are not flattened, so have dimension</span>
+<span class="sd">            nwalkers x niterations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span> <span class="s1">&#39;logprior&#39;</span><span class="p">],</span> <span class="n">thin_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logposts</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;logprior&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">logposts</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getacls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for calculating acls for the given filename.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">compute_acl</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="n">start_index</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getaux</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for getting auxilary information.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        test : str</span>
+<span class="sd">            The name of the test to retrieve auxilary information about.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            The ``test_aux_info[test]`` dictionary. If a dictionary does</span>
+<span class="sd">            not exist yet for the given test, an empty dictionary will be</span>
+<span class="sd">            created and saved to ``test_aux_info[test]``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_aux_info</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_aux_info</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="n">aux</span>
+
+<div class="viewcode-block" id="BaseBurnInTests.halfchain">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.halfchain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">halfchain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Just uses half the chain as the burn-in iteration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">niters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getniters</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># this test cannot determine when something will burn in</span>
+        <span class="c1"># only when it was not burned in in the past</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="s1">&#39;halfchain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="s1">&#39;halfchain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">niters</span><span class="o">//</span><span class="mi">2</span></div>
+
+
+<div class="viewcode-block" id="BaseBurnInTests.min_iterations">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.min_iterations">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">min_iterations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Just checks that the sampler has been run for the minimum number</span>
+<span class="sd">        of iterations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">niters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getniters</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">is_burned_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_iterations</span> <span class="o">&lt;</span> <span class="n">niters</span>
+        <span class="k">if</span> <span class="n">is_burned_in</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_iterations</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="s1">&#39;min_iterations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="s1">&#39;min_iterations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span></div>
+
+
+<div class="viewcode-block" id="BaseBurnInTests.max_posterior">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.max_posterior">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_posterior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Carries out the max posterior test and stores the results.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseBurnInTests.posterior_step">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.posterior_step">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">posterior_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Carries out the posterior step test and stores the results.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseBurnInTests.nacl">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.nacl">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nacl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Carries out the nacl test and stores the results.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseBurnInTests.evaluate">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.evaluate">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs all tests and evaluates the results to determine if and</span>
+<span class="sd">        when all tests pass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseBurnInTests.write">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.write">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes burn-in info to an open HDF file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.base.BaseInferenceFile</span>
+<span class="sd">            Open HDF file to write the data to. The HDF file should be an</span>
+<span class="sd">            instance of a pycbc BaseInferenceFile.</span>
+<span class="sd">        path : str, optional</span>
+<span class="sd">            Path in the HDF file to write the data to. Default is (None) is</span>
+<span class="sd">            to write to the path given by the file&#39;s ``sampler_group``</span>
+<span class="sd">            attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;burn_in_test&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_test</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;is_burned_in&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;burn_in_iteration&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">testgroup</span> <span class="o">=</span> <span class="s1">&#39;burn_in_tests&#39;</span>
+        <span class="c1"># write individual test data</span>
+        <span class="k">for</span> <span class="n">tst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_tests</span><span class="p">:</span>
+            <span class="n">subpath</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">path</span><span class="p">,</span> <span class="n">testgroup</span><span class="p">,</span> <span class="n">tst</span><span class="p">])</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;is_burned_in&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">tst</span><span class="p">],</span> <span class="n">subpath</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;burn_in_iteration&#39;</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">tst</span><span class="p">],</span>
+                          <span class="n">subpath</span><span class="p">)</span>
+            <span class="c1"># write auxiliary info</span>
+            <span class="k">if</span> <span class="n">tst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_aux_info</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_aux_info</span><span class="p">[</span><span class="n">tst</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">subpath</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_tests_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;For loading class-specific tests.&quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=unused-argument</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="BaseBurnInTests.from_config">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">sampler</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads burn in from section [sampler-burn_in].&quot;&quot;&quot;</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s1">&#39;sampler&#39;</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="s1">&#39;burn_in&#39;</span>
+        <span class="n">burn_in_test</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;burn-in-test&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;nacl&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;nacl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;nacl&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;ndim&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ndim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;ndim&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;min-iterations&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;min_iterations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;min-iterations&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="c1"># load any class specific tests</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_extra_tests_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">burn_in_test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MCMCBurnInTests">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MCMCBurnInTests</span><span class="p">(</span><span class="n">BaseBurnInTests</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Burn-in tests for collections of independent MCMC chains.</span>
+
+<span class="sd">    This differs from EnsembleMCMCBurnInTests in that chains are treated as</span>
+<span class="sd">    being independent of each other. The ``is_burned_in`` attribute will be</span>
+<span class="sd">    True if `any` chain passes the burn in tests (whereas in MCMCBurnInTests,</span>
+<span class="sd">    all chains must pass the burn in tests). In other words, independent</span>
+<span class="sd">    samples can be collected even if all of the chains are not burned in.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">burn_in_test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MCMCBurnInTests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">burn_in_test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">nchains</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">nchains</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">nchains</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">nwalkers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span> <span class="o">=</span> <span class="n">nchains</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">NOT_BURNED_IN_ITER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MCMCBurnInTests.burn_in_index">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.burn_in_index">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">burn_in_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The burn in index (retrieved from the iteration).&quot;&quot;&quot;</span>
+        <span class="n">burn_in_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter2index</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span><span class="p">)</span>
+        <span class="c1"># don&#39;t set if it isn&#39;t burned in</span>
+        <span class="n">burn_in_index</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">]</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="k">return</span> <span class="n">burn_in_index</span></div>
+
+
+<div class="viewcode-block" id="MCMCBurnInTests.max_posterior">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.max_posterior">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_posterior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies max posterior test.&quot;&quot;&quot;</span>
+        <span class="n">logposts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getlogposts</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">burn_in_idx</span><span class="p">,</span> <span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">max_posterior</span><span class="p">(</span><span class="n">logposts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ndim</span><span class="p">)</span>
+        <span class="c1"># convert index to iterations</span>
+        <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">burn_in_idx</span><span class="p">)</span>
+        <span class="n">burn_in_iter</span><span class="p">[</span><span class="o">~</span><span class="n">is_burned_in</span><span class="p">]</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="c1"># save</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;max_posterior&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span></div>
+
+
+<div class="viewcode-block" id="MCMCBurnInTests.posterior_step">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.posterior_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">posterior_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the posterior-step test.&quot;&quot;&quot;</span>
+        <span class="n">logposts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getlogposts</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">burn_in_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">posterior_step</span><span class="p">(</span><span class="n">logps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ndim</span><span class="p">)</span>
+                                   <span class="k">for</span> <span class="n">logps</span> <span class="ow">in</span> <span class="n">logposts</span><span class="p">])</span>
+        <span class="c1"># this test cannot determine when something will burn in</span>
+        <span class="c1"># only when it was not burned in in the past</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;posterior_step&#39;</span>
+        <span class="k">if</span> <span class="n">test</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="c1"># convert index to iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span>
+                                                             <span class="n">burn_in_idx</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MCMCBurnInTests.nacl">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.nacl">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nacl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the :py:func:`nacl` test.&quot;&quot;&quot;</span>
+        <span class="n">nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getnsamples</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">acls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getacls</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="n">nsamples</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">nacl</span><span class="p">(</span><span class="n">nsamples</span><span class="p">,</span> <span class="n">acls</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nacls</span><span class="p">)</span>
+        <span class="c1"># stack the burn in results into an nparams x nchains array</span>
+        <span class="n">burn_in_per_chain</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">is_burned_in</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># store</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;nacl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_per_chain</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># hasn&#39;t been stored yet</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">NOT_BURNED_IN_ITER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span>
+        <span class="n">burn_in_iter</span><span class="p">[</span><span class="n">burn_in_per_chain</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span>
+                                                           <span class="n">nsamples</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># add the status for each parameter as additional information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_aux_info</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span></div>
+
+
+<div class="viewcode-block" id="MCMCBurnInTests.evaluate">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.evaluate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs all of the burn-in tests.&quot;&quot;&quot;</span>
+        <span class="c1"># evaluate all the tests</span>
+        <span class="k">for</span> <span class="n">tst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_tests</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Evaluating </span><span class="si">%s</span><span class="s2"> burn-in test&quot;</span><span class="p">,</span> <span class="n">tst</span><span class="p">)</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tst</span><span class="p">)(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># evaluate each chain at a time</span>
+        <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">):</span>
+            <span class="c1"># some tests (like halfchain) just store a single bool for all</span>
+            <span class="c1"># chains</span>
+            <span class="n">tibi</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="n">ci</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">r</span>
+                    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">tbi</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">:</span> <span class="n">r</span><span class="p">[</span><span class="n">ci</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">r</span>
+                   <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">is_burned_in</span><span class="p">,</span> <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">evaluate_tests</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">burn_in_test</span><span class="p">,</span>
+                                                        <span class="n">tibi</span><span class="p">,</span> <span class="n">tbi</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">[</span><span class="n">ci</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span><span class="p">[</span><span class="n">ci</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Number of chains burned in: </span><span class="si">%i</span><span class="s2"> of </span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MCMCBurnInTests.write">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.write">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes burn-in info to an open HDF file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.base.BaseInferenceFile</span>
+<span class="sd">            Open HDF file to write the data to. The HDF file should be an</span>
+<span class="sd">            instance of a pycbc BaseInferenceFile.</span>
+<span class="sd">        path : str, optional</span>
+<span class="sd">            Path in the HDF file to write the data to. Default is (None) is</span>
+<span class="sd">            to write to the path given by the file&#39;s ``sampler_group``</span>
+<span class="sd">            attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">sampler_group</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MCMCBurnInTests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="c1"># add number of chains burned in as additional metadata</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;nchains_burned_in&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">path</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MultiTemperedMCMCBurnInTests">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiTemperedMCMCBurnInTests</span><span class="p">(</span><span class="n">MCMCBurnInTests</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds support for multiple temperatures to</span>
+<span class="sd">    :py:class:`MCMCBurnInTests`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getacls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for calculating acls for the given filename.</span>
+
+<span class="sd">        This function is used by the ``n_acl`` burn-in test. That function</span>
+<span class="sd">        expects the returned ``acls`` dict to just report a single ACL for</span>
+<span class="sd">        each parameter. Since multi-tempered samplers return an array of ACLs</span>
+<span class="sd">        for each parameter instead, this takes the max over the array before</span>
+<span class="sd">        returning.</span>
+
+<span class="sd">        Since we calculate the acls, this will also store it to the sampler.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Name of the file to retrieve samples from.</span>
+<span class="sd">        start_index : int</span>
+<span class="sd">            Index to start calculating ACLs.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of parameter names -&gt; array giving ACL for each chain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">acls</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">MultiTemperedMCMCBurnInTests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_getacls</span><span class="p">(</span>
+            <span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="p">)</span>
+        <span class="c1"># acls will have shape ntemps x nchains, flatten to nchains</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">vals</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span> <span class="ow">in</span> <span class="n">acls</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getlogposts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for retrieving log posteriors.</span>
+
+<span class="sd">        This just gets the coldest temperature chain, and returns arrays with</span>
+<span class="sd">        shape nwalkers x niterations, so the parent class can run the same</span>
+<span class="sd">        ``posterior_step`` function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_multitemper_getlogposts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnsembleMCMCBurnInTests</span><span class="p">(</span><span class="n">BaseBurnInTests</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides methods for estimating burn-in of an ensemble MCMC.&quot;&quot;&quot;</span>
+
+    <span class="n">available_tests</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;halfchain&#39;</span><span class="p">,</span> <span class="s1">&#39;min_iterations&#39;</span><span class="p">,</span> <span class="s1">&#39;max_posterior&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;posterior_step&#39;</span><span class="p">,</span> <span class="s1">&#39;nacl&#39;</span><span class="p">,</span> <span class="s1">&#39;ks_test&#39;</span><span class="p">,</span>
+                       <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">burn_in_test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EnsembleMCMCBurnInTests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">sampler</span><span class="p">,</span> <span class="n">burn_in_test</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># for kstest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ksthreshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;ks_threshold&#39;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests.burn_in_index">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.burn_in_index">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">burn_in_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The burn in index (retrieved from the iteration).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter2index</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="k">return</span> <span class="n">index</span></div>
+
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests.max_posterior">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.max_posterior">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_posterior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies max posterior test to self.&quot;&quot;&quot;</span>
+        <span class="n">logposts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getlogposts</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">burn_in_idx</span><span class="p">,</span> <span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">max_posterior</span><span class="p">(</span><span class="n">logposts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ndim</span><span class="p">)</span>
+        <span class="n">all_burned_in</span> <span class="o">=</span> <span class="n">is_burned_in</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">all_burned_in</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">burn_in_idx</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="c1"># store</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;max_posterior&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_burned_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getaux</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+        <span class="c1"># additional info</span>
+        <span class="n">aux</span><span class="p">[</span><span class="s1">&#39;iteration_per_walker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">burn_in_idx</span><span class="p">)</span>
+        <span class="n">aux</span><span class="p">[</span><span class="s1">&#39;status_per_walker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span></div>
+
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests.posterior_step">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.posterior_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">posterior_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the posterior-step test.&quot;&quot;&quot;</span>
+        <span class="n">logposts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getlogposts</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">burn_in_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">posterior_step</span><span class="p">(</span><span class="n">logps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ndim</span><span class="p">)</span>
+                                   <span class="k">for</span> <span class="n">logps</span> <span class="ow">in</span> <span class="n">logposts</span><span class="p">])</span>
+        <span class="n">burn_in_iters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">burn_in_idx</span><span class="p">)</span>
+        <span class="c1"># this test cannot determine when something will burn in</span>
+        <span class="c1"># only when it was not burned in in the past</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;posterior_step&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iters</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="c1"># store the iteration per walker as additional info</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getaux</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+        <span class="n">aux</span><span class="p">[</span><span class="s1">&#39;iteration_per_walker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iters</span></div>
+
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests.nacl">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.nacl">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nacl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the :py:func:`nacl` test.&quot;&quot;&quot;</span>
+        <span class="n">nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getnsamples</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">acls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getacls</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="o">=</span><span class="n">nsamples</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">nacl</span><span class="p">(</span><span class="n">nsamples</span><span class="p">,</span> <span class="n">acls</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nacls</span><span class="p">)</span>
+        <span class="n">all_burned_in</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_burned_in</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">all_burned_in</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">nsamples</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="c1"># store</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;nacl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_burned_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span>
+        <span class="c1"># store the status per parameter as additional info</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getaux</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+        <span class="n">aux</span><span class="p">[</span><span class="s1">&#39;status_per_parameter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span></div>
+
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests.ks_test">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.ks_test">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ks_test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies ks burn-in test.&quot;&quot;&quot;</span>
+        <span class="n">nsamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getnsamples</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># get the samples from the mid point</span>
+            <span class="n">samples1</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span> <span class="s1">&#39;logprior&#39;</span><span class="p">],</span> <span class="n">iteration</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">nsamples</span><span class="o">/</span><span class="mf">2.</span><span class="p">))</span>
+            <span class="c1"># get the last samples</span>
+            <span class="n">samples2</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+                <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span> <span class="s1">&#39;logprior&#39;</span><span class="p">],</span> <span class="n">iteration</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># do the test</span>
+        <span class="c1"># is_the_same is a dictionary of params --&gt; bool indicating whether or</span>
+        <span class="c1"># not the 1D marginal is the same at the half way point</span>
+        <span class="n">is_the_same</span> <span class="o">=</span> <span class="n">ks_test</span><span class="p">(</span><span class="n">samples1</span><span class="p">,</span> <span class="n">samples2</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ksthreshold</span><span class="p">)</span>
+        <span class="n">is_burned_in</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">is_the_same</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">is_burned_in</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_index2iter</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">nsamples</span><span class="o">//</span><span class="mi">2</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">NOT_BURNED_IN_ITER</span>
+        <span class="c1"># store</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="s1">&#39;ks_test&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_burned_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">[</span><span class="n">test</span><span class="p">]</span> <span class="o">=</span> <span class="n">burn_in_iter</span>
+        <span class="c1"># store the test per parameter as additional info</span>
+        <span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getaux</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+        <span class="n">aux</span><span class="p">[</span><span class="s1">&#39;status_per_parameter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_the_same</span></div>
+
+
+<div class="viewcode-block" id="EnsembleMCMCBurnInTests.evaluate">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.evaluate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs all of the burn-in tests.&quot;&quot;&quot;</span>
+        <span class="c1"># evaluate all the tests</span>
+        <span class="k">for</span> <span class="n">tst</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_tests</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Evaluating </span><span class="si">%s</span><span class="s2"> burn-in test&quot;</span><span class="p">,</span> <span class="n">tst</span><span class="p">)</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tst</span><span class="p">)(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">is_burned_in</span><span class="p">,</span> <span class="n">burn_in_iter</span> <span class="o">=</span> <span class="n">evaluate_tests</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_test</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_is_burned_in</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">test_burn_in_iteration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span> <span class="o">=</span> <span class="n">is_burned_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span> <span class="o">=</span> <span class="n">burn_in_iter</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Is burned in: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Burn-in iteration: </span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">,</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span><span class="p">))</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_tests_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads the ks test settings from the config file.&quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;ks-threshold&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ks_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;ks-threshold&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">kwargs</span></div>
+
+
+
+<div class="viewcode-block" id="EnsembleMultiTemperedMCMCBurnInTests">
+<a class="viewcode-back" href="../../../pycbc.inference.html#pycbc.inference.burn_in.EnsembleMultiTemperedMCMCBurnInTests">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnsembleMultiTemperedMCMCBurnInTests</span><span class="p">(</span><span class="n">EnsembleMCMCBurnInTests</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds support for multiple temperatures to</span>
+<span class="sd">    :py:class:`EnsembleMCMCBurnInTests`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getacls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for calculating acls for the given filename.</span>
+
+<span class="sd">        This function is used by the ``n_acl`` burn-in test. That function</span>
+<span class="sd">        expects the returned ``acls`` dict to just report a single ACL for</span>
+<span class="sd">        each parameter. Since multi-tempered samplers return an array of ACLs</span>
+<span class="sd">        for each parameter instead, this takes the max over the array before</span>
+<span class="sd">        returning.</span>
+
+<span class="sd">        Since we calculate the acls, this will also store it to the sampler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">acls</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">EnsembleMultiTemperedMCMCBurnInTests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_getacls</span><span class="p">(</span>
+            <span class="n">filename</span><span class="p">,</span> <span class="n">start_index</span><span class="p">)</span>
+        <span class="c1"># return the max for each parameter</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">vals</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">for</span> <span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span> <span class="ow">in</span> <span class="n">acls</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getlogposts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function for retrieving log posteriors.</span>
+
+<span class="sd">        This just gets the coldest temperature chain, and returns arrays with</span>
+<span class="sd">        shape nwalkers x niterations, so the parent class can run the same</span>
+<span class="sd">        ``posterior_step`` function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_multitemper_getlogposts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_multitemper_getlogposts</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve log posteriors for multi tempered samplers.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">sampler</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span> <span class="s1">&#39;logprior&#39;</span><span class="p">],</span> <span class="n">thin_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">temps</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># reshape to drop the first dimension</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">stat</span><span class="p">,</span> <span class="n">arr</span><span class="p">)</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">,</span> <span class="n">niterations</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">stat</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">niterations</span><span class="p">))</span>
+        <span class="n">logposts</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;logprior&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">logposts</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

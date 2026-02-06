@@ -1,0 +1,275 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing PyCBC &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Running PyCBC under Docker" href="docker.html" />
+    <link rel="prev" title="PyCBC: Powering Gravitational-wave Astronomy" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing PyCBC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simple-installation">Simple Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#full-virtualenv-for-development-and-production">Full Virtualenv for Development and Production</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#development-build-on-ldg-igwn-clusters">Development build on LDG / IGWN clusters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#other-scenarios">Other scenarios</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#docker">Docker</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#building-the-documentation">Building the Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-of-intel-mkl-optimized-fft-libraries">Use of Intel MKL Optimized FFT libraries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#graphics-processing-unit-support-with-cuda">Graphics Processing Unit support with CUDA</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install_cuda.html">Instructions to add CUDA support (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#related-help">Related Help</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="install_virtualenv.html">Setting up virtualenv</a></li>
+<li class="toctree-l4"><a class="reference internal" href="install_lalsuite.html">Installing lalsuite for PyCBC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installing PyCBC</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/install.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-pycbc">
+<span id="id1"></span><h1>Installing PyCBC<a class="headerlink" href="#installing-pycbc" title="Link to this heading"></a></h1>
+<section id="simple-installation">
+<h2>Simple Installation<a class="headerlink" href="#simple-installation" title="Link to this heading"></a></h2>
+<p>PyCBC is available through the PyPI. For straightforward use of the PyCBC library
+and executables, we recommend installing with the following command. If you
+are not running in a specialized computing environment, this is probably the
+appropriate thing to do.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pycbc
+</pre></div>
+</div>
+</section>
+<section id="full-virtualenv-for-development-and-production">
+<h2>Full Virtualenv for Development and Production<a class="headerlink" href="#full-virtualenv-for-development-and-production" title="Link to this heading"></a></h2>
+<p>This document explains how to set up a virtual environment to install PyCBC
+either for development or use in a production analysis with a release. The
+code build will be a standard Python install, which requires that the
+installation directory containing the Python libraries is accessible at
+runtime.</p>
+<p>PyCBC uses the <a class="reference external" href="https://help.github.com/articles/using-pull-requests/">fork and pull</a> model for development. If you wish to develop PyCBC, then you will need an account on <a class="reference external" href="https://www.github.com">GitHub</a>. Once you have set up your account you should follow the instructions to <a class="reference external" href="https://help.github.com/articles/fork-a-repo/">fork a repository</a> to fork the <a class="reference external" href="https://github.com/gwastro/pycbc">gwastro/pycbc</a> repository into your own account. From your own fork, you can follow the <a class="reference external" href="https://help.github.com/articles/github-flow-in-the-browser/">GitHub flow model</a> to develop and maintain the code. For each new feature or bug fix, you should <a class="reference external" href="https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/">create a new branch</a> to develop the feature. You can then <a class="reference external" href="https://help.github.com/articles/creating-a-pull-request/">create a pull request</a> so that the PyCBC maintainers can review and merge your changes into the official repository.</p>
+<p>Create a virtual environment for your development or production environment and
+do a clean install. The following will create a python3 environment: currently PyCBC requires python3.7 or higher.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>virtualenv<span class="w"> </span>-p<span class="w"> </span>python3<span class="w"> </span>env
+<span class="nb">source</span><span class="w"> </span>env/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip<span class="w"> </span>setuptools
+</pre></div>
+</div>
+<p>We can then make a fresh clone of the repository.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:gwastro/pycbc.git
+</pre></div>
+</div>
+<p>Finally, install the most common pycbc develeopment environment packages
+as follows.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>pycbc
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>companion.txt
+pip<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+<section id="development-build-on-ldg-igwn-clusters">
+<h3>Development build on LDG / IGWN clusters<a class="headerlink" href="#development-build-on-ldg-igwn-clusters" title="Link to this heading"></a></h3>
+<p>The above instructions require some adjustment when working on a LIGO or other GW collaboration
+compute cluster (eg CIT).  The main issue is that the default environment may not include a
+sufficiently recent python version (&gt;=3.7).  The standard workaround is to use a python executable
+available in a ‘IGWN Conda’ environment.  To see what environments are available, you can run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>info<span class="w"> </span>--envs
+</pre></div>
+</div>
+<p>This should yield <code class="docutils literal notranslate"><span class="pre">igwn-py37</span></code> as one choice.  The output of this command will also
+tell you the location of the environment in the file system.  Then, the location of the
+python3.7 executable is for instance <code class="docutils literal notranslate"><span class="pre">/cvmfs/software.igwn.org/conda/envs/igwn-py37/bin/python</span></code>
+and you will create the virtualenv via the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>virtualenv<span class="w"> </span>-p<span class="w"> </span>/cvmfs/software.igwn.org/conda/envs/igwn-py37/bin/python<span class="w"> </span>env
+</pre></div>
+</div>
+<p>Once the virtualenv has been created you can install PyCBC from PyPI or a local
+copy with the <cite>[igwn]</cite> extra specifier to install the optional extra requirements
+recommended for IGWN users:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-igwn.txt
+pip<span class="w"> </span>install<span class="w"> </span>.<span class="o">[</span>igwn<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="other-scenarios">
+<h2>Other scenarios<a class="headerlink" href="#other-scenarios" title="Link to this heading"></a></h2>
+<section id="docker">
+<h3>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h3>
+<p>For more details, including instructions on starting a docker container  see:</p>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+</div>
+</div></blockquote>
+</section>
+<section id="building-the-documentation">
+<h3>Building the Documentation<a class="headerlink" href="#building-the-documentation" title="Link to this heading"></a></h3>
+<p>To build the documentation from your virtual environment, first make sure that you have <a class="reference external" href="http://sphinx-doc.org/">Sphinx</a> and the required helper tools installed with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;Sphinx&gt;=1.5.0&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span>sphinx-rtd-theme
+pip<span class="w"> </span>install<span class="w"> </span>sphinxcontrib-programoutput
+</pre></div>
+</div>
+<p>You can then build the documentation locally as</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>setup.py<span class="w"> </span>build_docs
+</pre></div>
+</div>
+<p>The documentation will show up locally in ‘docs/_build/html’.</p>
+</section>
+<section id="use-of-intel-mkl-optimized-fft-libraries">
+<h3>Use of Intel MKL Optimized FFT libraries<a class="headerlink" href="#use-of-intel-mkl-optimized-fft-libraries" title="Link to this heading"></a></h3>
+<p>PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MKL is the correct library for your platform,
+you can add the script that sets up the MKL environment to you virtualenv <code class="docutils literal notranslate"><span class="pre">activate</span></code> script with the command. Typically,
+the MKl source command appears as follows but may vary depending on your cluster / environment.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;source /opt/intel/bin/compilervars.sh intel64&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="graphics-processing-unit-support-with-cuda">
+<h3>Graphics Processing Unit support with CUDA<a class="headerlink" href="#graphics-processing-unit-support-with-cuda" title="Link to this heading"></a></h3>
+<p>PyCBC has the ability to accelerate its processing using CUDA. To take advantage of this, follow the instructions linked below to install the CUDA dependencies.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install_cuda.html">Instructions to add CUDA support (optional)</a></li>
+</ul>
+</div>
+</section>
+<section id="related-help">
+<h3>Related Help<a class="headerlink" href="#related-help" title="Link to this heading"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install_virtualenv.html">Setting up virtualenv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install_lalsuite.html">Installing lalsuite for PyCBC</a></li>
+</ul>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="PyCBC: Powering Gravitational-wave Astronomy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="docker.html" class="btn btn-neutral float-right" title="Running PyCBC under Docker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

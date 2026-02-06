@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.filter.qtransform &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.filter.qtransform</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.filter.qtransform</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2017  Hunter A. Gabbard, Andrew Lundgren,</span>
+<span class="c1">#                     Duncan Macleod, Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module retrives a timeseries and then calculates</span>
+<span class="sd">the q-transform of that time series</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ceil</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">exp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types.timeseries</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">TimeSeries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">ifft</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">zeros</span>
+
+<div class="viewcode-block" id="qplane">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.qtransform.qplane">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qplane</span><span class="p">(</span><span class="n">qplane_tile_dict</span><span class="p">,</span> <span class="n">fseries</span><span class="p">,</span> <span class="n">return_complex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs q-transform on each tile for each q-plane and selects</span>
+<span class="sd">       tile with the maximum energy. Q-transform can then</span>
+<span class="sd">       be interpolated to a desired frequency and time resolution.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qplane_tile_dict:</span>
+<span class="sd">        Dictionary containing a list of q-tile tupples for each q-plane</span>
+<span class="sd">    fseries: &#39;pycbc FrequencySeries&#39;</span>
+<span class="sd">        frequency-series data set</span>
+<span class="sd">    return_complex: {False, bool}</span>
+<span class="sd">        Return the raw complex series instead of the normalized power.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    q : float</span>
+<span class="sd">        The q of the maximum q plane</span>
+<span class="sd">    times : numpy.ndarray</span>
+<span class="sd">        The time that the qtransform is sampled.</span>
+<span class="sd">    freqs : numpy.ndarray</span>
+<span class="sd">        The frequencies that the qtransform is samled.</span>
+<span class="sd">    qplane : numpy.ndarray (2d)</span>
+<span class="sd">        The two dimensional interpolated qtransform of this time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># store q-transforms for each q in a dict</span>
+    <span class="n">qplanes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">max_energy</span><span class="p">,</span> <span class="n">max_key</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">qplane_tile_dict</span><span class="p">):</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">f0</span> <span class="ow">in</span> <span class="n">qplane_tile_dict</span><span class="p">[</span><span class="n">q</span><span class="p">]:</span>
+            <span class="n">energy</span> <span class="o">=</span> <span class="n">qseries</span><span class="p">(</span><span class="n">fseries</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">f0</span><span class="p">,</span> <span class="n">return_complex</span><span class="o">=</span><span class="n">return_complex</span><span class="p">)</span>
+            <span class="n">menergy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">menergy</span> <span class="o">&gt;</span> <span class="n">max_energy</span><span class="p">:</span>
+                <span class="n">max_energy</span> <span class="o">=</span> <span class="n">menergy</span>
+                <span class="n">max_key</span> <span class="o">=</span> <span class="n">q</span>
+
+        <span class="n">qplanes</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="n">energies</span>
+
+    <span class="c1"># record q-transform output for peak q</span>
+    <span class="n">plane</span> <span class="o">=</span> <span class="n">qplanes</span><span class="p">[</span><span class="n">max_key</span><span class="p">]</span>
+    <span class="n">frequencies</span> <span class="o">=</span> <span class="n">qplane_tile_dict</span><span class="p">[</span><span class="n">max_key</span><span class="p">]</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">plane</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">plane</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">plane</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">max_key</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">frequencies</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">plane</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qtiling">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.qtransform.qtiling">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qtiling</span><span class="p">(</span><span class="n">fseries</span><span class="p">,</span> <span class="n">qrange</span><span class="p">,</span> <span class="n">frange</span><span class="p">,</span> <span class="n">mismatch</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterable constructor of QTile tuples</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fseries: &#39;pycbc FrequencySeries&#39;</span>
+<span class="sd">        frequency-series data set</span>
+<span class="sd">    qrange:</span>
+<span class="sd">        upper and lower bounds of q range</span>
+<span class="sd">    frange:</span>
+<span class="sd">        upper and lower bounds of frequency range</span>
+<span class="sd">    mismatch:</span>
+<span class="sd">        percentage of desired fractional mismatch</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    qplane_tile_dict: &#39;dict&#39;</span>
+<span class="sd">        dictionary containing Q-tile tuples for a set of Q-planes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qplane_tile_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_iter_qs</span><span class="p">(</span><span class="n">qrange</span><span class="p">,</span> <span class="n">deltam_f</span><span class="p">(</span><span class="n">mismatch</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qs</span><span class="p">:</span>
+        <span class="n">qtilefreq</span> <span class="o">=</span> <span class="n">_iter_frequencies</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">frange</span><span class="p">,</span> <span class="n">mismatch</span><span class="p">,</span> <span class="n">fseries</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+        <span class="n">qplane_tile_dict</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">qtilefreq</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">qplane_tile_dict</span></div>
+
+
+<div class="viewcode-block" id="deltam_f">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.qtransform.deltam_f">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">deltam_f</span><span class="p">(</span><span class="n">mismatch</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fractional mismatch between neighbouring tiles</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mismatch: &#39;float&#39;</span>
+<span class="sd">        percentage of desired fractional mismatch</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :type: &#39;float&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">mismatch</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_iter_qs</span><span class="p">(</span><span class="n">qrange</span><span class="p">,</span> <span class="n">deltam</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterate over the Q values</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    qrange:</span>
+<span class="sd">        upper and lower bounds of q range</span>
+<span class="sd">    deltam:</span>
+<span class="sd">        Fractional mismatch between neighbouring tiles</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Q-value:</span>
+<span class="sd">        Q value for Q-tile</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># work out how many Qs we need</span>
+    <span class="n">cumum</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">qrange</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">qrange</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">nplanes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ceil</span><span class="p">(</span><span class="n">cumum</span> <span class="o">/</span> <span class="n">deltam</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">dq</span> <span class="o">=</span> <span class="n">cumum</span> <span class="o">/</span> <span class="n">nplanes</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nplanes</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">qrange</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="n">dq</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mf">.5</span><span class="p">))</span>
+    <span class="k">return</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_iter_frequencies</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">frange</span><span class="p">,</span> <span class="n">mismatch</span><span class="p">,</span> <span class="n">dur</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Iterate over the frequencies of this &#39;QPlane&#39;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    q:</span>
+<span class="sd">        q value</span>
+<span class="sd">    frange: &#39;list&#39;</span>
+<span class="sd">        upper and lower bounds of frequency range</span>
+<span class="sd">    mismatch:</span>
+<span class="sd">        percentage of desired fractional mismatch</span>
+<span class="sd">    dur:</span>
+<span class="sd">        duration of timeseries in seconds</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    frequencies:</span>
+<span class="sd">        Q-Tile frequency</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># work out how many frequencies we need</span>
+    <span class="n">minf</span><span class="p">,</span> <span class="n">maxf</span> <span class="o">=</span> <span class="n">frange</span>
+    <span class="n">fcum_mismatch</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">maxf</span><span class="p">)</span> <span class="o">/</span> <span class="n">minf</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">q</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span>
+    <span class="n">nfreq</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ceil</span><span class="p">(</span><span class="n">fcum_mismatch</span> <span class="o">/</span> <span class="n">deltam_f</span><span class="p">(</span><span class="n">mismatch</span><span class="p">))))</span>
+    <span class="n">fstep</span> <span class="o">=</span> <span class="n">fcum_mismatch</span> <span class="o">/</span> <span class="n">nfreq</span>
+    <span class="n">fstepmin</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">dur</span>
+    <span class="c1"># for each frequency, yield a QTile</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nfreq</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">minf</span><span class="p">)</span> <span class="o">*</span>
+               <span class="n">exp</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">q</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mf">.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">fstep</span><span class="p">)</span> <span class="o">//</span>
+               <span class="n">fstepmin</span> <span class="o">*</span> <span class="n">fstepmin</span><span class="p">)</span>
+    <span class="k">return</span>
+
+<div class="viewcode-block" id="qseries">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.qtransform.qseries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qseries</span><span class="p">(</span><span class="n">fseries</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">f0</span><span class="p">,</span> <span class="n">return_complex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the energy &#39;TimeSeries&#39; for the given fseries</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fseries: &#39;pycbc FrequencySeries&#39;</span>
+<span class="sd">        frequency-series data set</span>
+<span class="sd">    Q:</span>
+<span class="sd">        q value</span>
+<span class="sd">    f0:</span>
+<span class="sd">        central frequency</span>
+<span class="sd">    return_complex: {False, bool}</span>
+<span class="sd">        Return the raw complex series instead of the normalized power.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    energy: &#39;~pycbc.types.TimeSeries&#39;</span>
+<span class="sd">        A &#39;TimeSeries&#39; of the normalized energy from the Q-transform of</span>
+<span class="sd">        this tile against the data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># normalize and generate bi-square window</span>
+    <span class="n">qprime</span> <span class="o">=</span> <span class="n">Q</span> <span class="o">/</span> <span class="mi">11</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">315.</span> <span class="o">*</span> <span class="n">qprime</span> <span class="o">/</span> <span class="p">(</span><span class="mf">128.</span> <span class="o">*</span> <span class="n">f0</span><span class="p">))</span>
+    <span class="n">window_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">f0</span> <span class="o">/</span> <span class="n">qprime</span> <span class="o">*</span> <span class="n">fseries</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">xfrequencies</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="n">window_size</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">f0</span> <span class="o">-</span> <span class="p">(</span><span class="n">f0</span> <span class="o">/</span> <span class="n">qprime</span><span class="p">))</span> <span class="o">*</span> <span class="n">fseries</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">window_size</span><span class="p">)</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">end</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="n">windowed</span> <span class="o">=</span> <span class="n">fseries</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">xfrequencies</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">norm</span>
+
+    <span class="n">tlen</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fseries</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="n">windowed</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">tlen</span><span class="p">)</span>
+    <span class="n">windowed</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="n">center</span><span class="p">)</span>
+
+    <span class="c1"># calculate the time series for this q -value</span>
+    <span class="n">windowed</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">windowed</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">fseries</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span>
+                            <span class="n">epoch</span><span class="o">=</span><span class="n">fseries</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+    <span class="n">ctseries</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">tlen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">),</span>
+                            <span class="n">delta_t</span><span class="o">=</span><span class="n">fseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="n">ifft</span><span class="p">(</span><span class="n">windowed</span><span class="p">,</span> <span class="n">ctseries</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_complex</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ctseries</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">ctseries</span><span class="o">.</span><span class="n">squared_norm</span><span class="p">()</span>
+        <span class="n">medianenergy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">energy</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+        <span class="k">return</span>  <span class="n">energy</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">medianenergy</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

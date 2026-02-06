@@ -1,0 +1,291 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.followup &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.followup</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.followup</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; This module provides functions to generate followup plots and trigger</span>
+<span class="sd">time series.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="o">,</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="c1"># Only if a backend is not already set ... This should really *not* be done</span>
+<span class="c1"># here, but in the executables you should set matplotlib.use()</span>
+<span class="c1"># This matches the check that matplotlib does internally, but this *may* be</span>
+<span class="c1"># version dependenant. If this is a problem then remove this and control from</span>
+<span class="c1"># the executables directly.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="k">if</span> <span class="s1">&#39;matplotlib.backends&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;agg&#39;</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mpld3</span><span class="o">,</span><span class="w"> </span><span class="nn">mpld3.plugins</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="kn">import</span> <span class="n">segment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+
+<div class="viewcode-block" id="columns_from_file_list">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.followup.columns_from_file_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">columns_from_file_list</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return columns of information stored in single detector trigger</span>
+<span class="sd">    files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_list_file : string</span>
+<span class="sd">        pickle file containing the list of single detector</span>
+<span class="sd">    triggers.</span>
+<span class="sd">    ifo : string</span>
+<span class="sd">        The ifo to return triggers for.</span>
+<span class="sd">    columns : list of strings</span>
+<span class="sd">        The list of columns to read from the trigger files.</span>
+<span class="sd">    start : int</span>
+<span class="sd">        The start time to get triggers from</span>
+<span class="sd">    end : int</span>
+<span class="sd">        The end time to get triggers from</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    trigger_dict : dict</span>
+<span class="sd">        A dictionary of column vectors with column names as keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_list</span> <span class="o">=</span> <span class="n">file_list</span><span class="o">.</span><span class="n">find_output_with_ifo</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+    <span class="n">file_list</span> <span class="o">=</span> <span class="n">file_list</span><span class="o">.</span><span class="n">find_all_output_in_range</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">segment</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+
+    <span class="n">trig_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">trig_file</span> <span class="ow">in</span> <span class="n">file_list</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="n">trig_file</span><span class="o">.</span><span class="n">storage_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+        <span class="n">time</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">][:]</span>
+        <span class="n">pick</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">time</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">,</span> <span class="n">time</span> <span class="o">&gt;</span> <span class="n">start</span><span class="p">)</span>
+        <span class="n">pick_loc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pick</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trig_dict</span><span class="p">:</span>
+                <span class="n">trig_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">trig_dict</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">trig_dict</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="n">col</span><span class="p">][:][</span><span class="n">pick_loc</span><span class="p">]])</span>
+
+    <span class="k">return</span> <span class="n">trig_dict</span></div>
+
+
+<span class="n">ifo_color</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H1&#39;</span><span class="p">:</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">:</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;V1&#39;</span><span class="p">:</span><span class="s1">&#39;green&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="coinc_timeseries_plot">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.followup.coinc_timeseries_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">coinc_timeseries_plot</span><span class="p">(</span><span class="n">coinc_file</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="n">coinc_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="n">stat1</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/stat1&#39;</span><span class="p">]</span>
+    <span class="n">stat2</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/stat2&#39;</span><span class="p">]</span>
+    <span class="n">time1</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/time1&#39;</span><span class="p">]</span>
+    <span class="n">time2</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;foreground/time2&#39;</span><span class="p">]</span>
+    <span class="n">ifo1</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;detector_1&#39;</span><span class="p">]</span>
+    <span class="n">ifo2</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;detector_2&#39;</span><span class="p">]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">time1</span><span class="p">,</span> <span class="n">stat1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">ifo1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ifo_color</span><span class="p">[</span><span class="n">ifo1</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">time2</span><span class="p">,</span> <span class="n">stat2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">ifo2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ifo_color</span><span class="p">[</span><span class="n">ifo2</span><span class="p">])</span>
+
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;.12g&#39;</span>
+    <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">MousePosition</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;NewSNR&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">fig_to_html</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="trigger_timeseries_plot">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.followup.trigger_timeseries_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">trigger_timeseries_plot</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">trigs</span> <span class="o">=</span> <span class="n">columns_from_file_list</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span>
+                                       <span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">,</span> <span class="s1">&#39;end_time&#39;</span><span class="p">],</span>
+                                       <span class="n">ifo</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">trigs</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">],</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span>
+                      <span class="n">color</span><span class="o">=</span><span class="n">ifo_color</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;.12g&#39;</span>
+        <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">MousePosition</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;SNR&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">mpld3</span><span class="o">.</span><span class="n">fig_to_html</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="times_to_urls">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.followup.times_to_urls">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">times_to_urls</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="s1">&#39;/../followup/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span>
+    <span class="k">return</span> <span class="n">times_to_links</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="times_to_links">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.followup.times_to_links">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">times_to_links</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">base</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="s2">&quot;&lt;a href=&#39;/../followup/</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&#39; target=&#39;_blank&#39;&gt;followup&lt;/a&gt;&quot;</span>
+
+    <span class="n">urls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">times</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span> <span class="o">-</span> <span class="n">window</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span> <span class="o">+</span> <span class="n">window</span>
+        <span class="n">urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">base</span> <span class="o">%</span> <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">urls</span></div>
+
+
+<div class="viewcode-block" id="get_gracedb_search_link">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.followup.get_gracedb_search_link">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_gracedb_search_link</span><span class="p">(</span><span class="n">time</span><span class="p">):</span>
+    <span class="c1"># Set up a search string for a 3s window around the coincidence</span>
+    <span class="n">gdb_search_query</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%.0f</span><span class="s1">+..+</span><span class="si">%.0f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                         <span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">gdb_search_url</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;https://gracedb.ligo.org/search/?query=&#39;</span>
+                      <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&amp;query_type=S&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gdb_search_query</span><span class="p">))</span>
+    <span class="n">gdb_search_link</span> <span class="o">=</span> <span class="s1">&#39;&lt;a href=&quot;&#39;</span> <span class="o">+</span> <span class="n">gdb_search_url</span> <span class="o">+</span> <span class="s1">&#39;&quot;&gt;Search&lt;/a&gt;&#39;</span>
+    <span class="k">return</span> <span class="n">gdb_search_link</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

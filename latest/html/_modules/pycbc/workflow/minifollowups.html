@@ -1,0 +1,1450 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.minifollowups &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.minifollowups</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.minifollowups</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2015 Christopher M. Biwer, Alexander Harvey Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">segments</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">coinc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Executable</span><span class="p">,</span> <span class="n">FileList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">makedir</span><span class="p">,</span> <span class="n">resolve_url_to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlotExecutable</span><span class="p">,</span> <span class="n">requirestr</span><span class="p">,</span> <span class="n">excludestr</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># Python 3</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">zip_longest</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c1"># Python 2</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">izip_longest</span> <span class="k">as</span> <span class="n">zip_longest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.pegasus_workflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">SubWorkflow</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.minifollowups&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="grouper">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.grouper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">grouper</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create a list of n length tuples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span>
+    <span class="k">return</span> <span class="n">zip_longest</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="setup_foreground_minifollowups">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.setup_foreground_minifollowups">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_foreground_minifollowups</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">,</span> <span class="n">single_triggers</span><span class="p">,</span>
+                       <span class="n">tmpltbank_file</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">,</span>
+                       <span class="n">insp_anal_name</span><span class="p">,</span> <span class="n">dax_output</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                       <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create plots that followup the Nth loudest coincident injection</span>
+<span class="sd">    from a statmap produced HDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">        The core workflow instance we are populating</span>
+<span class="sd">    coinc_file:</span>
+<span class="sd">    single_triggers: list of pycbc.workflow.File</span>
+<span class="sd">        A list cointaining the file objects associated with the merged</span>
+<span class="sd">        single detector trigger files for each ifo.</span>
+<span class="sd">    tmpltbank_file: pycbc.workflow.File</span>
+<span class="sd">        The file object pointing to the HDF format template bank</span>
+<span class="sd">    insp_segs: SegFile</span>
+<span class="sd">       The segment file containing the data read and analyzed by each inspiral</span>
+<span class="sd">       job.</span>
+<span class="sd">    insp_data_name: str</span>
+<span class="sd">        The name of the segmentlist storing data read.</span>
+<span class="sd">    insp_anal_name: str</span>
+<span class="sd">        The name of the segmentlist storing data analyzed.</span>
+<span class="sd">    dax_output : directory</span>
+<span class="sd">        Location of the dax outputs</span>
+<span class="sd">    out_dir: path</span>
+<span class="sd">        The directory to store minifollowups result plots and files</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the minifollowups executables</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    layout: list</span>
+<span class="sd">        A list of tuples which specify the displayed file layout for the</span>
+<span class="sd">        minifollops plots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Entering minifollowups module&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;workflow-minifollowups&#39;</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;There is no [workflow-minifollowups] section in &#39;</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;configuration file&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dax_output</span><span class="p">)</span>
+
+    <span class="c1"># turn the config file into a File class</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dax_output</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;foreground_minifollowup.ini&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">))</span>
+
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;foreground_minifollowup&#39;</span><span class="p">,</span>
+                     <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">dax_output</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--config-files&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--statmap-file&#39;</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_multiifo_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--single-detector-triggers&#39;</span><span class="p">,</span>
+                                     <span class="n">single_triggers</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-segments&#39;</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-read-name&#39;</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-analyzed-name&#39;</span><span class="p">,</span> <span class="n">insp_anal_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_list_opt</span><span class="p">(</span><span class="s1">&#39;--tags&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax&#39;</span><span class="p">,</span> <span class="s1">&#39;--dax-file&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax.map&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-map&#39;</span><span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--workflow-name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--dax-file-directory&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="c1"># execute this in a sub-workflow</span>
+    <span class="n">fil</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># determine if a staging site has been specified</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">SubWorkflow</span><span class="p">(</span><span class="n">fil</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">is_planned</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">tmpltbank_file</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="n">single_triggers</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_inputs</span><span class="p">(</span><span class="o">*</span><span class="n">input_files</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">set_subworkflow_properties</span><span class="p">(</span><span class="n">map_file</span><span class="p">,</span>
+                                   <span class="n">staging_site</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">staging_site</span><span class="p">,</span>
+                                   <span class="n">cache_file</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">cache_file</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_into_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups module&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="setup_single_det_minifollowups">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.setup_single_det_minifollowups">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_single_det_minifollowups</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">single_trig_file</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">,</span>
+                                   <span class="n">insp_segs</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">,</span> <span class="n">insp_anal_name</span><span class="p">,</span>
+                                   <span class="n">dax_output</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">veto_segment_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fg_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">fg_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">statfiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create plots that followup the Nth loudest clustered single detector</span>
+<span class="sd">    triggers from a merged single detector trigger HDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">        The core workflow instance we are populating</span>
+<span class="sd">    single_trig_file: pycbc.workflow.File</span>
+<span class="sd">        The File class holding the single detector triggers.</span>
+<span class="sd">    tmpltbank_file: pycbc.workflow.File</span>
+<span class="sd">        The file object pointing to the HDF format template bank</span>
+<span class="sd">    insp_segs: SegFile</span>
+<span class="sd">       The segment file containing the data read by each inspiral job.</span>
+<span class="sd">    insp_data_name: str</span>
+<span class="sd">        The name of the segmentlist storing data read.</span>
+<span class="sd">    insp_anal_name: str</span>
+<span class="sd">        The name of the segmentlist storing data analyzed.</span>
+<span class="sd">    out_dir: path</span>
+<span class="sd">        The directory to store minifollowups result plots and files</span>
+<span class="sd">    statfiles: FileList (optional, default=None)</span>
+<span class="sd">        Supplementary files necessary for computing the single-detector</span>
+<span class="sd">        statistic.</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the minifollowups executables</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    layout: list</span>
+<span class="sd">        A list of tuples which specify the displayed file layout for the</span>
+<span class="sd">        minifollops plots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Entering minifollowups module&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;workflow-sngl_minifollowups&#39;</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;There is no [workflow-sngl_minifollowups] section in &#39;</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;configuration file&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dax_output</span><span class="p">)</span>
+
+    <span class="c1"># turn the config file into a File class</span>
+    <span class="n">curr_ifo</span> <span class="o">=</span> <span class="n">single_trig_file</span><span class="o">.</span><span class="n">ifo</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dax_output</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">curr_ifo</span> <span class="o">+</span> \
+                                   <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;singles_minifollowup.ini&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">))</span>
+
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;singles_minifollowup&#39;</span><span class="p">,</span>
+                     <span class="n">ifos</span><span class="o">=</span><span class="n">curr_ifo</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">dax_output</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--config-files&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--single-detector-file&#39;</span><span class="p">,</span> <span class="n">single_trig_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-segments&#39;</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-read-name&#39;</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-analyzed-name&#39;</span><span class="p">,</span> <span class="n">insp_anal_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--instrument&#39;</span><span class="p">,</span> <span class="n">curr_ifo</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">veto_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">veto_segment_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--veto-segment-name&#39;</span><span class="p">,</span> <span class="n">veto_segment_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fg_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">fg_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--foreground-censor-file&#39;</span><span class="p">,</span> <span class="n">fg_file</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--foreground-segment-name&#39;</span><span class="p">,</span> <span class="n">fg_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">statfiles</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span>
+            <span class="s1">&#39;--statistic-files&#39;</span><span class="p">,</span>
+            <span class="n">statfiles</span><span class="p">,</span>
+            <span class="n">check_existing_options</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_list_opt</span><span class="p">(</span><span class="s1">&#39;--tags&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax&#39;</span><span class="p">,</span> <span class="s1">&#39;--dax-file&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax.map&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;--output-map&#39;</span><span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--workflow-name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--dax-file-directory&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="c1"># execute this in a sub-workflow</span>
+    <span class="n">fil</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">job</span> <span class="o">=</span> <span class="n">SubWorkflow</span><span class="p">(</span><span class="n">fil</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">is_planned</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">tmpltbank_file</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">,</span> <span class="n">single_trig_file</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">veto_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">input_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">veto_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">statfiles</span><span class="p">:</span>
+        <span class="n">input_files</span> <span class="o">+=</span> <span class="n">statfiles</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_inputs</span><span class="p">(</span><span class="o">*</span><span class="n">input_files</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">set_subworkflow_properties</span><span class="p">(</span><span class="n">map_file</span><span class="p">,</span>
+                                   <span class="n">staging_site</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">staging_site</span><span class="p">,</span>
+                                   <span class="n">cache_file</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">cache_file</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_into_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups module&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="setup_injection_minifollowups">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.setup_injection_minifollowups">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_injection_minifollowups</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">,</span> <span class="n">inj_xml_file</span><span class="p">,</span>
+                                  <span class="n">single_triggers</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">,</span>
+                                  <span class="n">insp_segs</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">,</span> <span class="n">insp_anal_name</span><span class="p">,</span>
+                                  <span class="n">dax_output</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create plots that followup the closest missed injections</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">        The core workflow instance we are populating</span>
+<span class="sd">    coinc_file:</span>
+<span class="sd">    single_triggers: list of pycbc.workflow.File</span>
+<span class="sd">        A list cointaining the file objects associated with the merged</span>
+<span class="sd">        single detector trigger files for each ifo.</span>
+<span class="sd">    tmpltbank_file: pycbc.workflow.File</span>
+<span class="sd">        The file object pointing to the HDF format template bank</span>
+<span class="sd">    insp_segs: SegFile</span>
+<span class="sd">       The segment file containing the data read by each inspiral job.</span>
+<span class="sd">    insp_data_name: str</span>
+<span class="sd">        The name of the segmentlist storing data read.</span>
+<span class="sd">    insp_anal_name: str</span>
+<span class="sd">        The name of the segmentlist storing data analyzed.</span>
+<span class="sd">    out_dir: path</span>
+<span class="sd">        The directory to store minifollowups result plots and files</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the minifollowups executables</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    layout: list</span>
+<span class="sd">        A list of tuples which specify the displayed file layout for the</span>
+<span class="sd">        minifollops plots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Entering injection minifollowups module&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;workflow-injection_minifollowups&#39;</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;There is no [workflow-injection_minifollowups] section in &#39;</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;configuration file&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dax_output</span><span class="p">)</span>
+
+    <span class="c1"># turn the config file into a File class</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dax_output</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;injection_minifollowup.ini&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">))</span>
+
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;injection_minifollowup&#39;</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">dax_output</span><span class="p">)</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--config-files&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-file&#39;</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-xml-file&#39;</span><span class="p">,</span> <span class="n">inj_xml_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_multiifo_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--single-detector-triggers&#39;</span><span class="p">,</span> <span class="n">single_triggers</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-segments&#39;</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-read-name&#39;</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-analyzed-name&#39;</span><span class="p">,</span> <span class="n">insp_anal_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_list_opt</span><span class="p">(</span><span class="s1">&#39;--tags&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax&#39;</span><span class="p">,</span> <span class="s1">&#39;--dax-file&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax.map&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-map&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--workflow-name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--dax-file-directory&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="c1"># execute this in a sub-workflow</span>
+    <span class="n">fil</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">job</span> <span class="o">=</span> <span class="n">SubWorkflow</span><span class="p">(</span><span class="n">fil</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">is_planned</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">tmpltbank_file</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">,</span> <span class="n">inj_xml_file</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">]</span>
+    <span class="n">input_files</span> <span class="o">+=</span> <span class="n">single_triggers</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_inputs</span><span class="p">(</span><span class="o">*</span><span class="n">input_files</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">set_subworkflow_properties</span><span class="p">(</span><span class="n">map_file</span><span class="p">,</span>
+                                   <span class="n">staging_site</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">staging_site</span><span class="p">,</span>
+                                   <span class="n">cache_file</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">cache_file</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_into_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving injection minifollowups module&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SingleTemplateExecutable">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.SingleTemplateExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleTemplateExecutable</span><span class="p">(</span><span class="n">PlotExecutable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to be used for to create workflow.Executable instances for the</span>
+<span class="sd">    pycbc_single_template executable. Basically inherits directly from</span>
+<span class="sd">    PlotExecutable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">time_dependent_options</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;--channel-name&#39;</span><span class="p">,</span> <span class="s1">&#39;--frame-type&#39;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="SingleTimeFreqExecutable">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.SingleTimeFreqExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleTimeFreqExecutable</span><span class="p">(</span><span class="n">PlotExecutable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to be used for to create workflow.Executable instances for the</span>
+<span class="sd">    pycbc_plot_singles_timefreq executable. Basically inherits directly from</span>
+<span class="sd">    PlotExecutable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">time_dependent_options</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;--channel-name&#39;</span><span class="p">,</span> <span class="s1">&#39;--frame-type&#39;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="PlotQScanExecutable">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.PlotQScanExecutable">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PlotQScanExecutable</span><span class="p">(</span><span class="n">PlotExecutable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to be used for to create workflow.Executable instances for the</span>
+<span class="sd">    pycbc_plot_qscan executable. Basically inherits directly from</span>
+<span class="sd">    PlotExecutable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">time_dependent_options</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;--channel-name&#39;</span><span class="p">,</span> <span class="s1">&#39;--frame-type&#39;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_single_template_params">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.get_single_template_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_single_template_params</span><span class="p">(</span><span class="n">curr_idx</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">bank_data</span><span class="p">,</span>
+                               <span class="n">bank_id</span><span class="p">,</span> <span class="n">fsdt</span><span class="p">,</span> <span class="n">tids</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A function to get the parameters needed for the make_single_template_files</span>
+<span class="sd">    function.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    curr_idx : int</span>
+<span class="sd">        The index of the event in the file</span>
+<span class="sd">    times : dictionary keyed on IFO of numpy arrays, dtype float</span>
+<span class="sd">        The array of trigger times for each detector</span>
+<span class="sd">    bank_data : dictionary or h5py file</span>
+<span class="sd">        Structure containing the bank information</span>
+<span class="sd">    bank_id : int</span>
+<span class="sd">        The template index within the bank</span>
+<span class="sd">    fsdt : dictionary of h5py files, keyed on IFO</span>
+<span class="sd">        The single-detector TRIGGER_MERGE files, keyed by IFO</span>
+<span class="sd">    tids : dictionary keyed on IFO of numpy arrays, dtype int</span>
+<span class="sd">        The trigger indexes in fsdt for each IFO</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    params : dictionary</span>
+<span class="sd">        A dictionary containing the parameters needed for the event used</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">times</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_end_time&#39;</span> <span class="o">%</span> <span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">curr_idx</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Only present for precessing, so may not exist</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;u_vals_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> \
+                                 <span class="n">fsdt</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">ifo</span><span class="p">][</span><span class="s1">&#39;u_vals&#39;</span><span class="p">][</span><span class="n">tids</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">curr_idx</span><span class="p">]]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coinc</span><span class="o">.</span><span class="n">mean_if_greater_than_zero</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">times</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">curr_idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">times</span><span class="p">]</span>
+    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;approximant&#39;</span> <span class="ow">in</span> <span class="n">bank_data</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="c1"># don&#39;t require precessing template info if not present</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bank_data</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">][</span><span class="n">bank_id</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">params</span></div>
+
+
+
+<div class="viewcode-block" id="make_single_template_files">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_single_template_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_single_template_files</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">segs</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">data_read_name</span><span class="p">,</span>
+                               <span class="n">analyzed_name</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">inj_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">store_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_mean_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">use_exact_inj_params</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function for creating jobs to run the pycbc_single_template code and</span>
+<span class="sd">    add these jobs to the workflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : workflow.Workflow instance</span>
+<span class="sd">        The pycbc.workflow.Workflow instance to add these jobs to.</span>
+<span class="sd">    segs : workflow.File instance</span>
+<span class="sd">        The pycbc.workflow.File instance that points to the XML file containing</span>
+<span class="sd">        the segment lists of data read in and data analyzed.</span>
+<span class="sd">    ifo: str</span>
+<span class="sd">        The name of the interferometer</span>
+<span class="sd">    data_read_name : str</span>
+<span class="sd">        The name of the segmentlist containing the data read in by each</span>
+<span class="sd">        inspiral job in the segs file.</span>
+<span class="sd">    analyzed_name : str</span>
+<span class="sd">        The name of the segmentlist containing the data analyzed by each</span>
+<span class="sd">        inspiral job in the segs file.</span>
+<span class="sd">    params : dictionary</span>
+<span class="sd">        A dictionary containing the parameters of the template to be used.</span>
+<span class="sd">        params[ifo+&#39;end_time&#39;] is required for all ifos in workflow.ifos.</span>
+<span class="sd">        If use_exact_inj_params is False then also need to supply values for</span>
+<span class="sd">        [mass1, mass2, spin1z, spin2x]. For precessing templates one also</span>
+<span class="sd">        needs to supply [spin1y, spin1x, spin2x, spin2y, inclination]</span>
+<span class="sd">        additionally for precession one must supply u_vals or</span>
+<span class="sd">        u_vals_+ifo for all ifos. u_vals is the ratio between h_+ and h_x to</span>
+<span class="sd">        use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.</span>
+<span class="sd">    out_dir : str</span>
+<span class="sd">        Directory in which to store the output files.</span>
+<span class="sd">    inj_file : workflow.File (optional, default=None)</span>
+<span class="sd">        If given send this injection file to the job so that injections are</span>
+<span class="sd">        made into the data.</span>
+<span class="sd">    exclude : list (optional, default=None)</span>
+<span class="sd">        If given, then when considering which subsections in the ini file to</span>
+<span class="sd">        parse for options to add to single_template_plot, only use subsections</span>
+<span class="sd">        that *do not* match strings in this list.</span>
+<span class="sd">    require : list (optional, default=None)</span>
+<span class="sd">        If given, then when considering which subsections in the ini file to</span>
+<span class="sd">        parse for options to add to single_template_plot, only use subsections</span>
+<span class="sd">        matching strings in this list.</span>
+<span class="sd">    tags : list (optional, default=None)</span>
+<span class="sd">        The tags to use for this job.</span>
+<span class="sd">    store_file : boolean (optional, default=False)</span>
+<span class="sd">        Keep the output files of this job.</span>
+<span class="sd">    use_mean_time : boolean (optional, default=False)</span>
+<span class="sd">        Use the mean time as the center time for all ifos</span>
+<span class="sd">    use_exact_inj_params : boolean (optional, default=False)</span>
+<span class="sd">        If True do not use masses and spins listed in the params dictionary</span>
+<span class="sd">        but instead use the injection closest to the filter time as a template.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    output_files : workflow.FileList</span>
+<span class="sd">        The list of workflow.Files created in this function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;single_template&#39;</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">requirestr</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">require</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">exclude</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifo_combinations</span><span class="p">)</span>
+    <span class="c1"># Reanalyze the time around the trigger in each detector</span>
+    <span class="n">curr_exe</span> <span class="o">=</span> <span class="n">SingleTemplateExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;single_template&#39;</span><span class="p">,</span>
+                                        <span class="n">ifos</span><span class="o">=</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+                                        <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;_end_time&#39;</span><span class="p">])</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">cseg</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">curr_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">valid_seg</span><span class="o">=</span><span class="n">cseg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_exact_inj_params</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--use-params-of-closest-injection&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--mass1&#39;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--mass2&#39;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin1z&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin2z&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--template-start-frequency&#39;</span><span class="p">,</span>
+                     <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">])</span>
+        <span class="c1"># Is this precessing?</span>
+        <span class="k">if</span> <span class="s1">&#39;u_vals&#39;</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">or</span> <span class="s1">&#39;u_vals_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin1x&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin1y&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin2x&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin2y&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inclination&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">])</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--u-val&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;u_vals&#39;</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--u-val&#39;</span><span class="p">,</span>
+                             <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;u_vals_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ifo</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;_end_time&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_mean_time</span><span class="p">:</span>
+        <span class="n">trig_time</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;_end_time&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">trig_time</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_time&#39;</span><span class="p">]</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--trigger-time&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">trig_time</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-segments&#39;</span><span class="p">,</span> <span class="n">segs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">inj_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-file&#39;</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--data-read-name&#39;</span><span class="p">,</span> <span class="n">data_read_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--data-analyzed-name&#39;</span><span class="p">,</span> <span class="n">analyzed_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;--output-file&#39;</span><span class="p">,</span> <span class="n">store_file</span><span class="o">=</span><span class="n">store_file</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+
+<div class="viewcode-block" id="make_single_template_plots">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_single_template_plots">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_single_template_plots</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">segs</span><span class="p">,</span> <span class="n">data_read_name</span><span class="p">,</span> <span class="n">analyzed_name</span><span class="p">,</span>
+                               <span class="n">params</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">inj_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">data_segments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">require</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">params_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">use_exact_inj_params</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function for creating jobs to run the pycbc_single_template code and</span>
+<span class="sd">    to run the associated plotting code pycbc_single_template_plots and add</span>
+<span class="sd">    these jobs to the workflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : workflow.Workflow instance</span>
+<span class="sd">        The pycbc.workflow.Workflow instance to add these jobs to.</span>
+<span class="sd">    segs : workflow.File instance</span>
+<span class="sd">        The pycbc.workflow.File instance that points to the XML file containing</span>
+<span class="sd">        the segment lists of data read in and data analyzed.</span>
+<span class="sd">    data_read_name : str</span>
+<span class="sd">        The name of the segmentlist containing the data read in by each</span>
+<span class="sd">        inspiral job in the segs file.</span>
+<span class="sd">    analyzed_name : str</span>
+<span class="sd">        The name of the segmentlist containing the data analyzed by each</span>
+<span class="sd">        inspiral job in the segs file.</span>
+<span class="sd">    params : dictionary</span>
+<span class="sd">        A dictionary containing the parameters of the template to be used.</span>
+<span class="sd">        params[ifo+&#39;end_time&#39;] is required for all ifos in workflow.ifos.</span>
+<span class="sd">        If use_exact_inj_params is False then also need to supply values for</span>
+<span class="sd">        [mass1, mass2, spin1z, spin2x]. For precessing templates one also</span>
+<span class="sd">        needs to supply [spin1y, spin1x, spin2x, spin2y, inclination]</span>
+<span class="sd">        additionally for precession one must supply u_vals or</span>
+<span class="sd">        u_vals_+ifo for all ifos. u_vals is the ratio between h_+ and h_x to</span>
+<span class="sd">        use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.</span>
+<span class="sd">    out_dir : str</span>
+<span class="sd">        Directory in which to store the output files.</span>
+<span class="sd">    inj_file : workflow.File (optional, default=None)</span>
+<span class="sd">        If given send this injection file to the job so that injections are</span>
+<span class="sd">        made into the data.</span>
+<span class="sd">    exclude : list (optional, default=None)</span>
+<span class="sd">        If given, then when considering which subsections in the ini file to</span>
+<span class="sd">        parse for options to add to single_template_plot, only use subsections</span>
+<span class="sd">        that *do not* match strings in this list.</span>
+<span class="sd">    require : list (optional, default=None)</span>
+<span class="sd">        If given, then when considering which subsections in the ini file to</span>
+<span class="sd">        parse for options to add to single_template_plot, only use subsections</span>
+<span class="sd">        matching strings in this list.</span>
+<span class="sd">    data_segments : dictionary of segment lists</span>
+<span class="sd">        Dictionary of segment lists keyed on the IFO. Used to decide if an</span>
+<span class="sd">        IFO is plotted if there is valid data. If not given, will plot if</span>
+<span class="sd">        the IFO produced a trigger which contributed to the event</span>
+<span class="sd">    tags : list (optional, default=None)</span>
+<span class="sd">        Add this list of tags to all jobs.</span>
+<span class="sd">    params_str : str (optional, default=None)</span>
+<span class="sd">        If given add this string to plot title and caption to describe the</span>
+<span class="sd">        template that was used.</span>
+<span class="sd">    use_exact_inj_params : boolean (optional, default=False)</span>
+<span class="sd">        If True do not use masses and spins listed in the params dictionary</span>
+<span class="sd">        but instead use the injection closest to the filter time as a template.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    hdf_files : workflow.FileList</span>
+<span class="sd">        The list of workflow.Files created by single_template jobs</span>
+<span class="sd">        in this function.</span>
+<span class="sd">    plot_files : workflow.FileList</span>
+<span class="sd">        The list of workflow.Files created by single_template_plot jobs</span>
+<span class="sd">        in this function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;single_template_plot&#39;</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">requirestr</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">require</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">exclude</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifo_combinations</span><span class="p">)</span>
+    <span class="n">hdf_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">plot_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+        <span class="n">valid</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_time&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">data_segments</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="k">if</span> <span class="n">data_segments</span> \
+                <span class="k">else</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_end_time&#39;</span> <span class="o">%</span> <span class="n">ifo</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">secs</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="c1"># If the IFO is not being used, continue</span>
+                <span class="k">continue</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">make_single_template_files</span><span class="p">(</span>
+                <span class="n">workflow</span><span class="p">,</span>
+                <span class="n">segs</span><span class="p">,</span>
+                <span class="n">ifo</span><span class="p">,</span>
+                <span class="n">data_read_name</span><span class="p">,</span>
+                <span class="n">analyzed_name</span><span class="p">,</span>
+                <span class="n">params</span><span class="p">,</span>
+                <span class="n">out_dir</span><span class="p">,</span>
+                <span class="n">inj_file</span><span class="o">=</span><span class="n">inj_file</span><span class="p">,</span>
+                <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span>
+                <span class="n">require</span><span class="o">=</span><span class="n">require</span><span class="p">,</span>
+                <span class="n">tags</span><span class="o">=</span><span class="n">tags</span> <span class="o">+</span> <span class="p">[</span><span class="n">tag</span><span class="p">],</span>
+                <span class="n">store_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">use_exact_inj_params</span><span class="o">=</span><span class="n">use_exact_inj_params</span>
+            <span class="p">)</span>
+            <span class="n">hdf_files</span> <span class="o">+=</span> <span class="n">data</span>
+            <span class="c1"># Make the plot for this trigger and detector</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                              <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">+</span> <span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--single-template-file&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;&#39;</span><span class="si">%s</span><span class="s2"> SNR and chi^2 timeseries&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params_str</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">title</span><span class="o">+=</span> <span class="s2">&quot; using </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">params_str</span><span class="p">)</span>
+            <span class="n">title</span><span class="o">+=</span><span class="s2">&quot;&#39;&quot;</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--plot-title&#39;</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+            <span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;&#39;The SNR and chi^2 timeseries around the injection&quot;</span>
+            <span class="k">if</span> <span class="n">params_str</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">caption</span> <span class="o">+=</span> <span class="s2">&quot; using </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">params_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">use_exact_inj_params</span><span class="p">:</span>
+                <span class="n">caption</span> <span class="o">+=</span> <span class="s2">&quot;. The injection itself was used as the template.&#39;&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">caption</span> <span class="o">+=</span> <span class="s2">&quot;. The template used has the following parameters: &quot;</span>
+                <span class="n">caption</span> <span class="o">+=</span> <span class="s2">&quot;mass1=</span><span class="si">%s</span><span class="s2">, mass2=</span><span class="si">%s</span><span class="s2">, spin1z=</span><span class="si">%s</span><span class="s2">, spin2z=</span><span class="si">%s</span><span class="s2">&#39;&quot;</span>\
+                       <span class="o">%</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span>
+                         <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--plot-caption&#39;</span><span class="p">,</span> <span class="n">caption</span><span class="p">)</span>
+            <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+            <span class="n">plot_files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">hdf_files</span><span class="p">,</span> <span class="n">plot_files</span></div>
+
+
+<div class="viewcode-block" id="make_plot_waveform_plot">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_plot_waveform_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_plot_waveform_plot</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">require</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add plot_waveform jobs to the workflow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;single_template_plot&#39;</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">requirestr</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">require</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">exclude</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifo_combinations</span><span class="p">)</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">secs</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;plot_waveform&#39;</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">ifos</span><span class="p">,</span>
+                              <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">+</span> <span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--mass1&#39;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--mass2&#39;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin1z&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin2z&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;u_vals&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="c1"># Precessing options</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin1x&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin2x&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin1y&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--spin2y&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inclination&#39;</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">])</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--u-val&#39;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%.6f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;u_vals&#39;</span><span class="p">])</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+        <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+        <span class="n">files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">files</span></div>
+
+
+<div class="viewcode-block" id="make_inj_info">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_inj_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_inj_info</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">,</span> <span class="n">injection_index</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                  <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;page_injinfo&#39;</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                              <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-file&#39;</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--injection-index&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">injection_index</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--n-nearest&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="n">files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">files</span></div>
+
+
+<div class="viewcode-block" id="make_coinc_info">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_coinc_info">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_coinc_info</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">singles</span><span class="p">,</span> <span class="n">bank</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                    <span class="n">n_loudest</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trig_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_substring</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">sort_order</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sort_var</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;page_coincinfo&#39;</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                              <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--single-trigger-files&#39;</span><span class="p">,</span> <span class="n">singles</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--statmap-file&#39;</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sort_order</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--sort-order&#39;</span><span class="p">,</span> <span class="n">sort_order</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sort_var</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--sort-variable&#39;</span><span class="p">,</span> <span class="n">sort_var</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_loudest</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--n-loudest&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_loudest</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">trig_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--trigger-id&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">trig_id</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--title&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file_substring</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--statmap-file-subspace-name&#39;</span><span class="p">,</span> <span class="n">file_substring</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="n">files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">files</span></div>
+
+
+<div class="viewcode-block" id="make_sngl_ifo">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_sngl_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_sngl_ifo</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">sngl_file</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span> <span class="n">trigger_id</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span>
+                  <span class="n">statfiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Setup a job to create sngl detector sngl ifo html summary snippet.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;page_snglinfo&#39;</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                              <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--single-trigger-file&#39;</span><span class="p">,</span> <span class="n">sngl_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--trigger-id&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">trigger_id</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--instrument&#39;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">statfiles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span>
+            <span class="s1">&#39;--statistic-files&#39;</span><span class="p">,</span>
+            <span class="n">statfiles</span><span class="p">,</span>
+            <span class="n">check_existing_options</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--title&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="n">files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">files</span></div>
+
+
+
+<div class="viewcode-block" id="make_trigger_timeseries">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_trigger_timeseries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_trigger_timeseries</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">singles</span><span class="p">,</span> <span class="n">ifo_times</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">special_tids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">require</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;plot_trigger_timeseries&#39;</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">requirestr</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">require</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">exclude</span><span class="p">)</span>
+    <span class="n">secs</span> <span class="o">=</span> <span class="n">excludestr</span><span class="p">(</span><span class="n">secs</span><span class="p">,</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifo_combinations</span><span class="p">)</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">secs</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+                              <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">+</span> <span class="n">tags</span><span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_multiifo_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--single-trigger-files&#39;</span><span class="p">,</span> <span class="n">singles</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--times&#39;</span><span class="p">,</span> <span class="n">ifo_times</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">special_tids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--special-trigger-ids&#39;</span><span class="p">,</span> <span class="n">special_tids</span><span class="p">)</span>
+
+        <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+        <span class="n">files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">files</span></div>
+
+
+<div class="viewcode-block" id="make_qscan_plot">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_qscan_plot">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_qscan_plot</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">injection_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">data_segments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_window</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate a make_qscan node and add it to workflow.</span>
+
+<span class="sd">    This function generates a single node of the plot_qscan executable</span>
+<span class="sd">    and adds it to the current workflow. Parent/child relationships are set by</span>
+<span class="sd">    the input/output files automatically.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        The workflow class that stores the jobs that will be run.</span>
+<span class="sd">    ifo: str</span>
+<span class="sd">        Which interferometer are we using?</span>
+<span class="sd">    trig_time: int</span>
+<span class="sd">        The time of the trigger being followed up.</span>
+<span class="sd">    out_dir: str</span>
+<span class="sd">        Location of directory to output to</span>
+<span class="sd">    injection_file: pycbc.workflow.File (optional, default=None)</span>
+<span class="sd">        If given, add the injections in the file to strain before making the</span>
+<span class="sd">        plot.</span>
+<span class="sd">    data_segments: igwn_segments.segmentlist (optional, default=None)</span>
+<span class="sd">        The list of segments for which data exists and can be read in. If given</span>
+<span class="sd">        the start/end times given to plot_qscan will be adjusted if</span>
+<span class="sd">        [trig_time - time_window, trig_time + time_window] does not completely</span>
+<span class="sd">        lie within a valid data segment. A ValueError will be raised if the</span>
+<span class="sd">        trig_time is not within a valid segment, or if it is not possible to</span>
+<span class="sd">        find 2*time_window (plus the padding) of continuous data around the</span>
+<span class="sd">        trigger. This **must** be coalesced.</span>
+<span class="sd">    time_window: int (optional, default=None)</span>
+<span class="sd">        The amount of data (not including padding) that will be read in by the</span>
+<span class="sd">        plot_qscan job. The default value of 100s should be fine for most</span>
+<span class="sd">        cases.</span>
+<span class="sd">    tags: list (optional, default=None)</span>
+<span class="sd">        List of tags to add to the created nodes, which determine file naming.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;plot_qscan&#39;</span>
+
+    <span class="n">curr_exe</span> <span class="o">=</span> <span class="n">PlotQScanExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                          <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="c1"># Determine start/end times, using data segments if needed.</span>
+    <span class="c1"># Begin by choosing &quot;optimal&quot; times</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">trig_time</span> <span class="o">-</span> <span class="n">time_window</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">trig_time</span> <span class="o">+</span> <span class="n">time_window</span>
+    <span class="n">node</span> <span class="o">=</span> <span class="n">curr_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">valid_seg</span><span class="o">=</span><span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">]))</span>
+
+    <span class="c1"># Then if data_segments is available, check against that, and move if</span>
+    <span class="c1"># needed</span>
+    <span class="k">if</span> <span class="n">data_segments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Assumes coalesced, so trig_time can only be within one segment</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">data_segments</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">trig_time</span> <span class="ow">in</span> <span class="n">seg</span><span class="p">:</span>
+                <span class="n">data_seg</span> <span class="o">=</span> <span class="n">seg</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">trig_time</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-start-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">trig_time</span><span class="p">))</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-end-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">trig_time</span><span class="p">))</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--center-time&#39;</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">)</span>
+                <span class="n">caption_string</span> <span class="o">=</span> <span class="s2">&quot;&#39;No trigger in </span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">ifo</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--plot-caption&#39;</span><span class="p">,</span> <span class="n">caption_string</span><span class="p">)</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+                <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+                <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Trig time </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trig_time</span><span class="p">)</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;does not seem to lie within any data segments. &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;This shouldn&#39;t be possible, please ask for help!&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Check for pad-data</span>
+        <span class="k">if</span> <span class="n">curr_exe</span><span class="o">.</span><span class="n">has_opt</span><span class="p">(</span><span class="s1">&#39;pad-data&#39;</span><span class="p">):</span>
+            <span class="n">pad_data</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">curr_exe</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="s1">&#39;pad-data&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pad_data</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># We only read data that&#39;s available. The code must handle the case</span>
+        <span class="c1"># of not much data being available.</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">data_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pad_data</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pad_data</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">data_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pad_data</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pad_data</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-start-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-end-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--center-time&#39;</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">injection_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--injection-file&#39;</span><span class="p">,</span> <span class="n">injection_file</span><span class="p">)</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+<div class="viewcode-block" id="make_singles_timefreq">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_singles_timefreq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_singles_timefreq</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">single</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                          <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_window</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">data_segments</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Generate a singles_timefreq node and add it to workflow.</span>
+
+<span class="sd">    This function generates a single node of the singles_timefreq executable</span>
+<span class="sd">    and adds it to the current workflow. Parent/child relationships are set by</span>
+<span class="sd">    the input/output files automatically.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        The workflow class that stores the jobs that will be run.</span>
+<span class="sd">    single: pycbc.workflow.core.File instance</span>
+<span class="sd">        The File object storing the single-detector triggers to followup.</span>
+<span class="sd">    bank_file: pycbc.workflow.core.File instance</span>
+<span class="sd">        The File object storing the template bank.</span>
+<span class="sd">    trig_time: int</span>
+<span class="sd">        The time of the trigger being followed up.</span>
+<span class="sd">    out_dir: str</span>
+<span class="sd">        Location of directory to output to</span>
+<span class="sd">    veto_file: pycbc.workflow.core.File (optional, default=None)</span>
+<span class="sd">        If given use this file to veto triggers to determine the loudest event.</span>
+<span class="sd">        FIXME: Veto files *should* be provided a definer argument and not just</span>
+<span class="sd">        assume that all segments should be read.</span>
+<span class="sd">    time_window: int (optional, default=None)</span>
+<span class="sd">        The amount of data (not including padding) that will be read in by the</span>
+<span class="sd">        singles_timefreq job. The default value of 10s should be fine for most</span>
+<span class="sd">        cases.</span>
+<span class="sd">    data_segments: igwn_segments.segmentlist (optional, default=None)</span>
+<span class="sd">        The list of segments for which data exists and can be read in. If given</span>
+<span class="sd">        the start/end times given to singles_timefreq will be adjusted if</span>
+<span class="sd">        [trig_time - time_window, trig_time + time_window] does not completely</span>
+<span class="sd">        lie within a valid data segment. A ValueError will be raised if the</span>
+<span class="sd">        trig_time is not within a valid segment, or if it is not possible to</span>
+<span class="sd">        find 2*time_window (plus the padding) of continuous data around the</span>
+<span class="sd">        trigger. This **must** be coalesced.</span>
+<span class="sd">    tags: list (optional, default=None)</span>
+<span class="sd">        List of tags to add to the created nodes, which determine file naming.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;plot_singles_timefreq&#39;</span>
+
+    <span class="n">curr_exe</span> <span class="o">=</span> <span class="n">SingleTimeFreqExecutable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ifos</span><span class="o">=</span><span class="p">[</span><span class="n">single</span><span class="o">.</span><span class="n">ifo</span><span class="p">],</span>
+                          <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="c1"># Determine start/end times, using data segments if needed.</span>
+    <span class="c1"># Begin by choosing &quot;optimal&quot; times</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">trig_time</span> <span class="o">-</span> <span class="n">time_window</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">trig_time</span> <span class="o">+</span> <span class="n">time_window</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">curr_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">(</span><span class="n">valid_seg</span><span class="o">=</span><span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">]))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--trig-file&#39;</span><span class="p">,</span> <span class="n">single</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+
+    <span class="c1"># Then if data_segments is available, check against that, and move if</span>
+    <span class="c1"># needed</span>
+    <span class="k">if</span> <span class="n">data_segments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Assumes coalesced, so trig_time can only be within one segment</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">data_segments</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">trig_time</span> <span class="ow">in</span> <span class="n">seg</span><span class="p">:</span>
+                <span class="n">data_seg</span> <span class="o">=</span> <span class="n">seg</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">trig_time</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-start-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">trig_time</span><span class="p">))</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-end-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">trig_time</span><span class="p">))</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--center-time&#39;</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+
+                <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--detector&#39;</span><span class="p">,</span> <span class="n">single</span><span class="o">.</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+                <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+                <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Trig time </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trig_time</span><span class="p">)</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;does not seem to lie within any data segments. &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;This shouldn&#39;t be possible, please ask for help!&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># Check for pad-data</span>
+        <span class="k">if</span> <span class="n">curr_exe</span><span class="o">.</span><span class="n">has_opt</span><span class="p">(</span><span class="s1">&#39;pad-data&#39;</span><span class="p">):</span>
+            <span class="n">pad_data</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">curr_exe</span><span class="o">.</span><span class="n">get_opt</span><span class="p">(</span><span class="s1">&#39;pad-data&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pad_data</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">data_seg</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">time_window</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad_data</span><span class="p">):</span>
+            <span class="n">tl</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">time_window</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad_data</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;I was asked to use </span><span class="si">{}</span><span class="s2"> seconds of data &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tl</span><span class="p">)</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;to run a plot_singles_timefreq job. However, I have &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;only </span><span class="si">{}</span><span class="s2"> seconds available.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">data_seg</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">start</span> <span class="o">-</span> <span class="n">pad_data</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pad_data</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">time_window</span>
+        <span class="k">if</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">end</span> <span class="o">+</span> <span class="n">pad_data</span><span class="p">):</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">pad_data</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">end</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">time_window</span>
+        <span class="c1"># Sanity check, shouldn&#39;t get here!</span>
+        <span class="k">if</span> <span class="n">data_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">start</span> <span class="o">-</span> <span class="n">pad_data</span><span class="p">):</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;I shouldn&#39;t be here! Go ask Ian what he broke.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-start-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--gps-end-time&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">))</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--center-time&#39;</span><span class="p">,</span> <span class="n">trig_time</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--veto-file&#39;</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">)</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--detector&#39;</span><span class="p">,</span> <span class="n">single</span><span class="o">.</span><span class="n">ifo</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="k">return</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span></div>
+
+
+<div class="viewcode-block" id="make_skipped_html">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_skipped_html">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_skipped_html</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">skipped_data</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make a html snippet from the list of skipped background coincidences</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;html_snippet&#39;</span><span class="p">,</span>
+                     <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+
+    <span class="n">parsed_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">skipped_data</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parsed_data</span><span class="p">:</span>
+            <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+            <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">time</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">time</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">time</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">n_events</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">skipped_data</span><span class="p">)</span>
+    <span class="n">html_string</span> <span class="o">=</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1"> background events have been skipped &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_events</span><span class="p">)</span>
+    <span class="n">html_string</span> <span class="o">+=</span> <span class="s1">&#39;because one of their single triggers already appears &#39;</span>
+    <span class="n">html_string</span> <span class="o">+=</span> <span class="s1">&#39;in the events followed up above. &#39;</span>
+    <span class="n">html_string</span> <span class="o">+=</span> <span class="s1">&#39;Specifically, the following single detector triggers &#39;</span>
+    <span class="n">html_string</span> <span class="o">+=</span> <span class="s1">&#39;were found in these coincidences. &#39;</span>
+    <span class="n">html_template</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> event at time </span><span class="si">{}</span><span class="s1"> appeared </span><span class="si">{}</span><span class="s1"> times. &#39;</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">parsed_data</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+            <span class="n">n_occurances</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">time</span><span class="p">]</span>
+            <span class="n">html_string</span> <span class="o">+=</span> <span class="n">html_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">n_occurances</span><span class="p">)</span>
+
+    <span class="n">html_string</span> <span class="o">+=</span> <span class="s1">&#39;&quot;&#39;</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--html-text&#39;</span><span class="p">,</span> <span class="n">html_string</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--title&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;Events were skipped&quot;&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.html&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-file&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">files</span></div>
+
+
+
+<div class="viewcode-block" id="make_upload_files">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.make_upload_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_upload_files</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">psd_files</span><span class="p">,</span> <span class="n">snr_timeseries</span><span class="p">,</span> <span class="n">xml_all</span><span class="p">,</span>
+                      <span class="n">event_id</span><span class="p">,</span> <span class="n">approximant</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">,</span>
+                      <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make files including xml, skymap fits and plots for uploading to gracedb</span>
+<span class="sd">    for a given event</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    psd_files: FileList([])</span>
+<span class="sd">        PSD Files from MERGE_PSDs for the search as appropriate for the</span>
+<span class="sd">        event</span>
+<span class="sd">    snr_timeseries: FileList([])</span>
+<span class="sd">        SNR timeseries files, one from each IFO, to add to the XML and plot</span>
+<span class="sd">        output from pysbs_single_template</span>
+<span class="sd">    xml_all: pycbc.workflow.core.File instance</span>
+<span class="sd">        XML file containing all events from the search</span>
+<span class="sd">    event_id: string</span>
+<span class="sd">        an integer to describe the event&#39;s position in the xml_all file</span>
+<span class="sd">    approximant: byte string</span>
+<span class="sd">        The approximant used for the template of the event, to be passed</span>
+<span class="sd">        to bayestar for sky location</span>
+<span class="sd">    out_dir:</span>
+<span class="sd">        The directory where all the output files should go</span>
+<span class="sd">    channel_name: string</span>
+<span class="sd">        Channel name to be added to the XML file to be uploaded</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the minifollowups executables</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    all_output_files: FileList</span>
+<span class="sd">        List of all output files from this process</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up upload files&quot;</span><span class="p">)</span>
+    <span class="n">indiv_xml_exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span>
+        <span class="s1">&#39;generate_xml&#39;</span><span class="p">,</span>
+        <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+    <span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up XML generation&quot;</span><span class="p">)</span>
+    <span class="n">xml_node</span> <span class="o">=</span> <span class="n">indiv_xml_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--input-file&#39;</span><span class="p">,</span> <span class="n">xml_all</span><span class="p">)</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--event-id&#39;</span><span class="p">,</span> <span class="n">event_id</span><span class="p">)</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--psd-files&#39;</span><span class="p">,</span> <span class="n">psd_files</span><span class="p">)</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--snr-timeseries&#39;</span><span class="p">,</span> <span class="n">snr_timeseries</span><span class="p">)</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--channel-name&#39;</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">)</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+        <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--snr-timeseries-plot&#39;</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">xml_node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+        <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--psd-plot&#39;</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;psd&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">xml_out</span> <span class="o">=</span> <span class="n">xml_node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+        <span class="s1">&#39;.xml&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--output-file&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">xml_node</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up bayestar generation&quot;</span><span class="p">)</span>
+    <span class="n">bayestar_exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span>
+        <span class="s1">&#39;bayestar&#39;</span><span class="p">,</span>
+        <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+        <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+    <span class="p">)</span>
+
+    <span class="n">bayestar_node</span> <span class="o">=</span> <span class="n">bayestar_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">bayestar_node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--event-xml&#39;</span><span class="p">,</span> <span class="n">xml_out</span><span class="p">)</span>
+    <span class="n">fits_out</span> <span class="o">=</span> <span class="n">bayestar_node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+        <span class="s1">&#39;.fits&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;--output-file&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># This will be called if the approximant is within the bank</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;SPAtmplt&#39;</span><span class="p">:</span>
+        <span class="c1"># Bayestar doesn&#39;t use the SPAtmplt approximant</span>
+        <span class="n">approximant</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;TaylorF2&#39;</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bayestar_node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--approximant&#39;</span><span class="p">,</span> <span class="n">approximant</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">bayestar_node</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up skymap plot generation&quot;</span><span class="p">)</span>
+    <span class="n">skymap_plot_exe</span> <span class="o">=</span> <span class="n">PlotExecutable</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span>
+        <span class="s1">&#39;skymap_plot&#39;</span><span class="p">,</span>
+        <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+        <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+        <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+    <span class="p">)</span>
+
+    <span class="n">skymap_plot_node</span> <span class="o">=</span> <span class="n">skymap_plot_exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">skymap_plot_node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">fits_out</span><span class="p">)</span>
+    <span class="n">skymap_plot_node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+        <span class="s1">&#39;.png&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;-o&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">skymap_plot_node</span>
+
+    <span class="n">all_output_files</span> <span class="o">=</span> <span class="n">xml_node</span><span class="o">.</span><span class="n">output_files</span> <span class="o">+</span> <span class="n">bayestar_node</span><span class="o">.</span><span class="n">output_files</span> <span class="o">+</span> \
+        <span class="n">skymap_plot_node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">all_output_files</span></div>
+
+
+
+<div class="viewcode-block" id="setup_upload_prep_minifollowups">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.minifollowups.setup_upload_prep_minifollowups">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_upload_prep_minifollowups</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">,</span> <span class="n">xml_all_file</span><span class="p">,</span>
+                                    <span class="n">single_triggers</span><span class="p">,</span> <span class="n">psd_files</span><span class="p">,</span>
+                                    <span class="n">tmpltbank_file</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">,</span>
+                                    <span class="n">insp_anal_name</span><span class="p">,</span> <span class="n">dax_output</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                                    <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Create plots that followup the Nth loudest coincident injection</span>
+<span class="sd">    from a statmap produced HDF file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.Workflow</span>
+<span class="sd">        The core workflow instance we are populating</span>
+<span class="sd">    coinc_file:</span>
+<span class="sd">    single_triggers: list of pycbc.workflow.File</span>
+<span class="sd">        A list cointaining the file objects associated with the merged</span>
+<span class="sd">        single detector trigger files for each ifo.</span>
+<span class="sd">    psd_files: list of pycbc.workflow.File</span>
+<span class="sd">        A list containing the file objects associated with the merged</span>
+<span class="sd">        psd files for each ifo.</span>
+<span class="sd">    xml_all_file : workflow file object</span>
+<span class="sd">        XML File containing all foreground events</span>
+<span class="sd">    tmpltbank_file: pycbc.workflow.File</span>
+<span class="sd">        The file object pointing to the HDF format template bank</span>
+<span class="sd">    insp_segs: SegFile</span>
+<span class="sd">       The segment file containing the data read and analyzed by each inspiral</span>
+<span class="sd">       job.</span>
+<span class="sd">       The segment file containing the data read and analyzed by each inspiral</span>
+<span class="sd">       job.</span>
+<span class="sd">    insp_data_name: str</span>
+<span class="sd">        The name of the segmentlist storing data read.</span>
+<span class="sd">    insp_anal_name: str</span>
+<span class="sd">        The name of the segmentlist storing data analyzed.</span>
+<span class="sd">    dax_output : directory</span>
+<span class="sd">        Location of the dax outputs</span>
+<span class="sd">    out_dir: path</span>
+<span class="sd">        The directory to store minifollowups result plots and files</span>
+<span class="sd">    tags: {None, optional}</span>
+<span class="sd">        Tags to add to the minifollowups executables</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    layout: list</span>
+<span class="sd">        A list of tuples which specify the displayed file layout for the</span>
+<span class="sd">        minifollowups plots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Entering minifollowups module&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;workflow-minifollowups&#39;</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;There is no [workflow-minifollowups] section in &#39;</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;configuration file&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dax_output</span><span class="p">)</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="c1"># turn the config file into a File class</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dax_output</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> \
+                                  <span class="s1">&#39;upload_prep_minifollowup.ini&#39;</span><span class="p">)</span>
+    <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">))</span>
+
+    <span class="n">config_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+    <span class="n">exe</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;upload_prep_minifollowup&#39;</span><span class="p">,</span>
+                     <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">dax_output</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">node</span> <span class="o">=</span> <span class="n">exe</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--config-files&#39;</span><span class="p">,</span> <span class="n">config_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--xml-all-file&#39;</span><span class="p">,</span> <span class="n">xml_all_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--statmap-file&#39;</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_multiifo_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--single-detector-triggers&#39;</span><span class="p">,</span>
+                                     <span class="n">single_triggers</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_multiifo_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--psd-files&#39;</span><span class="p">,</span> <span class="n">psd_files</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-segments&#39;</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-read-name&#39;</span><span class="p">,</span> <span class="n">insp_data_name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--inspiral-data-analyzed-name&#39;</span><span class="p">,</span> <span class="n">insp_anal_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_list_opt</span><span class="p">(</span><span class="s1">&#39;--tags&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax&#39;</span><span class="p">,</span> <span class="s1">&#39;--dax-file&#39;</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span> <span class="s1">&#39;.dax.map&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-map&#39;</span><span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--workflow-name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--output-dir&#39;</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_opt</span><span class="p">(</span><span class="s1">&#39;--dax-file-directory&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+
+    <span class="c1"># execute this in a sub-workflow</span>
+    <span class="n">fil</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># determine if a staging site has been specified</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">SubWorkflow</span><span class="p">(</span><span class="n">fil</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">is_planned</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">xml_all_file</span><span class="p">,</span> <span class="n">tmpltbank_file</span><span class="p">,</span> <span class="n">coinc_file</span><span class="p">,</span> <span class="n">insp_segs</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="n">single_triggers</span> <span class="o">+</span> <span class="n">psd_files</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_inputs</span><span class="p">(</span><span class="o">*</span><span class="n">input_files</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">set_subworkflow_properties</span><span class="p">(</span><span class="n">map_file</span><span class="p">,</span>
+                                   <span class="n">staging_site</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">staging_site</span><span class="p">,</span>
+                                   <span class="n">cache_file</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">cache_file</span><span class="p">)</span>
+    <span class="n">job</span><span class="o">.</span><span class="n">add_into_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Leaving minifollowups module&#39;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

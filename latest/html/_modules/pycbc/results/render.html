@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.render &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.render</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.render</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2015 Christopher M. Biwer</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span><span class="o">,</span><span class="w"> </span><span class="nn">types</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">codecs</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jinja2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">FileSystemLoader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">xml.sax.saxutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">unescape</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.results</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.results</span><span class="w"> </span><span class="kn">import</span> <span class="n">unescape_table</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.results.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_html_with_metadata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SegFile</span><span class="p">,</span> <span class="n">makedir</span>
+
+<div class="viewcode-block" id="render_workflow_html_template">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.render_workflow_html_template">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_workflow_html_template</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">subtemplate</span><span class="p">,</span> <span class="n">filelists</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Writes a template given inputs from the workflow generator. Takes</span>
+<span class="sd">    a list of tuples. Each tuple is a pycbc File object. Also the name of the</span>
+<span class="sd">    subtemplate to render and the filename of the output.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dirnam</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">makedir</span><span class="p">(</span><span class="n">dirnam</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">filelist</span> <span class="ow">in</span> <span class="n">filelists</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filelist</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># render subtemplate</span>
+    <span class="n">subtemplate_dir</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/templates/wells&#39;</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">subtemplate_dir</span><span class="p">))</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">get_embedded_config</span><span class="o">=</span><span class="n">get_embedded_config</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">path_exists</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">len</span><span class="o">=</span><span class="nb">len</span><span class="p">)</span>
+    <span class="n">subtemplate</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">subtemplate</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filelists&#39;</span> <span class="p">:</span> <span class="n">filelists</span><span class="p">,</span>
+               <span class="s1">&#39;dir&#39;</span> <span class="p">:</span> <span class="n">dirnam</span><span class="p">}</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">subtemplate</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="c1"># save as html page</span>
+    <span class="n">kwds</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;render-function&#39;</span> <span class="p">:</span> <span class="s1">&#39;render_tmplt&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;filenames&#39;</span> <span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filenames</span><span class="p">)}</span>
+    <span class="n">kwds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">:</span>
+        <span class="n">kwds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="n">save_html_with_metadata</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">output</span><span class="p">),</span> <span class="n">filename</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">kwds</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_embedded_config">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.get_embedded_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_embedded_config</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Attempt to load config data attached to file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span> <span class="ow">and</span>
+               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">())))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cp</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">load_metadata_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">cp</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">()</span>
+
+    <span class="n">cp</span><span class="o">.</span><span class="n">check_option</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">check_option</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cp</span></div>
+
+
+<div class="viewcode-block" id="setup_template_render">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.setup_template_render">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_template_render</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">config_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This function is the gateway for rendering a template for a file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initialization</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">get_embedded_config</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="c1"># use meta-data if not empty for rendering</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;render-function&#39;</span><span class="p">):</span>
+        <span class="n">render_function_name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;render-function&#39;</span><span class="p">)</span>
+        <span class="n">render_function</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">render_function_name</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">render_function</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="c1"># read configuration file for rendering</span>
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config_path</span><span class="p">):</span>
+        <span class="n">cp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+
+        <span class="c1"># render template</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;render-function&#39;</span><span class="p">):</span>
+            <span class="n">render_function_name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;render-function&#39;</span><span class="p">)</span>
+            <span class="n">render_function</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">render_function_name</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">render_function</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">render_default</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="c1"># if no configuration file is present</span>
+    <span class="c1"># then render the default template</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">render_default</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="render_default">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.render_default">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_default</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This is the default function that will render a template to a string of HTML. The</span>
+<span class="sd">    string will be for a drop-down tab that contains a link to the file.</span>
+
+<span class="sd">    If the file extension requires information to be read, then that is passed to the</span>
+<span class="sd">    content variable (eg. a segmentlistdict).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define filename and slug from path</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="c1"># initializations</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.xml&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.xml.gz&#39;</span><span class="p">):</span>
+        <span class="c1"># segment or veto file return a segmentslistdict instance</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">wf_file</span> <span class="o">=</span> <span class="n">SegFile</span><span class="o">.</span><span class="n">from_segment_xml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="c1"># FIXME: This is a dictionary, but the code wants a segmentlist</span>
+            <span class="c1">#        for now I just coalesce.</span>
+            <span class="n">wf_file</span><span class="o">.</span><span class="n">return_union_seglist</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No segment table found in </span><span class="si">%s</span><span class="s1"> : </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+
+    <span class="c1"># render template</span>
+    <span class="n">template_dir</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/templates/files&#39;</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">template_dir</span><span class="p">))</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">abs</span><span class="o">=</span><span class="nb">abs</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">open</span><span class="o">=</span><span class="nb">open</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">path_exists</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="s1">&#39;file_default.html&#39;</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;path&#39;</span>     <span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+               <span class="s1">&#39;filename&#39;</span> <span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+               <span class="s1">&#39;slug&#39;</span>     <span class="p">:</span> <span class="n">slug</span><span class="p">,</span>
+               <span class="s1">&#39;cp&#39;</span>       <span class="p">:</span> <span class="n">cp</span><span class="p">,</span>
+               <span class="s1">&#39;content&#39;</span>  <span class="p">:</span> <span class="n">content</span><span class="p">}</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="render_glitchgram">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.render_glitchgram">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_glitchgram</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Render a glitchgram file template.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define filename and slug from path</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="c1"># render template</span>
+    <span class="n">template_dir</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/templates/files&#39;</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">template_dir</span><span class="p">))</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">abs</span><span class="o">=</span><span class="nb">abs</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;template&#39;</span><span class="p">))</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filename&#39;</span> <span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+               <span class="s1">&#39;slug&#39;</span>     <span class="p">:</span> <span class="n">slug</span><span class="p">,</span>
+               <span class="s1">&#39;cp&#39;</span>       <span class="p">:</span> <span class="n">cp</span><span class="p">}</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="render_text">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.render_text">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_text</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Render a file as text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define filename and slug from path</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="c1"># initializations</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># read file as a string</span>
+    <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;replace&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="c1"># replace all the escaped characters</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">unescape</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">unescape_table</span><span class="p">)</span>
+
+    <span class="c1"># render template</span>
+    <span class="n">template_dir</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">__path__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/templates/files&#39;</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">template_dir</span><span class="p">))</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">abs</span><span class="o">=</span><span class="nb">abs</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">path_exists</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="s1">&#39;file_pre.html&#39;</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filename&#39;</span> <span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+               <span class="s1">&#39;slug&#39;</span>     <span class="p">:</span> <span class="n">slug</span><span class="p">,</span>
+               <span class="s1">&#39;cp&#39;</span>       <span class="p">:</span> <span class="n">cp</span><span class="p">,</span>
+               <span class="s1">&#39;content&#39;</span>  <span class="p">:</span> <span class="n">content</span><span class="p">}</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="render_ignore">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.render_ignore">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_ignore</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Does not render anything.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span></div>
+
+
+<div class="viewcode-block" id="render_tmplt">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.render.render_tmplt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_tmplt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Render a file as text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define filename and slug from path</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="c1"># initializations</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># read file as a string</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="c1"># replace all the escaped characters</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">unescape</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">unescape_table</span><span class="p">)</span>
+
+    <span class="c1"># render template</span>
+    <span class="n">template_dir</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="n">template_dir</span><span class="p">))</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">setup_template_render</span><span class="o">=</span><span class="n">setup_template_render</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">get_embedded_config</span><span class="o">=</span><span class="n">get_embedded_config</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">path_exists</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;filename&#39;</span> <span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+               <span class="s1">&#39;slug&#39;</span>     <span class="p">:</span> <span class="n">slug</span><span class="p">,</span>
+               <span class="s1">&#39;cp&#39;</span>       <span class="p">:</span> <span class="n">cp</span><span class="p">,</span>
+               <span class="s1">&#39;content&#39;</span>  <span class="p">:</span> <span class="n">content</span><span class="p">}</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

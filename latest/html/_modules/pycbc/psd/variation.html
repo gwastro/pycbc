@@ -1,0 +1,551 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.psd.variation &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../psd.html">pycbc.psd</a></li>
+      <li class="breadcrumb-item active">pycbc.psd.variation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.psd.variation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; PSD Variation &quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">rfft</span><span class="p">,</span> <span class="n">irfft</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.psd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+
+
+<div class="viewcode-block" id="create_full_filt">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.create_full_filt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_full_filt</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">filt</span><span class="p">,</span> <span class="n">plong</span><span class="p">,</span> <span class="n">srate</span><span class="p">,</span> <span class="n">psd_duration</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a filter to convolve with strain data to find PSD variation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    freqs : numpy.ndarray</span>
+<span class="sd">        Array of sample frequencies of the PSD.</span>
+<span class="sd">    filt : numpy.ndarray</span>
+<span class="sd">        A bandpass filter.</span>
+<span class="sd">    plong : numpy.ndarray</span>
+<span class="sd">        The estimated PSD.</span>
+<span class="sd">    srate : float</span>
+<span class="sd">        The sample rate of the data.</span>
+<span class="sd">    psd_duration : float</span>
+<span class="sd">        The duration of the estimated PSD.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    full_filt : numpy.ndarray</span>
+<span class="sd">        The full filter used to calculate PSD variation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Make the weighting filter - bandpass, which weight by f^-7/6,</span>
+    <span class="c1"># and whiten. The normalization is chosen so that the variance</span>
+    <span class="c1"># will be one if this filter is applied to white noise which</span>
+    <span class="c1"># already has a variance of one.</span>
+    <span class="n">fweight</span> <span class="o">=</span> <span class="n">freqs</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">7.</span><span class="o">/</span><span class="mf">6.</span><span class="p">)</span> <span class="o">*</span> <span class="n">filt</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">plong</span><span class="p">)</span>
+    <span class="n">fweight</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">fweight</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fweight</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span> <span class="o">**</span> <span class="o">-</span><span class="mf">0.5</span>
+    <span class="n">fweight</span> <span class="o">=</span> <span class="n">norm</span> <span class="o">*</span> <span class="n">fweight</span>
+    <span class="n">fwhiten</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span> <span class="o">/</span> <span class="n">srate</span><span class="p">)</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">plong</span><span class="p">)</span>
+    <span class="n">fwhiten</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">full_filt</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">windows</span><span class="o">.</span><span class="n">hann</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_duration</span> <span class="o">*</span> <span class="n">srate</span><span class="p">))</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span>
+        <span class="n">irfft</span><span class="p">(</span><span class="n">fwhiten</span> <span class="o">*</span> <span class="n">fweight</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">psd_duration</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">srate</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">full_filt</span></div>
+
+
+
+<div class="viewcode-block" id="mean_square">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.mean_square">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_square</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">srate</span><span class="p">,</span> <span class="n">short_stride</span><span class="p">,</span> <span class="n">stride</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculate mean square of given time series once per stride</span>
+
+<span class="sd">    First of all this function calculate the mean square of given time</span>
+<span class="sd">    series once per short_stride. This is used to find and remove</span>
+<span class="sd">    outliers due to short glitches. Here an outlier is defined as any</span>
+<span class="sd">    element which is greater than two times the average of its closest</span>
+<span class="sd">    neighbours. Every outlier is substituted with the average of the</span>
+<span class="sd">    corresponding adjacent elements.</span>
+<span class="sd">    Then, every second the function compute the mean square of the</span>
+<span class="sd">    smoothed time series, within the stride.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : numpy.ndarray</span>
+<span class="sd">    delta_t : float</span>
+<span class="sd">        Duration of the time series</span>
+<span class="sd">    srate : int</span>
+<span class="sd">        Sample rate of the data were it given as a TimeSeries</span>
+<span class="sd">    short_stride : float</span>
+<span class="sd">        Stride duration for outlier removal</span>
+<span class="sd">    stride ; float</span>
+<span class="sd">        Stride duration</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    m_s: List</span>
+<span class="sd">        Mean square of given time series</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Calculate mean square of data once per short stride and replace</span>
+    <span class="c1"># outliers</span>
+    <span class="n">short_ms</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">srate</span> <span class="o">*</span> <span class="n">short_stride</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>
+                          <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Define an array of averages that is used to substitute outliers</span>
+    <span class="n">ave</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">short_ms</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="n">short_ms</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">outliers</span> <span class="o">=</span> <span class="n">short_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">ave</span><span class="p">)</span>
+    <span class="n">short_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">ave</span><span class="p">[</span><span class="n">outliers</span><span class="p">]</span>
+
+    <span class="c1"># Calculate mean square of data every step within a window equal to</span>
+    <span class="c1"># stride seconds</span>
+    <span class="n">m_s</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">inv_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">short_stride</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">delta_t</span> <span class="o">-</span> <span class="n">stride</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="n">m_s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">short_ms</span><span class="p">[</span><span class="n">inv_time</span> <span class="o">*</span> <span class="n">index</span><span class="p">:</span><span class="n">inv_time</span> <span class="o">*</span>
+                                       <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="o">+</span><span class="n">stride</span><span class="p">)]))</span>
+    <span class="k">return</span> <span class="n">m_s</span></div>
+
+
+
+<div class="viewcode-block" id="calc_filt_psd_variation">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.calc_filt_psd_variation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_filt_psd_variation</span><span class="p">(</span><span class="n">strain</span><span class="p">,</span> <span class="n">segment</span><span class="p">,</span> <span class="n">short_segment</span><span class="p">,</span> <span class="n">psd_long_segment</span><span class="p">,</span>
+                            <span class="n">psd_duration</span><span class="p">,</span> <span class="n">psd_stride</span><span class="p">,</span> <span class="n">psd_avg_method</span><span class="p">,</span> <span class="n">low_freq</span><span class="p">,</span>
+                            <span class="n">high_freq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculates time series of PSD variability</span>
+
+<span class="sd">    This function first splits the segment up into 512 second chunks. It</span>
+<span class="sd">    then calculates the PSD over this 512 second. The PSD is used to</span>
+<span class="sd">    to create a filter that is the composition of three filters:</span>
+<span class="sd">    1. Bandpass filter between f_low and f_high.</span>
+<span class="sd">    2. Weighting filter which gives the rough response of a CBC template.</span>
+<span class="sd">    3. Whitening filter.</span>
+<span class="sd">    Next it makes the convolution of this filter with the stretch of data.</span>
+<span class="sd">    This new time series is given to the &quot;mean_square&quot; function, which</span>
+<span class="sd">    computes the mean square of the timeseries within an 8 seconds window,</span>
+<span class="sd">    once per second.</span>
+<span class="sd">    The result, which is the variance of the S/N in that stride for the</span>
+<span class="sd">    Parseval theorem, is then stored in a timeseries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain : TimeSeries</span>
+<span class="sd">        Input strain time series to estimate PSDs</span>
+<span class="sd">    segment : {float, 8}</span>
+<span class="sd">        Duration of the segments for the mean square estimation in seconds.</span>
+<span class="sd">    short_segment : {float, 0.25}</span>
+<span class="sd">        Duration of the short segments for the outliers removal.</span>
+<span class="sd">    psd_long_segment : {float, 512}</span>
+<span class="sd">        Duration of the long segments for PSD estimation in seconds.</span>
+<span class="sd">    psd_duration : {float, 8}</span>
+<span class="sd">        Duration of FFT segments for long term PSD estimation, in seconds.</span>
+<span class="sd">    psd_stride : {float, 4}</span>
+<span class="sd">        Separation between FFT segments for long term PSD estimation, in</span>
+<span class="sd">        seconds.</span>
+<span class="sd">    psd_avg_method : {string, &#39;median&#39;}</span>
+<span class="sd">        Method for averaging PSD estimation segments.</span>
+<span class="sd">    low_freq : {float, 20}</span>
+<span class="sd">        Minimum frequency to consider the comparison between PSDs.</span>
+<span class="sd">    high_freq : {float, 480}</span>
+<span class="sd">        Maximum frequency to consider the comparison between PSDs.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    psd_var : TimeSeries</span>
+<span class="sd">        Time series of the variability in the PSD estimation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate strain precision</span>
+    <span class="k">if</span> <span class="n">strain</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+        <span class="n">fs_dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span>
+    <span class="k">elif</span> <span class="n">strain</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span><span class="p">:</span>
+        <span class="n">fs_dtype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span>
+
+    <span class="c1"># Convert start and end times immediately to floats</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+    <span class="n">srate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+
+    <span class="c1"># Fix the step for the PSD estimation and the time to remove at the</span>
+    <span class="c1"># edge of the time series.</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">strain_crop</span> <span class="o">=</span> <span class="mf">8.0</span>
+
+    <span class="c1"># Find the times of the long segments</span>
+    <span class="n">times_long</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span>
+                              <span class="n">psd_long_segment</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">strain_crop</span>
+                              <span class="o">-</span> <span class="n">segment</span> <span class="o">+</span> <span class="n">step</span><span class="p">)</span>
+
+    <span class="c1"># Create a bandpass filter between low_freq and high_freq</span>
+    <span class="n">filt</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">firwin</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">srate</span><span class="p">,</span> <span class="p">[</span><span class="n">low_freq</span><span class="p">,</span> <span class="n">high_freq</span><span class="p">],</span> <span class="n">pass_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">window</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">srate</span><span class="p">)</span>
+    <span class="n">filt</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_duration</span> <span class="o">*</span> <span class="n">srate</span><span class="p">))</span>
+    <span class="c1"># Fourier transform the filter and take the absolute value to get</span>
+    <span class="c1"># rid of the phase.</span>
+    <span class="n">filt</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rfft</span><span class="p">(</span><span class="n">filt</span><span class="p">))</span>
+
+    <span class="n">psd_var_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">tlong</span> <span class="ow">in</span> <span class="n">times_long</span><span class="p">:</span>
+        <span class="c1"># Calculate PSD for long segment</span>
+        <span class="k">if</span> <span class="n">tlong</span> <span class="o">+</span> <span class="n">psd_long_segment</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="n">end_time</span><span class="p">):</span>
+            <span class="n">astrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">tlong</span><span class="p">,</span> <span class="n">tlong</span> <span class="o">+</span> <span class="n">psd_long_segment</span><span class="p">)</span>
+            <span class="n">plong</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span>
+                <span class="n">astrain</span><span class="p">,</span>
+                <span class="n">seg_len</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_duration</span> <span class="o">*</span> <span class="n">strain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">),</span>
+                <span class="n">seg_stride</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_stride</span> <span class="o">*</span> <span class="n">strain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">),</span>
+                <span class="n">avg_method</span><span class="o">=</span><span class="n">psd_avg_method</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">astrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">tlong</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+            <span class="n">plong</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">psd</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span>
+                           <span class="n">strain</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">psd_long_segment</span><span class="p">,</span>
+                                             <span class="n">end_time</span><span class="p">),</span>
+                           <span class="n">seg_len</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_duration</span> <span class="o">*</span> <span class="n">strain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">),</span>
+                           <span class="n">seg_stride</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_stride</span> <span class="o">*</span> <span class="n">strain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">),</span>
+                           <span class="n">avg_method</span><span class="o">=</span><span class="n">psd_avg_method</span><span class="p">)</span>
+        <span class="n">astrain</span> <span class="o">=</span> <span class="n">astrain</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">freqs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">plong</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">fs_dtype</span><span class="p">)</span>
+        <span class="n">plong</span> <span class="o">=</span> <span class="n">plong</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="n">full_filt</span> <span class="o">=</span> <span class="n">create_full_filt</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">filt</span><span class="p">,</span> <span class="n">plong</span><span class="p">,</span> <span class="n">srate</span><span class="p">,</span> <span class="n">psd_duration</span><span class="p">)</span>
+        <span class="c1"># Convolve the filter with long segment of data</span>
+        <span class="n">wstrain</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">fftconvolve</span><span class="p">(</span><span class="n">astrain</span><span class="p">,</span> <span class="n">full_filt</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
+        <span class="n">wstrain</span> <span class="o">=</span> <span class="n">wstrain</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">strain_crop</span> <span class="o">*</span> <span class="n">srate</span><span class="p">):</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">strain_crop</span> <span class="o">*</span> <span class="n">srate</span><span class="p">)]</span>
+        <span class="c1"># compute the mean square of the chunk of data</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">wstrain</span><span class="p">)</span> <span class="o">*</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span>
+        <span class="n">variation</span> <span class="o">=</span> <span class="n">mean_square</span><span class="p">(</span><span class="n">wstrain</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">srate</span><span class="p">,</span> <span class="n">short_segment</span><span class="p">,</span> <span class="n">segment</span><span class="p">)</span>
+        <span class="n">psd_var_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">variation</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">wstrain</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+    <span class="c1"># Package up the time series to return</span>
+    <span class="n">psd_var</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">psd_var_list</span><span class="p">),</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">step</span><span class="p">,</span>
+                         <span class="n">epoch</span><span class="o">=</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">strain_crop</span> <span class="o">+</span> <span class="n">segment</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">psd_var</span></div>
+
+
+
+<div class="viewcode-block" id="find_trigger_value">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.find_trigger_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_trigger_value</span><span class="p">(</span><span class="n">psd_var</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Find the PSD variation value at a particular time with the filter</span>
+<span class="sd">    method. If the time is outside the timeseries bound, 1. is given.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    psd_var : TimeSeries</span>
+<span class="sd">        Time series of the varaibility in the PSD estimation</span>
+<span class="sd">    idx : numpy.ndarray</span>
+<span class="sd">        Time indices of the triggers</span>
+<span class="sd">    start : float</span>
+<span class="sd">        GPS start time</span>
+<span class="sd">    sample_rate : float</span>
+<span class="sd">        Sample rate defined in ini file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    vals : Array</span>
+<span class="sd">        PSD variation value at a particular time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Find gps time of the trigger</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">idx</span> <span class="o">/</span> <span class="n">sample_rate</span>
+    <span class="c1"># Extract the PSD variation at trigger time through linear</span>
+    <span class="c1"># interpolation</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">psd_var</span><span class="p">,</span> <span class="s1">&#39;cached_psd_var_interpolant&#39;</span><span class="p">):</span>
+        <span class="n">psd_var</span><span class="o">.</span><span class="n">cached_psd_var_interpolant</span> <span class="o">=</span> \
+            <span class="n">interp1d</span><span class="p">(</span><span class="n">psd_var</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                     <span class="n">psd_var</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                     <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                     <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">psd_var</span><span class="o">.</span><span class="n">cached_psd_var_interpolant</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">vals</span></div>
+
+
+
+<div class="viewcode-block" id="live_create_filter">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.live_create_filter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">live_create_filter</span><span class="p">(</span><span class="n">psd_estimated</span><span class="p">,</span>
+                       <span class="n">psd_duration</span><span class="p">,</span>
+                       <span class="n">sample_rate</span><span class="p">,</span>
+                       <span class="n">low_freq</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                       <span class="n">high_freq</span><span class="o">=</span><span class="mi">480</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a filter to be used in the calculation of the psd variation for the</span>
+<span class="sd">    PyCBC Live search. This filter combines a bandpass between a lower and</span>
+<span class="sd">    upper frequency and an estimated signal response so that the variance</span>
+<span class="sd">    will be 1 when the filter is applied to white noise.</span>
+
+<span class="sd">    Within the PyCBC Live search this filter needs to be recreated every time</span>
+<span class="sd">    the estimated psd is updated and needs to be unique for each detector.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    psd_estimated : pycbc.frequencyseries</span>
+<span class="sd">        The current PyCBC Live PSD: variations are measured relative to this</span>
+<span class="sd">        estimate.</span>
+<span class="sd">    psd_duration : float</span>
+<span class="sd">        The duration of the estimation of the psd, in seconds.</span>
+<span class="sd">    sample_rate : int</span>
+<span class="sd">        The sample rate of the strain data being search over.</span>
+<span class="sd">    low_freq : int (default = 20)</span>
+<span class="sd">        The lower frequency to apply in the bandpass filter.</span>
+<span class="sd">    high_freq : int (default = 480)</span>
+<span class="sd">        The upper frequency to apply in the bandpass filter.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    full_filt : numpy.ndarray</span>
+<span class="sd">        The complete filter to be convolved with the strain data to</span>
+<span class="sd">        find the psd variation value.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create a bandpass filter between low_freq and high_freq once</span>
+    <span class="n">filt</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">firwin</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">,</span>
+                      <span class="p">[</span><span class="n">low_freq</span><span class="p">,</span> <span class="n">high_freq</span><span class="p">],</span>
+                      <span class="n">pass_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="n">window</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span>
+                      <span class="n">fs</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">filt</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">psd_duration</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
+
+    <span class="c1"># Fourier transform the filter and take the absolute value to get</span>
+    <span class="c1">#  rid of the phase.</span>
+    <span class="n">filt</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rfft</span><span class="p">(</span><span class="n">filt</span><span class="p">))</span>
+
+    <span class="c1"># Extract the psd frequencies to create a representative filter.</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psd_estimated</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">plong</span> <span class="o">=</span> <span class="n">psd_estimated</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">full_filt</span> <span class="o">=</span> <span class="n">create_full_filt</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">filt</span><span class="p">,</span> <span class="n">plong</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">psd_duration</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">full_filt</span></div>
+
+
+
+<div class="viewcode-block" id="live_calc_psd_variation">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.live_calc_psd_variation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">live_calc_psd_variation</span><span class="p">(</span><span class="n">strain</span><span class="p">,</span>
+                            <span class="n">full_filt</span><span class="p">,</span>
+                            <span class="n">increment</span><span class="p">,</span>
+                            <span class="n">data_trim</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+                            <span class="n">short_stride</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the psd variation in the PyCBC Live search.</span>
+
+<span class="sd">    The Live strain data is convolved with the filter to produce a timeseries</span>
+<span class="sd">    containing the PSD variation values for each sample. The mean square of</span>
+<span class="sd">    the timeseries is calculated over the short_stride to find outliers caused</span>
+<span class="sd">    by short duration glitches. Outliers are replaced with the average of</span>
+<span class="sd">    adjacent elements in the array. This array is then further averaged every</span>
+<span class="sd">    second to produce the PSD variation timeseries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain : pycbc.timeseries</span>
+<span class="sd">        Live data being searched through by the PyCBC Live search.</span>
+<span class="sd">    full_filt : numpy.ndarray</span>
+<span class="sd">        A filter created by `live_create_filter`.</span>
+<span class="sd">    increment : float</span>
+<span class="sd">        The number of seconds in each increment in the PyCBC Live search.</span>
+<span class="sd">    data_trim : float</span>
+<span class="sd">        The number of seconds to be trimmed from either end of the convolved</span>
+<span class="sd">        timeseries to prevent artefacts.</span>
+<span class="sd">    short_stride : float</span>
+<span class="sd">        The number of seconds to average the PSD variation timeseries over to</span>
+<span class="sd">        remove the effects of short duration glitches.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    psd_var : pycbc.timeseries</span>
+<span class="sd">        A timeseries containing the PSD variation values.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_rate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+
+    <span class="c1"># Grab the last increments worth of data, plus padding for edge effects.</span>
+    <span class="n">astrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">increment</span> <span class="o">-</span> <span class="p">(</span><span class="n">data_trim</span> <span class="o">*</span> <span class="mi">3</span><span class="p">),</span>
+                                <span class="n">strain</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+
+    <span class="c1"># Convolve the data and the filter to produce the PSD variation timeseries,</span>
+    <span class="c1">#  then trim the beginning and end of the data to prevent edge effects.</span>
+    <span class="n">wstrain</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">fftconvolve</span><span class="p">(</span><span class="n">astrain</span><span class="p">,</span> <span class="n">full_filt</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;same&#39;</span><span class="p">)</span>
+    <span class="n">wstrain</span> <span class="o">=</span> <span class="n">wstrain</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">data_trim</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">):</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">data_trim</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">)]</span>
+
+    <span class="c1"># Create a PSD variation array by taking the mean square of the PSD</span>
+    <span class="c1">#  variation timeseries every short_stride</span>
+    <span class="n">short_ms</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+        <span class="n">wstrain</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="n">short_stride</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Define an array of averages that is used to substitute outliers</span>
+    <span class="n">ave</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">short_ms</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="n">short_ms</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">outliers</span> <span class="o">=</span> <span class="n">short_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mf">2.</span> <span class="o">*</span> <span class="n">ave</span><span class="p">)</span>
+    <span class="n">short_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">ave</span><span class="p">[</span><span class="n">outliers</span><span class="p">]</span>
+
+    <span class="c1"># Calculate the PSD variation every second by a moving window average</span>
+    <span class="c1"># containing (1/short_stride) short_ms samples.</span>
+    <span class="n">m_s</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">samples_per_second</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">short_stride</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">short_ms</span><span class="p">)</span> <span class="o">/</span> <span class="n">samples_per_second</span><span class="p">)):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">samples_per_second</span> <span class="o">*</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">samples_per_second</span> <span class="o">*</span> <span class="p">(</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">m_s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">short_ms</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]))</span>
+
+    <span class="n">m_s</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m_s</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">wstrain</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">psd_var</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">m_s</span><span class="p">,</span>
+                         <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                         <span class="n">epoch</span><span class="o">=</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">increment</span> <span class="o">-</span> <span class="p">(</span><span class="n">data_trim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">psd_var</span></div>
+
+
+
+<div class="viewcode-block" id="live_find_var_value">
+<a class="viewcode-back" href="../../../pycbc.psd.html#pycbc.psd.variation.live_find_var_value">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">live_find_var_value</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span>
+                        <span class="n">psd_var_timeseries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract the PSD variation values at trigger times by linear interpolation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    triggers : dict</span>
+<span class="sd">        Dictionary containing input trigger times.</span>
+<span class="sd">    psd_var_timeseries : pycbc.timeseries</span>
+<span class="sd">        A timeseries containing the PSD variation value for each second of the</span>
+<span class="sd">        latest increment in PyCBC Live.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    psd_var_vals : numpy.ndarray</span>
+<span class="sd">        Array of interpolated PSD variation values at trigger times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create the interpolator</span>
+    <span class="n">interpolator</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">psd_var_timeseries</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                            <span class="n">psd_var_timeseries</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                            <span class="n">fill_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                            <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Evaluate at the trigger times</span>
+    <span class="n">psd_var_vals</span> <span class="o">=</span> <span class="n">interpolator</span><span class="p">(</span><span class="n">triggers</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">psd_var_vals</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

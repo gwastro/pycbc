@@ -1,0 +1,460 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.trigger_fits &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.trigger_fits</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.trigger_fits</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tools for maximum likelihood fits to single trigger statistic values</span>
+
+<span class="sd">For some set of values above a threshold, e.g. trigger SNRs, the functions</span>
+<span class="sd">in this module perform maximum likelihood fits with 1-sigma uncertainties</span>
+<span class="sd">to various simple functional forms of PDF, all normalized to 1.</span>
+<span class="sd">You can also obtain the fitted function and its (inverse) CDF and perform</span>
+<span class="sd">a Kolmogorov-Smirnov test.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd"># call the fit function directly if the threshold is known</span>
+<span class="sd">alpha, sigma_alpha = fit_exponential(snrs, 5.5)</span>
+
+<span class="sd"># apply a threshold explicitly</span>
+<span class="sd">alpha, sigma_alpha = fit_above_thresh(&#39;exponential&#39;, snrs, thresh=6.25)</span>
+
+<span class="sd"># let the code work out the threshold from the smallest value via the default thresh=None</span>
+<span class="sd">alpha, sigma_alpha = fit_above_thresh(&#39;exponential&#39;, snrs)</span>
+
+<span class="sd"># or only fit the largest N values, i.e. tail fitting</span>
+<span class="sd">thresh = tail_threshold(snrs, N=500)</span>
+<span class="sd">alpha, sigma_alpha = fit_above_thresh(&#39;exponential&#39;, snrs, thresh)</span>
+
+<span class="sd"># obtain the fitted function directly</span>
+<span class="sd">xvals = numpy.xrange(5.5, 10.5, 20)</span>
+<span class="sd">exponential_fit = expfit(xvals, alpha, thresh)</span>
+
+<span class="sd"># or access function by name</span>
+<span class="sd">exponential_fit_1 = fit_fn(&#39;exponential&#39;, xvals, alpha, thresh)</span>
+
+<span class="sd"># Use weighting factors to e.g. take decimation into account</span>
+<span class="sd">alpha, sigma_alpha = fit_above_thresh(&#39;exponential&#39;, snrs, weights=weights)</span>
+
+<span class="sd"># get the KS test statistic and p-value - see scipy.stats.kstest</span>
+<span class="sd">ks_stat, ks_pval = KS_test(&#39;exponential&#39;, snrs, alpha, thresh)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright T. Dent 2015 (thomas.dent@aei.mpg.de)</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 2 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">kstest</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.trigger_fits&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="exponential_fitalpha">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.exponential_fitalpha">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">exponential_fitalpha</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Maximum likelihood estimator for the fit factor for</span>
+<span class="sd">    an exponential decrease model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">thresh</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="rayleigh_fitalpha">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.rayleigh_fitalpha">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rayleigh_fitalpha</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Maximum likelihood estimator for the fit factor for</span>
+<span class="sd">    a Rayleigh distribution of events</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">2.</span> <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">vals</span> <span class="o">**</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">thresh</span> <span class="o">**</span> <span class="mf">2.</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="power_fitalpha">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.power_fitalpha">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">power_fitalpha</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Maximum likelihood estimator for the fit factor for</span>
+<span class="sd">    a power law model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">vals</span><span class="o">/</span><span class="n">thresh</span><span class="p">),</span> <span class="n">weights</span><span class="o">=</span><span class="n">w</span><span class="p">)</span> <span class="o">**</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span></div>
+
+
+
+<span class="n">fitalpha_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;exponential&#39;</span> <span class="p">:</span> <span class="n">exponential_fitalpha</span><span class="p">,</span>
+    <span class="s1">&#39;rayleigh&#39;</span>    <span class="p">:</span> <span class="n">rayleigh_fitalpha</span><span class="p">,</span>
+    <span class="s1">&#39;power&#39;</span>       <span class="p">:</span> <span class="n">power_fitalpha</span>
+<span class="p">}</span>
+
+<span class="c1"># measurement standard deviation = (-d^2 log L/d alpha^2)^(-1/2)</span>
+<span class="n">fitstd_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;exponential&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">weights</span><span class="p">,</span> <span class="n">alpha</span> <span class="p">:</span> <span class="n">alpha</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s1">&#39;rayleigh&#39;</span>    <span class="p">:</span> <span class="k">lambda</span> <span class="n">weights</span><span class="p">,</span> <span class="n">alpha</span> <span class="p">:</span> <span class="n">alpha</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s1">&#39;power&#39;</span>       <span class="p">:</span> <span class="k">lambda</span> <span class="n">weights</span><span class="p">,</span> <span class="n">alpha</span> <span class="p">:</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="fit_above_thresh">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.fit_above_thresh">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fit_above_thresh</span><span class="p">(</span><span class="n">distr</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Maximum likelihood fit for the coefficient alpha</span>
+
+<span class="sd">    Fitting a distribution of discrete values above a given threshold.</span>
+<span class="sd">    Exponential  p(x) = alpha exp(-alpha (x-x_t))</span>
+<span class="sd">    Rayleigh     p(x) = alpha x exp(-alpha (x**2-x_t**2)/2)</span>
+<span class="sd">    Power        p(x) = ((alpha-1)/x_t) (x/x_t)**-alpha</span>
+<span class="sd">    Values below threshold will be discarded.</span>
+<span class="sd">    If no threshold is specified the minimum sample value will be used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distr : {&#39;exponential&#39;, &#39;rayleigh&#39;, &#39;power&#39;}</span>
+<span class="sd">        Name of distribution</span>
+<span class="sd">    vals : sequence of floats</span>
+<span class="sd">        Values to fit</span>
+<span class="sd">    thresh : float</span>
+<span class="sd">        Threshold to apply before fitting; if None, use min(vals)</span>
+<span class="sd">    weights: sequence of floats</span>
+<span class="sd">        Weighting factors to use for the values when fitting.</span>
+<span class="sd">        Default=None - all the same</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Fitted value</span>
+<span class="sd">    sigma_alpha : float</span>
+<span class="sd">        Standard error in fitted value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">thresh</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">thresh</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="n">above_thresh</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">above_thresh</span> <span class="o">=</span> <span class="n">vals</span> <span class="o">&gt;=</span> <span class="n">thresh</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">above_thresh</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Nothing is above threshold - warn and return -1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No values are above the threshold, </span><span class="si">%.2f</span><span class="s2">, &quot;</span>
+                           <span class="s2">&quot;maximum is </span><span class="si">%.2f</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">vals</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span>
+
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">above_thresh</span><span class="p">]</span>
+
+    <span class="c1"># Set up the weights</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">above_thresh</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">fitalpha_dict</span><span class="p">[</span><span class="n">distr</span><span class="p">](</span><span class="n">vals</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">fitstd_dict</span><span class="p">[</span><span class="n">distr</span><span class="p">](</span><span class="n">w</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Variables:</span>
+<span class="c1"># x: the trigger stat value(s) at which to evaluate the function</span>
+<span class="c1"># a: slope parameter of the fit</span>
+<span class="c1"># t: lower threshold stat value</span>
+<span class="n">fitfn_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;exponential&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">t</span> <span class="p">:</span> <span class="n">a</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">t</span><span class="p">)),</span>
+    <span class="s1">&#39;rayleigh&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">t</span> <span class="p">:</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">x</span> <span class="o">*</span> \
+                                   <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">t</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)),</span>
+    <span class="s1">&#39;power&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">t</span> <span class="p">:</span> <span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span> <span class="o">**</span> <span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="fit_fn">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.fit_fn">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fit_fn</span><span class="p">(</span><span class="n">distr</span><span class="p">,</span> <span class="n">xvals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">thresh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The fitted function normalized to 1 above threshold</span>
+
+<span class="sd">    To normalize to a given total count multiply by the count.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    xvals : sequence of floats</span>
+<span class="sd">        Values where the function is to be evaluated</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The fitted parameter</span>
+<span class="sd">    thresh : float</span>
+<span class="sd">        Threshold value applied to fitted values</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fit : array of floats</span>
+<span class="sd">        Fitted function at the requested xvals</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xvals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span>
+    <span class="n">fit</span> <span class="o">=</span> <span class="n">fitfn_dict</span><span class="p">[</span><span class="n">distr</span><span class="p">](</span><span class="n">xvals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
+    <span class="c1"># set fitted values below threshold to 0</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="n">fit</span><span class="p">,</span> <span class="n">xvals</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fit</span></div>
+
+
+
+<span class="n">cum_fndict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;exponential&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t</span> <span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">t</span><span class="p">)),</span>
+    <span class="s1">&#39;rayleigh&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t</span> <span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="mf">2.</span> <span class="o">-</span> <span class="n">t</span> <span class="o">**</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">),</span>
+    <span class="s1">&#39;power&#39;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t</span> <span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="cum_fit">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.cum_fit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cum_fit</span><span class="p">(</span><span class="n">distr</span><span class="p">,</span> <span class="n">xvals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">thresh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Integral of the fitted function above a given value (reverse CDF)</span>
+
+<span class="sd">    The fitted function is normalized to 1 above threshold</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    xvals : sequence of floats</span>
+<span class="sd">        Values where the function is to be evaluated</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The fitted parameter</span>
+<span class="sd">    thresh : float</span>
+<span class="sd">        Threshold value applied to fitted values</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cum_fit : array of floats</span>
+<span class="sd">        Reverse CDF of fitted function at the requested xvals</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xvals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span>
+    <span class="n">cum_fit</span> <span class="o">=</span> <span class="n">cum_fndict</span><span class="p">[</span><span class="n">distr</span><span class="p">](</span><span class="n">xvals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
+    <span class="c1"># set fitted values below threshold to 0</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="n">cum_fit</span><span class="p">,</span> <span class="n">xvals</span> <span class="o">&lt;</span> <span class="n">thresh</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cum_fit</span></div>
+
+
+<div class="viewcode-block" id="tail_threshold">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.tail_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tail_threshold</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine a threshold above which there are N louder values&quot;&quot;&quot;</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not enough input values to determine threshold&#39;</span><span class="p">)</span>
+    <span class="n">vals</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="o">-</span><span class="n">N</span><span class="p">:])</span></div>
+
+
+
+<div class="viewcode-block" id="KS_test">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.KS_test">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">KS_test</span><span class="p">(</span><span class="n">distr</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform Kolmogorov-Smirnov test for fitted distribution</span>
+
+<span class="sd">    Compare the given set of discrete values above a given threshold to the</span>
+<span class="sd">    fitted distribution function.</span>
+<span class="sd">    If no threshold is specified, the minimum sample value will be used.</span>
+<span class="sd">    Returns the KS test statistic and its p-value: lower p means less</span>
+<span class="sd">    probable under the hypothesis of a perfect fit</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distr : {&#39;exponential&#39;, &#39;rayleigh&#39;, &#39;power&#39;}</span>
+<span class="sd">        Name of distribution</span>
+<span class="sd">    vals : sequence of floats</span>
+<span class="sd">        Values to compare to fit</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Fitted distribution parameter</span>
+<span class="sd">    thresh : float</span>
+<span class="sd">        Threshold to apply before fitting; if None, use min(vals)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    D : float</span>
+<span class="sd">        KS test statistic</span>
+<span class="sd">    p-value : float</span>
+<span class="sd">        p-value, assumed to be two-tailed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">thresh</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">thresh</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">vals</span> <span class="o">&gt;=</span> <span class="n">thresh</span><span class="p">]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cdf_fn</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cum_fndict</span><span class="p">[</span><span class="n">distr</span><span class="p">](</span><span class="n">x</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">kstest</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">cdf_fn</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="which_bin">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.trigger_fits.which_bin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">which_bin</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">minpar</span><span class="p">,</span> <span class="n">maxpar</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function</span>
+
+<span class="sd">    Returns bin index where a parameter value belongs (from 0 through nbins-1)</span>
+<span class="sd">    when dividing the range between minpar and maxpar equally into bins.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    par : float</span>
+<span class="sd">        Parameter value being binned</span>
+<span class="sd">    minpar : float</span>
+<span class="sd">        Minimum parameter value</span>
+<span class="sd">    maxpar : float</span>
+<span class="sd">        Maximum parameter value</span>
+<span class="sd">    nbins : int</span>
+<span class="sd">        Number of bins to use</span>
+<span class="sd">    log : boolean</span>
+<span class="sd">        If True, use log spaced bins</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    binind : int</span>
+<span class="sd">        Bin index</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="p">(</span><span class="n">par</span> <span class="o">&gt;=</span> <span class="n">minpar</span> <span class="ow">and</span> <span class="n">par</span> <span class="o">&lt;=</span> <span class="n">maxpar</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+        <span class="n">par</span><span class="p">,</span> <span class="n">minpar</span><span class="p">,</span> <span class="n">maxpar</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">par</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">minpar</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">maxpar</span><span class="p">)</span>
+    <span class="c1"># par lies some fraction of the way between min and max</span>
+    <span class="k">if</span> <span class="n">minpar</span> <span class="o">!=</span> <span class="n">maxpar</span><span class="p">:</span>
+        <span class="n">frac</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">par</span> <span class="o">-</span> <span class="n">minpar</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">maxpar</span> <span class="o">-</span> <span class="n">minpar</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># if they are equal there is only one size 0 bin</span>
+        <span class="c1"># must be in that bin</span>
+        <span class="n">frac</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># binind then lies between 0 and nbins - 1</span>
+    <span class="n">binind</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">frac</span> <span class="o">*</span> <span class="n">nbins</span><span class="p">)</span>
+    <span class="c1"># corner case</span>
+    <span class="k">if</span> <span class="n">par</span> <span class="o">==</span> <span class="n">maxpar</span><span class="p">:</span>
+        <span class="n">binind</span> <span class="o">=</span> <span class="n">nbins</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">binind</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

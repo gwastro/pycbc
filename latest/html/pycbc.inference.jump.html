@@ -1,0 +1,1107 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.jump package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.inference.models package" href="pycbc.inference.models.html" />
+    <link rel="prev" title="pycbc.inference.io package" href="pycbc.inference.io.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.inference.html">pycbc.inference package</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.jump package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.inference.jump.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-inference-jump-package">
+<h1>pycbc.inference.jump package<a class="headerlink" href="#pycbc-inference-jump-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.inference.jump.angular">
+<span id="pycbc-inference-jump-angular-module"></span><h2>pycbc.inference.jump.angular module<a class="headerlink" href="#module-pycbc.inference.jump.angular" title="Link to this heading"></a></h2>
+<p>Jump proposals that use cyclic boundaries on [0, 2pi).</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.angular.EpsieATAdaptiveAngular">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.angular.</span></span><span class="sig-name descname"><span class="pre">EpsieATAdaptiveAngular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">componentwise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/angular.html#EpsieATAdaptiveAngular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.angular.EpsieATAdaptiveAngular" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ATAdaptiveAngular</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive angular proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.angular.EpsieATAdaptiveAngular.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/angular.html#EpsieATAdaptiveAngular.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.angular.EpsieATAdaptiveAngular.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedNormal</span></code> and
+<code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set to False (since the boundaries for the angular
+proposals are always <span class="math notranslate nohighlight">\([0, 2\pi)\)</span>). See that function
+for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">ra</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_angular_proposal</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive angular proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveAngularProposal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.angular.EpsieAdaptiveAngular">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.angular.</span></span><span class="sig-name descname"><span class="pre">EpsieAdaptiveAngular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/angular.html#EpsieAdaptiveAngular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.angular.EpsieAdaptiveAngular" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveAngular</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive angular proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.angular.EpsieAdaptiveAngular.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/angular.html#EpsieAdaptiveAngular.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.angular.EpsieAdaptiveAngular.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedNormal</span></code> and
+<code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set to False (since the boundaries for the angular
+proposals are always <span class="math notranslate nohighlight">\([0, 2\pi)\)</span>). See that function
+for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">ra</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_angular</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive angular proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveAngular</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.angular.EpsieAngular">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.angular.</span></span><span class="sig-name descname"><span class="pre">EpsieAngular</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/angular.html#EpsieAngular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.angular.EpsieAngular" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Angular</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s angular proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.angular.EpsieAngular.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/angular.html#EpsieAngular.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.angular.EpsieAngular.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.Angular</span></code> and <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set
+to False. See that function for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">ra</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">angular</span>
+<span class="n">var</span><span class="o">-</span><span class="n">ra</span> <span class="o">=</span> <span class="mf">0.01</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An angular proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.Angular</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.inference.jump.bounded_normal">
+<span id="pycbc-inference-jump-bounded-normal-module"></span><h2>pycbc.inference.jump.bounded_normal module<a class="headerlink" href="#module-pycbc.inference.jump.bounded_normal" title="Link to this heading"></a></h2>
+<p>Jump proposals that use a bounded normal distribution.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.bounded_normal.EpsieATAdaptiveBoundedNormal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.bounded_normal.</span></span><span class="sig-name descname"><span class="pre">EpsieATAdaptiveBoundedNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">componentwise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/bounded_normal.html#EpsieATAdaptiveBoundedNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.bounded_normal.EpsieATAdaptiveBoundedNormal" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ATAdaptiveBoundedNormal</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive bounded proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.bounded_normal.EpsieATAdaptiveBoundedNormal.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/bounded_normal.html#EpsieATAdaptiveBoundedNormal.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.bounded_normal.EpsieATAdaptiveBoundedNormal.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedProposal</span></code>. See that function
+for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_bounded_proposal</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive bounded proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedProposal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.bounded_normal.EpsieAdaptiveBoundedNormal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.bounded_normal.</span></span><span class="sig-name descname"><span class="pre">EpsieAdaptiveBoundedNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/bounded_normal.html#EpsieAdaptiveBoundedNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.bounded_normal.EpsieAdaptiveBoundedNormal" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveBoundedNormal</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive normal proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.bounded_normal.EpsieAdaptiveBoundedNormal.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/bounded_normal.html#EpsieAdaptiveBoundedNormal.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.bounded_normal.EpsieAdaptiveBoundedNormal.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedNormal</span></code>. See that function
+for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_bounded_normal</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive normal proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedNormal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.bounded_normal.EpsieBoundedNormal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.bounded_normal.</span></span><span class="sig-name descname"><span class="pre">EpsieBoundedNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/bounded_normal.html#EpsieBoundedNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.bounded_normal.EpsieBoundedNormal" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BoundedNormal</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s bounded normal proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.bounded_normal.EpsieBoundedNormal.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/bounded_normal.html#EpsieBoundedNormal.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.bounded_normal.EpsieBoundedNormal.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.BoundedNormal</span></code> and <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set
+to True. See that function for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">mchrip</span><span class="o">+</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">bounded_normal</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mchirp</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mchirp</span> <span class="o">=</span> <span class="mi">80</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A bounded normal proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.BoundedNormal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.inference.jump.discrete">
+<span id="pycbc-inference-jump-discrete-module"></span><h2>pycbc.inference.jump.discrete module<a class="headerlink" href="#module-pycbc.inference.jump.discrete" title="Link to this heading"></a></h2>
+<p>Jump proposals that use a bounded normal distribution.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieAdaptiveBoundedDiscrete">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.discrete.</span></span><span class="sig-name descname"><span class="pre">EpsieAdaptiveBoundedDiscrete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">successive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieAdaptiveBoundedDiscrete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieAdaptiveBoundedDiscrete" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveBoundedDiscrete</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive bounded discrete
+proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieAdaptiveBoundedDiscrete.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieAdaptiveBoundedDiscrete.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieAdaptiveBoundedDiscrete.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedDiscrete</span></code>. See that function
+for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">index</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_bounded_discrete</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">index</span> <span class="o">=</span> <span class="mi">42</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive normal proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedDiscrete</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieAdaptiveNormalDiscrete">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.discrete.</span></span><span class="sig-name descname"><span class="pre">EpsieAdaptiveNormalDiscrete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">successive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieAdaptiveNormalDiscrete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieAdaptiveNormalDiscrete" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveNormalDiscrete</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive bounded discrete
+proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieAdaptiveNormalDiscrete.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieAdaptiveNormalDiscrete.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieAdaptiveNormalDiscrete.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveNormalDiscrete</span></code>. See that function
+for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">index</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_normal_discrete</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">index</span> <span class="o">=</span> <span class="mi">42</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive normal proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveBoundedDiscrete</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieBoundedDiscrete">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.discrete.</span></span><span class="sig-name descname"><span class="pre">EpsieBoundedDiscrete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">successive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieBoundedDiscrete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieBoundedDiscrete" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BoundedDiscrete</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s bounded discrete proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieBoundedDiscrete.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieBoundedDiscrete.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieBoundedDiscrete.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.BoundedDiscrete</span></code> and <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set
+to True. See that function for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">index</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">bounded_discrete</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">index</span> <span class="o">=</span> <span class="mi">19</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A bounded discrete proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.BoundedDiscrete</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieNormalDiscrete">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.discrete.</span></span><span class="sig-name descname"><span class="pre">EpsieNormalDiscrete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">successive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieNormalDiscrete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieNormalDiscrete" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NormalDiscrete</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s normal discrete proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.discrete.EpsieNormalDiscrete.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/discrete.html#EpsieNormalDiscrete.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.discrete.EpsieNormalDiscrete.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_from_config()</span></code> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.NormalDiscrete</span></code> and <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set
+to False. See that function for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">index</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">discrete</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A bounded discrete proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.BoundedDiscrete</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.inference.jump.normal">
+<span id="pycbc-inference-jump-normal-module"></span><h2>pycbc.inference.jump.normal module<a class="headerlink" href="#module-pycbc.inference.jump.normal" title="Link to this heading"></a></h2>
+<p>Jump proposals that use a normal distribution.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.EpsieATAdaptiveNormal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">EpsieATAdaptiveNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagonal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">componentwise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#EpsieATAdaptiveNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.EpsieATAdaptiveNormal" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ATAdaptiveNormal</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s ATAdaptiveProposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.EpsieATAdaptiveNormal.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#EpsieATAdaptiveNormal.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.EpsieATAdaptiveNormal.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <a class="reference internal" href="#pycbc.inference.jump.normal.epsie_from_config" title="pycbc.inference.jump.normal.epsie_from_config"><code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_from_config()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveProposal</span></code> and <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code>
+set to False. See that function for details on options that can be
+read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">mchrip</span><span class="o">+</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_proposal</span>
+<span class="n">diagonal</span> <span class="o">=</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveProposal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.EpsieAdaptiveNormal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">EpsieAdaptiveNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adaptation_duration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#EpsieAdaptiveNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.EpsieAdaptiveNormal" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveNormal</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s adaptive normal proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.EpsieAdaptiveNormal.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#EpsieAdaptiveNormal.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.EpsieAdaptiveNormal.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <a class="reference internal" href="#pycbc.inference.jump.normal.epsie_adaptive_from_config" title="pycbc.inference.jump.normal.epsie_adaptive_from_config"><code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_adaptive_from_config()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveNormal</span></code>. See that function for
+details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">mchirp</span><span class="o">+</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_normal</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mchirp</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mchirp</span> <span class="o">=</span> <span class="mi">80</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An adaptive normal proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveNormal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.EpsieNormal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">EpsieNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jump_interval_duration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#EpsieNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.EpsieNormal" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Normal</span></code></p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method to epsie’s normal proposal.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.EpsieNormal.from_config">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#EpsieNormal.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.EpsieNormal.from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a proposal from a config file.</p>
+<p>This calls <a class="reference internal" href="#pycbc.inference.jump.normal.epsie_from_config" title="pycbc.inference.jump.normal.epsie_from_config"><code class="xref py py-func docutils literal notranslate"><span class="pre">epsie_from_config()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">cls</span></code> set to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.Normal</span></code> and <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> set to
+False. See that function for details on options that can be read.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">mchrip</span><span class="o">+</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">normal</span>
+<span class="n">var</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mf">0.1</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A normal proposal for use with <code class="docutils literal notranslate"><span class="pre">epsie</span></code> samplers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.Normal</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.epsie_adaptive_from_config">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">epsie_adaptive_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_arg_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'boundaries'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#epsie_adaptive_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.epsie_adaptive_from_config" title="Link to this definition"></a></dt>
+<dd><p>Generic function for loading adaptive epsie proposals from a config
+file.</p>
+<p>The section that is read should have the format <code class="docutils literal notranslate"><span class="pre">[{section}-{tag}]</span></code>,
+where <code class="docutils literal notranslate"><span class="pre">{tag}</span></code> is a <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list
+of the parameters to create the jump proposal for.</p>
+<p>Options that are read:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>name<span class="classifier">str</span></dt><dd><p>Required. Must match the name of the proposal.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>adaptation-duration<span class="classifier">int</span></dt><dd><p>Required. Sets the <code class="docutils literal notranslate"><span class="pre">adaptation_duration</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><p>min-{param} : float</p></li>
+<li><dl class="simple">
+<dt>max-{param}<span class="classifier">float</span></dt><dd><p>The bounds on each parameter. Required if <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> is set to
+True, in which case bounds must be provided for every parameter.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>var-{param}<span class="classifier">float</span></dt><dd><p>Optional. Initial variance to use. If not provided, will use a
+default based on the bounds (see
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.AdaptiveSupport</span></code> for details).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>adaptation-decay<span class="classifier">int</span></dt><dd><p>Optional. Sets the <code class="docutils literal notranslate"><span class="pre">adaptation_decay</span></code>. If not provided, will use
+the class’s default.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>start-iteration<span class="classifier">int</span></dt><dd><p>Optional. Sets the <code class="docutils literal notranslate"><span class="pre">start_iteration</span></code>.If not provided, will use
+the class’s default.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>target-rate<span class="classifier">float</span></dt><dd><p>Optional. Sets the <code class="docutils literal notranslate"><span class="pre">target_rate</span></code>. If not provided, will use
+the class’s default.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> (<em>epsie.proposals.BaseProposal</em>) – The epsie proposal class to initialize. The class should have
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.normal.AdaptiveSupport</span></code>.</p></li>
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+<li><p><strong>with_boundaries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Try to load boundaries from the section and pass a <code class="docutils literal notranslate"><span class="pre">boundaries</span></code>
+argument to the class’s initialization. Default is True.</p></li>
+<li><p><strong>boundary_arg_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The name of the argument for the boundaries (only used if
+<code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> is True). Provided because some adaptive proposals
+that only need the boundary widths call this <code class="docutils literal notranslate"><span class="pre">prior_widths</span></code>. Default
+is <code class="docutils literal notranslate"><span class="pre">'boundaries'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The class initialized with the options read from the config file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cls</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.epsie_at_adaptive_from_config">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">epsie_at_adaptive_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#epsie_at_adaptive_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.epsie_at_adaptive_from_config" title="Link to this definition"></a></dt>
+<dd><p>Generic function for loading AT Adaptive Normal proposals from a config
+file.</p>
+<p>The section that is read should have the format <code class="docutils literal notranslate"><span class="pre">[{section}-{tag}]</span></code>,
+where <code class="docutils literal notranslate"><span class="pre">{tag}</span></code> is a <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list
+of the parameters to create the jump proposal for.</p>
+<p>Options that are read:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>name<span class="classifier">str</span></dt><dd><p>Required. Must match the name of the proposal.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>adaptation-duration<span class="classifier">int</span></dt><dd><p>Sets the <code class="docutils literal notranslate"><span class="pre">adaptation_duration</span></code>. If not provided will use the class’s
+default.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>diagonal<span class="classifier">bool, optional</span></dt><dd><p>Determines whether only to adapt the variance. If True will only train
+the diagonal elements.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>componentwise<span class="classifier">bool, optional</span></dt><dd><p>Whether to include a componentwise scaling of the parameters.
+By default set to False. Componentwise scaling <cite>ndim</cite> times more
+expensive than global scaling.</p>
+</dd>
+</dl>
+</li>
+<li><p>min-{param} : float</p></li>
+<li><dl class="simple">
+<dt>max-{param}<span class="classifier">float</span></dt><dd><p>The bounds on each parameter. Required if <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> is set to
+True, in which case bounds must be provided for every parameter.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>start-iteration<span class="classifier">int</span></dt><dd><p>Optional. Sets the <code class="docutils literal notranslate"><span class="pre">start_iteration</span></code>. If not provided, will use
+the class’s default.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>target-rate<span class="classifier">float</span></dt><dd><p>Optional. Sets the <code class="docutils literal notranslate"><span class="pre">target_rate</span></code>. If not provided, will use
+the class’s default.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> (<em>epsie.proposals.BaseProposal</em>) – The epsie proposal class to initialize. The class should have
+<code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.normal.AdaptiveSupport</span></code>.</p></li>
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+<li><p><strong>with_boundaries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Try to load boundaries from the section and pass a <code class="docutils literal notranslate"><span class="pre">boundaries</span></code>
+argument to the class’s initialization. Default is True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The class initialized with the options read from the config file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cls</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.epsie_from_config">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">epsie_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#epsie_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.epsie_from_config" title="Link to this definition"></a></dt>
+<dd><p>Generic function for loading epsie proposals from a config file.</p>
+<p>This should be used for proposals that are not adaptive.</p>
+<p>The section that is read should have the format <code class="docutils literal notranslate"><span class="pre">[{section}-{tag}]</span></code>,
+where <code class="docutils literal notranslate"><span class="pre">{tag}</span></code> is a <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list
+of the parameters to create the jump proposal for.</p>
+<p>Options that are read:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>name<span class="classifier">str</span></dt><dd><p>Required. Must match the name of the proposal.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>var-{param}<span class="classifier">float</span></dt><dd><p>Optional. Variance to use for parameter {param}. If <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code>
+is True, then any parameter not specified will use a default variance
+of <span class="math notranslate nohighlight">\((\Delta p/10)^2\)</span>, where <span class="math notranslate nohighlight">\(\Delta p\)</span> is the boundary
+width for that parameter. If <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> is False, will use
+a default value of 1.</p>
+</dd>
+</dl>
+</li>
+<li><p>min-{param} : float</p></li>
+<li><dl class="simple">
+<dt>max-{param}<span class="classifier">float</span></dt><dd><p>The bounds on each parameter. Required if <code class="docutils literal notranslate"><span class="pre">with_boundaries</span></code> is set to
+True, in which case bounds must be provided for every parameter.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> (<em>epsie.proposals.BaseProposal</em>) – The epsie proposal class to initialize.</p></li>
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+<li><p><strong>with_boundaries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – Try to load boundaries from the section and pass a <code class="docutils literal notranslate"><span class="pre">boundaries</span></code>
+argument to the class’s initialization. This should be set to true
+for bounded proposals. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The class initialized with the options read from the config file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cls</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.get_epsie_adaptation_settings">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">get_epsie_adaptation_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#get_epsie_adaptation_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.get_epsie_adaptation_settings" title="Link to this definition"></a></dt>
+<dd><p>Get settings for Epsie adaptive proposals from a config file.</p>
+<p>This requires that <code class="docutils literal notranslate"><span class="pre">adaptation_duration</span></code> is in the given dictionary.
+It will also look for <code class="docutils literal notranslate"><span class="pre">adaptation_decay</span></code>, <code class="docutils literal notranslate"><span class="pre">start_iteration</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">target_rate</span></code>, but these are optional. Arguments will be popped from the
+given dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of option -&gt; value that was loaded from a config file
+section.</p></li>
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> (</em><em>optional</em><em>)</em>) – Proposal name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of argument name -&gt; values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.get_epsie_discrete_successive_settings">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">get_epsie_discrete_successive_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#get_epsie_discrete_successive_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.get_epsie_discrete_successive_settings" title="Link to this definition"></a></dt>
+<dd><p>Get settings for Epsie successive discrete proposal successive jumps
+from a config file.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">successive</span></code> is not defined for a parameter then assumes successive
+jumps are not allowed (i.e. jumps from an integer to the same integer).
+Arguments will be popped from the given dictionary.</p>
+<dl class="simple">
+<dt>Example::</dt><dd><p>[jump_proposal-k+n]
+name = discrete
+successive-k =</p>
+</dd>
+</dl>
+<p>This example sets successive jumps for <code class="docutils literal notranslate"><span class="pre">k</span></code> but does not do so for <code class="docutils literal notranslate"><span class="pre">n</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – List of parameter names to get the successive option for.</p></li>
+<li><p><strong>opts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of option -&gt; value that was loaded from a config file
+section.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of parameter names -&gt; bools</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.get_param_boundaries">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">get_param_boundaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#get_param_boundaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.get_param_boundaries" title="Link to this definition"></a></dt>
+<dd><p>Gets parameter boundaries for jump proposals.</p>
+<p>The syntax for the options should be <code class="docutils literal notranslate"><span class="pre">(min|max)_{param}</span> <span class="pre">=</span> <span class="pre">value</span></code>. Both
+a minimum and maximum should be provided for every parameter in <code class="docutils literal notranslate"><span class="pre">params</span></code>.
+If the opts are created using <code class="docutils literal notranslate"><span class="pre">load_opts</span></code>, then the options can be
+formatted as <code class="docutils literal notranslate"><span class="pre">(min|max)-{param}</span></code>, since that function will turn all <code class="docutils literal notranslate"><span class="pre">-</span></code>
+to <code class="docutils literal notranslate"><span class="pre">_</span></code> in option names.</p>
+<p>Arguments will be popped from the given <code class="docutils literal notranslate"><span class="pre">opts</span></code> dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – List of parameter names to get boundaries for.</p></li>
+<li><p><strong>opts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of option -&gt; value that was loaded from a config file
+section.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of parameter names -&gt; <code class="xref py py-class docutils literal notranslate"><span class="pre">epsie.proposals.Boundaries</span></code></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.get_variance">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">get_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#get_variance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.get_variance" title="Link to this definition"></a></dt>
+<dd><p>Gets variance for jump proposals from the dictionary of options.</p>
+<p>This looks for <code class="docutils literal notranslate"><span class="pre">var_{param}</span></code> for every parameter listed in <code class="docutils literal notranslate"><span class="pre">params</span></code>.
+If found, the argument is popped from the given <code class="docutils literal notranslate"><span class="pre">opts</span></code> dictionary. If not
+found, <code class="docutils literal notranslate"><span class="pre">default</span></code> will be used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – List of parameter names to look for.</p></li>
+<li><p><strong>opts</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of option -&gt; value that was loaded from a config file
+section.</p></li>
+<li><p><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – Default value to use for parameters that do not have variances
+provided. Default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of variances to use. Order is the same as the parameter names
+given in <code class="docutils literal notranslate"><span class="pre">params</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.normal.load_opts">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.normal.</span></span><span class="sig-name descname"><span class="pre">load_opts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump/normal.html#load_opts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.normal.load_opts" title="Link to this definition"></a></dt>
+<dd><p>Loads config options for jump proposals.</p>
+<p>All <cite>-</cite> in option names are converted to <cite>_</cite> before returning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – Config file to read from.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the section to look in.</p></li>
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – <code class="xref py py-const docutils literal notranslate"><span class="pre">pycbc.VARARGS_DELIM</span></code> separated list of parameter names
+to create proposals for.</p></li>
+<li><p><strong>skip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – List of option names to skip loading.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>params</strong> (<em>list</em>) – List of parameter names the jump proposal is for.</p></li>
+<li><p><strong>opts</strong> (<em>dict</em>) – Dictionary of option names -&gt; values, where all values are strings.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.inference.jump">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.inference.jump" title="Link to this heading"></a></h2>
+<p>Provides custom jump proposals for samplers.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.inference.jump.epsie_proposals_from_config">
+<span class="sig-prename descclassname"><span class="pre">pycbc.inference.jump.</span></span><span class="sig-name descname"><span class="pre">epsie_proposals_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'jump_proposal'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/jump.html#epsie_proposals_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.inference.jump.epsie_proposals_from_config" title="Link to this definition"></a></dt>
+<dd><p>Loads epsie jump proposals from the given config file.</p>
+<p>This loads jump proposals from sub-sections starting with <code class="docutils literal notranslate"><span class="pre">section</span></code>
+(default is ‘jump_proposal’). The tag part of the sub-sections’ headers
+should list the parameters the proposal is to be used for.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">mtotal</span><span class="o">+</span><span class="n">q</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">adaptive_normal</span>
+<span class="n">adaptation</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">q</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mtotal</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mtotal</span> <span class="o">=</span> <span class="mi">160</span>
+
+<span class="p">[</span><span class="n">jump_proposal</span><span class="o">-</span><span class="n">spin1_a</span><span class="p">]</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">normal</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>WorkflowConfigParser instance</em>) – The config file to read.</p></li>
+<li><p><strong>section</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The section name to read jump proposals from. Default is
+<code class="docutils literal notranslate"><span class="pre">'jump_proposal'</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of the proposal instances.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.inference.io.html" class="btn btn-neutral float-left" title="pycbc.inference.io package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.inference.models.html" class="btn btn-neutral float-right" title="pycbc.inference.models package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

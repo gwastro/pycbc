@@ -1,0 +1,231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Examples and Interactive Tutorials &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Catalog of Observed Gravitational-wave Mergers" href="catalog.html" />
+    <link rel="prev" title="Index" href="genindex.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Library Examples and Interactive Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Library Examples and Interactive Tutorials</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/tutorials.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="library-examples-and-interactive-tutorials">
+<span id="tutorials"></span><h1>Library Examples and Interactive Tutorials<a class="headerlink" href="#library-examples-and-interactive-tutorials" title="Link to this heading"></a></h1>
+<p>We have interactive tutorials and examples of using the pycbc.
+<a class="reference external" href="https://github.com/gwastro/PyCBC-Tutorials">Please give them a try!</a>.</p>
+<p>In addition we have some examples below.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="catalog.html#which-mergers-do-we-have-information-about">Which mergers do we have information about?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="catalog.html#plotting-some-key-statistics-from-the-catalog">Plotting some key statistics from the catalog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="catalog.html#accessing-data-around-each-event">Accessing data around each event</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html#determine-the-times-an-instrument-has-valid-data">Determine the times an instrument has valid data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html#finding-times-of-hardware-injections">Finding times of hardware injections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html#what-flags-can-i-query">What flags can I query?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="frame.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html#querying-a-ldr-server">Querying a LDR server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html#reading-a-frame-file">Reading a frame file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html#writing-a-frame-file">Writing a frame file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#using-the-function-based-api">Using the function based API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#using-the-class-based-api">Using the class-based API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#choosing-a-specific-backend">Choosing a specific backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html#plotting-the-whitened-strain">Plotting the whitened strain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html#calculate-the-signal-to-noise">Calculate the signal-to-noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html#listen-to-gw150914-in-hanford">Listen to GW150914 in Hanford</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detector.html#detector-locations">Detector Locations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html#light-travel-time-between-detectors">Light travel time between detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html#time-source-gravitational-wave-passes-through-detector">Time source gravitational-wave passes through detector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html#antenna-patterns-and-projecting-a-signal-into-the-detector-frame">Antenna Patterns and Projecting a Signal into the Detector Frame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html#adding-a-custom-detector-overriding-existing-ones">Adding a custom detector / overriding existing ones</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="psd.html#reading-saving-a-psd-from-a-file">Reading / Saving a PSD from a file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html#generating-an-analytic-psd-from-lalsimulation">Generating an Analytic PSD from lalsimulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html#estimating-the-psd-of-a-time-series">Estimating the PSD of a time series</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="noise.html#generating-time-domain-gaussian-noise">Generating time domain Gaussian noise</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#what-waveforms-can-i-generate">What waveforms can I generate?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#plotting-time-domain-waveforms">Plotting Time Domain Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#generating-one-waveform-in-multiple-detectors">Generating one waveform in multiple detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#selecting-which-modes-to-include">Selecting which modes to include</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#calculating-the-match-between-waveforms">Calculating the match between waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#plotting-a-td-and-fd-waveform-together-in-the-td">Plotting a TD and FD waveform together in the TD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#plotting-gw-phase-and-amplitude-of-td-waveform">Plotting GW phase and amplitude of TD waveform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#plotting-frequency-evolution-of-td-waveform">Plotting frequency evolution of TD waveform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html#adding-a-custom-waveform">Adding a custom waveform</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filter.html#applying-highpass-lowpass-filters">Applying highpass / lowpass filters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html#applying-an-fir-filter">Applying an FIR filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html#matched-filter-snr">Matched Filter SNR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html#chisq-time-series">Chisq time series</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html#generating-samples-in-a-python-script-by-using-the-ini-file">Generating samples in a Python script by using the .ini file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html#making-mass-distributions-in-m1-and-m2">Making Mass Distributions in M1 and M2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html#generating-mchirp-and-q-from-uniform-mass1-and-mass2">Generating mchirp and q from uniform mass1 and mass2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html#sky-location-distribution-as-spin-distribution-example">Sky Location Distribution as Spin Distribution Example</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="genindex.html" class="btn btn-neutral float-left" title="Index" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="catalog.html" class="btn btn-neutral float-right" title="Catalog of Observed Gravitational-wave Mergers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

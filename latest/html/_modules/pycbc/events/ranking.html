@@ -1,0 +1,565 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.ranking &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.ranking</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.ranking</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; This module contains functions for calculating single-ifo ranking</span>
+<span class="sd">statistic values</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.ranking&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="effsnr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.effsnr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">effsnr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">reduced_x2</span><span class="p">,</span> <span class="n">fac</span><span class="o">=</span><span class="mf">250.</span><span class="p">,</span>
+           <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the effective SNR statistic. See (S5y1 paper) for definition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">rchisq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reduced_x2</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">esnr</span> <span class="o">=</span> <span class="n">snr</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">snr</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">fac</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.25</span> <span class="o">/</span> <span class="n">rchisq</span> <span class="o">**</span> <span class="mf">0.25</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">esnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">esnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="newsnr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.newsnr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newsnr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">reduced_x2</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span>
+           <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the re-weighted SNR statistic (&#39;newSNR&#39;) from given SNR and</span>
+<span class="sd">    reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for</span>
+<span class="sd">    definition. Previous implementation in glue/ligolw/lsctables.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">reduced_x2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reduced_x2</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># newsnr is only different from snr if reduced chisq &gt; 1</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">reduced_x2</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">nsnr</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">reduced_x2</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">**</span> <span class="p">(</span><span class="n">q</span><span class="o">/</span><span class="n">n</span><span class="p">)))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">q</span><span class="p">)</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nsnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nsnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="newsnr_sgveto">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.newsnr_sgveto">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newsnr_sgveto</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">brchisq</span><span class="p">,</span> <span class="n">sgchisq</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Combined SNR derived from NewSNR and Sine-Gaussian Chisq&quot;&quot;&quot;</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="n">newsnr</span><span class="p">(</span>
+            <span class="n">snr</span><span class="p">,</span>
+            <span class="n">brchisq</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span>
+        <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">sgchisq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sgchisq</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sgchisq</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="n">nsnr</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">nsnr</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">sgchisq</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">/</span> <span class="mf">4.0</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nsnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nsnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="newsnr_sgveto_psdvar">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.newsnr_sgveto_psdvar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newsnr_sgveto_psdvar</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">brchisq</span><span class="p">,</span> <span class="n">sgchisq</span><span class="p">,</span> <span class="n">psd_var_val</span><span class="p">,</span>
+                         <span class="n">min_expected_psdvar</span><span class="o">=</span><span class="mf">0.65</span><span class="p">,</span>
+                         <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and</span>
+<span class="sd">    PSD variation statistic&quot;&quot;&quot;</span>
+    <span class="c1"># If PSD var is lower than the &#39;minimum usually expected value&#39; stop this</span>
+    <span class="c1"># being used in the statistic. This low value might arise because a</span>
+    <span class="c1"># significant fraction of the &quot;short&quot; PSD period was gated (for instance).</span>
+    <span class="n">psd_var_val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psd_var_val</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">psd_var_val</span><span class="p">[</span><span class="n">psd_var_val</span> <span class="o">&lt;</span> <span class="n">min_expected_psdvar</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">scaled_snr</span> <span class="o">=</span> <span class="n">snr</span> <span class="o">*</span> <span class="p">(</span><span class="n">psd_var_val</span> <span class="o">**</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">scaled_brchisq</span> <span class="o">=</span> <span class="n">brchisq</span> <span class="o">*</span> <span class="p">(</span><span class="n">psd_var_val</span> <span class="o">**</span> <span class="o">-</span><span class="mf">1.</span><span class="p">)</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">newsnr_sgveto</span><span class="p">(</span>
+        <span class="n">scaled_snr</span><span class="p">,</span>
+        <span class="n">scaled_brchisq</span><span class="p">,</span>
+        <span class="n">sgchisq</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nsnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nsnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="newsnr_sgveto_psdvar_threshold">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.newsnr_sgveto_psdvar_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newsnr_sgveto_psdvar_threshold</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">brchisq</span><span class="p">,</span> <span class="n">sgchisq</span><span class="p">,</span> <span class="n">psd_var_val</span><span class="p">,</span>
+                                   <span class="n">min_expected_psdvar</span><span class="o">=</span><span class="mf">0.65</span><span class="p">,</span>
+                                   <span class="n">brchisq_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                                   <span class="n">psd_var_val_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                                   <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; newsnr_sgveto_psdvar with thresholds applied.</span>
+
+<span class="sd">    This is the newsnr_sgveto_psdvar statistic with additional options</span>
+<span class="sd">    to threshold on chi-squared or PSD variation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">newsnr_sgveto_psdvar</span><span class="p">(</span>
+        <span class="n">snr</span><span class="p">,</span>
+        <span class="n">brchisq</span><span class="p">,</span>
+        <span class="n">sgchisq</span><span class="p">,</span>
+        <span class="n">psd_var_val</span><span class="p">,</span>
+        <span class="n">min_expected_psdvar</span><span class="o">=</span><span class="n">min_expected_psdvar</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">nsnr</span><span class="p">[</span><span class="n">brchisq</span> <span class="o">&gt;</span> <span class="n">brchisq_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="n">nsnr</span><span class="p">[</span><span class="n">psd_var_val</span> <span class="o">&gt;</span> <span class="n">psd_var_val_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nsnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nsnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="newsnr_sgveto_psdvar_scaled">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.newsnr_sgveto_psdvar_scaled">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newsnr_sgveto_psdvar_scaled</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">brchisq</span><span class="p">,</span> <span class="n">sgchisq</span><span class="p">,</span> <span class="n">psd_var_val</span><span class="p">,</span>
+                                <span class="n">scaling</span><span class="o">=</span><span class="mf">0.33</span><span class="p">,</span> <span class="n">min_expected_psdvar</span><span class="o">=</span><span class="mf">0.65</span><span class="p">,</span>
+                                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Combined SNR derived from NewSNR, Sine-Gaussian Chisq and scaled PSD</span>
+<span class="sd">    variation statistic. &quot;&quot;&quot;</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="n">newsnr_sgveto</span><span class="p">(</span>
+            <span class="n">snr</span><span class="p">,</span>
+            <span class="n">brchisq</span><span class="p">,</span>
+            <span class="n">sgchisq</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span>
+        <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">psd_var_val</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psd_var_val</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">psd_var_val</span><span class="p">[</span><span class="n">psd_var_val</span> <span class="o">&lt;</span> <span class="n">min_expected_psdvar</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+
+    <span class="c1"># Default scale is 0.33 as tuned from analysis of data from O2 chunks</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">nsnr</span> <span class="o">/</span> <span class="n">psd_var_val</span> <span class="o">**</span> <span class="n">scaling</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nsnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nsnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="newsnr_sgveto_psdvar_scaled_threshold">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.newsnr_sgveto_psdvar_scaled_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">newsnr_sgveto_psdvar_scaled_threshold</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">bchisq</span><span class="p">,</span> <span class="n">sgchisq</span><span class="p">,</span> <span class="n">psd_var_val</span><span class="p">,</span>
+                                          <span class="n">threshold</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+                                          <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Combined SNR derived from NewSNR and Sine-Gaussian Chisq, and</span>
+<span class="sd">    scaled psd variation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">newsnr_sgveto_psdvar_scaled</span><span class="p">(</span>
+        <span class="n">snr</span><span class="p">,</span>
+        <span class="n">bchisq</span><span class="p">,</span>
+        <span class="n">sgchisq</span><span class="p">,</span>
+        <span class="n">psd_var_val</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">nsnr</span><span class="p">[</span><span class="n">bchisq</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+
+    <span class="c1"># If snr input is float, return a float. Otherwise return numpy array.</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="s1">&#39;__len__&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nsnr</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nsnr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_snr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_snr</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pylint:disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return SNR from a trigs/dictionary object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)</span>
+<span class="sd">        Dictionary-like object holding single detector trigger information.</span>
+<span class="sd">        &#39;snr&#39; is a required key</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Array of snr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_newsnr">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_newsnr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_newsnr</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate newsnr (&#39;reweighted SNR&#39;) for a trigs/dictionary object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)</span>
+<span class="sd">        Dictionary-like object holding single detector trigger information.</span>
+<span class="sd">        &#39;chisq_dof&#39;, &#39;snr&#39;, and &#39;chisq&#39; are required keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Array of newsnr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq_dof&#39;</span><span class="p">][:]</span> <span class="o">-</span> <span class="mf">2.</span>
+    <span class="n">nsnr</span> <span class="o">=</span> <span class="n">newsnr</span><span class="p">(</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_newsnr_sgveto">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_newsnr_sgveto">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_newsnr_sgveto</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate newsnr re-weigthed by the sine-gaussian veto</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)</span>
+<span class="sd">        Dictionary-like object holding single detector trigger information.</span>
+<span class="sd">        &#39;chisq_dof&#39;, &#39;snr&#39;, &#39;sg_chisq&#39; and &#39;chisq&#39; are required keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        Array of newsnr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq_dof&#39;</span><span class="p">][:]</span> <span class="o">-</span> <span class="mf">2.</span>
+    <span class="n">nsnr_sg</span> <span class="o">=</span> <span class="n">newsnr_sgveto</span><span class="p">(</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">,</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">][:],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr_sg</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_newsnr_sgveto_psdvar">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_newsnr_sgveto_psdvar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_newsnr_sgveto_psdvar</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate snr re-weighted by Allen chisq, sine-gaussian veto and</span>
+<span class="sd">    psd variation statistic</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays</span>
+<span class="sd">        Dictionary holding single detector trigger information.</span>
+<span class="sd">    &#39;chisq_dof&#39;, &#39;snr&#39;, &#39;chisq&#39; and &#39;psd_var_val&#39; are required keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     numpy.ndarray</span>
+<span class="sd">        Array of newsnr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq_dof&#39;</span><span class="p">][:]</span> <span class="o">-</span> <span class="mf">2.</span>
+    <span class="n">nsnr_sg_psd</span> <span class="o">=</span> <span class="n">newsnr_sgveto_psdvar</span><span class="p">(</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">,</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;psd_var_val&#39;</span><span class="p">][:],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr_sg_psd</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_newsnr_sgveto_psdvar_threshold">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_newsnr_sgveto_psdvar_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_newsnr_sgveto_psdvar_threshold</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate newsnr re-weighted by the sine-gaussian veto and scaled</span>
+<span class="sd">    psd variation statistic</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays</span>
+<span class="sd">        Dictionary holding single detector trigger information.</span>
+<span class="sd">    &#39;chisq_dof&#39;, &#39;snr&#39;, &#39;chisq&#39; and &#39;psd_var_val&#39; are required keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     numpy.ndarray</span>
+<span class="sd">        Array of newsnr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq_dof&#39;</span><span class="p">][:]</span> <span class="o">-</span> <span class="mf">2.</span>
+    <span class="n">nsnr_sg_psdt</span> <span class="o">=</span> <span class="n">newsnr_sgveto_psdvar_threshold</span><span class="p">(</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">,</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;psd_var_val&#39;</span><span class="p">][:],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr_sg_psdt</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_newsnr_sgveto_psdvar_scaled">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_newsnr_sgveto_psdvar_scaled">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_newsnr_sgveto_psdvar_scaled</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate newsnr re-weighted by the sine-gaussian veto and scaled</span>
+<span class="sd">    psd variation statistic</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays</span>
+<span class="sd">        Dictionary holding single detector trigger information.</span>
+<span class="sd">    &#39;chisq_dof&#39;, &#39;snr&#39;, &#39;chisq&#39; and &#39;psd_var_val&#39; are required keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     numpy.ndarray</span>
+<span class="sd">        Array of newsnr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq_dof&#39;</span><span class="p">][:]</span> <span class="o">-</span> <span class="mf">2.</span>
+    <span class="n">nsnr_sg_psdscale</span> <span class="o">=</span> <span class="n">newsnr_sgveto_psdvar_scaled</span><span class="p">(</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">,</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;psd_var_val&#39;</span><span class="p">][:],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr_sg_psdscale</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_newsnr_sgveto_psdvar_scaled_threshold">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_newsnr_sgveto_psdvar_scaled_threshold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_newsnr_sgveto_psdvar_scaled_threshold</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate newsnr re-weighted by the sine-gaussian veto and scaled</span>
+<span class="sd">    psd variation statistic. A further threshold is applied to the</span>
+<span class="sd">    reduced chisq.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays</span>
+<span class="sd">        Dictionary holding single detector trigger information.</span>
+<span class="sd">    &#39;chisq_dof&#39;, &#39;snr&#39;, &#39;chisq&#39; and &#39;psd_var_val&#39; are required keys</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     numpy.ndarray</span>
+<span class="sd">        Array of newsnr values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq_dof&#39;</span><span class="p">][:]</span> <span class="o">-</span> <span class="mf">2.</span>
+    <span class="n">nsnr_sg_psdt</span> <span class="o">=</span> <span class="n">newsnr_sgveto_psdvar_scaled_threshold</span><span class="p">(</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">dof</span><span class="p">,</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">][:],</span>
+        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;psd_var_val&#39;</span><span class="p">][:],</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsnr_sg_psdt</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+
+
+<span class="n">sngls_ranking_function_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;snr&#39;</span><span class="p">:</span> <span class="n">get_snr</span><span class="p">,</span>
+    <span class="s1">&#39;newsnr&#39;</span><span class="p">:</span> <span class="n">get_newsnr</span><span class="p">,</span>
+    <span class="s1">&#39;new_snr&#39;</span><span class="p">:</span> <span class="n">get_newsnr</span><span class="p">,</span>
+    <span class="s1">&#39;newsnr_sgveto&#39;</span><span class="p">:</span> <span class="n">get_newsnr_sgveto</span><span class="p">,</span>
+    <span class="s1">&#39;newsnr_sgveto_psdvar&#39;</span><span class="p">:</span> <span class="n">get_newsnr_sgveto_psdvar</span><span class="p">,</span>
+    <span class="s1">&#39;newsnr_sgveto_psdvar_threshold&#39;</span><span class="p">:</span> <span class="n">get_newsnr_sgveto_psdvar_threshold</span><span class="p">,</span>
+    <span class="s1">&#39;newsnr_sgveto_psdvar_scaled&#39;</span><span class="p">:</span> <span class="n">get_newsnr_sgveto_psdvar_scaled</span><span class="p">,</span>
+    <span class="s1">&#39;newsnr_sgveto_psdvar_scaled_threshold&#39;</span><span class="p">:</span>
+    <span class="n">get_newsnr_sgveto_psdvar_scaled_threshold</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Lists of datasets required in the trigs object for each function</span>
+<span class="n">reqd_datasets</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">,</span> <span class="s1">&#39;chisq_dof&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;new_snr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar&#39;</span><span class="p">]</span> <span class="o">=</span> \
+    <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;psd_var_val&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> \
+    <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar_scaled&#39;</span><span class="p">]</span> <span class="o">=</span> \
+    <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar&#39;</span><span class="p">]</span>
+<span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar_scaled_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> \
+    <span class="n">reqd_datasets</span><span class="p">[</span><span class="s1">&#39;newsnr_sgveto_psdvar&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="get_sngls_ranking_from_trigs">
+<a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.ranking.get_sngls_ranking_from_trigs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sngls_ranking_from_trigs</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="n">statname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return ranking for all trigs given a statname.</span>
+
+<span class="sd">    Compute the single-detector ranking for a list of input triggers for a</span>
+<span class="sd">    specific statname.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    trigs: dict of numpy.ndarrays, SingleDetTriggers or ReadByTemplate</span>
+<span class="sd">        Dictionary holding single detector trigger information.</span>
+<span class="sd">    statname:</span>
+<span class="sd">        The statistic to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Identify correct function</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sngl_func</span> <span class="o">=</span> <span class="n">sngls_ranking_function_dict</span><span class="p">[</span><span class="n">statname</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;Single-detector ranking </span><span class="si">{}</span><span class="s1"> not recognized&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">statname</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+    <span class="c1"># NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any</span>
+    <span class="c1">#       kwargs sent here must be known to the function.</span>
+    <span class="k">return</span> <span class="n">sngl_func</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

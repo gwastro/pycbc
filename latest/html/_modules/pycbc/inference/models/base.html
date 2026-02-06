@@ -1,0 +1,1065 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models.base &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../models.html">pycbc.inference.models</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models.base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models.base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;Base class for models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoSectionError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">transforms</span><span class="p">,</span> <span class="n">distributions</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldArray</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                               Support classes</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_NoPrior</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dummy class to just return 0 if no prior is given to a model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.</span>
+
+
+<div class="viewcode-block" id="ModelStats">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.ModelStats">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelStats</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to hold model&#39;s current stat values.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">statnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the names of the stats that have been stored.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<div class="viewcode-block" id="ModelStats.getstats">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.ModelStats.getstats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getstats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">nan</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the requested stats as a tuple.</span>
+
+<span class="sd">        If a requested stat is not an attribute (implying it hasn&#39;t been</span>
+<span class="sd">        stored), then the default value is returned for that stat.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        names : list of str</span>
+<span class="sd">            The names of the stats to get.</span>
+<span class="sd">        default : float, optional</span>
+<span class="sd">            What to return if a requested stat is not an attribute of self.</span>
+<span class="sd">            Default is ``numpy.nan``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            A tuple of the requested stats.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ModelStats.getstatsdict">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.ModelStats.getstatsdict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getstatsdict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">nan</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the requested stats as a dictionary.</span>
+
+<span class="sd">        If a requested stat is not an attribute (implying it hasn&#39;t been</span>
+<span class="sd">        stored), then the default value is returned for that stat.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        names : list of str</span>
+<span class="sd">            The names of the stats to get.</span>
+<span class="sd">        default : float, optional</span>
+<span class="sd">            What to return if a requested stat is not an attribute of self.</span>
+<span class="sd">            Default is ``numpy.nan``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of the requested stats.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getstats</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">)))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SamplingTransforms">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.SamplingTransforms">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SamplingTransforms</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides methods for transforming between sampling parameter space and</span>
+<span class="sd">    model parameter space.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">sampling_params</span><span class="p">,</span>
+                 <span class="n">replace_parameters</span><span class="p">,</span> <span class="n">sampling_transforms</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">replace_parameters</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sampling_params</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s2">&quot;number of sampling parameters must be the &quot;</span>
+            <span class="s2">&quot;same as the number of replace parameters&quot;</span><span class="p">)</span>
+        <span class="c1"># pull out the replaced parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">variable_params</span>
+                                <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">replace_parameters</span><span class="p">]</span>
+        <span class="c1"># add the sampling parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span> <span class="o">+=</span> <span class="n">sampling_params</span>
+        <span class="c1"># sort to make sure we have a consistent order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="o">=</span> <span class="n">sampling_transforms</span>
+
+<div class="viewcode-block" id="SamplingTransforms.logjacobian">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.SamplingTransforms.logjacobian">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logjacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the log of the jacobian needed to transform pdfs in the</span>
+<span class="sd">        ``variable_params`` parameter space to the ``sampling_params``</span>
+<span class="sd">        parameter space.</span>
+
+<span class="sd">        Let :math:`\mathbf{x}` be the set of variable parameters,</span>
+<span class="sd">        :math:`\mathbf{y} = f(\mathbf{x})` the set of sampling parameters, and</span>
+<span class="sd">        :math:`p_x(\mathbf{x})` a probability density function defined over</span>
+<span class="sd">        :math:`\mathbf{x}`.</span>
+<span class="sd">        The corresponding pdf in :math:`\mathbf{y}` is then:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            p_y(\mathbf{y}) =</span>
+<span class="sd">                p_x(\mathbf{x})\left|\mathrm{det}\,\mathbf{J}_{ij}\right|,</span>
+
+<span class="sd">        where :math:`\mathbf{J}_{ij}` is the Jacobian of the inverse transform</span>
+<span class="sd">        :math:`\mathbf{x} = g(\mathbf{y})`. This has elements:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \mathbf{J}_{ij} = \frac{\partial g_i}{\partial{y_j}}</span>
+
+<span class="sd">        This function returns</span>
+<span class="sd">        :math:`\log \left|\mathrm{det}\,\mathbf{J}_{ij}\right|`.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**params :</span>
+<span class="sd">            The keyword arguments should specify values for all of the variable</span>
+<span class="sd">            args and all of the sampling args.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float :</span>
+<span class="sd">            The value of the jacobian.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">transforms</span><span class="o">.</span><span class="n">compute_jacobian</span><span class="p">(</span>
+            <span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="SamplingTransforms.apply">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.SamplingTransforms.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the sampling transforms to the given samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        samples : dict or FieldArray</span>
+<span class="sd">            The samples to apply the transforms to.</span>
+<span class="sd">        inverse : bool, optional</span>
+<span class="sd">            Whether to apply the inverse transforms (i.e., go from the sampling</span>
+<span class="sd">            args to the ``variable_params``). Default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict or FieldArray</span>
+<span class="sd">            The transformed samples, along with the original samples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">transforms</span><span class="o">.</span><span class="n">apply_transforms</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="p">,</span>
+                                           <span class="n">inverse</span><span class="o">=</span><span class="n">inverse</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SamplingTransforms.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.SamplingTransforms.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets sampling transforms specified in a config file.</span>
+
+<span class="sd">        Sampling parameters and the parameters they replace are read from the</span>
+<span class="sd">        ``sampling_params`` section, if it exists. Sampling transforms are</span>
+<span class="sd">        read from the ``sampling_transforms`` section(s), using</span>
+<span class="sd">        ``transforms.read_transforms_from_config``.</span>
+
+<span class="sd">        An ``AssertionError`` is raised if no ``sampling_params`` section</span>
+<span class="sd">        exists in the config file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            Config file parser to read.</span>
+<span class="sd">        variable_params : list</span>
+<span class="sd">            List of parameter names of the original variable params.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SamplingTransforms</span>
+<span class="sd">            A sampling transforms class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if a sampling_params section is provided</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sampling_params</span><span class="p">,</span> <span class="n">replace_parameters</span> <span class="o">=</span> \
+                <span class="n">read_sampling_params_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoSectionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No sampling_params section read from config file&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="c1"># get sampling transformations</span>
+        <span class="n">sampling_transforms</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">read_transforms_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;sampling_transforms&#39;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sampling in </span><span class="si">{}</span><span class="s2"> in place of </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sampling_params</span><span class="p">),</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">replace_parameters</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="n">sampling_params</span><span class="p">,</span>
+                   <span class="n">replace_parameters</span><span class="p">,</span> <span class="n">sampling_transforms</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="read_sampling_params_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.read_sampling_params_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_sampling_params_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">section</span><span class="o">=</span><span class="s1">&#39;sampling_params&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads sampling parameters from the given config file.</span>
+
+<span class="sd">    Parameters are read from the `[({section_group}_){section}]` section.</span>
+<span class="sd">    The options should list the variable args to transform; the parameters they</span>
+<span class="sd">    point to should list the parameters they are to be transformed to for</span>
+<span class="sd">    sampling. If a multiple parameters are transformed together, they should</span>
+<span class="sd">    be comma separated. Example:</span>
+
+<span class="sd">    .. code-block:: ini</span>
+
+<span class="sd">        [sampling_params]</span>
+<span class="sd">        mass1, mass2 = mchirp, logitq</span>
+<span class="sd">        spin1_a = logitspin1_a</span>
+
+<span class="sd">    Note that only the final sampling parameters should be listed, even if</span>
+<span class="sd">    multiple intermediate transforms are needed. (In the above example, a</span>
+<span class="sd">    transform is needed to go from mass1, mass2 to mchirp, q, then another one</span>
+<span class="sd">    needed to go from q to logitq.) These transforms should be specified</span>
+<span class="sd">    in separate sections; see ``transforms.read_transforms_from_config`` for</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : WorkflowConfigParser</span>
+<span class="sd">        An open config parser to read from.</span>
+<span class="sd">    section_group : str, optional</span>
+<span class="sd">        Append `{section_group}_` to the section name. Default is None.</span>
+<span class="sd">    section : str, optional</span>
+<span class="sd">        The name of the section. Default is &#39;sampling_params&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sampling_params : list</span>
+<span class="sd">        The list of sampling parameters to use instead.</span>
+<span class="sd">    replaced_params : list</span>
+<span class="sd">        The list of variable args to replace in the sampler.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">section_group</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">section_prefix</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">section_group</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">section_prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">section</span> <span class="o">=</span> <span class="n">section_prefix</span> <span class="o">+</span> <span class="n">section</span>
+    <span class="n">replaced_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">sampling_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+        <span class="n">map_args</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">sampling_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">map_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))))</span>
+        <span class="n">replaced_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))))</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sampling_params</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">replaced_params</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                               Base model definition</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="BaseModel">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base class for all models.</span>
+
+<span class="sd">    Given some model :math:`h` with parameters :math:`\Theta`, Bayes Theorem</span>
+<span class="sd">    states that the probability of observing parameter values :math:`\vartheta`</span>
+<span class="sd">    is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        p(\vartheta|h) = \frac{p(h|\vartheta) p(\vartheta)}{p(h)}.</span>
+
+<span class="sd">    Here:</span>
+
+<span class="sd">     * :math:`p(\vartheta|h)` is the **posterior** probability;</span>
+
+<span class="sd">     * :math:`p(h|\vartheta)` is the **likelihood**;</span>
+
+<span class="sd">     * :math:`p(\vartheta)` is the **prior**;</span>
+
+<span class="sd">     * :math:`p(h)` is the **evidence**.</span>
+
+<span class="sd">    This class defines properties and methods for evaluating the log</span>
+<span class="sd">    likelihood, log prior, and log posteror. A set of parameter values is set</span>
+<span class="sd">    using the ``update`` method. Calling the class&#39;s</span>
+<span class="sd">    ``log(likelihood|prior|posterior)`` properties will then evaluate the model</span>
+<span class="sd">    at those parameter values.</span>
+
+<span class="sd">    Classes that inherit from this class must implement a ``_loglikelihood``</span>
+<span class="sd">    function that can be called by ``loglikelihood``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_params : (tuple of) string(s)</span>
+<span class="sd">        A tuple of parameter names that will be varied.</span>
+<span class="sd">    static_params : dict, optional</span>
+<span class="sd">        A dictionary of parameter names -&gt; values to keep fixed.</span>
+<span class="sd">    prior : callable, optional</span>
+<span class="sd">        A callable class or function that computes the log of the prior. If</span>
+<span class="sd">        None provided, will use ``_noprior``, which returns 0 for all parameter</span>
+<span class="sd">        values.</span>
+<span class="sd">    sampling_params : list, optional</span>
+<span class="sd">        Replace one or more of the ``variable_params`` with the given</span>
+<span class="sd">        parameters for sampling.</span>
+<span class="sd">    replace_parameters : list, optional</span>
+<span class="sd">        The ``variable_params`` to replace with sampling parameters. Must be</span>
+<span class="sd">        the same length as ``sampling_params``.</span>
+<span class="sd">    sampling_transforms : list, optional</span>
+<span class="sd">        List of transforms to use to go between the ``variable_params`` and the</span>
+<span class="sd">        sampling parameters. Required if ``sampling_params`` is not None.</span>
+<span class="sd">    waveform_transforms : list, optional</span>
+<span class="sd">        A list of transforms to convert the ``variable_params`` into something</span>
+<span class="sd">        understood by the likelihood model. This is useful if the prior is</span>
+<span class="sd">        more easily parameterized in parameters that are different than what</span>
+<span class="sd">        the likelihood is most easily defined in. Since these are used solely</span>
+<span class="sd">        for converting parameters, and not for rescaling the parameter space,</span>
+<span class="sd">        a Jacobian is not required for these transforms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sampling_transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">waveform_transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># store variable and static args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span> <span class="o">=</span> <span class="n">variable_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span> <span class="o">=</span> <span class="n">static_params</span>
+        <span class="c1"># store prior</span>
+        <span class="k">if</span> <span class="n">prior</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior_distribution</span> <span class="o">=</span> <span class="n">_NoPrior</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">prior</span><span class="o">.</span><span class="n">variable_args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_params</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;variable params of prior and model must be the &quot;</span>
+                             <span class="s2">&quot;same&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prior_distribution</span> <span class="o">=</span> <span class="n">prior</span>
+        <span class="c1"># store transforms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="o">=</span> <span class="n">sampling_transforms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span> <span class="o">=</span> <span class="n">waveform_transforms</span>
+        <span class="c1"># initialize current params to None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># initialize a model stats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span> <span class="o">=</span> <span class="n">ModelStats</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the model parameters.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_params</span>
+
+    <span class="nd">@variable_params</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">variable_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">variable_params</span> <span class="o">=</span> <span class="p">(</span><span class="n">variable_params</span><span class="p">,)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">variable_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">variable_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variable_params</span> <span class="o">=</span> <span class="n">variable_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the model&#39;s static arguments.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_static_params</span>
+
+    <span class="nd">@static_params</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">static_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">static_params</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">static_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">static_params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_static_params</span> <span class="o">=</span> <span class="n">static_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sampling_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the sampling parameters.</span>
+
+<span class="sd">        If ``sampling_transforms`` is None, this is the same as the</span>
+<span class="sd">        ``variable_params``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sampling_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sampling_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">sampling_params</span>
+        <span class="k">return</span> <span class="n">sampling_params</span>
+
+<div class="viewcode-block" id="BaseModel.update">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the current parameter positions and resets stats.</span>
+
+<span class="sd">        If any sampling transforms are specified, they are applied to the</span>
+<span class="sd">        params before being stored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># add the static params</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">values</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform_params</span><span class="p">(</span><span class="o">**</span><span class="n">values</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span> <span class="o">=</span> <span class="n">ModelStats</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">current_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;no parameters values currently stored; &quot;</span>
+                             <span class="s2">&quot;run update to add some&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The stats that ``get_current_stats`` returns by default.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;logjacobian&#39;</span><span class="p">,</span> <span class="s1">&#39;logprior&#39;</span><span class="p">,</span> <span class="s1">&#39;loglikelihood&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extra_stats</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extra_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Allows child classes to add more stats to the default stats.</span>
+
+<span class="sd">        This returns an empty list; classes that inherit should override this</span>
+<span class="sd">        property if they want to add extra stats.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="BaseModel.get_current_stats">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.get_current_stats">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_current_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return one or more of the current stats as a tuple.</span>
+
+<span class="sd">        This function does no computation. It only returns what has already</span>
+<span class="sd">        been calculated. If a stat hasn&#39;t been calculated, it will be returned</span>
+<span class="sd">        as ``numpy.nan``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        names : list of str, optional</span>
+<span class="sd">            Specify the names of the stats to retrieve. If ``None`` (the</span>
+<span class="sd">            default), will return ``default_stats``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple :</span>
+<span class="sd">            The current values of the requested stats, as a tuple. The order</span>
+<span class="sd">            of the stats is the same as the names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_stats</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="o">.</span><span class="n">getstats</span><span class="p">(</span><span class="n">names</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">current_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the ``default_stats`` as a dict.</span>
+
+<span class="sd">        This does no computation. It only returns what has already been</span>
+<span class="sd">        calculated. If a stat hasn&#39;t been calculated, it will be returned</span>
+<span class="sd">        as ``numpy.nan``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of stat names -&gt; current stat values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="o">.</span><span class="n">getstatsdict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_stats</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_trytoget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statname</span><span class="p">,</span> <span class="n">fallback</span><span class="p">,</span> <span class="n">apply_transforms</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Helper function to get a stat from ``_current_stats``.</span>
+
+<span class="sd">        If the statistic hasn&#39;t been calculated, ``_current_stats`` will raise</span>
+<span class="sd">        an ``AttributeError``. In that case, the ``fallback`` function will</span>
+<span class="sd">        be called. If that call is successful, the ``statname`` will be added</span>
+<span class="sd">        to ``_current_stats`` with the returned value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        statname : str</span>
+<span class="sd">            The stat to get from ``current_stats``.</span>
+<span class="sd">        fallback : method of self</span>
+<span class="sd">            The function to call if the property call fails.</span>
+<span class="sd">        apply_transforms : bool, optional</span>
+<span class="sd">            Apply waveform transforms to the current parameters before calling</span>
+<span class="sd">            the fallback function. Default is False.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            Any other keyword arguments are passed through to the function.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float :</span>
+<span class="sd">            The value of the property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">statname</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="c1"># apply waveform transforms if requested</span>
+            <span class="k">if</span> <span class="n">apply_transforms</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">apply_transforms</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveform_transforms</span><span class="p">,</span>
+                    <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">fallback</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_stats</span><span class="p">,</span> <span class="n">statname</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The log likelihood at the current parameters.</span>
+
+<span class="sd">        This will initially try to return the ``current_stats.loglikelihood``.</span>
+<span class="sd">        If that raises an ``AttributeError``, will call `_loglikelihood`` to</span>
+<span class="sd">        calculate it and store it to ``current_stats``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trytoget</span><span class="p">(</span><span class="s1">&#39;loglikelihood&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loglikelihood</span><span class="p">,</span>
+                              <span class="n">apply_transforms</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loglikelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Low-level function that calculates the log likelihood of the current</span>
+<span class="sd">        params.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logjacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The log jacobian of the sampling transforms at the current postion.</span>
+
+<span class="sd">        If no sampling transforms were provided, will just return 0.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**params :</span>
+<span class="sd">            The keyword arguments should specify values for all of the variable</span>
+<span class="sd">            args and all of the sampling args.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float :</span>
+<span class="sd">            The value of the jacobian.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trytoget</span><span class="p">(</span><span class="s1">&#39;logjacobian&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logjacobian</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_logjacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the logjacobian of the current parameters.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logj</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">logjacobian</span><span class="p">(</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">logj</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logprior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the log prior at the current parameters.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trytoget</span><span class="p">(</span><span class="s1">&#39;logprior&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logprior</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_logprior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculates the log prior at the current parameters.&quot;&quot;&quot;</span>
+        <span class="n">logj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logjacobian</span>
+        <span class="n">logp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_distribution</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">current_params</span><span class="p">)</span> <span class="o">+</span> <span class="n">logj</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">logp</span><span class="p">):</span>
+            <span class="n">logp</span> <span class="o">=</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">return</span> <span class="n">logp</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logposterior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the log of the posterior of the current parameter values.</span>
+
+<span class="sd">        The logprior is calculated first. If the logprior returns ``-inf``</span>
+<span class="sd">        (possibly indicating a non-physical point), then the ``loglikelihood``</span>
+<span class="sd">        is not called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logprior</span>
+        <span class="k">if</span> <span class="n">logp</span> <span class="o">==</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">logp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">logp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">loglikelihood</span>
+
+<div class="viewcode-block" id="BaseModel.prior_rvs">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.prior_rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prior_rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns random variates drawn from the prior.</span>
+
+<span class="sd">        If the ``sampling_params`` are different from the ``variable_params``,</span>
+<span class="sd">        the variates are transformed to the `sampling_params` parameter space</span>
+<span class="sd">        before being returned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        size : int, optional</span>
+<span class="sd">            Number of random values to return for each parameter. Default is 1.</span>
+<span class="sd">        prior : JointDistribution, optional</span>
+<span class="sd">            Use the given prior to draw values rather than the saved prior.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FieldArray</span>
+<span class="sd">            A field array of the random values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># draw values from the prior</span>
+        <span class="k">if</span> <span class="n">prior</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prior</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_distribution</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="c1"># transform if necessary</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ptrans</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">p0</span><span class="p">)</span>
+            <span class="c1"># pull out the sampling args</span>
+            <span class="n">p0</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">([</span><span class="n">ptrans</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
+                                         <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">],</span>
+                                        <span class="n">names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p0</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_transform_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Applies sampling transforms and boundary conditions to parameters.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        \**params :</span>
+<span class="sd">            Key, value pairs of parameters to apply the transforms to.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of the transformed parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># apply inverse transforms to go from sampling parameters to</span>
+        <span class="c1"># variable args</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_transforms</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># apply boundary conditions</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_distribution</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">params</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Methods for initiating from a config file.</span>
+    <span class="c1">#</span>
+<div class="viewcode-block" id="BaseModel.extra_args_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.extra_args_from_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extra_args_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtypes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets any additional keyword in the given config file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            Config file parser to read.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to read.</span>
+<span class="sd">        skip_args : list of str, optional</span>
+<span class="sd">            Names of arguments to skip.</span>
+<span class="sd">        dtypes : dict, optional</span>
+<span class="sd">            A dictionary of arguments -&gt; data types. If an argument is found</span>
+<span class="sd">            in the dict, it will be cast to the given datatype. Otherwise, the</span>
+<span class="sd">            argument&#39;s value will just be read from the config file (and thus</span>
+<span class="sd">            be a string).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Dictionary of keyword arguments read from the config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">dtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dtypes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">skip_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">skip_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">read_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+                     <span class="k">if</span> <span class="n">opt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">read_args</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+            <span class="c1"># try to cast the value if a datatype was specified for this opt</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">dtypes</span><span class="p">[</span><span class="n">opt</span><span class="p">](</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">kwargs</span></div>
+
+
+<div class="viewcode-block" id="BaseModel.prior_from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.prior_from_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prior_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="p">,</span> <span class="n">prior_section</span><span class="p">,</span>
+                          <span class="n">constraint_section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets arguments and keyword arguments from a config file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            Config file parser to read.</span>
+<span class="sd">        variable_params : list</span>
+<span class="sd">            List of variable model parameter names.</span>
+<span class="sd">        static_params : dict</span>
+<span class="sd">            Dictionary of static model parameters and their values.</span>
+<span class="sd">        prior_section : str</span>
+<span class="sd">            Section to read prior(s) from.</span>
+<span class="sd">        constraint_section : str</span>
+<span class="sd">            Section to read constraint(s) from.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pycbc.distributions.JointDistribution</span>
+<span class="sd">            The prior.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get prior distribution for each variable parameter</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up priors for each parameter&quot;</span><span class="p">)</span>
+        <span class="n">dists</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_distributions_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">prior_section</span><span class="p">)</span>
+        <span class="n">constraints</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_constraints_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">constraint_section</span><span class="p">,</span> <span class="n">static_args</span><span class="o">=</span><span class="n">static_params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">distributions</span><span class="o">.</span><span class="n">JointDistribution</span><span class="p">(</span><span class="n">variable_params</span><span class="p">,</span> <span class="o">*</span><span class="n">dists</span><span class="p">,</span>
+                                               <span class="n">constraints</span><span class="o">=</span><span class="n">constraints</span><span class="p">)</span></div>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_args_from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function for loading parameters.</span>
+
+<span class="sd">        This retrieves the prior, variable parameters, static parameterss,</span>
+<span class="sd">        constraints, sampling transforms, and waveform transforms</span>
+<span class="sd">        (if provided).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : ConfigParser</span>
+<span class="sd">            Config parser to read.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict :</span>
+<span class="sd">            Dictionary of the arguments. Has keys ``variable_params``,</span>
+<span class="sd">            ``static_params``, ``prior``, and ``sampling_transforms``. If</span>
+<span class="sd">            waveform transforms are in the config file, will also have</span>
+<span class="sd">            ``waveform_transforms``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span>
+        <span class="n">prior_section</span> <span class="o">=</span> <span class="s2">&quot;prior&quot;</span>
+        <span class="n">vparams_section</span> <span class="o">=</span> <span class="s1">&#39;variable_params&#39;</span>
+        <span class="n">sparams_section</span> <span class="o">=</span> <span class="s1">&#39;static_params&#39;</span>
+        <span class="n">constraint_section</span> <span class="o">=</span> <span class="s1">&#39;constraint&#39;</span>
+        <span class="c1"># check that the name exists and matches</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;section&#39;s </span><span class="si">{}</span><span class="s2"> name does not match mine </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                             <span class="n">name</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="c1"># get model parameters</span>
+        <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">.</span><span class="n">read_params_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">prior_section</span><span class="o">=</span><span class="n">prior_section</span><span class="p">,</span> <span class="n">vargs_section</span><span class="o">=</span><span class="n">vparams_section</span><span class="p">,</span>
+            <span class="n">sargs_section</span><span class="o">=</span><span class="n">sparams_section</span><span class="p">)</span>
+        <span class="c1"># get prior</span>
+        <span class="n">prior</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">prior_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="p">,</span> <span class="n">prior_section</span><span class="p">,</span>
+            <span class="n">constraint_section</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;variable_params&#39;</span><span class="p">:</span> <span class="n">variable_params</span><span class="p">,</span>
+                <span class="s1">&#39;static_params&#39;</span><span class="p">:</span> <span class="n">static_params</span><span class="p">,</span>
+                <span class="s1">&#39;prior&#39;</span><span class="p">:</span> <span class="n">prior</span><span class="p">}</span>
+        <span class="c1"># try to load sampling transforms</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sampling_transforms</span> <span class="o">=</span> <span class="n">SamplingTransforms</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoSectionError</span><span class="p">:</span>
+            <span class="n">sampling_transforms</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">args</span><span class="p">[</span><span class="s1">&#39;sampling_transforms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampling_transforms</span>
+        <span class="c1"># get any waveform transforms</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_subsections</span><span class="p">(</span><span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading waveform transforms&quot;</span><span class="p">)</span>
+            <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">read_transforms_from_config</span><span class="p">(</span>
+                <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;waveform_transforms&#39;</span><span class="p">)</span>
+            <span class="n">args</span><span class="p">[</span><span class="s1">&#39;waveform_transforms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">waveform_transforms</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">waveform_transforms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># safety check for spins</span>
+        <span class="c1"># we won&#39;t do this if the following exists in the config file</span>
+        <span class="n">ignore</span> <span class="o">=</span> <span class="s2">&quot;no_err_on_missing_cartesian_spins&quot;</span>
+        <span class="n">check_for_cartesian_spins</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="p">,</span>
+                                  <span class="n">waveform_transforms</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">ignore</span><span class="p">)</span>
+        <span class="n">check_for_cartesian_spins</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="p">,</span>
+                                  <span class="n">waveform_transforms</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">ignore</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">args</span>
+
+<div class="viewcode-block" id="BaseModel.from_config">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initializes an instance of this class from the given config file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            Config file parser to read.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All additional keyword arguments are passed to the class. Any</span>
+<span class="sd">            provided keyword will over ride what is in the config file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_init_args_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+        <span class="c1"># get any other keyword arguments provided in the model section</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">extra_args_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span>
+                                               <span class="n">skip_args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]))</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseModel.write_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel.write_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes metadata to the given file handler.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fp : pycbc.inference.io.BaseInferenceFile instance</span>
+<span class="sd">            The inference file to write to.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            If provided, the metadata will be written to the attrs specified</span>
+<span class="sd">            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is</span>
+<span class="sd">            written to the top-level attrs (``fp.attrs``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">getattrs</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;variable_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_params</span><span class="p">))</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;sampling_params&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">))</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">write_kwargs_to_attrs</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">static_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">static_params</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="check_for_cartesian_spins">
+<a class="viewcode-back" href="../../../../pycbc.inference.models.html#pycbc.inference.models.base.check_for_cartesian_spins">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_for_cartesian_spins</span><span class="p">(</span><span class="n">which</span><span class="p">,</span> <span class="n">variable_params</span><span class="p">,</span> <span class="n">static_params</span><span class="p">,</span>
+                              <span class="n">waveform_transforms</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">ignore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks that if any spin parameters exist, cartesian spins also exist.</span>
+
+<span class="sd">    This looks for parameters starting with ``spinN`` in the variable and</span>
+<span class="sd">    static params, where ``N`` is either  1 or 2 (specified by the ``which``</span>
+<span class="sd">    argument). If any parameters are found with those names, the params and</span>
+<span class="sd">    the output of the waveform transforms are checked to see that there is</span>
+<span class="sd">    at least one of ``spinN(x|y|z)``. If not, a ``ValueError`` is raised.</span>
+
+<span class="sd">    This check will not be done if the config file has an section given by</span>
+<span class="sd">    the ignore argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    which : {1, 2}</span>
+<span class="sd">        Which component to check for. Must be either 1 or 2.</span>
+<span class="sd">    variable_params : list</span>
+<span class="sd">        List of the variable parameters.</span>
+<span class="sd">    static_params : dict</span>
+<span class="sd">        The dictionary of static params.</span>
+<span class="sd">    waveform_transforms : list</span>
+<span class="sd">        List of the transforms that will be applied to the variable and</span>
+<span class="sd">        static params before being passed to the waveform generator.</span>
+<span class="sd">    cp : ConfigParser</span>
+<span class="sd">        The config file.</span>
+<span class="sd">    ignore : str</span>
+<span class="sd">        The section to check for in the config file. If the section is</span>
+<span class="sd">        present in the config file, the check will not be done.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># don&#39;t do this check if the config file has the ignore section</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">ignore</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">{}</span><span class="s2">] found in config file; not performing check for &quot;</span>
+                     <span class="s2">&quot;cartesian spin</span><span class="si">{}</span><span class="s2"> parameters&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ignore</span><span class="p">,</span> <span class="n">which</span><span class="p">))</span>
+        <span class="k">return</span>
+    <span class="n">errmsg</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;Spin parameters </span><span class="si">{sp}</span><span class="s2"> found in variable/static &quot;</span>
+        <span class="s2">&quot;params for component </span><span class="si">{n}</span><span class="s2">, but no Cartesian spin parameters (</span><span class="si">{cp}</span><span class="s2">) &quot;</span>
+        <span class="s2">&quot;found in either the variable/static params or &quot;</span>
+        <span class="s2">&quot;the waveform transform outputs. Most waveform &quot;</span>
+        <span class="s2">&quot;generators only recognize Cartesian spin &quot;</span>
+        <span class="s2">&quot;parameters; without them, all spins are set to &quot;</span>
+        <span class="s2">&quot;zero. If you are using spherical spin coordinates, add &quot;</span>
+        <span class="s2">&quot;the following waveform_transform to your config file:</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;[waveform_transforms-spin</span><span class="si">{n}</span><span class="s2">x+spin</span><span class="si">{n}</span><span class="s2">y+spin</span><span class="si">{n}</span><span class="s2">z]</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;name = spherical_to_cartesian</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;x = spin</span><span class="si">{n}</span><span class="s2">x</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;y = spin</span><span class="si">{n}</span><span class="s2">y</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;z = spin</span><span class="si">{n}</span><span class="s2">z</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;radial = spin</span><span class="si">{n}</span><span class="s2">_a</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;azimuthal = spin</span><span class="si">{n}</span><span class="s2">_azimuthal</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;polar = spin</span><span class="si">{n}</span><span class="s2">_polar</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;Here, spin</span><span class="si">{n}</span><span class="s2">_a, spin</span><span class="si">{n}</span><span class="s2">_azimuthal, and spin</span><span class="si">{n}</span><span class="s2">_polar are the names &quot;</span>
+        <span class="s2">&quot;of your radial, azimuthal, and polar coordinates, respectively. &quot;</span>
+        <span class="s2">&quot;If you intentionally did not include Cartesian spin parameters, &quot;</span>
+        <span class="s2">&quot;(e.g., you are using a custom waveform or model) add</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;[</span><span class="si">{ignore}</span><span class="s2">]</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;to your config file as an empty section and rerun. This check will &quot;</span>
+        <span class="s2">&quot;not be performed in that case.&quot;</span><span class="p">)</span>
+    <span class="n">allparams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_params</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">static_params</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">spinparams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">allparams</span>
+                     <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;spin</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">which</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">spinparams</span><span class="p">):</span>
+        <span class="n">cartspins</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="s1">&#39;spin</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">which</span><span class="p">,</span> <span class="n">coord</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">])</span>
+        <span class="c1"># add any parameters to all params that will be output by waveform</span>
+        <span class="c1"># transforms</span>
+        <span class="n">allparams</span> <span class="o">=</span> <span class="n">allparams</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">outputs</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">waveform_transforms</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">allparams</span> <span class="o">&amp;</span> <span class="n">cartspins</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sp</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">spinparams</span><span class="p">),</span>
+                                           <span class="n">cp</span><span class="o">=</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cartspins</span><span class="p">),</span>
+                                           <span class="n">n</span><span class="o">=</span><span class="n">which</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="n">ignore</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

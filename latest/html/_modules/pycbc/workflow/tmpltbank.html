@@ -1,0 +1,545 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.tmpltbank &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.tmpltbank</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.tmpltbank</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Ian Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for setting up the template bank stage of CBC</span>
+<span class="sd">workflows. For details about this module and its capabilities see here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ConfigParser</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileList</span><span class="p">,</span> <span class="n">Executable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_analysis_dir</span><span class="p">,</span> <span class="n">resolve_url_to_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.jobsetup</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_tmpltbank_class</span><span class="p">,</span> <span class="n">sngl_ifo_job_setup</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.tmpltbank&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="setup_tmpltbank_workflow">
+<a class="viewcode-back" href="../../../workflow/template_bank.html#pycbc.workflow.tmpltbank.setup_tmpltbank_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_tmpltbank_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                             <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psd_files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">return_format</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup template bank section of CBC workflow. This function is responsible</span>
+<span class="sd">    for deciding which of the various template bank workflow generation</span>
+<span class="sd">    utilities should be used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    science_segs : Keyed dictionary of igwn_segments.segmentlist objects</span>
+<span class="sd">        scienceSegs[ifo] holds the science segments to be analysed for each</span>
+<span class="sd">        ifo.</span>
+<span class="sd">    datafind_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        The file list containing the datafind files.</span>
+<span class="sd">    output_dir : path string</span>
+<span class="sd">        The directory where data products will be placed.</span>
+<span class="sd">    psd_files : pycbc.workflow.core.FileList</span>
+<span class="sd">        The file list containing predefined PSDs, if provided.</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        The FileList holding the details of all the template bank jobs.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Entering template bank generation module.&quot;</span><span class="p">)</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+
+    <span class="c1"># Parse for options in ini file</span>
+    <span class="n">tmpltbankMethod</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-tmpltbank&quot;</span><span class="p">,</span> <span class="s2">&quot;tmpltbank-method&quot;</span><span class="p">,</span>
+                                      <span class="n">tags</span><span class="p">)</span>
+
+    <span class="c1"># There can be a large number of different options here, for e.g. to set</span>
+    <span class="c1"># up fixed bank, or maybe something else</span>
+    <span class="k">if</span> <span class="n">tmpltbankMethod</span> <span class="o">==</span> <span class="s2">&quot;PREGENERATED_BANK&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting template bank from pre-generated bank(s).&quot;</span><span class="p">)</span>
+        <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">setup_tmpltbank_pregenerated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="c1"># Else we assume template banks will be generated in the workflow</span>
+    <span class="k">elif</span> <span class="n">tmpltbankMethod</span> <span class="o">==</span> <span class="s2">&quot;WORKFLOW_INDEPENDENT_IFOS&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding template bank jobs to workflow.&quot;</span><span class="p">)</span>
+        <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">setup_tmpltbank_dax_generated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span>
+                                         <span class="n">datafind_outs</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span>
+                                         <span class="n">psd_files</span><span class="o">=</span><span class="n">psd_files</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">tmpltbankMethod</span> <span class="o">==</span> <span class="s2">&quot;WORKFLOW_INDEPENDENT_IFOS_NODATA&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding template bank jobs to workflow.&quot;</span><span class="p">)</span>
+        <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">setup_tmpltbank_without_frames</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                         <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span> <span class="n">independent_ifos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">psd_files</span><span class="o">=</span><span class="n">psd_files</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">tmpltbankMethod</span> <span class="o">==</span> <span class="s2">&quot;WORKFLOW_NO_IFO_VARIATION_NODATA&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding template bank jobs to workflow.&quot;</span><span class="p">)</span>
+        <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">setup_tmpltbank_without_frames</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                         <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span> <span class="n">independent_ifos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                         <span class="n">psd_files</span><span class="o">=</span><span class="n">psd_files</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Template bank method not recognized. Must be either &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;PREGENERATED_BANK, WORKFLOW_INDEPENDENT_IFOS &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;or WORKFLOW_INDEPENDENT_IFOS_NODATA.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="c1"># Check the format of the input template bank file and return it in</span>
+    <span class="c1"># the format requested as per return_format, provided a conversion</span>
+    <span class="c1"># between the two specific formats has been implemented. Currently,</span>
+    <span class="c1"># a conversion from xml.gz or xml to hdf is supported, but not vice</span>
+    <span class="c1"># versa. If a return_format is not specified the function returns</span>
+    <span class="c1"># the bank in the format as it was inputted.</span>
+    <span class="n">tmplt_bank_filename</span><span class="o">=</span><span class="n">tmplt_banks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">tmplt_bank_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Input bank is a </span><span class="si">%s</span><span class="s2"> file&quot;</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_format</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+        <span class="n">tmplt_banks_return</span> <span class="o">=</span> <span class="n">tmplt_banks</span>
+    <span class="k">elif</span> <span class="n">return_format</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;hdf&#39;</span><span class="p">,</span> <span class="s1">&#39;h5&#39;</span><span class="p">,</span> <span class="s1">&#39;hdf5&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;hdf&#39;</span><span class="p">,</span> <span class="s1">&#39;h5&#39;</span><span class="p">,</span> <span class="s1">&#39;hdf5&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;xml.gz&#39;</span> <span class="p">,</span> <span class="s1">&#39;xml&#39;</span><span class="p">):</span>
+            <span class="n">tmplt_banks_return</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">convert_bank_to_hdf</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span>
+                                                        <span class="n">tmplt_banks</span><span class="p">,</span> <span class="s2">&quot;bank&quot;</span><span class="p">)</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="n">return_format</span><span class="p">:</span>
+            <span class="n">tmplt_banks_return</span> <span class="o">=</span> <span class="n">tmplt_banks</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> to </span><span class="si">{1}</span><span class="s2"> conversion is not &quot;</span>
+                                      <span class="s2">&quot;supported.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">,</span> <span class="n">return_format</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leaving template bank generation module.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tmplt_banks_return</span></div>
+
+
+<div class="viewcode-block" id="setup_tmpltbank_dax_generated">
+<a class="viewcode-back" href="../../../workflow/template_bank.html#pycbc.workflow.tmpltbank.setup_tmpltbank_dax_generated">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_tmpltbank_dax_generated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                                  <span class="n">output_dir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                  <span class="n">psd_files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup template bank jobs that are generated as part of the CBC workflow.</span>
+<span class="sd">    This function will add numerous jobs to the CBC workflow using</span>
+<span class="sd">    configuration options from the .ini file. The following executables are</span>
+<span class="sd">    currently supported:</span>
+
+<span class="sd">    * lalapps_tmpltbank</span>
+<span class="sd">    * pycbc_geom_nonspin_bank</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    science_segs : Keyed dictionary of igwn_segments.segmentlist objects</span>
+<span class="sd">        scienceSegs[ifo] holds the science segments to be analysed for each</span>
+<span class="sd">        ifo.</span>
+<span class="sd">    datafind_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        The file list containing the datafind files.</span>
+<span class="sd">    output_dir : path string</span>
+<span class="sd">        The directory where data products will be placed.</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+<span class="sd">    psd_file : pycbc.workflow.core.FileList</span>
+<span class="sd">        The file list containing predefined PSDs, if provided.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        The FileList holding the details of all the template bank jobs.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="c1"># Need to get the exe to figure out what sections are analysed, what is</span>
+    <span class="c1"># discarded etc. This should *not* be hardcoded, so using a new executable</span>
+    <span class="c1"># will require a bit of effort here ....</span>
+
+    <span class="n">ifos</span> <span class="o">=</span> <span class="n">science_segs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">tmplt_bank_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;executables&#39;</span><span class="p">,</span> <span class="s1">&#39;tmpltbank&#39;</span><span class="p">))</span>
+    <span class="c1"># Select the appropriate class</span>
+    <span class="n">exe_class</span> <span class="o">=</span> <span class="n">select_tmpltbank_class</span><span class="p">(</span><span class="n">tmplt_bank_exe</span><span class="p">)</span>
+
+    <span class="c1"># Set up class for holding the banks</span>
+    <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;tmpltbank&#39;</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span>
+                                               <span class="n">out_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                               <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="c1"># Check for the write_psd flag</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-tmpltbank&quot;</span><span class="p">,</span> <span class="s2">&quot;tmpltbank-write-psd-file&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+            <span class="n">job_instance</span><span class="o">.</span><span class="n">write_psd</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">job_instance</span><span class="o">.</span><span class="n">write_psd</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">sngl_ifo_job_setup</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">tmplt_banks</span><span class="p">,</span> <span class="n">job_instance</span><span class="p">,</span>
+                           <span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                           <span class="n">allow_overlap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tmplt_banks</span></div>
+
+
+<div class="viewcode-block" id="setup_tmpltbank_without_frames">
+<a class="viewcode-back" href="../../../workflow/template_bank.html#pycbc.workflow.tmpltbank.setup_tmpltbank_without_frames">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_tmpltbank_without_frames</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                   <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">independent_ifos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                   <span class="n">psd_files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup CBC workflow to use a template bank (or banks) that are generated in</span>
+<span class="sd">    the workflow, but do not use the data to estimate a PSD, and therefore do</span>
+<span class="sd">    not vary over the duration of the workflow. This can either generate one</span>
+<span class="sd">    bank that is valid for all ifos at all times, or multiple banks that are</span>
+<span class="sd">    valid only for a single ifo at all times (one bank per ifo).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    output_dir : path string</span>
+<span class="sd">        The directory where the template bank outputs will be placed.</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+<span class="sd">    independent_ifos : Boolean, optional (default=False)</span>
+<span class="sd">        If given this will produce one template bank per ifo. If not given</span>
+<span class="sd">        there will be on template bank to cover all ifos.</span>
+<span class="sd">    psd_file : pycbc.workflow.core.FileList</span>
+<span class="sd">        The file list containing predefined PSDs, if provided.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        The FileList holding the details of the template bank(s).</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="c1"># Need to get the exe to figure out what sections are analysed, what is</span>
+    <span class="c1"># discarded etc. This should *not* be hardcoded, so using a new executable</span>
+    <span class="c1"># will require a bit of effort here ....</span>
+
+    <span class="n">ifos</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span>
+    <span class="n">fullSegment</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span>
+
+    <span class="n">tmplt_bank_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;executables&#39;</span><span class="p">,</span><span class="s1">&#39;tmpltbank&#39;</span><span class="p">))</span>
+    <span class="c1"># Can not use lalapps_template bank with this</span>
+    <span class="k">if</span> <span class="n">tmplt_bank_exe</span> <span class="o">==</span> <span class="s1">&#39;lalapps_tmpltbank&#39;</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Lalapps_tmpltbank cannot be used to generate template banks &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;without using frames. Try another code.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="c1"># Select the appropriate class</span>
+    <span class="n">exe_instance</span> <span class="o">=</span> <span class="n">select_tmpltbank_class</span><span class="p">(</span><span class="n">tmplt_bank_exe</span><span class="p">)</span>
+
+    <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="c1"># Make the distinction between one bank for all ifos and one bank per ifo</span>
+    <span class="k">if</span> <span class="n">independent_ifos</span><span class="p">:</span>
+        <span class="n">ifoList</span> <span class="o">=</span> <span class="p">[</span><span class="n">ifo</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ifoList</span> <span class="o">=</span> <span class="p">[[</span><span class="n">ifo</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">]]</span>
+
+    <span class="c1"># Check for the write_psd flag</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-tmpltbank&quot;</span><span class="p">,</span> <span class="s2">&quot;tmpltbank-write-psd-file&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">exe_instance</span><span class="o">.</span><span class="n">write_psd</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">exe_instance</span><span class="o">.</span><span class="n">write_psd</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifoList</span><span class="p">:</span>
+        <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_instance</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;tmpltbank&#39;</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span>
+                                               <span class="n">out_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                               <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span>
+                                               <span class="n">psd_files</span><span class="o">=</span><span class="n">psd_files</span><span class="p">)</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">job_instance</span><span class="o">.</span><span class="n">create_nodata_node</span><span class="p">(</span><span class="n">fullSegment</span><span class="p">)</span>
+        <span class="n">workflow</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">tmplt_banks</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+
+    <span class="k">return</span> <span class="n">tmplt_banks</span></div>
+
+
+<div class="viewcode-block" id="setup_tmpltbank_pregenerated">
+<a class="viewcode-back" href="../../../workflow/template_bank.html#pycbc.workflow.tmpltbank.setup_tmpltbank_pregenerated">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_tmpltbank_pregenerated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup CBC workflow to use a pregenerated template bank.</span>
+<span class="sd">    The bank given in cp.get(&#39;workflow&#39;,&#39;pregenerated-template-bank&#39;) will be used</span>
+<span class="sd">    as the input file for all matched-filtering jobs. If this option is</span>
+<span class="sd">    present, workflow will assume that it should be used and not generate</span>
+<span class="sd">    template banks within the workflow.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        An instanced class that manages the constructed workflow.</span>
+<span class="sd">    tags : list of strings</span>
+<span class="sd">        If given these tags are used to uniquely name and identify output files</span>
+<span class="sd">        that would be produced in multiple calls to this function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        The FileList holding the details of the template bank.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Currently this uses the *same* fixed bank for all ifos.</span>
+    <span class="c1"># Maybe we want to add capability to analyse separate banks in all ifos?</span>
+
+    <span class="c1"># Set up class for holding the banks</span>
+    <span class="n">tmplt_banks</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">global_seg</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span>
+    <span class="n">file_attrs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;segs&#39;</span> <span class="p">:</span> <span class="n">global_seg</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span> <span class="p">:</span> <span class="n">tags</span><span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># First check if we have a bank for all ifos</span>
+        <span class="n">pre_gen_bank</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s1">&#39;workflow-tmpltbank&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;tmpltbank-pregenerated-bank&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+        <span class="n">file_attrs</span><span class="p">[</span><span class="s1">&#39;ifos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span>
+        <span class="n">curr_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">pre_gen_bank</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">file_attrs</span><span class="p">)</span>
+        <span class="n">tmplt_banks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_file</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+        <span class="c1"># Okay then I must have banks for each ifo</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pre_gen_bank</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s1">&#39;workflow-tmpltbank&#39;</span><span class="p">,</span>
+                                <span class="s1">&#39;tmpltbank-pregenerated-bank-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+                                <span class="n">tags</span><span class="p">)</span>
+                <span class="n">file_attrs</span><span class="p">[</span><span class="s1">&#39;ifos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">curr_file</span> <span class="o">=</span> <span class="n">resolve_url_to_file</span><span class="p">(</span><span class="n">pre_gen_bank</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">file_attrs</span><span class="p">)</span>
+                <span class="n">tmplt_banks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_file</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Cannot find pregerated template bank in section &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;[workflow-tmpltbank] or any tagged sections. &quot;</span>
+                <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+                    <span class="n">tagged_secs</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;[workflow-tmpltbank-</span><span class="si">%s</span><span class="s2">]&quot;</span> \
+                                           <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">,)</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">)</span>
+                    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Tagged sections are </span><span class="si">%s</span><span class="s2">. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">tagged_secs</span><span class="p">,)</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;I looked for &#39;tmpltbank-pregenerated-bank&#39; option &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;and &#39;tmpltbank-pregenerated-bank-</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">,)</span>
+                <span class="k">raise</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tmplt_banks</span></div>
+
+
+
+<div class="viewcode-block" id="make_compress_split_banks">
+<a class="viewcode-back" href="../../../workflow/template_bank.html#pycbc.workflow.tmpltbank.make_compress_split_banks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_compress_split_banks</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">bank_files</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                       <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="n">compressed_banks</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">n_dp</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bank_files</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bank_file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bank_files</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span>
+            <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span>
+            <span class="s1">&#39;compress&#39;</span><span class="p">,</span>
+            <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+            <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+            <span class="n">tags</span><span class="o">=</span><span class="n">tags</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;bank%0</span><span class="si">{</span><span class="n">n_dp</span><span class="si">}</span><span class="s1">d&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_opt</span><span class="p">(</span><span class="s1">&#39;--bank-file&#39;</span><span class="p">,</span> <span class="n">bank_file</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+            <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+            <span class="s1">&#39;.hdf&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;--output&#39;</span>
+        <span class="p">)</span>
+        <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+        <span class="n">compressed_banks</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+    <span class="k">return</span> <span class="n">compressed_banks</span></div>
+
+
+<div class="viewcode-block" id="make_combine_split_banks">
+<a class="viewcode-back" href="../../../workflow/template_bank.html#pycbc.workflow.tmpltbank.make_combine_split_banks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_combine_split_banks</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">bank_files</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span>
+                       <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tags</span>
+    <span class="k">if</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span>
+        <span class="s2">&quot;workflow-splittable&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;recombine-num-banks&quot;</span><span class="p">,</span>
+        <span class="n">tags</span>
+    <span class="p">):</span>
+        <span class="n">n_banks_combined</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span>
+            <span class="s2">&quot;workflow-splittable&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;recombine-num-banks&quot;</span><span class="p">,</span>
+            <span class="n">tags</span>
+        <span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_banks_combined</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">out_files</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="n">n_dp</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">n_banks_combined</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_banks_combined</span><span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">Executable</span><span class="p">(</span>
+            <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span>
+            <span class="s1">&#39;combine_banks&#39;</span><span class="p">,</span>
+            <span class="n">ifos</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">ifos</span><span class="p">,</span>
+            <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">,</span>
+            <span class="n">tags</span><span class="o">=</span><span class="n">tags</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;%0</span><span class="si">{</span><span class="n">n_dp</span><span class="si">}</span><span class="s1">d&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">create_node</span><span class="p">()</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span> <span class="o">/</span> <span class="n">n_banks_combined</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">bank_files</span><span class="p">))</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_banks_combined</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">bank_files</span><span class="p">))</span>
+        <span class="n">bank_files_subset</span> <span class="o">=</span> <span class="n">bank_files</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">add_input_list_opt</span><span class="p">(</span><span class="s1">&#39;--input-filenames&#39;</span><span class="p">,</span> <span class="n">bank_files_subset</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">new_output_file_opt</span><span class="p">(</span>
+            <span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+            <span class="s1">&#39;.hdf&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;--output-file&#39;</span>
+        <span class="p">)</span>
+        <span class="n">workflow</span> <span class="o">+=</span> <span class="n">node</span>
+        <span class="n">out_files</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">output_files</span>
+
+    <span class="k">return</span> <span class="n">out_files</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

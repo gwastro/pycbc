@@ -1,0 +1,221 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft.backend_support &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.fft.backend_support</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.fft.backend_support</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Josh Willis, Andrew Miller</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This package provides a front-end to various fast Fourier transform</span>
+<span class="sd">implementations within PyCBC.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.scheme</span>
+
+
+<span class="c1"># These are global variables, that are modified by the various scheme-</span>
+<span class="c1"># dependent submodules, to maintain a list of all possible backends</span>
+<span class="c1"># for all possible schemes that are available at runtime.  This list</span>
+<span class="c1"># and dict are then used when parsing command-line options.</span>
+
+<span class="n">_all_backends_list</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">_all_backends_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="c1"># The following is the function called by each scheme&#39;s setup to add whatever new</span>
+<span class="c1"># backends may have been found to the global list.  Since some backends may be</span>
+<span class="c1"># shared, we must first check to make sure that the item in the list is not already</span>
+<span class="c1"># in the global list, and we assume that the keys to the dict are in one-to-one</span>
+<span class="c1"># correspondence with the items in the list.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_update_global_available</span><span class="p">(</span><span class="n">new_list</span><span class="p">,</span> <span class="n">new_dict</span><span class="p">,</span> <span class="n">global_list</span><span class="p">,</span> <span class="n">global_dict</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">new_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">global_list</span><span class="p">:</span>
+            <span class="n">global_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="n">global_dict</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">item</span><span class="p">:</span><span class="n">new_dict</span><span class="p">[</span><span class="n">item</span><span class="p">]})</span>
+
+<div class="viewcode-block" id="get_backend_modules">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.backend_support.get_backend_modules">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_backend_modules</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">_all_backends_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="get_backend_names">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.backend_support.get_backend_names">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_backend_names</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">_all_backends_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+<span class="n">BACKEND_PREFIX</span><span class="o">=</span><span class="s2">&quot;pycbc.fft.backend_&quot;</span>
+
+<div class="viewcode-block" id="set_backend">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.backend_support.set_backend">[docs]</a>
+<span class="nd">@pycbc</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_backend</span><span class="p">(</span><span class="n">backend_list</span><span class="p">):</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_backend">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.backend_support.get_backend">[docs]</a>
+<span class="nd">@pycbc</span><span class="o">.</span><span class="n">scheme</span><span class="o">.</span><span class="n">schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_backend</span><span class="p">():</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<span class="c1"># Import all scheme-dependent backends, to get _all_backends accurate:</span>
+
+<span class="k">for</span> <span class="n">scheme_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="s2">&quot;mkl&quot;</span><span class="p">,</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="s2">&quot;cupy&quot;</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mod</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="s1">&#39;pycbc.fft.backend_&#39;</span> <span class="o">+</span> <span class="n">scheme_name</span><span class="p">,</span> <span class="n">fromlist</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_alist&#39;</span><span class="p">,</span> <span class="s1">&#39;_adict&#39;</span><span class="p">])</span>
+        <span class="n">_alist</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s2">&quot;_alist&quot;</span><span class="p">)</span>
+        <span class="n">_adict</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="s2">&quot;_adict&quot;</span><span class="p">)</span>
+        <span class="n">_update_global_available</span><span class="p">(</span><span class="n">_alist</span><span class="p">,</span> <span class="n">_adict</span><span class="p">,</span> <span class="n">_all_backends_list</span><span class="p">,</span>
+                                 <span class="n">_all_backends_dict</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

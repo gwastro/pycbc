@@ -1,0 +1,931 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.types.config &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.types.config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.types.config</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013,2017,2021 Ian Harry, Duncan Brown, Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a wrapper to the ConfigParser utilities for pycbc.</span>
+<span class="sd">This module is described in the page here:</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ConfigParser</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.types.config&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DeepCopyableConfigParser">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.DeepCopyableConfigParser">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepCopyableConfigParser</span><span class="p">(</span><span class="n">ConfigParser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The standard SafeConfigParser no longer supports deepcopy() as of python</span>
+<span class="sd">    2.7 (see http://bugs.python.org/issue16058). This subclass restores that</span>
+<span class="sd">    functionality.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
+        <span class="c1"># http://stackoverflow.com/questions/23416370</span>
+        <span class="c1"># /manually-building-a-deep-copy-of-a-configparser-in-python-2-7</span>
+        <span class="n">config_string</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">config_string</span><span class="p">)</span>
+        <span class="n">config_string</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">new_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">()</span>
+        <span class="n">new_config</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">config_string</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_config</span></div>
+
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InterpolatingConfigParser</span><span class="p">(</span><span class="n">DeepCopyableConfigParser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a sub-class of DeepCopyableConfigParser, which lets</span>
+<span class="sd">    us add a few additional helper features that are useful in workflows.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">configFiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">overrideTuples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parsedFilePath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">deleteTuples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">skip_extended</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">sanitize_newline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">         Initialize an InterpolatingConfigParser. This reads the input configuration</span>
+<span class="sd">         files, overrides values if necessary and performs the interpolation.</span>
+
+<span class="sd">         Parameters</span>
+<span class="sd">         -----------</span>
+<span class="sd">         configFiles : Path to .ini file, or list of paths</span>
+<span class="sd">             The file(s) to be read in and parsed.</span>
+<span class="sd">         overrideTuples : List of (section, option, value) tuples</span>
+<span class="sd">             Add the (section, option, value) triplets provided</span>
+<span class="sd">             in this list to the provided .ini file(s). If the section, option</span>
+<span class="sd">             pair is already present, it will be overwritten.</span>
+<span class="sd">         parsedFilePath : Path, optional (default=None)</span>
+<span class="sd">             If given, write the parsed .ini file back to disk at this location.</span>
+<span class="sd">         deleteTuples : List of (section, option) tuples</span>
+<span class="sd">             Delete the (section, option) pairs provided</span>
+<span class="sd">             in this list from provided .ini file(s). If the section only</span>
+<span class="sd">             is provided, the entire section will be deleted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">         --------</span>
+<span class="sd">         InterpolatingConfigParser</span>
+<span class="sd">             Initialized InterpolatingConfigParser instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">configFiles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">configFiles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">overrideTuples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">overrideTuples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">deleteTuples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">deleteTuples</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Enable case sensitive options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optionxform</span> <span class="o">=</span> <span class="nb">str</span>
+
+        <span class="c1"># Add in environment</span>
+        <span class="c1"># We allow access to environment variables by loading them into a</span>
+        <span class="c1"># special configparser section ([environment]) which can then</span>
+        <span class="c1"># be referenced by other sections.</span>
+        <span class="c1"># We cannot include environment variables containing characters</span>
+        <span class="c1"># that are special to ConfigParser. So any variable containing a % or a</span>
+        <span class="c1"># $ is ignored.</span>
+        <span class="n">env_vals</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;%&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span> <span class="ow">and</span> <span class="s1">&#39;$&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_dict</span><span class="p">({</span><span class="s1">&#39;environment&#39;</span><span class="p">:</span> <span class="n">env_vals</span><span class="p">})</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_ini_file</span><span class="p">(</span><span class="n">configFiles</span><span class="p">)</span>
+
+        <span class="c1"># Split sections like [inspiral&amp;tmplt] into [inspiral] and [tmplt]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">split_multi_sections</span><span class="p">()</span>
+
+        <span class="c1"># Populate shared options from the [sharedoptions] section</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">populate_shared_sections</span><span class="p">()</span>
+
+        <span class="c1"># Do deletes from command line</span>
+        <span class="k">for</span> <span class="n">delete</span> <span class="ow">in</span> <span class="n">deleteTuples</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">delete</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_section</span><span class="p">(</span><span class="n">delete</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Cannot delete section </span><span class="si">%s</span><span class="s2">, &quot;</span>
+                        <span class="s2">&quot;no such section in configuration.&quot;</span> <span class="o">%</span> <span class="n">delete</span>
+                    <span class="p">)</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Deleting section </span><span class="si">%s</span><span class="s2"> from configuration&quot;</span><span class="p">,</span> <span class="n">delete</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">delete</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">remove_option</span><span class="p">(</span><span class="n">delete</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">delete</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Cannot delete option </span><span class="si">%s</span><span class="s2"> from section </span><span class="si">%s</span><span class="s2">,&quot;</span>
+                        <span class="s2">&quot; no such option in configuration.&quot;</span> <span class="o">%</span> <span class="n">delete</span>
+                    <span class="p">)</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Deleting option </span><span class="si">%s</span><span class="s2"> from section </span><span class="si">%s</span><span class="s2"> in &quot;</span> <span class="s2">&quot;configuration&quot;</span><span class="p">,</span>
+                    <span class="n">delete</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">delete</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Deletes must be tuples of length 1 or 2. &quot;</span>
+                    <span class="s2">&quot;Got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">delete</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Do overrides from command line</span>
+        <span class="k">for</span> <span class="n">override</span> <span class="ow">in</span> <span class="n">overrideTuples</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">override</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+                <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Overrides must be tuples of length 2 or 3.&quot;</span>
+                <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Got </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">override</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+            <span class="n">section</span> <span class="o">=</span> <span class="n">override</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">option</span> <span class="o">=</span> <span class="n">override</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">override</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">override</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="c1"># Check for section existence, create if needed</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Overriding section </span><span class="si">%s</span><span class="s2"> option </span><span class="si">%s</span><span class="s2"> with value </span><span class="si">%s</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;in configuration.&quot;</span><span class="p">,</span>
+                <span class="n">section</span><span class="p">,</span>
+                <span class="n">option</span><span class="p">,</span>
+                <span class="n">value</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check for any substitutions that can be made</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_extended</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perform_extended_interpolation</span><span class="p">()</span>
+
+        <span class="c1"># replace newlines in input with spaces</span>
+        <span class="c1"># this enables command line conversion compatibility</span>
+        <span class="k">if</span> <span class="n">sanitize_newline</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sanitize_newline</span><span class="p">()</span>
+
+        <span class="c1"># Check for duplicate options in sub-sections</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sanity_check_subsections</span><span class="p">()</span>
+
+        <span class="c1"># Dump parsed .ini file if needed</span>
+        <span class="k">if</span> <span class="n">parsedFilePath</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">parsedFilePath</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InterpolatingConfigParser.from_cli">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.from_cli">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the config parser using options parsed from the command</span>
+<span class="sd">        line.</span>
+
+<span class="sd">        The parsed options ``opts`` must include options provided by</span>
+<span class="sd">        :py:func:`add_workflow_command_line_group`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        opts : argparse.ArgumentParser</span>
+<span class="sd">            The command line arguments parsed by argparse</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># read configuration file</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading configuration file&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">config_overrides</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">overrides</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">tuple</span><span class="p">(</span><span class="n">override</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">override</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">config_overrides</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">overrides</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">config_delete</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">deletes</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">tuple</span><span class="p">(</span><span class="n">delete</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">delete</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">config_delete</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">deletes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">config_files</span><span class="p">,</span> <span class="n">overrides</span><span class="p">,</span> <span class="n">deleteTuples</span><span class="o">=</span><span class="n">deletes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.read_ini_file">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.read_ini_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_ini_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fpath</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read a .ini file and return it as a ConfigParser class.</span>
+<span class="sd">        This function does none of the parsing/combining of sections. It simply</span>
+<span class="sd">        reads the file, checks if there are overlaping options</span>
+<span class="sd">        and returns it unedited</span>
+
+<span class="sd">        Stub awaiting more functionality - see configparser_test.py</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fpath : Path to .ini file, or list of paths</span>
+<span class="sd">            The path(s) to a .ini file to be read in</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cp : ConfigParser</span>
+<span class="sd">            The ConfigParser class containing the read in .ini file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Read the file</span>
+
+        <span class="n">options_seen</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">fpath</span><span class="p">:</span>
+            <span class="n">parser</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">optionxform</span><span class="o">=</span><span class="nb">str</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">section</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">options_seen</span><span class="p">:</span>
+                    <span class="n">options_seen</span><span class="p">[</span><span class="n">section</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+                <span class="n">section_options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+
+                <span class="n">option_intersection</span> <span class="o">=</span> <span class="n">options_seen</span><span class="p">[</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">section_options</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">option_intersection</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate option(s) </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">option_intersection</span><span class="p">)</span><span class="si">}</span><span class="s2"> found in section &#39;</span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">&#39; in file &#39;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+                <span class="n">options_seen</span><span class="p">[</span><span class="n">section</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">section_options</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.get_subsections">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.get_subsections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_subsections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of subsections for the given section name&quot;&quot;&quot;</span>
+        <span class="c1"># Keep only subsection names</span>
+        <span class="n">subsections</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">sec</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">section_name</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
+            <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">sec</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">section_name</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">sec</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;defaultvalues&#39;</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">subsections</span><span class="p">:</span>
+            <span class="n">sp</span> <span class="o">=</span> <span class="n">sec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
+            <span class="c1"># The format [section-subsection-tag] is okay. Just</span>
+            <span class="c1"># check that [section-subsection] section exists. If not it is possible</span>
+            <span class="c1"># the user is trying to use an subsection name with &#39;-&#39; in it</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section_name</span><span class="p">,</span> <span class="n">sp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Workflow uses the &#39;-&#39; as a delimiter so &quot;</span>
+                    <span class="s2">&quot;this is interpreted as section-subsection-tag. &quot;</span>
+                    <span class="s2">&quot;While checking section </span><span class="si">%s</span><span class="s2">, no section with &quot;</span>
+                    <span class="s2">&quot;name </span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2"> was found. &quot;</span>
+                    <span class="s2">&quot;If you did not intend to use tags in an &quot;</span>
+                    <span class="s2">&quot;&#39;advanced user&#39; manner, or do not understand what &quot;</span>
+                    <span class="s2">&quot;this means, don&#39;t use dashes in section &quot;</span>
+                    <span class="s2">&quot;names. So [injection-nsbhinj] is good. &quot;</span>
+                    <span class="s2">&quot;[injection-nsbh-inj] is not.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">sp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sp</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subsections</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">sec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">sec</span> <span class="ow">in</span> <span class="n">subsections</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section_name</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.perform_extended_interpolation">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.perform_extended_interpolation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">perform_extended_interpolation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter through an ini file and replace all examples of</span>
+<span class="sd">        ExtendedInterpolation formatting with the exact value. For values like</span>
+<span class="sd">        ${example} this is replaced with the value that corresponds to the</span>
+<span class="sd">        option called example ***in the same section***</span>
+
+<span class="sd">        For values like ${common|example} this is replaced with the value that</span>
+<span class="sd">        corresponds to the option example in the section [common]. Note that</span>
+<span class="sd">        in the python3 config parser this is ${common:example} but python2.7</span>
+<span class="sd">        interprets the : the same as a = and this breaks things</span>
+
+<span class="sd">        Nested interpolation is not supported here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Do not allow any interpolation of the section names</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                <span class="c1"># Check the option name</span>
+                <span class="n">new_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolate_string</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">new_str</span> <span class="o">!=</span> <span class="n">option</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">new_str</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">remove_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span>
+                <span class="c1"># Check the value</span>
+                <span class="n">new_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolate_string</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">new_str</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">new_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.sanitize_newline">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.sanitize_newline">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sanitize_newline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter through an ini file and replace all examples of</span>
+<span class="sd">        newlines with spaces. This is useful for command line conversion</span>
+<span class="sd">        and allow multiline configparser inputs without added backslashes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Do not allow any interpolation of the section names</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                <span class="n">new_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.interpolate_string">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.interpolate_string">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_string</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Take a string and replace all example of ExtendedInterpolation</span>
+<span class="sd">        formatting within the string with the exact value.</span>
+
+<span class="sd">        For values like ${example} this is replaced with the value that</span>
+<span class="sd">        corresponds to the option called example ***in the same section***</span>
+
+<span class="sd">        For values like ${common|example} this is replaced with the value that</span>
+<span class="sd">        corresponds to the option example in the section [common]. Note that</span>
+<span class="sd">        in the python3 config parser this is ${common:example} but python2.7</span>
+<span class="sd">        interprets the : the same as a = and this breaks things</span>
+
+<span class="sd">        Nested interpolation is not supported here.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        test_string : String</span>
+<span class="sd">            The string to parse and interpolate</span>
+<span class="sd">        section : String</span>
+<span class="sd">            The current section of the ConfigParser object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        test_string : String</span>
+<span class="sd">            Interpolated string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># First check if any interpolation is needed and abort if not</span>
+        <span class="n">re_obj</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\$\{.*?\}&quot;</span><span class="p">,</span> <span class="n">test_string</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">re_obj</span><span class="p">:</span>
+            <span class="c1"># Not really sure how this works, but this will obtain the first</span>
+            <span class="c1"># instance of a string contained within ${....}</span>
+            <span class="n">rep_string</span> <span class="o">=</span> <span class="p">(</span><span class="n">re_obj</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Need to test which of the two formats we have</span>
+            <span class="n">split_string</span> <span class="o">=</span> <span class="n">rep_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_string</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">test_string</span> <span class="o">=</span> <span class="n">test_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s2">&quot;${&quot;</span> <span class="o">+</span> <span class="n">rep_string</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">split_string</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">NoOptionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Substitution failed&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_string</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">test_string</span> <span class="o">=</span> <span class="n">test_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                        <span class="s2">&quot;${&quot;</span> <span class="o">+</span> <span class="n">rep_string</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">split_string</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">split_string</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">NoOptionError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Substitution failed&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span>
+            <span class="n">re_obj</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\$\{.*?\}&quot;</span><span class="p">,</span> <span class="n">test_string</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">test_string</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.split_multi_sections">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.split_multi_sections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split_multi_sections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse through the WorkflowConfigParser instance and splits any sections</span>
+<span class="sd">        labelled with an &quot;&amp;&quot; sign (for e.g. [inspiral&amp;tmpltbank]) into</span>
+<span class="sd">        [inspiral] and [tmpltbank] sections. If these individual sections</span>
+<span class="sd">        already exist they  will be appended to. If an option exists in both the</span>
+<span class="sd">        [inspiral] and [inspiral&amp;tmpltbank] sections an error will be thrown</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Begin by looping over all sections</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+            <span class="c1"># Only continue if section needs splitting</span>
+            <span class="k">if</span> <span class="s2">&quot;&amp;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">section</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># Get list of section names to add these options to</span>
+            <span class="n">split_sections</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;&amp;&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">new_sec</span> <span class="ow">in</span> <span class="n">split_sections</span><span class="p">:</span>
+                <span class="c1"># Add sections if they don&#39;t already exist</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">new_sec</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">new_sec</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_options_to_section</span><span class="p">(</span><span class="n">new_sec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.populate_shared_sections">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.populate_shared_sections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">populate_shared_sections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the [sharedoptions] section of the ini file.</span>
+
+<span class="sd">        That section should contain entries according to:</span>
+
+<span class="sd">          * massparams = inspiral, tmpltbank</span>
+<span class="sd">          * dataparams = tmpltbank</span>
+
+<span class="sd">        This will result in all options in [sharedoptions-massparams] being</span>
+<span class="sd">        copied into the [inspiral] and [tmpltbank] sections and the options</span>
+<span class="sd">        in [sharedoptions-dataparams] being copited into [tmpltbank].</span>
+<span class="sd">        In the case of duplicates an error will be raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s2">&quot;sharedoptions&quot;</span><span class="p">):</span>
+            <span class="c1"># No sharedoptions, exit</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">&quot;sharedoptions&quot;</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s2">&quot;sharedoptions-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">))</span>
+            <span class="c1"># Comma separated</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+            <span class="n">common_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">&quot;sharedoptions-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">common_options</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Option exists in both original &quot;</span>
+                            <span class="o">+</span> <span class="s2">&quot;ConfigParser section [</span><span class="si">%s</span><span class="s2">] and &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,)</span>
+                            <span class="o">+</span> <span class="s2">&quot;sharedoptions section: </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span>
+                            <span class="o">%</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="s2">&quot;sharedoptions-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">))</span>
+                        <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_section</span><span class="p">(</span><span class="s2">&quot;sharedoptions-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_section</span><span class="p">(</span><span class="s2">&quot;sharedoptions&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.add_options_to_section">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.add_options_to_section">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_options_to_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">overwrite_options</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a set of options and values to a section of a ConfigParser object.</span>
+<span class="sd">        Will throw an error if any of the options being added already exist,</span>
+<span class="sd">        this behaviour can be overridden if desired</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The name of the section to add options+values to</span>
+<span class="sd">        items : list of tuples</span>
+<span class="sd">            Each tuple contains (at [0]) the option and (at [1]) the value to</span>
+<span class="sd">            add to the section of the ini file</span>
+<span class="sd">        overwrite_options : Boolean, optional</span>
+<span class="sd">            By default this function will throw a ValueError if an option exists</span>
+<span class="sd">            in both the original section in the ConfigParser *and* in the</span>
+<span class="sd">            provided items.</span>
+<span class="sd">            This will override so that the options+values given in items</span>
+<span class="sd">            will replace the original values if the value is set to True.</span>
+<span class="sd">            Default = False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Sanity checking</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Section </span><span class="si">%s</span><span class="s2"> not present in ConfigParser.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Check for duplicate options first</span>
+        <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite_options</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">option</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;Option exists in both original &quot;</span>
+                        <span class="o">+</span> <span class="s2">&quot;ConfigParser section [</span><span class="si">%s</span><span class="s2">] and &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,)</span>
+                        <span class="o">+</span> <span class="s2">&quot;input list: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">option</span><span class="p">,)</span>
+                    <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.sanity_check_subsections">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.sanity_check_subsections">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sanity_check_subsections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function goes through the ConfigParser and checks that any options</span>
+<span class="sd">        given in the [SECTION_NAME] section are not also given in any</span>
+<span class="sd">        [SECTION_NAME-SUBSECTION] sections.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Loop over the sections in the ini file</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+            <span class="c1"># [pegasus_profile] is specially allowed to be overriden by</span>
+            <span class="c1"># sub-sections</span>
+            <span class="k">if</span> <span class="n">section</span> <span class="o">==</span> <span class="s2">&quot;pegasus_profile&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">section</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;-defaultvalues&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+                    <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># Only allow defaultvalues for top-level sections</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s2">&quot;-defaultvalues subsections are only allowed for &quot;</span>
+                    <span class="s2">&quot;top-level sections; given </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">section</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Loop over the sections again</span>
+            <span class="k">for</span> <span class="n">section2</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+                <span class="c1"># Check if any are subsections of section</span>
+                <span class="k">if</span> <span class="n">section2</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">section</span> <span class="o">+</span> <span class="s2">&quot;-&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">section2</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;defaultvalues&quot;</span><span class="p">):</span>
+                        <span class="c1"># defaultvalues is storage for defaults, and will</span>
+                        <span class="c1"># be over-written by anything in the sections-proper</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Check for duplicate options whenever this exists</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_duplicate_options</span><span class="p">(</span>
+                        <span class="n">section</span><span class="p">,</span> <span class="n">section2</span><span class="p">,</span> <span class="n">raise_error</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.check_duplicate_options">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.check_duplicate_options">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_duplicate_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section1</span><span class="p">,</span> <span class="n">section2</span><span class="p">,</span> <span class="n">raise_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check for duplicate options in two sections, section1 and section2.</span>
+<span class="sd">        Will return a list of the duplicate options.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section1 : string</span>
+<span class="sd">            The name of the first section to compare</span>
+<span class="sd">        section2 : string</span>
+<span class="sd">            The name of the second section to compare</span>
+<span class="sd">        raise_error : Boolean, optional (default=False)</span>
+<span class="sd">            If True, raise an error if duplicates are present.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        duplicates : List</span>
+<span class="sd">            List of duplicate options</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Sanity checking</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Section </span><span class="si">%s</span><span class="s2"> not present in ConfigParser.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section1</span><span class="p">,)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="n">section2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Section </span><span class="si">%s</span><span class="s2"> not present in ConfigParser.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section2</span><span class="p">,)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Are section1 and section2 a section-and-defaultvalues pair?</span>
+        <span class="n">section_and_default</span> <span class="o">=</span> <span class="p">(</span><span class="n">section1</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">section2</span><span class="si">}</span><span class="s2">-defaultvalues&quot;</span> <span class="ow">or</span>
+                               <span class="n">section2</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">section1</span><span class="si">}</span><span class="s2">-defaultvalues&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Is one the sections defaultvalues, but the other is not the</span>
+        <span class="c1"># top-level section? This is to catch the case where we are</span>
+        <span class="c1"># comparing section-defaultvalues with section-subsection</span>
+        <span class="k">if</span> <span class="n">section1</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;-defaultvalues&quot;</span><span class="p">)</span> <span class="ow">or</span> \
+                <span class="n">section2</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;-defaultvalues&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">section_and_default</span><span class="p">:</span>
+                <span class="c1"># Override the raise_error variable not to error when</span>
+                <span class="c1"># defaultvalues are given and the sections are not</span>
+                <span class="c1"># otherwise the same</span>
+                <span class="n">raise_error</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">items1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section1</span><span class="p">)</span>
+        <span class="n">items2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section2</span><span class="p">)</span>
+
+        <span class="c1"># The list comprehension here creates a list of all duplicate items</span>
+        <span class="n">duplicates</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">items1</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">items2</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">duplicates</span> <span class="ow">and</span> <span class="n">raise_error</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;The following options appear in both section &quot;</span>
+                       <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">section1</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">section2</span><span class="si">}</span><span class="s2">: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">duplicates</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">section_and_default</span><span class="p">:</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;. Default values are unused in this case.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">duplicates</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.get_opt_tag">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.get_opt_tag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_opt_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convenience function accessing get_opt_tags() for a single tag: see</span>
+<span class="sd">        documentation for that function.</span>
+<span class="sd">        NB calling get_opt_tags() directly is preferred for simplicity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        self : ConfigParser object</span>
+<span class="sd">            The ConfigParser object (automatically passed when this is appended</span>
+<span class="sd">            to the ConfigParser class)</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section of the ConfigParser object to read</span>
+<span class="sd">        option : string</span>
+<span class="sd">            The ConfigParser option to look for</span>
+<span class="sd">        tag : string</span>
+<span class="sd">            The name of the subsection to look in, if not found in [section]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        string</span>
+<span class="sd">            The value of the options being searched for</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="p">[</span><span class="n">tag</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.get_opt_tags">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.get_opt_tags">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_opt_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Supplement to ConfigParser.ConfigParser.get(). This will search for an</span>
+<span class="sd">        option in [section] and if it doesn&#39;t find it will also try in</span>
+<span class="sd">        [section-defaultvalues], and [section-tag] for every value of tag</span>
+<span class="sd">        in tags. [section-tag] will be preferred to [section-defaultvalues]</span>
+<span class="sd">        values. Will raise a ConfigParser.Error if it cannot find a value.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        self : ConfigParser object</span>
+<span class="sd">            The ConfigParser object (automatically passed when this is appended</span>
+<span class="sd">            to the ConfigParser class)</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section of the ConfigParser object to read</span>
+<span class="sd">        option : string</span>
+<span class="sd">            The ConfigParser option to look for</span>
+<span class="sd">        tags : list of strings</span>
+<span class="sd">            The name of subsections to look in, if not found in [section]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        string</span>
+<span class="sd">            The value of the options being searched for</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Need lower case tag name; also exclude cases with tag=None</span>
+        <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="n">tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span> <span class="k">if</span> <span class="n">tag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="n">err_string</span> <span class="o">=</span> <span class="s2">&quot;No option &#39;</span><span class="si">%s</span><span class="s2">&#39; in section [</span><span class="si">%s</span><span class="s2">] &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">(</span><span class="n">err_string</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="n">return_vals</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># First, check if there are any default values set:</span>
+            <span class="n">has_defaultvalue</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">-defaultvalues&quot;</span><span class="p">):</span>
+                <span class="n">return_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">section</span><span class="si">}</span><span class="s2">-defaultvalues&quot;</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">has_defaultvalue</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">sub_section_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">sec_len</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">tag_permutation</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="n">sec_len</span><span class="p">):</span>
+                    <span class="n">joined_name</span> <span class="o">=</span> <span class="s2">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tag_permutation</span><span class="p">)</span>
+                    <span class="n">sub_section_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">joined_name</span><span class="p">)</span>
+            <span class="n">section_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">sb</span><span class="p">)</span> <span class="k">for</span> <span class="n">sb</span> <span class="ow">in</span> <span class="n">sub_section_list</span><span class="p">]</span>
+            <span class="n">err_section_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">sub_section_list</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">sub</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">sub</span><span class="p">),</span> <span class="n">option</span><span class="p">):</span>
+                        <span class="n">err_section_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">sub</span><span class="p">))</span>
+                        <span class="n">return_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">sub</span><span class="p">),</span> <span class="n">option</span><span class="p">)</span>
+                        <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">has_defaultvalue</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">return_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># option supplied which should overwrite the default;</span>
+                <span class="c1"># default will be first in the list, so remove it</span>
+                <span class="n">return_vals</span> <span class="o">=</span> <span class="n">return_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+            <span class="c1"># We also want to recursively go into sections</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">return_vals</span><span class="p">:</span>
+                <span class="n">err_string</span> <span class="o">+=</span> <span class="s2">&quot;or in sections [</span><span class="si">%s</span><span class="s2">].&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="s2">&quot;] [&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">section_list</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">(</span><span class="n">err_string</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">return_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">err_string</span> <span class="o">+=</span> <span class="p">(</span>
+                    <span class="s2">&quot;and multiple entries found in sections [</span><span class="si">%s</span><span class="s2">].&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;] [&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">err_section_list</span><span class="p">))</span>
+                <span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">(</span><span class="n">err_string</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">return_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.has_option_tag">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.has_option_tag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_option_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convenience function accessing has_option_tags() for a single tag: see</span>
+<span class="sd">        documentation for that function.</span>
+<span class="sd">        NB calling has_option_tags() directly is preferred for simplicity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        self : ConfigParser object</span>
+<span class="sd">            The ConfigParser object (automatically passed when this is appended</span>
+<span class="sd">            to the ConfigParser class)</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section of the ConfigParser object to read</span>
+<span class="sd">        option : string</span>
+<span class="sd">            The ConfigParser option to look for</span>
+<span class="sd">        tag : string</span>
+<span class="sd">            The name of the subsection to look in, if not found in [section]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        Boolean</span>
+<span class="sd">            Is the option in the section or [section-tag]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="p">[</span><span class="n">tag</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="InterpolatingConfigParser.has_option_tags">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.has_option_tags">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_option_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Supplement to ConfigParser.ConfigParser.has_option().</span>
+<span class="sd">        This will search for an option in [section] and if it doesn&#39;t find it</span>
+<span class="sd">        will also try in [section-tag] for each value in tags.</span>
+<span class="sd">        Returns True if the option is found and false if not.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        self : ConfigParser object</span>
+<span class="sd">            The ConfigParser object (automatically passed when this is appended</span>
+<span class="sd">            to the ConfigParser class)</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section of the ConfigParser object to read</span>
+<span class="sd">        option : string</span>
+<span class="sd">            The ConfigParser option to look for</span>
+<span class="sd">        tags : list of strings</span>
+<span class="sd">            The names of the subsection to look in, if not found in [section]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        Boolean</span>
+<span class="sd">            Is the option in the section or [section-tag] (for tag in tags)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

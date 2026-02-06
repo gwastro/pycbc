@@ -1,0 +1,1108 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc package" href="pycbc.html" />
+    <link rel="prev" title="Use of PyCBC in Scientific Publications" href="credit.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html">pycbc package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">pycbc</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/modules.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc">
+<h1>pycbc<a class="headerlink" href="#pycbc" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pycbc.html">pycbc package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html#module-pycbc.catalog.catalog">pycbc.catalog.catalog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html#module-pycbc.catalog">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html#module-pycbc.coordinates.base">pycbc.coordinates.base module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html#module-pycbc.coordinates.space">pycbc.coordinates.space module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html#module-pycbc.coordinates">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html#module-pycbc.detector.ground">pycbc.detector.ground module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html#module-pycbc.detector.space">pycbc.detector.space module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html#module-pycbc.detector">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.angular">pycbc.distributions.angular module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.arbitrary">pycbc.distributions.arbitrary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.bounded">pycbc.distributions.bounded module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.constraints">pycbc.distributions.constraints module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.external">pycbc.distributions.external module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.fixedsamples">pycbc.distributions.fixedsamples module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.gaussian">pycbc.distributions.gaussian module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.joint">pycbc.distributions.joint module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.mass">pycbc.distributions.mass module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.power_law">pycbc.distributions.power_law module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.qnm">pycbc.distributions.qnm module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.sky_location">pycbc.distributions.sky_location module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.spins">pycbc.distributions.spins module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.uniform">pycbc.distributions.uniform module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.uniform_log">pycbc.distributions.uniform_log module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions.utils">pycbc.distributions.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html#module-pycbc.distributions">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.coherent">pycbc.events.coherent module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.coinc">pycbc.events.coinc module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.coinc_rate">pycbc.events.coinc_rate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.cuts">pycbc.events.cuts module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.eventmgr">pycbc.events.eventmgr module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.eventmgr_cython">pycbc.events.eventmgr_cython module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.ranking">pycbc.events.ranking module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.significance">pycbc.events.significance module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.simd_threshold_cython">pycbc.events.simd_threshold_cython module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.single">pycbc.events.single module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.stat">pycbc.events.stat module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.threshold_cpu">pycbc.events.threshold_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.threshold_cupy">pycbc.events.threshold_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.trigger_fits">pycbc.events.trigger_fits module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.triggers">pycbc.events.triggers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events.veto">pycbc.events.veto module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html#module-pycbc.events">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.backend_cpu">pycbc.fft.backend_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.backend_cupy">pycbc.fft.backend_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.backend_mkl">pycbc.fft.backend_mkl module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.backend_support">pycbc.fft.backend_support module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.class_api">pycbc.fft.class_api module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.core">pycbc.fft.core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.cupyfft">pycbc.fft.cupyfft module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.fft_callback">pycbc.fft.fft_callback module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.fftw">pycbc.fft.fftw module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.fftw_pruned">pycbc.fft.fftw_pruned module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.fftw_pruned_cython">pycbc.fft.fftw_pruned_cython module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.func_api">pycbc.fft.func_api module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.mkl">pycbc.fft.mkl module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.npfft">pycbc.fft.npfft module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft.parser_support">pycbc.fft.parser_support module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html#module-pycbc.fft">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.autocorrelation">pycbc.filter.autocorrelation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.matchedfilter">pycbc.filter.matchedfilter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.matchedfilter_cpu">pycbc.filter.matchedfilter_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.matchedfilter_cupy">pycbc.filter.matchedfilter_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.matchedfilter_numpy">pycbc.filter.matchedfilter_numpy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.qtransform">pycbc.filter.qtransform module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.resample">pycbc.filter.resample module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.simd_correlate">pycbc.filter.simd_correlate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.simd_correlate_cython">pycbc.filter.simd_correlate_cython module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter.zpk">pycbc.filter.zpk module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html#module-pycbc.filter">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html#module-pycbc.frame.frame">pycbc.frame.frame module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html#module-pycbc.frame.gwosc">pycbc.frame.gwosc module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html#module-pycbc.frame.store">pycbc.frame.store module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html#module-pycbc.frame">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#subpackages">Subpackages</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.burn_in">pycbc.inference.burn_in module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.entropy">pycbc.inference.entropy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.evidence">pycbc.inference.evidence module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.gelman_rubin">pycbc.inference.gelman_rubin module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.geweke">pycbc.inference.geweke module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference.option_utils">pycbc.inference.option_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html#module-pycbc.inference">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html#module-pycbc.inject.inject">pycbc.inject.inject module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html#module-pycbc.inject.injfilterrejector">pycbc.inject.injfilterrejector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html#module-pycbc.inject">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#module-pycbc.io.gracedb">pycbc.io.gracedb module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#module-pycbc.io.hdf">pycbc.io.hdf module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#module-pycbc.io.ligolw">pycbc.io.ligolw module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#module-pycbc.io.live">pycbc.io.live module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#module-pycbc.io.record">pycbc.io.record module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html#module-pycbc.io">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html#module-pycbc.live.significance_fits">pycbc.live.significance_fits module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html#module-pycbc.live.snr_optimizer">pycbc.live.snr_optimizer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html#module-pycbc.live.supervision">pycbc.live.supervision module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html#module-pycbc.live">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html#module-pycbc.neutron_stars.eos_utils">pycbc.neutron_stars.eos_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html#module-pycbc.neutron_stars.pg_isso_solver">pycbc.neutron_stars.pg_isso_solver module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html#module-pycbc.neutron_stars">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html#module-pycbc.noise.gaussian">pycbc.noise.gaussian module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html#module-pycbc.noise.reproduceable">pycbc.noise.reproduceable module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html#module-pycbc.noise">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.fgmc_functions">pycbc.population.fgmc_functions module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.fgmc_laguerre">pycbc.population.fgmc_laguerre module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.fgmc_plots">pycbc.population.fgmc_plots module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.live_pastro">pycbc.population.live_pastro module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.live_pastro_utils">pycbc.population.live_pastro_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.population_models">pycbc.population.population_models module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.rates_functions">pycbc.population.rates_functions module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population.scale_injections">pycbc.population.scale_injections module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html#module-pycbc.population">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#module-pycbc.psd.analytical">pycbc.psd.analytical module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#module-pycbc.psd.analytical_space">pycbc.psd.analytical_space module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#module-pycbc.psd.estimate">pycbc.psd.estimate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#module-pycbc.psd.read">pycbc.psd.read module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#module-pycbc.psd.variation">pycbc.psd.variation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html#module-pycbc.psd">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.color">pycbc.results.color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.dq">pycbc.results.dq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.followup">pycbc.results.followup module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.layout">pycbc.results.layout module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.metadata">pycbc.results.metadata module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.mpld3_utils">pycbc.results.mpld3_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.plot">pycbc.results.plot module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.psd">pycbc.results.psd module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.pygrb_plotting_utils">pycbc.results.pygrb_plotting_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.pygrb_postprocessing_utils">pycbc.results.pygrb_postprocessing_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.render">pycbc.results.render module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.scatter_histograms">pycbc.results.scatter_histograms module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.snr">pycbc.results.snr module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.str_utils">pycbc.results.str_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.table_utils">pycbc.results.table_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results.versioning">pycbc.results.versioning module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html#module-pycbc.results">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#module-pycbc.strain.calibration">pycbc.strain.calibration module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#module-pycbc.strain.gate">pycbc.strain.gate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#module-pycbc.strain.lines">pycbc.strain.lines module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#module-pycbc.strain.recalibrate">pycbc.strain.recalibrate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#module-pycbc.strain.strain">pycbc.strain.strain module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html#module-pycbc.strain">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.bank_conversions">pycbc.tmpltbank.bank_conversions module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.bank_output_utils">pycbc.tmpltbank.bank_output_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.brute_force_methods">pycbc.tmpltbank.brute_force_methods module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.calc_moments">pycbc.tmpltbank.calc_moments module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.coord_utils">pycbc.tmpltbank.coord_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.lambda_mapping">pycbc.tmpltbank.lambda_mapping module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.lattice_utils">pycbc.tmpltbank.lattice_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.option_utils">pycbc.tmpltbank.option_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.partitioned_bank">pycbc.tmpltbank.partitioned_bank module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank.sky_grid">pycbc.tmpltbank.sky_grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html#module-pycbc.tmpltbank">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.aligned">pycbc.types.aligned module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.array">pycbc.types.array module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.array_cpu">pycbc.types.array_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.array_cupy">pycbc.types.array_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.config">pycbc.types.config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.frequencyseries">pycbc.types.frequencyseries module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.optparse">pycbc.types.optparse module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.timeseries">pycbc.types.timeseries module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types.utils">pycbc.types.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html#module-pycbc.types">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes.autochisq">pycbc.vetoes.autochisq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes.bank_chisq">pycbc.vetoes.bank_chisq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes.chisq">pycbc.vetoes.chisq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes.chisq_cpu">pycbc.vetoes.chisq_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes.chisq_cupy">pycbc.vetoes.chisq_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes.sgchisq">pycbc.vetoes.sgchisq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html#module-pycbc.vetoes">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.bank">pycbc.waveform.bank module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.compress">pycbc.waveform.compress module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.decompress_cpu">pycbc.waveform.decompress_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.decompress_cpu_cython">pycbc.waveform.decompress_cpu_cython module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.decompress_cupy">pycbc.waveform.decompress_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.generator">pycbc.waveform.generator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.multiband">pycbc.waveform.multiband module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.nltides">pycbc.waveform.nltides module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.parameters">pycbc.waveform.parameters module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.plugin">pycbc.waveform.plugin module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.premerger">pycbc.waveform.premerger module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#pycbc-waveform-pycbc-phenomc-tmplt-module">pycbc.waveform.pycbc_phenomC_tmplt module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.ringdown">pycbc.waveform.ringdown module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.sinegauss">pycbc.waveform.sinegauss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.spa_tmplt">pycbc.waveform.spa_tmplt module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.spa_tmplt_cpu">pycbc.waveform.spa_tmplt_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.spa_tmplt_cupy">pycbc.waveform.spa_tmplt_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.supernovae">pycbc.waveform.supernovae module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.utils">pycbc.waveform.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.utils_cpu">pycbc.waveform.utils_cpu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.utils_cupy">pycbc.waveform.utils_cupy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.waveform">pycbc.waveform.waveform module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform.waveform_modes">pycbc.waveform.waveform_modes module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html#module-pycbc.waveform">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.coincidence">pycbc.workflow.coincidence module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.configparser_test">pycbc.workflow.configparser_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.configuration">pycbc.workflow.configuration module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.core">pycbc.workflow.core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.datafind">pycbc.workflow.datafind module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.dq">pycbc.workflow.dq module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.grb_utils">pycbc.workflow.grb_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.inference_followups">pycbc.workflow.inference_followups module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.injection">pycbc.workflow.injection module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.jobsetup">pycbc.workflow.jobsetup module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.matched_filter">pycbc.workflow.matched_filter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.minifollowups">pycbc.workflow.minifollowups module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.pegasus_sites">pycbc.workflow.pegasus_sites module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.pegasus_workflow">pycbc.workflow.pegasus_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.plotting">pycbc.workflow.plotting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.psd">pycbc.workflow.psd module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.psdfiles">pycbc.workflow.psdfiles module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.segment">pycbc.workflow.segment module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.splittable">pycbc.workflow.splittable module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.tmpltbank">pycbc.workflow.tmpltbank module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow.versioning">pycbc.workflow.versioning module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html#module-pycbc.workflow">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedArray"><code class="docutils literal notranslate"><span class="pre">BinnedArray</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedArray.argmax"><code class="docutils literal notranslate"><span class="pre">BinnedArray.argmax()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedArray.argmin"><code class="docutils literal notranslate"><span class="pre">BinnedArray.argmin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedArray.centres"><code class="docutils literal notranslate"><span class="pre">BinnedArray.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedArray.copy"><code class="docutils literal notranslate"><span class="pre">BinnedArray.copy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedArray.logregularize"><code class="docutils literal notranslate"><span class="pre">BinnedArray.logregularize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios"><code class="docutils literal notranslate"><span class="pre">BinnedRatios</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.bins"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.bins()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.centres"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.incdenominator"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.incdenominator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.incnumerator"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.incnumerator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.logregularize"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.logregularize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.ratio"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.ratio()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.BinnedRatios.regularize"><code class="docutils literal notranslate"><span class="pre">BinnedRatios.regularize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.Bins"><code class="docutils literal notranslate"><span class="pre">Bins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.Bins.centres"><code class="docutils literal notranslate"><span class="pre">Bins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.Bins.lower"><code class="docutils literal notranslate"><span class="pre">Bins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.Bins.upper"><code class="docutils literal notranslate"><span class="pre">Bins.upper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.IrregularBins"><code class="docutils literal notranslate"><span class="pre">IrregularBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.IrregularBins.centres"><code class="docutils literal notranslate"><span class="pre">IrregularBins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.IrregularBins.lower"><code class="docutils literal notranslate"><span class="pre">IrregularBins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.IrregularBins.upper"><code class="docutils literal notranslate"><span class="pre">IrregularBins.upper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearBins"><code class="docutils literal notranslate"><span class="pre">LinearBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearBins.centres"><code class="docutils literal notranslate"><span class="pre">LinearBins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearBins.lower"><code class="docutils literal notranslate"><span class="pre">LinearBins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearBins.upper"><code class="docutils literal notranslate"><span class="pre">LinearBins.upper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins"><code class="docutils literal notranslate"><span class="pre">LinearPlusOverflowBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins.centres"><code class="docutils literal notranslate"><span class="pre">LinearPlusOverflowBins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins.lower"><code class="docutils literal notranslate"><span class="pre">LinearPlusOverflowBins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LinearPlusOverflowBins.upper"><code class="docutils literal notranslate"><span class="pre">LinearPlusOverflowBins.upper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicBins"><code class="docutils literal notranslate"><span class="pre">LogarithmicBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicBins.centres"><code class="docutils literal notranslate"><span class="pre">LogarithmicBins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicBins.lower"><code class="docutils literal notranslate"><span class="pre">LogarithmicBins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicBins.upper"><code class="docutils literal notranslate"><span class="pre">LogarithmicBins.upper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins"><code class="docutils literal notranslate"><span class="pre">LogarithmicPlusOverflowBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins.centres"><code class="docutils literal notranslate"><span class="pre">LogarithmicPlusOverflowBins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins.lower"><code class="docutils literal notranslate"><span class="pre">LogarithmicPlusOverflowBins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.LogarithmicPlusOverflowBins.upper"><code class="docutils literal notranslate"><span class="pre">LogarithmicPlusOverflowBins.upper()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.NDBins"><code class="docutils literal notranslate"><span class="pre">NDBins</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.NDBins.centres"><code class="docutils literal notranslate"><span class="pre">NDBins.centres()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.NDBins.lower"><code class="docutils literal notranslate"><span class="pre">NDBins.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.bin_utils.NDBins.upper"><code class="docutils literal notranslate"><span class="pre">NDBins.upper()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.boundaries.Bounds"><code class="docutils literal notranslate"><span class="pre">Bounds</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.Bounds.apply_conditions"><code class="docutils literal notranslate"><span class="pre">Bounds.apply_conditions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.Bounds.contains_conditioned"><code class="docutils literal notranslate"><span class="pre">Bounds.contains_conditioned()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.Bounds.cyclic"><code class="docutils literal notranslate"><span class="pre">Bounds.cyclic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.Bounds.max"><code class="docutils literal notranslate"><span class="pre">Bounds.max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.Bounds.min"><code class="docutils literal notranslate"><span class="pre">Bounds.min</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ClosedBound"><code class="docutils literal notranslate"><span class="pre">ClosedBound</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ClosedBound.larger"><code class="docutils literal notranslate"><span class="pre">ClosedBound.larger()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ClosedBound.name"><code class="docutils literal notranslate"><span class="pre">ClosedBound.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ClosedBound.smaller"><code class="docutils literal notranslate"><span class="pre">ClosedBound.smaller()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.boundaries.OpenBound"><code class="docutils literal notranslate"><span class="pre">OpenBound</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.OpenBound.larger"><code class="docutils literal notranslate"><span class="pre">OpenBound.larger()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.OpenBound.name"><code class="docutils literal notranslate"><span class="pre">OpenBound.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.OpenBound.smaller"><code class="docutils literal notranslate"><span class="pre">OpenBound.smaller()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ReflectedBound"><code class="docutils literal notranslate"><span class="pre">ReflectedBound</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ReflectedBound.name"><code class="docutils literal notranslate"><span class="pre">ReflectedBound.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ReflectedBound.reflect"><code class="docutils literal notranslate"><span class="pre">ReflectedBound.reflect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ReflectedBound.reflect_left"><code class="docutils literal notranslate"><span class="pre">ReflectedBound.reflect_left()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.boundaries.ReflectedBound.reflect_right"><code class="docutils literal notranslate"><span class="pre">ReflectedBound.reflect_right()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.boundaries.apply_cyclic"><code class="docutils literal notranslate"><span class="pre">apply_cyclic()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.boundaries.reflect_well"><code class="docutils literal notranslate"><span class="pre">reflect_well()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.constants.get_constant"><code class="docutils literal notranslate"><span class="pre">get_constant()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_a"><code class="docutils literal notranslate"><span class="pre">chi_a()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_eff"><code class="docutils literal notranslate"><span class="pre">chi_eff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_eff_from_spherical"><code class="docutils literal notranslate"><span class="pre">chi_eff_from_spherical()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_p"><code class="docutils literal notranslate"><span class="pre">chi_p()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_p_from_spherical"><code class="docutils literal notranslate"><span class="pre">chi_p_from_spherical()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_p_from_xi1_xi2"><code class="docutils literal notranslate"><span class="pre">chi_p_from_xi1_xi2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_perp_from_mass1_mass2_xi2"><code class="docutils literal notranslate"><span class="pre">chi_perp_from_mass1_mass2_xi2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chi_perp_from_spinx_spiny"><code class="docutils literal notranslate"><span class="pre">chi_perp_from_spinx_spiny()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.chirp_distance"><code class="docutils literal notranslate"><span class="pre">chirp_distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.delta_lambda_tilde"><code class="docutils literal notranslate"><span class="pre">delta_lambda_tilde()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.det_tc"><code class="docutils literal notranslate"><span class="pre">det_tc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.dquadmon_from_lambda"><code class="docutils literal notranslate"><span class="pre">dquadmon_from_lambda()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.eta_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">eta_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.eta_from_q"><code class="docutils literal notranslate"><span class="pre">eta_from_q()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.eta_from_tau0_tau3"><code class="docutils literal notranslate"><span class="pre">eta_from_tau0_tau3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.final_mass_from_f0_tau"><code class="docutils literal notranslate"><span class="pre">final_mass_from_f0_tau()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.final_mass_from_initial"><code class="docutils literal notranslate"><span class="pre">final_mass_from_initial()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.final_spin_from_f0_tau"><code class="docutils literal notranslate"><span class="pre">final_spin_from_f0_tau()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.final_spin_from_initial"><code class="docutils literal notranslate"><span class="pre">final_spin_from_initial()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.freq_from_final_mass_spin"><code class="docutils literal notranslate"><span class="pre">freq_from_final_mass_spin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.freqlmn_from_other_lmn"><code class="docutils literal notranslate"><span class="pre">freqlmn_from_other_lmn()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.hypertriangle"><code class="docutils literal notranslate"><span class="pre">hypertriangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.invq_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">invq_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.lambda1_from_delta_lambda_tilde_lambda_tilde"><code class="docutils literal notranslate"><span class="pre">lambda1_from_delta_lambda_tilde_lambda_tilde()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.lambda2_from_delta_lambda_tilde_lambda_tilde"><code class="docutils literal notranslate"><span class="pre">lambda2_from_delta_lambda_tilde_lambda_tilde()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.lambda_from_mass_tov_file"><code class="docutils literal notranslate"><span class="pre">lambda_from_mass_tov_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.lambda_tilde"><code class="docutils literal notranslate"><span class="pre">lambda_tilde()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass1_from_mass2_eta"><code class="docutils literal notranslate"><span class="pre">mass1_from_mass2_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass1_from_mchirp_eta"><code class="docutils literal notranslate"><span class="pre">mass1_from_mchirp_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass1_from_mchirp_q"><code class="docutils literal notranslate"><span class="pre">mass1_from_mchirp_q()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass1_from_mtotal_eta"><code class="docutils literal notranslate"><span class="pre">mass1_from_mtotal_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass1_from_mtotal_q"><code class="docutils literal notranslate"><span class="pre">mass1_from_mtotal_q()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass1_from_tau0_tau3"><code class="docutils literal notranslate"><span class="pre">mass1_from_tau0_tau3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass2_from_mass1_eta"><code class="docutils literal notranslate"><span class="pre">mass2_from_mass1_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass2_from_mchirp_eta"><code class="docutils literal notranslate"><span class="pre">mass2_from_mchirp_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass2_from_mchirp_q"><code class="docutils literal notranslate"><span class="pre">mass2_from_mchirp_q()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass2_from_mtotal_eta"><code class="docutils literal notranslate"><span class="pre">mass2_from_mtotal_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass2_from_mtotal_q"><code class="docutils literal notranslate"><span class="pre">mass2_from_mtotal_q()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mass2_from_tau0_tau3"><code class="docutils literal notranslate"><span class="pre">mass2_from_tau0_tau3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mchirp_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">mchirp_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mchirp_from_tau0"><code class="docutils literal notranslate"><span class="pre">mchirp_from_tau0()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mtotal_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">mtotal_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mtotal_from_mchirp_eta"><code class="docutils literal notranslate"><span class="pre">mtotal_from_mchirp_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.mtotal_from_tau0_tau3"><code class="docutils literal notranslate"><span class="pre">mtotal_from_tau0_tau3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.nltides_gw_phase_diff_isco"><code class="docutils literal notranslate"><span class="pre">nltides_gw_phase_diff_isco()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.optimal_dec_from_detector"><code class="docutils literal notranslate"><span class="pre">optimal_dec_from_detector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.optimal_ra_from_detector"><code class="docutils literal notranslate"><span class="pre">optimal_ra_from_detector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.phi1_from_phi_a_phi_s"><code class="docutils literal notranslate"><span class="pre">phi1_from_phi_a_phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.phi2_from_phi_a_phi_s"><code class="docutils literal notranslate"><span class="pre">phi2_from_phi_a_phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.phi_a"><code class="docutils literal notranslate"><span class="pre">phi_a()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.phi_from_spinx_spiny"><code class="docutils literal notranslate"><span class="pre">phi_from_spinx_spiny()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.phi_s"><code class="docutils literal notranslate"><span class="pre">phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.primary_mass"><code class="docutils literal notranslate"><span class="pre">primary_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.primary_spin"><code class="docutils literal notranslate"><span class="pre">primary_spin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.primary_xi"><code class="docutils literal notranslate"><span class="pre">primary_xi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.q_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">q_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos"><code class="docutils literal notranslate"><span class="pre">remnant_mass_from_mass1_mass2_cartesian_spin_eos()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.remnant_mass_from_mass1_mass2_spherical_spin_eos"><code class="docutils literal notranslate"><span class="pre">remnant_mass_from_mass1_mass2_spherical_spin_eos()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.secondary_mass"><code class="docutils literal notranslate"><span class="pre">secondary_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.secondary_spin"><code class="docutils literal notranslate"><span class="pre">secondary_spin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.secondary_xi"><code class="docutils literal notranslate"><span class="pre">secondary_xi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.snr_from_loglr"><code class="docutils literal notranslate"><span class="pre">snr_from_loglr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin1x_from_xi1_phi_a_phi_s"><code class="docutils literal notranslate"><span class="pre">spin1x_from_xi1_phi_a_phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin1y_from_xi1_phi_a_phi_s"><code class="docutils literal notranslate"><span class="pre">spin1y_from_xi1_phi_a_phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin1z_from_mass1_mass2_chi_eff_chi_a"><code class="docutils literal notranslate"><span class="pre">spin1z_from_mass1_mass2_chi_eff_chi_a()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s"><code class="docutils literal notranslate"><span class="pre">spin2x_from_mass1_mass2_xi2_phi_a_phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin2y_from_mass1_mass2_xi2_phi_a_phi_s"><code class="docutils literal notranslate"><span class="pre">spin2y_from_mass1_mass2_xi2_phi_a_phi_s()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin2z_from_mass1_mass2_chi_eff_chi_a"><code class="docutils literal notranslate"><span class="pre">spin2z_from_mass1_mass2_chi_eff_chi_a()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.spin_from_pulsar_freq"><code class="docutils literal notranslate"><span class="pre">spin_from_pulsar_freq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.tau0_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">tau0_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.tau0_from_mchirp"><code class="docutils literal notranslate"><span class="pre">tau0_from_mchirp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.tau0_from_mtotal_eta"><code class="docutils literal notranslate"><span class="pre">tau0_from_mtotal_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.tau3_from_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">tau3_from_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.tau3_from_mtotal_eta"><code class="docutils literal notranslate"><span class="pre">tau3_from_mtotal_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.tau_from_final_mass_spin"><code class="docutils literal notranslate"><span class="pre">tau_from_final_mass_spin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.taulmn_from_other_lmn"><code class="docutils literal notranslate"><span class="pre">taulmn_from_other_lmn()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.xi1_from_spin1x_spin1y"><code class="docutils literal notranslate"><span class="pre">xi1_from_spin1x_spin1y()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.conversions.xi2_from_mass1_mass2_spin2x_spin2y"><code class="docutils literal notranslate"><span class="pre">xi2_from_mass1_mass2_spin2x_spin2y()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.cosmology.cosmological_quantity_from_redshift"><code class="docutils literal notranslate"><span class="pre">cosmological_quantity_from_redshift()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.cosmology.distance_from_comoving_volume"><code class="docutils literal notranslate"><span class="pre">distance_from_comoving_volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.cosmology.redshift"><code class="docutils literal notranslate"><span class="pre">redshift()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.cosmology.redshift_from_comoving_volume"><code class="docutils literal notranslate"><span class="pre">redshift_from_comoving_volume()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.dq.parse_flag_str"><code class="docutils literal notranslate"><span class="pre">parse_flag_str()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.dq.parse_veto_definer"><code class="docutils literal notranslate"><span class="pre">parse_veto_definer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.dq.query_cumulative_flags"><code class="docutils literal notranslate"><span class="pre">query_cumulative_flags()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.dq.query_dqsegdb2"><code class="docutils literal notranslate"><span class="pre">query_dqsegdb2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.dq.query_flag"><code class="docutils literal notranslate"><span class="pre">query_flag()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.dq.query_str"><code class="docutils literal notranslate"><span class="pre">query_str()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.get_ctypes_library"><code class="docutils literal notranslate"><span class="pre">get_ctypes_library()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.get_libpath_from_dirlist"><code class="docutils literal notranslate"><span class="pre">get_libpath_from_dirlist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.import_optional"><code class="docutils literal notranslate"><span class="pre">import_optional()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.pkg_config"><code class="docutils literal notranslate"><span class="pre">pkg_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.pkg_config_check_exists"><code class="docutils literal notranslate"><span class="pre">pkg_config_check_exists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.pkg_config_header_strings"><code class="docutils literal notranslate"><span class="pre">pkg_config_header_strings()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.libutils.pkg_config_libdirs"><code class="docutils literal notranslate"><span class="pre">pkg_config_libdirs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.calc_areas"><code class="docutils literal notranslate"><span class="pre">calc_areas()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.calc_probabilities"><code class="docutils literal notranslate"><span class="pre">calc_probabilities()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.from_cli"><code class="docutils literal notranslate"><span class="pre">from_cli()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.get_area"><code class="docutils literal notranslate"><span class="pre">get_area()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.insert_args"><code class="docutils literal notranslate"><span class="pre">insert_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.intmc"><code class="docutils literal notranslate"><span class="pre">intmc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.redshift_estimation"><code class="docutils literal notranslate"><span class="pre">redshift_estimation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.mchirp_area.src_mass_from_z_det_mass"><code class="docutils literal notranslate"><span class="pre">src_mass_from_z_det_mass()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.opt.LimitedSizeDict"><code class="docutils literal notranslate"><span class="pre">LimitedSizeDict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.opt.get_l2_cache_size"><code class="docutils literal notranslate"><span class="pre">get_l2_cache_size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.opt.insert_optimization_option_group"><code class="docutils literal notranslate"><span class="pre">insert_optimization_option_group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.opt.verify_optimization_options"><code class="docutils literal notranslate"><span class="pre">verify_optimization_options()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.A0"><code class="docutils literal notranslate"><span class="pre">A0()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.A3"><code class="docutils literal notranslate"><span class="pre">A3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.chirp_distance"><code class="docutils literal notranslate"><span class="pre">chirp_distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.energy"><code class="docutils literal notranslate"><span class="pre">energy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.energy_coefficients"><code class="docutils literal notranslate"><span class="pre">energy_coefficients()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.eta_mass1_to_mass2"><code class="docutils literal notranslate"><span class="pre">eta_mass1_to_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.f_BKLISCO"><code class="docutils literal notranslate"><span class="pre">f_BKLISCO()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.f_ERD"><code class="docutils literal notranslate"><span class="pre">f_ERD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.f_FRD"><code class="docutils literal notranslate"><span class="pre">f_FRD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.f_LRD"><code class="docutils literal notranslate"><span class="pre">f_LRD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.f_LightRing"><code class="docutils literal notranslate"><span class="pre">f_LightRing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.f_SchwarzISCO"><code class="docutils literal notranslate"><span class="pre">f_SchwarzISCO()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.frequency_cutoff_from_name"><code class="docutils literal notranslate"><span class="pre">frequency_cutoff_from_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.frequency_to_velocity"><code class="docutils literal notranslate"><span class="pre">frequency_to_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.get_beta_sigma_from_aligned_spins"><code class="docutils literal notranslate"><span class="pre">get_beta_sigma_from_aligned_spins()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.get_final_freq"><code class="docutils literal notranslate"><span class="pre">get_final_freq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.get_freq"><code class="docutils literal notranslate"><span class="pre">get_freq()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.get_inspiral_tf"><code class="docutils literal notranslate"><span class="pre">get_inspiral_tf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.hybridEnergy"><code class="docutils literal notranslate"><span class="pre">hybridEnergy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.hybrid_meco_frequency"><code class="docutils literal notranslate"><span class="pre">hybrid_meco_frequency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.hybrid_meco_velocity"><code class="docutils literal notranslate"><span class="pre">hybrid_meco_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.jframe_to_l0frame"><code class="docutils literal notranslate"><span class="pre">jframe_to_l0frame()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.kerr_lightring"><code class="docutils literal notranslate"><span class="pre">kerr_lightring()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.kerr_lightring_velocity"><code class="docutils literal notranslate"><span class="pre">kerr_lightring_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.l0frame_to_jframe"><code class="docutils literal notranslate"><span class="pre">l0frame_to_jframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma"><code class="docutils literal notranslate"><span class="pre">mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mass1_mass2_to_mchirp_eta"><code class="docutils literal notranslate"><span class="pre">mass1_mass2_to_mchirp_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mass1_mass2_to_mtotal_eta"><code class="docutils literal notranslate"><span class="pre">mass1_mass2_to_mtotal_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mass1_mass2_to_tau0_tau3"><code class="docutils literal notranslate"><span class="pre">mass1_mass2_to_tau0_tau3()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mchirp_eta_to_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">mchirp_eta_to_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mchirp_mass1_to_mass2"><code class="docutils literal notranslate"><span class="pre">mchirp_mass1_to_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mchirp_q_to_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">mchirp_q_to_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.meco2"><code class="docutils literal notranslate"><span class="pre">meco2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.meco_velocity"><code class="docutils literal notranslate"><span class="pre">meco_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.megaparsecs_to_meters"><code class="docutils literal notranslate"><span class="pre">megaparsecs_to_meters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.mtotal_eta_to_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">mtotal_eta_to_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.nearest_larger_binary_number"><code class="docutils literal notranslate"><span class="pre">nearest_larger_binary_number()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.parsecs_to_meters"><code class="docutils literal notranslate"><span class="pre">parsecs_to_meters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.solar_mass_to_kg"><code class="docutils literal notranslate"><span class="pre">solar_mass_to_kg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.t2_cutoff_frequency"><code class="docutils literal notranslate"><span class="pre">t2_cutoff_frequency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.t2_cutoff_velocity"><code class="docutils literal notranslate"><span class="pre">t2_cutoff_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.t4_cutoff_velocity"><code class="docutils literal notranslate"><span class="pre">t4_cutoff_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.tau0_tau3_to_mass1_mass2"><code class="docutils literal notranslate"><span class="pre">tau0_tau3_to_mass1_mass2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.tau0_tau3_to_mtotal_eta"><code class="docutils literal notranslate"><span class="pre">tau0_tau3_to_mtotal_eta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pnutils.velocity_to_frequency"><code class="docutils literal notranslate"><span class="pre">velocity_to_frequency()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pool.BroadcastPool"><code class="docutils literal notranslate"><span class="pre">BroadcastPool</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.BroadcastPool.allmap"><code class="docutils literal notranslate"><span class="pre">BroadcastPool.allmap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.BroadcastPool.broadcast"><code class="docutils literal notranslate"><span class="pre">BroadcastPool.broadcast()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.BroadcastPool.close_pool"><code class="docutils literal notranslate"><span class="pre">BroadcastPool.close_pool()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.BroadcastPool.map"><code class="docutils literal notranslate"><span class="pre">BroadcastPool.map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pool.SinglePool"><code class="docutils literal notranslate"><span class="pre">SinglePool</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.SinglePool.broadcast"><code class="docutils literal notranslate"><span class="pre">SinglePool.broadcast()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.SinglePool.close_pool"><code class="docutils literal notranslate"><span class="pre">SinglePool.close_pool()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.SinglePool.imap"><code class="docutils literal notranslate"><span class="pre">SinglePool.imap()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.SinglePool.imap_unordered"><code class="docutils literal notranslate"><span class="pre">SinglePool.imap_unordered()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.pool.SinglePool.map"><code class="docutils literal notranslate"><span class="pre">SinglePool.map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pool.choose_pool"><code class="docutils literal notranslate"><span class="pre">choose_pool()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pool.is_main_process"><code class="docutils literal notranslate"><span class="pre">is_main_process()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.pool.use_mpi"><code class="docutils literal notranslate"><span class="pre">use_mpi()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.compute_efficiency"><code class="docutils literal notranslate"><span class="pre">compute_efficiency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.compute_lower_limit"><code class="docutils literal notranslate"><span class="pre">compute_lower_limit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.compute_upper_limit"><code class="docutils literal notranslate"><span class="pre">compute_upper_limit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.compute_volume_vs_mass"><code class="docutils literal notranslate"><span class="pre">compute_volume_vs_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.confidence_interval_min_width"><code class="docutils literal notranslate"><span class="pre">confidence_interval_min_width()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.filter_injections_by_mass"><code class="docutils literal notranslate"><span class="pre">filter_injections_by_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.hpd_coverage"><code class="docutils literal notranslate"><span class="pre">hpd_coverage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.hpd_credible_interval"><code class="docutils literal notranslate"><span class="pre">hpd_credible_interval()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.hpd_threshold"><code class="docutils literal notranslate"><span class="pre">hpd_threshold()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.integral_element"><code class="docutils literal notranslate"><span class="pre">integral_element()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.integrate_efficiency"><code class="docutils literal notranslate"><span class="pre">integrate_efficiency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.mean_efficiency_volume"><code class="docutils literal notranslate"><span class="pre">mean_efficiency_volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.rate.normalize_pdf"><code class="docutils literal notranslate"><span class="pre">normalize_pdf()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.CPUScheme"><code class="docutils literal notranslate"><span class="pre">CPUScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.CUDAScheme"><code class="docutils literal notranslate"><span class="pre">CUDAScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.CUPYScheme"><code class="docutils literal notranslate"><span class="pre">CUPYScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.ChooseBySchemeDict"><code class="docutils literal notranslate"><span class="pre">ChooseBySchemeDict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.DefaultScheme"><code class="docutils literal notranslate"><span class="pre">DefaultScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.MKLScheme"><code class="docutils literal notranslate"><span class="pre">MKLScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.NumpyScheme"><code class="docutils literal notranslate"><span class="pre">NumpyScheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.Scheme"><code class="docutils literal notranslate"><span class="pre">Scheme</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.clean_cuda"><code class="docutils literal notranslate"><span class="pre">clean_cuda()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.cpuonly"><code class="docutils literal notranslate"><span class="pre">cpuonly()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.current_prefix"><code class="docutils literal notranslate"><span class="pre">current_prefix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.from_cli"><code class="docutils literal notranslate"><span class="pre">from_cli()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.insert_processing_option_group"><code class="docutils literal notranslate"><span class="pre">insert_processing_option_group()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.register_clean_cuda"><code class="docutils literal notranslate"><span class="pre">register_clean_cuda()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.schemed"><code class="docutils literal notranslate"><span class="pre">schemed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.scheme.verify_processing_options"><code class="docutils literal notranslate"><span class="pre">verify_processing_options()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.chirp_volume_montecarlo"><code class="docutils literal notranslate"><span class="pre">chirp_volume_montecarlo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.compute_search_efficiency_in_bins"><code class="docutils literal notranslate"><span class="pre">compute_search_efficiency_in_bins()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.compute_search_volume_in_bins"><code class="docutils literal notranslate"><span class="pre">compute_search_volume_in_bins()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.volume_binned_pylal"><code class="docutils literal notranslate"><span class="pre">volume_binned_pylal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.volume_montecarlo"><code class="docutils literal notranslate"><span class="pre">volume_montecarlo()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.volume_shell"><code class="docutils literal notranslate"><span class="pre">volume_shell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.sensitivity.volume_to_distance_with_errors"><code class="docutils literal notranslate"><span class="pre">volume_to_distance_with_errors()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.gmst_accurate"><code class="docutils literal notranslate"><span class="pre">gmst_accurate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.gps_now"><code class="docutils literal notranslate"><span class="pre">gps_now()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.gps_to_utc_datetime"><code class="docutils literal notranslate"><span class="pre">gps_to_utc_datetime()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.gps_to_utc_str"><code class="docutils literal notranslate"><span class="pre">gps_to_utc_str()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.strip_time_from_date"><code class="docutils literal notranslate"><span class="pre">strip_time_from_date()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.strip_time_from_gps"><code class="docutils literal notranslate"><span class="pre">strip_time_from_gps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.time.utc_datetime_to_gps"><code class="docutils literal notranslate"><span class="pre">utc_datetime_to_gps()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignTotalSpin"><code class="docutils literal notranslate"><span class="pre">AlignTotalSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignTotalSpin.name"><code class="docutils literal notranslate"><span class="pre">AlignTotalSpin.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignTotalSpin.transform"><code class="docutils literal notranslate"><span class="pre">AlignTotalSpin.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin"><code class="docutils literal notranslate"><span class="pre">AlignedMassSpinToCartesianSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin.inverse"><code class="docutils literal notranslate"><span class="pre">AlignedMassSpinToCartesianSpin.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin.inverse_transform"><code class="docutils literal notranslate"><span class="pre">AlignedMassSpinToCartesianSpin.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin.name"><code class="docutils literal notranslate"><span class="pre">AlignedMassSpinToCartesianSpin.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin.transform"><code class="docutils literal notranslate"><span class="pre">AlignedMassSpinToCartesianSpin.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform"><code class="docutils literal notranslate"><span class="pre">BaseTransform</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.format_output"><code class="docutils literal notranslate"><span class="pre">BaseTransform.format_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.from_config"><code class="docutils literal notranslate"><span class="pre">BaseTransform.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.inverse"><code class="docutils literal notranslate"><span class="pre">BaseTransform.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">BaseTransform.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.inverse_transform"><code class="docutils literal notranslate"><span class="pre">BaseTransform.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.jacobian"><code class="docutils literal notranslate"><span class="pre">BaseTransform.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.name"><code class="docutils literal notranslate"><span class="pre">BaseTransform.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.BaseTransform.transform"><code class="docutils literal notranslate"><span class="pre">BaseTransform.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpin1ToSphericalSpin1"><code class="docutils literal notranslate"><span class="pre">CartesianSpin1ToSphericalSpin1</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpin1ToSphericalSpin1.name"><code class="docutils literal notranslate"><span class="pre">CartesianSpin1ToSphericalSpin1.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpin2ToSphericalSpin2"><code class="docutils literal notranslate"><span class="pre">CartesianSpin2ToSphericalSpin2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpin2ToSphericalSpin2.name"><code class="docutils literal notranslate"><span class="pre">CartesianSpin2ToSphericalSpin2.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin.inverse"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin.inverse_transform"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin.jacobian"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin.name"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToAlignedMassSpin.transform"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToAlignedMassSpin.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToChiP"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToChiP</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToChiP.name"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToChiP.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToChiP.transform"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToChiP.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin.inverse"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin.inverse_transform"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin.jacobian"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin.name"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianSpinToPrecessionMassSpin.transform"><code class="docutils literal notranslate"><span class="pre">CartesianSpinToPrecessionMassSpin.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical.inverse"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical.inverse_transform"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical.jacobian"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical.name"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CartesianToSpherical.transform"><code class="docutils literal notranslate"><span class="pre">CartesianToSpherical.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin.inverse"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin.inverse_transform"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin.jacobian"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin.name"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChiPToCartesianSpin.transform"><code class="docutils literal notranslate"><span class="pre">ChiPToCartesianSpin.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance.inverse"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance.inverse_transform"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance.jacobian"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance.name"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.ChirpDistanceToDistance.transform"><code class="docutils literal notranslate"><span class="pre">ChirpDistanceToDistance.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform"><code class="docutils literal notranslate"><span class="pre">CustomTransform</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform.from_config"><code class="docutils literal notranslate"><span class="pre">CustomTransform.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform.jacobian"><code class="docutils literal notranslate"><span class="pre">CustomTransform.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform.name"><code class="docutils literal notranslate"><span class="pre">CustomTransform.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransform.transform"><code class="docutils literal notranslate"><span class="pre">CustomTransform.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransformMultiOutputs"><code class="docutils literal notranslate"><span class="pre">CustomTransformMultiOutputs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransformMultiOutputs.from_config"><code class="docutils literal notranslate"><span class="pre">CustomTransformMultiOutputs.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransformMultiOutputs.name"><code class="docutils literal notranslate"><span class="pre">CustomTransformMultiOutputs.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.CustomTransformMultiOutputs.transform"><code class="docutils literal notranslate"><span class="pre">CustomTransformMultiOutputs.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance.inverse"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance.inverse_transform"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance.jacobian"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance.name"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToChirpDistance.transform"><code class="docutils literal notranslate"><span class="pre">DistanceToChirpDistance.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToRedshift"><code class="docutils literal notranslate"><span class="pre">DistanceToRedshift</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToRedshift.inverse"><code class="docutils literal notranslate"><span class="pre">DistanceToRedshift.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToRedshift.name"><code class="docutils literal notranslate"><span class="pre">DistanceToRedshift.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.DistanceToRedshift.transform"><code class="docutils literal notranslate"><span class="pre">DistanceToRedshift.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent"><code class="docutils literal notranslate"><span class="pre">Exponent</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent.inverse"><code class="docutils literal notranslate"><span class="pre">Exponent.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">Exponent.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent.inverse_transform"><code class="docutils literal notranslate"><span class="pre">Exponent.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent.jacobian"><code class="docutils literal notranslate"><span class="pre">Exponent.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent.name"><code class="docutils literal notranslate"><span class="pre">Exponent.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Exponent.transform"><code class="docutils literal notranslate"><span class="pre">Exponent.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToLISA"><code class="docutils literal notranslate"><span class="pre">GEOToLISA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToLISA.inverse"><code class="docutils literal notranslate"><span class="pre">GEOToLISA.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToLISA.inverse_transform"><code class="docutils literal notranslate"><span class="pre">GEOToLISA.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToLISA.name"><code class="docutils literal notranslate"><span class="pre">GEOToLISA.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToLISA.transform"><code class="docutils literal notranslate"><span class="pre">GEOToLISA.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB"><code class="docutils literal notranslate"><span class="pre">GEOToSSB</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB.default_params_name"><code class="docutils literal notranslate"><span class="pre">GEOToSSB.default_params_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB.from_config"><code class="docutils literal notranslate"><span class="pre">GEOToSSB.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB.inverse"><code class="docutils literal notranslate"><span class="pre">GEOToSSB.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB.inverse_transform"><code class="docutils literal notranslate"><span class="pre">GEOToSSB.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB.name"><code class="docutils literal notranslate"><span class="pre">GEOToSSB.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.GEOToSSB.transform"><code class="docutils literal notranslate"><span class="pre">GEOToSSB.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO"><code class="docutils literal notranslate"><span class="pre">LISAToGEO</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO.default_params_name"><code class="docutils literal notranslate"><span class="pre">LISAToGEO.default_params_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO.from_config"><code class="docutils literal notranslate"><span class="pre">LISAToGEO.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO.inverse"><code class="docutils literal notranslate"><span class="pre">LISAToGEO.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO.inverse_transform"><code class="docutils literal notranslate"><span class="pre">LISAToGEO.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO.name"><code class="docutils literal notranslate"><span class="pre">LISAToGEO.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToGEO.transform"><code class="docutils literal notranslate"><span class="pre">LISAToGEO.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB"><code class="docutils literal notranslate"><span class="pre">LISAToSSB</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB.default_params_name"><code class="docutils literal notranslate"><span class="pre">LISAToSSB.default_params_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB.from_config"><code class="docutils literal notranslate"><span class="pre">LISAToSSB.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB.inverse"><code class="docutils literal notranslate"><span class="pre">LISAToSSB.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB.inverse_transform"><code class="docutils literal notranslate"><span class="pre">LISAToSSB.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB.name"><code class="docutils literal notranslate"><span class="pre">LISAToSSB.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LISAToSSB.transform"><code class="docutils literal notranslate"><span class="pre">LISAToSSB.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.distance"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.from_config"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.get_eos"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.get_eos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.lambda_param"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.lambda_param</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.map_file"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.map_file</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.mass_param"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.mass_param</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.name"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.transform"><code class="docutils literal notranslate"><span class="pre">LambdaFromMultipleTOVFiles.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.data"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.distance"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.from_config"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.lambda_data"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.lambda_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.lambda_from_tov_data"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.lambda_from_tov_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.lambda_param"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.lambda_param</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.mass_data"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.mass_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.mass_param"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.mass_param</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.name"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.transform"><code class="docutils literal notranslate"><span class="pre">LambdaFromTOVFile.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log"><code class="docutils literal notranslate"><span class="pre">Log</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.inputvar"><code class="docutils literal notranslate"><span class="pre">Log.inputvar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.inverse"><code class="docutils literal notranslate"><span class="pre">Log.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">Log.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.inverse_transform"><code class="docutils literal notranslate"><span class="pre">Log.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.jacobian"><code class="docutils literal notranslate"><span class="pre">Log.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.name"><code class="docutils literal notranslate"><span class="pre">Log.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.outputvar"><code class="docutils literal notranslate"><span class="pre">Log.outputvar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Log.transform"><code class="docutils literal notranslate"><span class="pre">Log.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic"><code class="docutils literal notranslate"><span class="pre">Logistic</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.bounds"><code class="docutils literal notranslate"><span class="pre">Logistic.bounds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.from_config"><code class="docutils literal notranslate"><span class="pre">Logistic.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.inverse"><code class="docutils literal notranslate"><span class="pre">Logistic.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">Logistic.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.inverse_transform"><code class="docutils literal notranslate"><span class="pre">Logistic.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.jacobian"><code class="docutils literal notranslate"><span class="pre">Logistic.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.name"><code class="docutils literal notranslate"><span class="pre">Logistic.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logistic.transform"><code class="docutils literal notranslate"><span class="pre">Logistic.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit"><code class="docutils literal notranslate"><span class="pre">Logit</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.bounds"><code class="docutils literal notranslate"><span class="pre">Logit.bounds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.from_config"><code class="docutils literal notranslate"><span class="pre">Logit.from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.inputvar"><code class="docutils literal notranslate"><span class="pre">Logit.inputvar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.inverse"><code class="docutils literal notranslate"><span class="pre">Logit.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">Logit.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.inverse_transform"><code class="docutils literal notranslate"><span class="pre">Logit.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.jacobian"><code class="docutils literal notranslate"><span class="pre">Logit.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.logistic"><code class="docutils literal notranslate"><span class="pre">Logit.logistic()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.logit"><code class="docutils literal notranslate"><span class="pre">Logit.logit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.name"><code class="docutils literal notranslate"><span class="pre">Logit.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.outputvar"><code class="docutils literal notranslate"><span class="pre">Logit.outputvar</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Logit.transform"><code class="docutils literal notranslate"><span class="pre">Logit.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta.inverse"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta.inverse_transform"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta.jacobian"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta.name"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta.transform"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpEta.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ.inverse"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ.inverse_transform"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ.jacobian"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ.name"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ.transform"><code class="docutils literal notranslate"><span class="pre">Mass1Mass2ToMchirpQ.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2"><code class="docutils literal notranslate"><span class="pre">MchirpEtaToMass1Mass2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">MchirpEtaToMass1Mass2.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2.inverse_transform"><code class="docutils literal notranslate"><span class="pre">MchirpEtaToMass1Mass2.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2.jacobian"><code class="docutils literal notranslate"><span class="pre">MchirpEtaToMass1Mass2.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2.name"><code class="docutils literal notranslate"><span class="pre">MchirpEtaToMass1Mass2.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2.transform"><code class="docutils literal notranslate"><span class="pre">MchirpEtaToMass1Mass2.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2.inverse"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2.inverse_jacobian"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2.inverse_jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2.inverse_transform"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2.jacobian"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2.jacobian()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2.name"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2.transform"><code class="docutils literal notranslate"><span class="pre">MchirpQToMass1Mass2.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.PrecessionMassSpinToCartesianSpin"><code class="docutils literal notranslate"><span class="pre">PrecessionMassSpinToCartesianSpin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.PrecessionMassSpinToCartesianSpin.inverse"><code class="docutils literal notranslate"><span class="pre">PrecessionMassSpinToCartesianSpin.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.PrecessionMassSpinToCartesianSpin.inverse_transform"><code class="docutils literal notranslate"><span class="pre">PrecessionMassSpinToCartesianSpin.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.PrecessionMassSpinToCartesianSpin.name"><code class="docutils literal notranslate"><span class="pre">PrecessionMassSpinToCartesianSpin.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.PrecessionMassSpinToCartesianSpin.transform"><code class="docutils literal notranslate"><span class="pre">PrecessionMassSpinToCartesianSpin.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToGEO"><code class="docutils literal notranslate"><span class="pre">SSBToGEO</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToGEO.inverse"><code class="docutils literal notranslate"><span class="pre">SSBToGEO.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToGEO.inverse_transform"><code class="docutils literal notranslate"><span class="pre">SSBToGEO.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToGEO.name"><code class="docutils literal notranslate"><span class="pre">SSBToGEO.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToGEO.transform"><code class="docutils literal notranslate"><span class="pre">SSBToGEO.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToLISA"><code class="docutils literal notranslate"><span class="pre">SSBToLISA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToLISA.inverse"><code class="docutils literal notranslate"><span class="pre">SSBToLISA.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToLISA.inverse_transform"><code class="docutils literal notranslate"><span class="pre">SSBToLISA.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToLISA.name"><code class="docutils literal notranslate"><span class="pre">SSBToLISA.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SSBToLISA.transform"><code class="docutils literal notranslate"><span class="pre">SSBToLISA.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin1ToCartesianSpin1"><code class="docutils literal notranslate"><span class="pre">SphericalSpin1ToCartesianSpin1</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin1ToCartesianSpin1.inverse"><code class="docutils literal notranslate"><span class="pre">SphericalSpin1ToCartesianSpin1.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin1ToCartesianSpin1.name"><code class="docutils literal notranslate"><span class="pre">SphericalSpin1ToCartesianSpin1.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin2ToCartesianSpin2"><code class="docutils literal notranslate"><span class="pre">SphericalSpin2ToCartesianSpin2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin2ToCartesianSpin2.inverse"><code class="docutils literal notranslate"><span class="pre">SphericalSpin2ToCartesianSpin2.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalSpin2ToCartesianSpin2.name"><code class="docutils literal notranslate"><span class="pre">SphericalSpin2ToCartesianSpin2.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalToCartesian"><code class="docutils literal notranslate"><span class="pre">SphericalToCartesian</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalToCartesian.inverse"><code class="docutils literal notranslate"><span class="pre">SphericalToCartesian.inverse</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalToCartesian.inverse_transform"><code class="docutils literal notranslate"><span class="pre">SphericalToCartesian.inverse_transform()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalToCartesian.name"><code class="docutils literal notranslate"><span class="pre">SphericalToCartesian.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.transforms.SphericalToCartesian.transform"><code class="docutils literal notranslate"><span class="pre">SphericalToCartesian.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.apply_transforms"><code class="docutils literal notranslate"><span class="pre">apply_transforms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.compute_jacobian"><code class="docutils literal notranslate"><span class="pre">compute_jacobian()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.get_common_cbc_transforms"><code class="docutils literal notranslate"><span class="pre">get_common_cbc_transforms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.order_transforms"><code class="docutils literal notranslate"><span class="pre">order_transforms()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.transforms.read_transforms_from_config"><code class="docutils literal notranslate"><span class="pre">read_transforms_from_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.LogFormatter"><code class="docutils literal notranslate"><span class="pre">LogFormatter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.LogFormatter.converter"><code class="docutils literal notranslate"><span class="pre">LogFormatter.converter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.html#pycbc.LogFormatter.formatTime"><code class="docutils literal notranslate"><span class="pre">LogFormatter.formatTime()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.add_common_pycbc_options"><code class="docutils literal notranslate"><span class="pre">add_common_pycbc_options()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.init_logging"><code class="docutils literal notranslate"><span class="pre">init_logging()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.load_source"><code class="docutils literal notranslate"><span class="pre">load_source()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.makedir"><code class="docutils literal notranslate"><span class="pre">makedir()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#pycbc.random_string"><code class="docutils literal notranslate"><span class="pre">random_string()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="credit.html" class="btn btn-neutral float-left" title="Use of PyCBC in Scientific Publications" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.html" class="btn btn-neutral float-right" title="pycbc package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

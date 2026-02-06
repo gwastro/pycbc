@@ -1,0 +1,525 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.joint &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.joint</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.joint</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C)  2017 Collin Capano, Christopher M. Biwer, Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot; This module provides classes to describe joint distributions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.record</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldArray</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.joint&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="JointDistribution">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.joint.JointDistribution">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">JointDistribution</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Callable class that calculates the joint distribution built from a set of</span>
+<span class="sd">    distributions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_args : list</span>
+<span class="sd">        A list of strings that contain the names of the variable parameters and</span>
+<span class="sd">        the order they are expected when the class is called.</span>
+<span class="sd">    \*distributions :</span>
+<span class="sd">        The rest of the arguments must be instances of distributions describing</span>
+<span class="sd">        the individual distributions on the variable parameters.</span>
+<span class="sd">        A single distribution may contain</span>
+<span class="sd">        multiple parameters. The set of all params across the distributions</span>
+<span class="sd">        (retrieved from the distributions&#39; params attribute) must be the same</span>
+<span class="sd">        as the set of variable_args provided.</span>
+<span class="sd">    \*\*kwargs :</span>
+<span class="sd">        Valid keyword arguments include:</span>
+<span class="sd">        `constraints` : a list of functions that accept a dict of parameters</span>
+<span class="sd">        with the parameter name as the key. If the constraint is satisfied the</span>
+<span class="sd">        function should return True, if the constraint is violated, then the</span>
+<span class="sd">        function should return False.</span>
+<span class="sd">        `n_test_samples` : number of random draws used to fix pdf normalization</span>
+<span class="sd">        factor after applying constraints.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    variable_args : tuple</span>
+<span class="sd">        The parameters expected when the evaluator is called.</span>
+<span class="sd">    distributions : list</span>
+<span class="sd">        The distributions for the parameters.</span>
+<span class="sd">    constraints : list</span>
+<span class="sd">        A list of functions to test if parameter values obey multi-dimensional</span>
+<span class="sd">        constraints.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    An example of creating a joint distribution with constraint that total mass must</span>
+<span class="sd">    be below 30.</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.distributions import Uniform, JointDistribution</span>
+<span class="sd">    &gt;&gt;&gt; def mtotal_lt_30(params):</span>
+<span class="sd">        ...    return params[&quot;mass1&quot;] + params[&quot;mass2&quot;] &lt; 30</span>
+<span class="sd">    &gt;&gt;&gt; mass_lim = (2, 50)</span>
+<span class="sd">    &gt;&gt;&gt; uniform_prior = Uniform(mass1=mass_lim, mass2=mass_lim)</span>
+<span class="sd">    &gt;&gt;&gt; prior_eval = JointDistribution([&quot;mass1&quot;, &quot;mass2&quot;], uniform_prior,</span>
+<span class="sd">        ...                               constraints=[mtotal_lt_30])</span>
+<span class="sd">    &gt;&gt;&gt; print(prior_eval(mass1=20, mass2=1))</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;joint&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">,</span> <span class="o">*</span><span class="n">distributions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="c1"># store the names of the parameters defined in the distributions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span>
+
+        <span class="c1"># store the distributions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span> <span class="o">=</span> <span class="n">distributions</span>
+
+        <span class="c1"># store the constraints on the parameters defined inside the</span>
+        <span class="c1"># distributions list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;constraints&quot;</span><span class="p">]</span> \
+                                  <span class="k">if</span> <span class="s2">&quot;constraints&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="c1"># store kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="c1"># check that all of the supplied parameters are described by the given</span>
+        <span class="c1"># distributions</span>
+        <span class="n">distparams</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">distributions</span><span class="p">:</span>
+            <span class="n">distparams</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">params</span><span class="p">))</span>
+
+        <span class="n">varset</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span><span class="p">)</span>
+        <span class="n">missing_params</span> <span class="o">=</span> <span class="n">distparams</span> <span class="o">-</span> <span class="n">varset</span>
+        <span class="k">if</span> <span class="n">missing_params</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;provided variable_args do not include &quot;</span>
+                <span class="s2">&quot;parameters </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing_params</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; which are &quot;</span>
+                <span class="s2">&quot;required by the provided distributions&quot;</span><span class="p">)</span>
+        <span class="n">extra_params</span> <span class="o">=</span> <span class="n">varset</span> <span class="o">-</span> <span class="n">distparams</span>
+        <span class="k">if</span> <span class="n">extra_params</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;variable_args </span><span class="si">%s</span><span class="s2"> &quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extra_params</span><span class="p">))</span> <span class="o">+</span>
+                <span class="s2">&quot;are not in any of the provided distributions&quot;</span><span class="p">)</span>
+
+        <span class="c1"># if there are constraints then find the renormalization factor</span>
+        <span class="c1"># since a constraint will cut out part of the space</span>
+        <span class="c1"># do this by random sampling the full space and find the percent</span>
+        <span class="c1"># of samples rejected</span>
+        <span class="n">n_test_samples</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_test_samples&quot;</span><span class="p">]</span> \
+                             <span class="k">if</span> <span class="s2">&quot;n_test_samples&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Renormalizing distribution for constraints&quot;</span><span class="p">)</span>
+
+            <span class="c1"># draw samples</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+                <span class="n">draw</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">n_test_samples</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">dist</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">samples</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">draw</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">samples</span><span class="p">)</span>
+
+            <span class="c1"># evaluate constraints</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">within_constraints</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+            <span class="c1"># set new scaling factor for prior to be</span>
+            <span class="c1"># the fraction of acceptances in random sampling of entire space</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pdf_scale</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_test_samples</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pdf_scale</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;None of the random draws for pdf &quot;</span>
+                    <span class="s2">&quot;renormalization satisfied the constraints. &quot;</span>
+                    <span class="s2">&quot; You can try increasing the &#39;n_test_samples&#39; keyword.&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pdf_scale</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># since Distributions will return logpdf we keep the scale factor</span>
+        <span class="c1"># in log scale as well for self.__call__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logpdf_scale</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pdf_scale</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JointDistribution.apply_boundary_conditions">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.joint.JointDistribution.apply_boundary_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_boundary_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies each distributions&#39; boundary conditions to the given list</span>
+<span class="sd">        of parameters, returning a new list with the conditions applied.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **params :</span>
+<span class="sd">            Keyword arguments should give the parameters to apply the</span>
+<span class="sd">            conditions to.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of the parameters after each distribution&#39;s</span>
+<span class="sd">            `apply_boundary_conditions` function has been applied.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">params</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_return_atomic</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determines if an array or atomic value should be returned given a</span>
+<span class="sd">        set of input params.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict, numpy.record, array, or FieldArray</span>
+<span class="sd">            The input to evaluate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool :</span>
+<span class="sd">            Whether or not functions run on the parameters should be returned</span>
+<span class="sd">            as atomic types or not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                           <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">record</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">FieldArray</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">FieldArray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;params must be either dict, FieldArray, &quot;</span>
+                             <span class="s2">&quot;record, or structured array&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_fieldarray</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ensures the given params are a ``FieldArray``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict, FieldArray, numpy.record, or numpy.ndarray</span>
+<span class="sd">            If the given object is a dict, it will be converted to a</span>
+<span class="sd">            FieldArray.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FieldArray</span>
+<span class="sd">            The given values as a FieldArray.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">record</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
+                                           <span class="n">names</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">params</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">FieldArray</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">FieldArray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;params must be either dict, FieldArray, &quot;</span>
+                             <span class="s2">&quot;record, or structured array&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JointDistribution.within_constraints">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.joint.JointDistribution.within_constraints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">within_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluates whether the given parameters satisfy the constraints.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict, FieldArray, numpy.record, or numpy.ndarray</span>
+<span class="sd">            The parameter values to evaluate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        (array of) bool :</span>
+<span class="sd">            If params was an array, or if params a dictionary and one or more</span>
+<span class="sd">            of the parameters are arrays, will return an array of booleans.</span>
+<span class="sd">            Otherwise, a boolean.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_fieldarray</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">return_atomic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return_atomic</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="c1"># convert params to a field array if it isn&#39;t one</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">&amp;=</span> <span class="n">constraint</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_atomic</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="JointDistribution.contains">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.joint.JointDistribution.contains">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">contains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluates whether the given parameters satisfy the boundary</span>
+<span class="sd">            conditions, boundaries, and constraints. This method is different</span>
+<span class="sd">            from `within_constraints`, that method only check the constraints.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        params : dict, FieldArray, numpy.record, or numpy.ndarray</span>
+<span class="sd">            The parameter values to evaluate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        (array of) bool :</span>
+<span class="sd">            If params was an array, or if params a dictionary and one or more</span>
+<span class="sd">            of the parameters are arrays, will return an array of booleans.</span>
+<span class="sd">            Otherwise, a boolean.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_boundary_conditions</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+            <span class="n">param_names</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">params</span>
+            <span class="n">vlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">param_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="n">contain_array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">vlen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="c1"># note: enable `__contains__` in `pycbc.distributions.bounded`</span>
+            <span class="c1"># to handle array-like input, it doesn&#39;t work now.</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">vlen</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">pname</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="n">pname</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">pname</span> <span class="ow">in</span> <span class="n">param_names</span><span class="p">}</span>
+                <span class="n">contain_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">dist</span>
+            <span class="n">result</span> <span class="o">&amp;=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">contain_array</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">&amp;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">within_constraints</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate joint distribution for parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">return_atomic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return_atomic</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="c1"># check if statisfies constraints</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">parray</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_fieldarray</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">isin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">within_constraints</span><span class="p">(</span><span class="n">parray</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">isin</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">return_atomic</span><span class="p">:</span>
+                    <span class="n">out</span> <span class="o">=</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">parray</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">out</span>
+
+        <span class="c1"># evaluate</span>
+        <span class="c1"># note: this step may fail if arrays of values were provided, as</span>
+        <span class="c1"># not all distributions are vectorized currently</span>
+        <span class="n">logps</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">d</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">])</span>
+        <span class="n">logp</span> <span class="o">=</span> <span class="n">logps</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logp</span> <span class="o">+=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">isin</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">return_atomic</span><span class="p">:</span>
+            <span class="n">logp</span> <span class="o">=</span> <span class="n">logp</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">logp</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logpdf_scale</span>
+
+<div class="viewcode-block" id="JointDistribution.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.joint.JointDistribution.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Rejection samples the parameter space.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># create output FieldArray</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="p">[(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_args</span><span class="p">]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="c1"># loop until enough samples accepted</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="n">ndraw</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="k">while</span> <span class="n">remaining</span><span class="p">:</span>
+            <span class="c1"># scratch space for evaluating constraints</span>
+            <span class="n">scratch</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="n">ndraw</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+                <span class="c1"># drawing samples from the distributions is generally faster</span>
+                <span class="c1"># then evaluating constrants, so we&#39;ll always draw the full</span>
+                <span class="c1"># size, even if that gives us more points than we need</span>
+                <span class="n">draw</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">ndraw</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">dist</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+                    <span class="n">scratch</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">draw</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="c1"># apply any constraints</span>
+            <span class="n">keep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">within_constraints</span><span class="p">(</span><span class="n">scratch</span><span class="p">)</span>
+            <span class="n">nkeep</span> <span class="o">=</span> <span class="n">keep</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">kmin</span> <span class="o">=</span> <span class="n">size</span> <span class="o">-</span> <span class="n">remaining</span>
+            <span class="n">kmax</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">nkeep</span><span class="p">,</span> <span class="n">remaining</span><span class="p">)</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmin</span><span class="o">+</span><span class="n">kmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">scratch</span><span class="p">[</span><span class="n">keep</span><span class="p">][:</span><span class="n">kmax</span><span class="p">]</span>
+            <span class="n">remaining</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">-</span> <span class="n">nkeep</span><span class="p">)</span>
+            <span class="c1"># to try to speed up next go around, we&#39;ll increase the draw</span>
+            <span class="c1"># size by the fraction of values that were kept, but cap at 1e6</span>
+            <span class="n">ndraw</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mf">1e6</span><span class="p">,</span> <span class="n">ndraw</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">ndraw</span> <span class="o">/</span> <span class="p">(</span><span class="n">nkeep</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">))))</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">well_reflected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Get list of which parameters are well reflected</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reflect</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">bounds</span><span class="p">[</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">reflected</span> <span class="o">==</span> <span class="s1">&#39;well&#39;</span><span class="p">:</span>
+                <span class="n">reflect</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reflect</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cyclic</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Get list of which parameters are cyclic</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cyclic</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">bounds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">bounds</span><span class="p">[</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">cyclic</span><span class="p">:</span>
+                <span class="n">cyclic</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cyclic</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Get the dict of boundaries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bnds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="s1">&#39;bounds&#39;</span><span class="p">):</span>
+                <span class="n">bnds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bnds</span>
+
+<div class="viewcode-block" id="JointDistribution.cdfinv">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.joint.JointDistribution.cdfinv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cdfinv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">original</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Apply the inverse cdf to the array of values [0, 1]. Every</span>
+<span class="sd">        variable parameter must be given as a keyword argument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributions</span><span class="p">:</span>
+            <span class="n">updated</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">cdfinv</span><span class="p">(</span><span class="o">**</span><span class="n">original</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">updated</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

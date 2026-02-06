@@ -1,0 +1,292 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HDF5 Based Coincidence Code &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Building Documentation for GitHub Pages" href="../build_gh_pages.html" />
+    <link rel="prev" title="The workflow matched-filter module" href="matched_filter.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../devs.html">Documentation for Developers</a></li>
+          <li class="breadcrumb-item"><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+      <li class="breadcrumb-item active">HDF5 Based Coincidence Code</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/hdf_coincidence.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hdf5-based-coincidence-code">
+<span id="workflowintervalcoincmod"></span><h1>HDF5 Based Coincidence Code<a class="headerlink" href="#hdf5-based-coincidence-code" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>On this page we go over how to use the interval slides based post processing
+functionality in PyCBC.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This functionality is experimental and under active development.
+No gaurantee of stability is given at this time. Contact Alex Nitz (<a class="reference external" href="mailto:alex&#46;nitz&#37;&#52;&#48;ligo&#46;org">alex<span>&#46;</span>nitz<span>&#64;</span>ligo<span>&#46;</span>org</a>)
+if you have questions, issues, comments, etc.</p>
+</div>
+<p>The post processing discussed here implements coincidence, background estimation,
+injection finding, and some basic plotting infrastructure based on hdf files.</p>
+<p>This document assumes that one is familiar with the standard pycbc workflow modules.
+Only differences from the standard configuration are discussed here.</p>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<p>There are several limitations that may not be familiar to people used to existing
+post-processing codes.</p>
+<p>The following restrictions are not slated to be changed in the near future.</p>
+<ul class="simple">
+<li><p>Coincidence is exact match only</p></li>
+</ul>
+<p>The following restrictions are slated to be be removed when time permits</p>
+<ul class="simple">
+<li><p>Only two detector searches are implemented</p></li>
+<li><p>The significance estimation does not include any parameter space binning</p></li>
+<li><p>Only a single fixed template bank for the entire anlysis is possible</p></li>
+</ul>
+</section>
+<section id="configuration-file">
+<h2>Configuration File<a class="headerlink" href="#configuration-file" title="Link to this heading"></a></h2>
+<p>An example configuration file is included as example_hdf_post.ini. This acts as a supplement to the standard ini files. It does not stand alone.</p>
+<section id="workflow-configuration">
+<h3>Workflow Configuration<a class="headerlink" href="#workflow-configuration" title="Link to this heading"></a></h3>
+<p>The following are the sections used to configure the workflow.</p>
+<ul class="simple">
+<li><p>[workflow-coincidence]</p></li>
+</ul>
+<p>There is one option related to the performance of the background estimation and coincidence.</p>
+<ul class="simple">
+<li><p>–parallelization-factor</p></li>
+</ul>
+<p>This is an integer that determines the total number of jobs to calculate the foreground and background
+coincidences for the entire run. The number is inversely proportional to the memory usage of each job, and the expected run time.
+A factor of 10 is sufficient for a one month run with an SNR threshold of 5.0, 8000 templates, and a timeslide every 1.1 seconds.
+To ensure short running jobs, the factor should be increased in proportion to the number of background triggers.
+The memory usage of each jobs is only porportional to the fraction of single detector triggers that are read in.</p>
+</section>
+<section id="executable-configuration">
+<h3>Executable Configuration<a class="headerlink" href="#executable-configuration" title="Link to this heading"></a></h3>
+<p>There following executables are used in the coincidence, injection finding, and
+plotting. They following needs to be in your [executables] section.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>bank2hdf = ${which:pycbc_coinc_bank2hdf}
+trig2hdf = ${which:pycbc_coinc_trig2hdf}
+hdfinjfind = ${which:pycbc_coinc_hdfinjfind}
+coinc = ${which:pycbc_coinc_findtrigs}
+statmap = ${which:pycbc_coinc_statmap}
+plot_sensitivity = ${which:pycbc_page_sensitivity}
+plot_foundmissed = ${which:pycbc_page_foundmissed}
+plot_snrifar = ${which:pycbc_page_snrifar}
+plot_snrchi = ${which:pycbc_page_snrchi}
+page_foreground = ${which:pycbc_page_foreground}
+hdf_trigger_merge = ${which:pycbc_coinc_mergetrigs}
+</pre></div>
+</div>
+<p>Executables that do not require any additional configuration.</p>
+<ul class="simple">
+<li><p>bank2hdf : This converts the xml based template bank file to an hdf format.</p></li>
+<li><p>trig2hdf : This converts the xml based inspiral trigger file to an hdf file. If you have used a split template bank they are recombined into a single hdf file.</p></li>
+<li><p>plot_foundmissed : Make an interactive found missed plot.</p></li>
+<li><p>plot_snrifar : Makes ifar vs SNR cumulative plots</p></li>
+</ul>
+<section id="options-to-the-coincidence-background-executable">
+<h4>Options to the coincidence/background executable<a class="headerlink" href="#options-to-the-coincidence-background-executable" title="Link to this heading"></a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">coinc</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">Coincidence</span> <span class="ow">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">time</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">flight</span><span class="o">.</span> <span class="n">This</span> <span class="n">options</span> <span class="n">sets</span> <span class="n">how</span> <span class="n">many</span>
+<span class="p">;</span> <span class="n">seconds</span> <span class="n">to</span> <span class="n">add</span> <span class="n">to</span> <span class="n">this</span> <span class="n">fixed</span> <span class="n">window</span><span class="o">.</span>
+<span class="n">coinc</span><span class="o">-</span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">.005</span>
+<span class="p">;</span> <span class="n">Background</span> <span class="n">coincident</span> <span class="n">triggers</span> <span class="n">are</span> <span class="n">decimated</span><span class="o">.</span> <span class="n">This</span> <span class="n">option</span> <span class="n">controls</span> <span class="n">how</span>
+<span class="p">;</span><span class="n">many</span> <span class="n">of</span> <span class="n">the</span> <span class="n">loudest</span> <span class="n">triggers</span> <span class="n">to</span> <span class="n">keep</span> <span class="kn">from</span><span class="w"> </span><span class="nn">each</span> <span class="n">group</span> <span class="n">of</span> <span class="n">templates</span><span class="o">.</span>
+<span class="n">loudest</span><span class="o">-</span><span class="n">keep</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="p">;</span> <span class="n">For</span> <span class="n">now</span><span class="p">,</span> <span class="n">don</span><span class="s1">&#39;t touch these options, but they control how to decimate low</span>
+<span class="p">;</span> <span class="n">significane</span> <span class="n">triggers</span><span class="o">.</span>
+<span class="n">decimation</span><span class="o">-</span><span class="n">factor</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="p">[</span><span class="n">coinc</span><span class="o">-</span><span class="n">inj</span><span class="p">]</span>
+<span class="p">[</span><span class="n">coinc</span><span class="o">-</span><span class="n">full</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">The</span> <span class="n">time</span> <span class="n">interval</span> <span class="ow">in</span> <span class="n">seconds</span> <span class="n">between</span> <span class="n">each</span> <span class="n">timeslide</span><span class="o">.</span>
+<span class="n">timeslide</span><span class="o">-</span><span class="n">interval</span><span class="o">=</span><span class="mf">1.9</span>
+</pre></div>
+</div>
+</section>
+<section id="options-to-the-coincidence-clustering-statistic-asignment-executable">
+<h4>Options to the coincidence clustering + statistic asignment executable<a class="headerlink" href="#options-to-the-coincidence-clustering-statistic-asignment-executable" title="Link to this heading"></a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">statmap</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">The</span> <span class="n">only</span> <span class="n">option</span> <span class="ow">is</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">time</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">seconds</span> <span class="n">to</span> <span class="n">cluster</span>
+<span class="p">;</span> <span class="n">coincident</span> <span class="n">triggers</span> <span class="n">over</span> <span class="n">the</span> <span class="n">entire</span> <span class="n">template</span> <span class="n">bank</span>
+<span class="n">cluster</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">5.0</span>
+</pre></div>
+</div>
+</section>
+<section id="options-to-the-injection-finding-executable">
+<h4>Options to the injection finding executable<a class="headerlink" href="#options-to-the-injection-finding-executable" title="Link to this heading"></a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">hdfinjfind</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">Injections</span> <span class="n">are</span> <span class="n">associated</span> <span class="n">to</span> <span class="n">triggers</span> <span class="n">by</span> <span class="n">time</span> <span class="n">alone</span><span class="o">.</span> <span class="n">The</span> <span class="n">one</span> <span class="n">option</span>
+<span class="p">;</span> <span class="n">determines</span> <span class="n">the</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">seconds</span> <span class="n">of</span> <span class="n">the</span> <span class="n">window</span><span class="o">.</span> <span class="n">Make</span> <span class="n">sure</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">smaller</span>
+<span class="p">;</span> <span class="n">then</span> <span class="n">the</span> <span class="n">coincident</span> <span class="n">clustering</span> <span class="n">window</span><span class="p">,</span> <span class="n">otherwise</span> <span class="n">note</span> <span class="n">that</span> <span class="n">injections</span>
+<span class="p">;</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">association</span> <span class="k">with</span> <span class="n">multiple</span> <span class="n">triggers</span> <span class="n">are</span> <span class="n">simply</span> <span class="n">marked</span> <span class="k">as</span> <span class="n">missed</span><span class="o">.</span>
+<span class="n">injection</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+</section>
+<section id="options-for-sensitivity-plotting">
+<h4>Options for sensitivity plotting<a class="headerlink" href="#options-for-sensitivity-plotting" title="Link to this heading"></a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[plot_sensitivity]
+; The type of bins to use. Options are mchirp, total_mass, or spin.
+bin-type =  mchirp
+; The bin boundaries
+bins = 0.89 1.31 1.74 2.17 2.60
+min-dist = 40
+max-dist = 120
+; The number of distance bins. If there is no injection in a bin, it fails, as it should!
+; Remove this option to use binless sensitivity estimation. The distance bins options
+; only exists for comparison to other pipelines where the codes do distance bins.
+dist-bins = 15
+</pre></div>
+</div>
+<p>Additional plots can be made by adding a tag. This works similary to the system for injection files. For
+example you can add  [plot_sensitivity-mchirp], [plot_sensitivity-mtotal], and [plot_sensitivity-spin]
+sections to make three versions of the plot.</p>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="matched_filter.html" class="btn btn-neutral float-left" title="The workflow matched-filter module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../build_gh_pages.html" class="btn btn-neutral float-right" title="Building Documentation for GitHub Pages" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

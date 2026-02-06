@@ -1,0 +1,500 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This package provides classes and functions for evaluating Bayesian statistics</span>
+<span class="sd">assuming various noise models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">entry_points</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.analytic</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">TestEggbox</span><span class="p">,</span> <span class="n">TestNormal</span><span class="p">,</span> <span class="n">TestRosenbrock</span><span class="p">,</span> <span class="n">TestVolcano</span><span class="p">,</span>
+                       <span class="n">TestPrior</span><span class="p">,</span> <span class="n">TestPosterior</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianNoise</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.marginalized_gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarginalizedPhaseGaussianNoise</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.marginalized_gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarginalizedPolarization</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.marginalized_gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarginalizedHMPolPhase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.marginalized_gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarginalizedTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.brute_marg</span><span class="w"> </span><span class="kn">import</span> <span class="n">BruteParallelGaussianMarginalize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.brute_marg</span><span class="w"> </span><span class="kn">import</span> <span class="n">BruteLISASkyModesMarginalize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.gated_gaussian_noise</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">GatedGaussianNoise</span><span class="p">,</span> <span class="n">GatedGaussianMargPol</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.single_template</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleTemplate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relbin</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relative</span><span class="p">,</span> <span class="n">RelativeTime</span><span class="p">,</span> <span class="n">RelativeTimeDom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.hierarchical</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">HierarchicalModel</span><span class="p">,</span> <span class="n">MultiSignalModel</span><span class="p">,</span>
+                           <span class="n">JointPrimaryMarginalizedModel</span><span class="p">)</span>
+
+<span class="c1"># Used to manage a model instance across multiple cores or MPI</span>
+<span class="n">_global_instance</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_call_global_model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function for global model (needed for parallelization).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_global_instance</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>  <span class="c1"># pylint:disable=not-callable</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_call_global_model_logprior</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Private function for a calling global&#39;s logprior.</span>
+
+<span class="sd">    This is needed for samplers that use a separate function for the logprior,</span>
+<span class="sd">    like ``emcee_pt``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint:disable=not-callable</span>
+    <span class="k">return</span> <span class="n">_global_instance</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">callstat</span><span class="o">=</span><span class="s1">&#39;logprior&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CallModel">
+<a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.CallModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CallModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper class for calling models from a sampler.</span>
+
+<span class="sd">    This class can be called like a function, with the parameter values to</span>
+<span class="sd">    evaluate provided as a list in the same order as the model&#39;s</span>
+<span class="sd">    ``variable_params``. In that case, the model is updated with the provided</span>
+<span class="sd">    parameters and then the ``callstat`` retrieved. If ``return_all_stats`` is</span>
+<span class="sd">    set to ``True``, then all of the stats specified by the model&#39;s</span>
+<span class="sd">    ``default_stats`` will be returned as a tuple, in addition to the stat</span>
+<span class="sd">    value.</span>
+
+<span class="sd">    The model&#39;s attributes are promoted to this class&#39;s namespace, so that any</span>
+<span class="sd">    attribute and method of ``model`` may be called directly from this class.</span>
+
+<span class="sd">    This class must be initalized prior to the creation of a ``Pool`` object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Model instance</span>
+<span class="sd">        The model to call.</span>
+<span class="sd">    callstat : str</span>
+<span class="sd">        The statistic to call.</span>
+<span class="sd">    return_all_stats : bool, optional</span>
+<span class="sd">        Whether or not to return all of the other statistics along with the</span>
+<span class="sd">        ``callstat`` value.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Create a wrapper around an instance of the ``TestNormal`` model, with the</span>
+<span class="sd">    ``callstat`` set to ``logposterior``:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.inference.models import TestNormal, CallModel</span>
+<span class="sd">    &gt;&gt;&gt; model = TestNormal([&#39;x&#39;, &#39;y&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; call_model = CallModel(model, &#39;logposterior&#39;)</span>
+
+<span class="sd">    Now call on a set of parameter values:</span>
+
+<span class="sd">    &gt;&gt;&gt; call_model([0.1, -0.2])</span>
+<span class="sd">    (-1.8628770664093453, (0.0, 0.0, -1.8628770664093453))</span>
+
+<span class="sd">    Note that a tuple of all of the model&#39;s ``default_stats`` were returned in</span>
+<span class="sd">    addition to the ``logposterior`` value. We can shut this off by toggling</span>
+<span class="sd">    ``return_all_stats``:</span>
+
+<span class="sd">    &gt;&gt;&gt; call_model.return_all_stats = False</span>
+<span class="sd">    &gt;&gt;&gt; call_model([0.1, -0.2])</span>
+<span class="sd">    -1.8628770664093453</span>
+
+<span class="sd">    Attributes of the model can be called from the call model. For example:</span>
+
+<span class="sd">    &gt;&gt;&gt; call_model.variable_params</span>
+<span class="sd">    (&#39;x&#39;, &#39;y&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">callstat</span><span class="p">,</span> <span class="n">return_all_stats</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callstat</span> <span class="o">=</span> <span class="n">callstat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_all_stats</span> <span class="o">=</span> <span class="n">return_all_stats</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds the models attributes to self.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_values</span><span class="p">,</span> <span class="n">callstat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_all_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the model with the given parameter values, then calls the</span>
+<span class="sd">        call function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        param_values : list of float</span>
+<span class="sd">            The parameter values to test. Assumed to be in the same order as</span>
+<span class="sd">            ``model.sampling_params``.</span>
+<span class="sd">        callstat : str, optional</span>
+<span class="sd">            Specify which statistic to call. Default is to call whatever self&#39;s</span>
+<span class="sd">            ``callstat`` is set to.</span>
+<span class="sd">        return_all_stats : bool, optional</span>
+<span class="sd">            Whether or not to return all stats in addition to the ``callstat``</span>
+<span class="sd">            value. Default is to use self&#39;s ``return_all_stats``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        stat : float</span>
+<span class="sd">            The statistic returned by the ``callfunction``.</span>
+<span class="sd">        all_stats : tuple, optional</span>
+<span class="sd">            The values of all of the model&#39;s ``default_stats`` at the given</span>
+<span class="sd">            param values. Any stat that has not be calculated is set to</span>
+<span class="sd">            ``numpy.nan``. This is only returned if ``return_all_stats`` is</span>
+<span class="sd">            set to ``True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">callstat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">callstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">callstat</span>
+        <span class="k">if</span> <span class="n">return_all_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">return_all_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_all_stats</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">,</span> <span class="n">param_values</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">callstat</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_all_stats</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_current_stats</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">val</span></div>
+
+
+
+<div class="viewcode-block" id="read_from_config">
+<a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.read_from_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initializes a model from the given config file.</span>
+
+<span class="sd">    The section must have a ``name`` argument. The name argument corresponds to</span>
+<span class="sd">    the name of the class to initialize.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : WorkflowConfigParser</span>
+<span class="sd">        Config file parser to read.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to the ``from_config`` method</span>
+<span class="sd">        of the class specified by the name argument.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cls</span>
+<span class="sd">        The initialized model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># use the name to get the distribution</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">get_model</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="n">_models</span> <span class="o">=</span> <span class="p">{</span><span class="n">_cls</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">_cls</span> <span class="k">for</span> <span class="n">_cls</span> <span class="ow">in</span> <span class="p">(</span>
+    <span class="n">TestEggbox</span><span class="p">,</span>
+    <span class="n">TestNormal</span><span class="p">,</span>
+    <span class="n">TestRosenbrock</span><span class="p">,</span>
+    <span class="n">TestVolcano</span><span class="p">,</span>
+    <span class="n">TestPosterior</span><span class="p">,</span>
+    <span class="n">TestPrior</span><span class="p">,</span>
+    <span class="n">GaussianNoise</span><span class="p">,</span>
+    <span class="n">MarginalizedPhaseGaussianNoise</span><span class="p">,</span>
+    <span class="n">MarginalizedPolarization</span><span class="p">,</span>
+    <span class="n">MarginalizedHMPolPhase</span><span class="p">,</span>
+    <span class="n">MarginalizedTime</span><span class="p">,</span>
+    <span class="n">BruteParallelGaussianMarginalize</span><span class="p">,</span>
+    <span class="n">BruteLISASkyModesMarginalize</span><span class="p">,</span>
+    <span class="n">GatedGaussianNoise</span><span class="p">,</span>
+    <span class="n">GatedGaussianMargPol</span><span class="p">,</span>
+    <span class="n">SingleTemplate</span><span class="p">,</span>
+    <span class="n">Relative</span><span class="p">,</span>
+    <span class="n">RelativeTime</span><span class="p">,</span>
+    <span class="n">HierarchicalModel</span><span class="p">,</span>
+    <span class="n">MultiSignalModel</span><span class="p">,</span>
+    <span class="n">RelativeTimeDom</span><span class="p">,</span>
+    <span class="n">JointPrimaryMarginalizedModel</span><span class="p">,</span>
+<span class="p">)}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_ModelManager</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sub-classes dictionary to manage the collection of available models.</span>
+
+<span class="sd">    The first time this is called, any plugin models that are available will be</span>
+<span class="sd">    added to the dictionary before returning.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_plugins</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds a model to the dictionary.</span>
+
+<span class="sd">        If the given model has the same name as a model already in the</span>
+<span class="sd">        dictionary, the original model will be overridden. A warning will be</span>
+<span class="sd">        printed in that case.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Custom model </span><span class="si">%s</span><span class="s2"> will override a model of the &quot;</span>
+                         <span class="s2">&quot;same name. If you don&#39;t want this, change the &quot;</span>
+                         <span class="s2">&quot;model&#39;s name attribute and restart.&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_plugins</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds any plugin models that are available.</span>
+
+<span class="sd">        This will only add the plugins if ``self.retrieve_plugins = True``.</span>
+<span class="sd">        After this runs, ``self.retrieve_plugins`` is set to ``False``, so that</span>
+<span class="sd">        subsequent calls to this will no re-add models.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_plugins</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.inference.models&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_model</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_plugins</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__len__</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">popitem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">popitem</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__delitem__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__delitem__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="n">models</span> <span class="o">=</span> <span class="n">_ModelManager</span><span class="p">(</span><span class="n">_models</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_models">
+<a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.get_models">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_models</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the dictionary of current models.</span>
+
+<span class="sd">    Ensures that plugins are added to the dictionary first.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">add_plugins</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">models</span></div>
+
+
+
+<div class="viewcode-block" id="get_model">
+<a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.get_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the given model.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_name : str</span>
+<span class="sd">        The name of the model to get.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    model :</span>
+<span class="sd">        The requested model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_models</span><span class="p">()[</span><span class="n">model_name</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="available_models">
+<a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.available_models">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">available_models</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List the currently available models.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">get_models</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="register_model">
+<a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.register_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_model</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Makes a custom model available to PyCBC.</span>
+
+<span class="sd">    The provided model will be added to the dictionary of models that PyCBC</span>
+<span class="sd">    knows about, using the model&#39;s ``name`` attribute. If the ``name`` is the</span>
+<span class="sd">    same as a model that already exists in PyCBC, a warning will be printed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : pycbc.inference.models.base.BaseModel</span>
+<span class="sd">        The model to use. The model should be a sub-class of</span>
+<span class="sd">        :py:class:`BaseModel &lt;pycbc.inference.models.base.BaseModel&gt;` to ensure</span>
+<span class="sd">        it has the correct API for use within ``pycbc_inference``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">get_models</span><span class="p">()</span><span class="o">.</span><span class="n">add_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

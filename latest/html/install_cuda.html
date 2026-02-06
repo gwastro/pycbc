@@ -1,0 +1,182 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instructions to add CUDA support (optional) &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Setting up virtualenv" href="install_virtualenv.html" />
+    <link rel="prev" title="Running PyCBC under Docker" href="docker.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="install.html">Installing PyCBC</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="install.html#simple-installation">Simple Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#full-virtualenv-for-development-and-production">Full Virtualenv for Development and Production</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="install.html#other-scenarios">Other scenarios</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="install.html#docker">Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#building-the-documentation">Building the Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#use-of-intel-mkl-optimized-fft-libraries">Use of Intel MKL Optimized FFT libraries</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="install.html#graphics-processing-unit-support-with-cuda">Graphics Processing Unit support with CUDA</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Instructions to add CUDA support (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="install.html#related-help">Related Help</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="install.html">Installing PyCBC</a></li>
+      <li class="breadcrumb-item active">Instructions to add CUDA support (optional)</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/install_cuda.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="instructions-to-add-cuda-support-optional">
+<h1>Instructions to add CUDA support (optional)<a class="headerlink" href="#instructions-to-add-cuda-support-optional" title="Link to this heading"></a></h1>
+<p>If you would like to use GPU acceleration of PyCBC through CUDA you will require these additional packages:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="http://www.numpy.org">NumPy</a> &gt;= 1.5.1</p></li>
+<li><p><a class="reference external" href="http://www.nvidia.com/object/cuda_home_new.html">Nvidia CUDA</a> &gt;= 6.5 (driver and libraries)</p></li>
+<li><p><a class="reference external" href="http://mathema.tician.de/software/pycuda">PyCUDA</a> &gt;= 2015.1.3</p></li>
+<li><p><a class="reference external" href="http://scikits.appspot.com/cuda">SciKits.cuda</a> &gt;= 0.041</p></li>
+<li><p><a class="reference external" href="http://www.makotemplates.org/">Mako</a> &gt;= 0.7.2</p></li>
+</ul>
+<p>These packages may not be available via the distribution packaging system, at least in the required versions. As described below, most of these packages are available via the python package installer <a class="reference external" href="http://www.pip-installer.org">pip</a>, however custom installation instructions are given where required.</p>
+<p>If you are currently in your virtual environment, leave it by running <code class="docutils literal notranslate"><span class="pre">deactivate</span></code> as you need to add some additional environment variables before continuing.  Set the shell variable <code class="docutils literal notranslate"><span class="pre">NAME</span></code> to the location of your virtual environment. Here we assume that your virtual environment is installed in <code class="docutils literal notranslate"><span class="pre">${HOME}/pycbc-dev</span></code>. If it is in different location, you will need to change this as appropriate.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">NAME</span><span class="o">=</span><span class="si">${</span><span class="nv">HOME</span><span class="si">}</span>/src/pycbc
+</pre></div>
+</div>
+<p>The install requires that you set the environment variable <code class="docutils literal notranslate"><span class="pre">CUDA_ROOT</span></code>, make sure that the CUDA <code class="docutils literal notranslate"><span class="pre">bin</span></code> directory is in your path, and add the CUDA library path to your <code class="docutils literal notranslate"><span class="pre">LD_LIBRARY_PATH</span></code>. You can do this by adding these commands to your <code class="docutils literal notranslate"><span class="pre">activate</span></code> script by running the commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export CUDA_ROOT=/usr/local/cuda&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="nv">$NAME</span>/bin/activate
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export PATH=${CUDA_ROOT}/bin:${PATH}&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="nv">$NAME</span>/bin/activate
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export LD_LIBRARY_PATH=${CUDA_ROOT}/lib64:${LD_LIBRARY_PATH}&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="nv">$NAME</span>/bin/activate
+</pre></div>
+</div>
+<p>Now activate your virtual environment.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span><span class="si">${</span><span class="nv">NAME</span><span class="si">}</span>/bin/activate
+</pre></div>
+</div>
+<section id="installing-the-cuda-dependencies">
+<h2>Installing the CUDA dependencies<a class="headerlink" href="#installing-the-cuda-dependencies" title="Link to this heading"></a></h2>
+<p>Install the dependencies PyCUDA, SciKits.cuda and Mako with by running the commands</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pycuda
+pip<span class="w"> </span>install<span class="w"> </span>scikit-cuda
+pip<span class="w"> </span>install<span class="w"> </span>Mako
+</pre></div>
+</div>
+<p>You should now be able to use the CUDA features in PyCBC.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="docker.html" class="btn btn-neutral float-left" title="Running PyCBC under Docker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="install_virtualenv.html" class="btn btn-neutral float-right" title="Setting up virtualenv" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

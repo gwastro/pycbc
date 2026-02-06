@@ -1,0 +1,1013 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.pygrb_postprocessing_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.pygrb_postprocessing_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.pygrb_postprocessing_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019 Francesco Pannarale, Gino Contestabile, Cameron Mills</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Preamble</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module to generate PyGRB figures: scatter plots and timeseries.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">segments</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_segments.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fromsegwizard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events.coherent</span><span class="w"> </span><span class="kn">import</span> <span class="n">reweightedsnr_cut</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">veto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_common_pycbc_options</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFile</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.results.pygrb_postprocessing_utils&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Arguments functions:</span>
+<span class="c1"># * Initialize a parser object with arguments shared by all plotting scripts</span>
+<span class="c1"># * Add to the parser object the arguments used for Monte-Carlo on distance</span>
+<span class="c1"># * Add to the parser object the arguments used for BestNR calculation</span>
+<span class="c1"># * Add to the parser object the arguments for found/missed injection files</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="pygrb_initialize_plot_parser">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.pygrb_initialize_plot_parser">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_initialize_plot_parser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets up a basic argument parser object for PyGRB plotting scripts&quot;&quot;&quot;</span>
+
+    <span class="n">formatter_class</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+                                     <span class="n">formatter_class</span><span class="o">=</span><span class="n">formatter_class</span><span class="p">)</span>
+    <span class="n">add_common_pycbc_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--output-file&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output file.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--x-lims&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma separated minimum and maximum values &quot;</span>
+                        <span class="s2">&quot;for the horizontal axis. When using negative &quot;</span>
+                        <span class="s2">&quot;values an equal sign after --x-lims is necessary.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--y-lims&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma separated minimum and maximum values &quot;</span>
+                        <span class="s2">&quot;for the vertical axis. When using negative values &quot;</span>
+                        <span class="s2">&quot;an equal sign after --y-lims is necessary.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--use-logs&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Produce a log-log plot&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="s2">&quot;--ifo&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;IFO used for IFO &quot;</span>
+                        <span class="s2">&quot;specific plots&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;--seg-files&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The location of the buffer, &quot;</span>
+                        <span class="s2">&quot;onsource and offsource txt segment files.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-V&quot;</span><span class="p">,</span> <span class="s2">&quot;--veto-file&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The location of the xml veto file.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot-title&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If provided, use the given string as the plot &quot;</span>
+                        <span class="s2">&quot;title.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot-caption&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If provided, use the given string as the plot &quot;</span>
+                        <span class="s2">&quot;caption&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span></div>
+
+
+
+<div class="viewcode-block" id="pygrb_add_slide_opts">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.pygrb_add_slide_opts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_add_slide_opts</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add to parser object arguments related to short timeslides&quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--slide-id&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Select a specific slide or set to all to plot &quot;</span>
+                        <span class="s2">&quot;results from all short slides.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="slide_opts_helper">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.slide_opts_helper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">slide_opts_helper</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">       This function overwrites the types of input slide_id information</span>
+<span class="sd">       when loading data in postprocessing scripts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">slide_id</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">slide_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">slide_id</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">slide_id</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">slide_id</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;--slide-id must be the string all or an int&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pygrb_add_injmc_opts">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.pygrb_add_injmc_opts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_add_injmc_opts</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add to parser object the arguments used for Monte-Carlo on distance.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">parser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-M&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-mc-injections&quot;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of Monte &quot;</span>
+                        <span class="s2">&quot;Carlo injection simulations to perform.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-S&quot;</span><span class="p">,</span> <span class="s2">&quot;--seed&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mi">1234</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Seed to initialize Monte Carlo.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-U&quot;</span><span class="p">,</span> <span class="s2">&quot;--upper-inj-dist&quot;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The upper distance &quot;</span>
+                        <span class="s2">&quot;of the injections in Mpc, if used.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-L&quot;</span><span class="p">,</span> <span class="s2">&quot;--lower-inj-dist&quot;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The lower distance of &quot;</span>
+                        <span class="s2">&quot;the injections in Mpc, if used.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--num-bins&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The number of bins used to &quot;</span>
+                        <span class="s2">&quot;calculate injection efficiency.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-w&quot;</span><span class="p">,</span> <span class="s2">&quot;--waveform-error&quot;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The standard deviation &quot;</span>
+                        <span class="s2">&quot;to use when calculating the waveform error.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;g1&quot;</span><span class="p">,</span> <span class="s2">&quot;h1&quot;</span><span class="p">,</span> <span class="s2">&quot;k1&quot;</span><span class="p">,</span> <span class="s2">&quot;l1&quot;</span><span class="p">,</span> <span class="s2">&quot;v1&quot;</span><span class="p">]:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--</span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s2">-cal-error&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                            <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The standard deviation to use &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;when calculating the </span><span class="si">{</span><span class="n">ifo</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> &quot;</span>
+                            <span class="s2">&quot;calibration amplitude error.&quot;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--</span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s2">-dc-cal-error&quot;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The scaling &quot;</span>
+                            <span class="s2">&quot;factor to use when calculating the &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ifo</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> calibration amplitude error.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pygrb_add_bestnr_opts">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.pygrb_add_bestnr_opts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_add_bestnr_opts</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add to the parser object the arguments used for BestNR calculation&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">parser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-Q&quot;</span><span class="p">,</span> <span class="s2">&quot;--chisq-index&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;chisq_index for newSNR &quot;</span>
+                        <span class="s2">&quot;calculation (default: 6)&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-N&quot;</span><span class="p">,</span> <span class="s2">&quot;--chisq-nhigh&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;chisq_nhigh for newSNR &quot;</span>
+                        <span class="s2">&quot;calculation (default: 2&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pygrb_add_null_snr_opts">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.pygrb_add_null_snr_opts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_add_null_snr_opts</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add to the parser object the arguments used for null SNR calculation</span>
+<span class="sd">    and null SNR cut.&quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-A&quot;</span><span class="p">,</span> <span class="s2">&quot;--null-snr-threshold&quot;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">5.25</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Null SNR threshold for null SNR cut &quot;</span>
+                        <span class="s2">&quot;(default: 5.25)&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-T&quot;</span><span class="p">,</span> <span class="s2">&quot;--null-grad-thresh&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">20.</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Threshold above which to &quot;</span>
+                        <span class="s2">&quot;increase the values of the null SNR cut&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-D&quot;</span><span class="p">,</span> <span class="s2">&quot;--null-grad-val&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Rate the null SNR cut will &quot;</span>
+                        <span class="s2">&quot;increase above the threshold&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pygrb_add_bestnr_cut_opt">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.pygrb_add_bestnr_cut_opt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pygrb_add_bestnr_cut_opt</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add to the parser object an argument to place a threshold on BestNR.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">parser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--newsnr-threshold&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;THRESHOLD&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Cut triggers with NewSNR less than THRESHOLD. &quot;</span>
+                        <span class="s2">&quot;Default 0: all events are considered.&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Wrapper to read segments files</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># An underscore at the name start flags a function called only in this file</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_read_seg_files</span><span class="p">(</span><span class="n">seg_files</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read segments txt files&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg_files</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The location of three segment files is necessary.&quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;[bufferSeg.txt, offSourceSeg.txt, onSourceSeg.txt]&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="n">times</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Needs to be in this order for consistency with build_segment_filelist</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;buffer&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">seg_file</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">seg_files</span><span class="p">):</span>
+        <span class="n">segs</span> <span class="o">=</span> <span class="n">fromsegwizard</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">seg_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s1">&#39;More than one segment, an error has occured.&#39;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="n">times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">segs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">times</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to extract vetoes</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_vetoes</span><span class="p">(</span><span class="n">veto_file</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">offsource</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts the veto segments from the veto File&quot;&quot;&quot;</span>
+
+    <span class="n">clean_segs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">vetoes</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">segs</span> <span class="o">=</span> <span class="n">veto</span><span class="o">.</span><span class="n">select_segments_by_definer</span><span class="p">(</span><span class="n">veto_file</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="n">segs</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">clean_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">segs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">clean_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">offsource</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">clean_segs</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">offsource</span><span class="p">])</span> <span class="o">-</span> <span class="n">clean_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">vetoes</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="n">v_span</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">s of data vetoed at GPS time </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                             <span class="n">v_span</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">vetoes</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to build a dictionary (indexed by ifo) of time-slid vetoes</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_slide_vetoes</span><span class="p">(</span><span class="n">vetoes</span><span class="p">,</span> <span class="n">slide_dict_or_list</span><span class="p">,</span> <span class="n">slide_id</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a dictionary (indexed by ifo) of time-slid vetoes&quot;&quot;&quot;</span>
+
+    <span class="c1"># Copy vetoes</span>
+    <span class="k">if</span> <span class="n">vetoes</span><span class="p">:</span>
+        <span class="n">slid_vetoes</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">vetoes</span><span class="p">)</span>
+        <span class="c1"># Slide them</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">slid_vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="n">slide_dict_or_list</span><span class="p">[</span><span class="n">slide_id</span><span class="p">][</span><span class="n">ifo</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">slid_vetoes</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">()</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">slid_vetoes</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Recursive function to reach all datasets in an HDF file handle</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_dataset_iterator</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reach all datasets in an HDF file handle&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Avoid slash as first character</span>
+        <span class="n">pref</span> <span class="o">=</span> <span class="n">prefix</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="n">prefix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">prefix</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">pref</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">key</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="n">_dataset_iterator</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to load trigger/injection data</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="load_data">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.load_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">rw_snr_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_tag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">slide_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load data from a trigger/injection PyGRB output file, returning a</span>
+<span class="sd">    dictionary. If the input_file is None, None is returned. data_tag enables</span>
+<span class="sd">    logging information about the number of triggers/injections found, so the</span>
+<span class="sd">    user should not set it to &#39;trigs&#39;/&#39;injs&#39; when processing the onsource.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">trigs</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">rw_snr</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/reweighted_snr&#39;</span><span class="p">][:]</span> \
+        <span class="k">if</span> <span class="s1">&#39;network/reweighted_snr&#39;</span> <span class="ow">in</span> <span class="n">trigs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">else</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">net_ids</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/event_id&#39;</span><span class="p">][:]</span> \
+        <span class="k">if</span> <span class="s1">&#39;network/event_id&#39;</span> <span class="ow">in</span> <span class="n">trigs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> \
+        <span class="k">else</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="c1"># Output the number of items loaded only upon a request by the user who is</span>
+    <span class="c1"># expected not to set data_tag to &#39;trigs&#39;or &#39;injs&#39; when processing the</span>
+    <span class="c1"># onsource</span>
+    <span class="k">if</span> <span class="n">data_tag</span> <span class="o">==</span> <span class="s1">&#39;trigs&#39;</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> triggers loaded.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">rw_snr</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">data_tag</span> <span class="o">==</span> <span class="s1">&#39;injs&#39;</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> injections loaded.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">rw_snr</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading triggers.&quot;</span><span class="p">)</span>
+    <span class="n">ifo_ids</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">ifo_ids</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="n">ifo</span><span class="o">+</span><span class="s1">&#39;/event_id&#39;</span><span class="p">][:]</span> \
+            <span class="k">if</span> <span class="n">ifo</span><span class="o">+</span><span class="s1">&#39;/event_id&#39;</span> <span class="ow">in</span> <span class="n">trigs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> \
+            <span class="k">else</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">trigs</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Apply the reweighted SNR cut on the reweighted SNR</span>
+    <span class="k">if</span> <span class="n">rw_snr_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">rw_snr</span> <span class="o">=</span> <span class="n">reweightedsnr_cut</span><span class="p">(</span><span class="n">rw_snr</span><span class="p">,</span> <span class="n">rw_snr_threshold</span><span class="p">)</span>
+
+    <span class="c1"># Establish the indices of data not surviving the cut</span>
+    <span class="n">above_thresh</span> <span class="o">=</span> <span class="n">rw_snr</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="c1"># Output the number of items surviging vetoes with the same logic as above</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">data_tag</span> <span class="o">==</span> <span class="s1">&#39;trigs&#39;</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">above_thresh</span><span class="p">)</span><span class="si">}</span><span class="s2"> triggers &quot;</span>
+    <span class="k">elif</span> <span class="n">data_tag</span> <span class="o">==</span> <span class="s1">&#39;injs&#39;</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">above_thresh</span><span class="p">)</span><span class="si">}</span><span class="s2"> injections &quot;</span>
+    <span class="k">if</span> <span class="n">msg</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;surviving reweighted SNR cut at </span><span class="si">{</span><span class="n">rw_snr_threshold</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="c1"># Do not assume that IFO and network datasets are sorted the same way:</span>
+    <span class="c1"># find where each surviving network/event_id is placed in the IFO/event_id</span>
+    <span class="n">ifo_ids_above_thresh_locations</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># 1. Determine once the IDs to be found</span>
+    <span class="n">target_ids</span> <span class="o">=</span> <span class="n">net_ids</span><span class="p">[</span><span class="n">above_thresh</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">input_ids</span> <span class="o">=</span> <span class="n">ifo_ids</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="c1"># 2. Do not assume ifo_ids are sorted and produce a sorting tracker</span>
+        <span class="n">sorter</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
+        <span class="c1"># 3. Find out where the target_ids are in the sorted ifo_ids[ifo]</span>
+        <span class="n">insert_indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span>
+            <span class="n">input_ids</span><span class="p">,</span>
+            <span class="n">target_ids</span><span class="p">,</span>
+            <span class="n">sorter</span><span class="o">=</span><span class="n">sorter</span><span class="p">)</span>
+        <span class="c1"># 4. Safety checks:</span>
+        <span class="c1"># a. searchsorted returns len(arr) when the element is not in the arr</span>
+        <span class="c1"># b. ensure that all target_ids were recovered in ifo_ids[ifo]</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">insert_indices</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_ids</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">input_ids</span><span class="p">[</span><span class="n">sorter</span><span class="p">[</span><span class="n">insert_indices</span><span class="p">]]</span> <span class="o">==</span> <span class="n">target_ids</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="c1"># 5. Extract valid original indices</span>
+        <span class="n">ifo_ids_above_thresh_locations</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">sorter</span><span class="p">[</span><span class="n">insert_indices</span><span class="p">]</span>
+
+    <span class="c1"># Removing points with reweighted SNR below threshold and select</span>
+    <span class="c1"># a specific slide, if the user asked for this</span>
+    <span class="n">trigs_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">trigs</span><span class="p">:</span>
+        <span class="c1"># Prepare a default mask that will preserve all points after</span>
+        <span class="c1"># the ones below threshold have already been removed</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">above_thresh</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># When necessary and possible, update the mask so it selects a given</span>
+        <span class="c1"># slide id</span>
+        <span class="k">if</span> <span class="n">slide_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;network/slide_id&#39;</span> <span class="ow">in</span> <span class="n">trigs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/slide_id&#39;</span><span class="p">][</span><span class="n">above_thresh</span><span class="p">]</span> <span class="o">==</span>
+                               <span class="n">slide_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dset</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_dataset_iterator</span><span class="p">(</span><span class="n">trigs</span><span class="p">):</span>
+            <span class="c1"># The dataset contains search or missed injections information,</span>
+            <span class="c1"># not properties of triggers or found injections: just copy it</span>
+            <span class="k">if</span> <span class="s1">&#39;search&#39;</span> <span class="ow">in</span> <span class="n">path</span> <span class="ow">or</span> <span class="s1">&#39;missed&#39;</span> <span class="ow">in</span> <span class="n">path</span> <span class="ow">or</span> <span class="s1">&#39;gating&#39;</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+                <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">dset</span><span class="p">[:]</span>
+            <span class="c1"># The dataset is trig/inj info at an IFO:</span>
+            <span class="c1"># cut with the correct index</span>
+            <span class="k">elif</span> <span class="n">path</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                <span class="n">ifo</span> <span class="o">=</span> <span class="n">path</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ifo_ids_above_thresh_locations</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">dset</span><span class="p">[:][</span><span class="n">ifo_ids_above_thresh_locations</span><span class="p">[</span><span class="n">ifo</span><span class="p">]]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+            <span class="c1"># The dataset is trig/inj network info: cut it before copying</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">dset</span><span class="p">[</span><span class="n">above_thresh</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="s1">&#39;network/slide_id&#39;</span> <span class="ow">in</span> <span class="n">trigs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="c1"># The slide selection is applied to datasets that contain</span>
+                <span class="c1"># properties of surviving triggers. These datasets are</span>
+                <span class="c1"># identified knowing that each trigger has a slide id, so</span>
+                <span class="c1"># they must have as many entries as the &#39;network/slide_id&#39;</span>
+                <span class="c1"># dataset once triggers below threshold are removed from it.</span>
+                <span class="k">if</span> <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> \
+                        <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/slide_id&#39;</span><span class="p">][</span><span class="n">above_thresh</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                    <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">trigs_dict</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">trigs_dict</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to apply vetoes to found injections</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="apply_vetoes_to_found_injs">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.apply_vetoes_to_found_injs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_vetoes_to_found_injs</span><span class="p">(</span><span class="n">found_missed_file</span><span class="p">,</span> <span class="n">found_injs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span>
+                               <span class="n">veto_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Separate injections surviving vetoes from vetoed injections.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        found_missed_file: injections results File</span>
+
+<span class="sd">        found_injs: dictionary of found injections</span>
+
+<span class="sd">        ifos: list of interferometers to use in vetoing</span>
+
+<span class="sd">        veto_file: vetoed segments File (optional)</span>
+
+<span class="sd">        keys: list of desired dataset names (optional)</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">        found_after_vetoes: dictionary of injections surviving vetoes</span>
+
+<span class="sd">        missed_after_vetoes: dictionary of vetoed injections</span>
+
+<span class="sd">        found_idx: numpy.array of indices of surviving injections</span>
+
+<span class="sd">        veto_idx: numpy.array of indices of vetoed injections</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">keep_keys</span> <span class="o">=</span> <span class="n">keys</span> <span class="k">if</span> <span class="n">keys</span> <span class="k">else</span> <span class="n">found_injs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found_missed_file</span> <span class="ow">or</span> <span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/end_time&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">found_injs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">t_id_key</span> <span class="o">=</span> <span class="s1">&#39;network/template_id&#39;</span>
+        <span class="k">if</span> <span class="n">t_id_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keep_keys</span><span class="p">:</span>
+            <span class="n">keep_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep_keys</span><span class="o">+</span><span class="p">[</span><span class="n">t_id_key</span><span class="p">])</span>
+        <span class="n">empty_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">keep_keys</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([]))</span>
+        <span class="n">empty_dict</span><span class="p">[</span><span class="n">t_id_key</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">empty_dict</span><span class="p">[</span><span class="n">t_id_key</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">empty_dict</span><span class="p">,</span> <span class="n">empty_dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">found_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">found_injs</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/end_time&#39;</span><span class="p">][:]))</span>
+    <span class="n">veto_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">veto_file</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying data vetoes to found injections...&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">inj_time</span> <span class="o">=</span> <span class="n">found_injs</span><span class="p">[</span><span class="n">ifo</span><span class="o">+</span><span class="s1">&#39;/end_time&#39;</span><span class="p">][:]</span>
+            <span class="n">segs</span> <span class="o">=</span> <span class="n">veto</span><span class="o">.</span><span class="n">select_segments_by_definer</span><span class="p">(</span><span class="n">veto_file</span><span class="p">,</span>
+                                                   <span class="n">segment_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                   <span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">veto</span><span class="o">.</span><span class="n">indices_outside_segments</span><span class="p">(</span><span class="n">inj_time</span><span class="p">,</span>
+                                                       <span class="p">[</span><span class="n">veto_file</span><span class="p">],</span>
+                                                       <span class="n">ifo</span><span class="p">,</span>
+                                                       <span class="kc">None</span><span class="p">)</span>
+                <span class="n">veto_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">veto_idx</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> injections vetoed due to </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">ifo</span><span class="p">)</span>
+                <span class="n">idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">veto</span><span class="o">.</span><span class="n">indices_within_segments</span><span class="p">(</span><span class="n">inj_time</span><span class="p">,</span>
+                                                      <span class="p">[</span><span class="n">veto_file</span><span class="p">],</span>
+                                                      <span class="n">ifo</span><span class="p">,</span>
+                                                      <span class="kc">None</span><span class="p">)</span>
+                <span class="n">found_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">found_idx</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+
+        <span class="n">veto_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">veto_idx</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> injections vetoed.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">veto_idx</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> injections surviving vetoes.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">found_idx</span><span class="p">))</span>
+
+    <span class="n">found_after_vetoes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">missed_after_vetoes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keep_keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;network/coincident_snr&#39;</span><span class="p">:</span>
+            <span class="n">found_injs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_coinc_snr</span><span class="p">(</span><span class="n">found_injs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">found_injs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">found_after_vetoes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">found_injs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">found_idx</span><span class="p">]</span>
+            <span class="n">missed_after_vetoes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">found_injs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">veto_idx</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">found_after_vetoes</span><span class="p">,</span> <span class="n">missed_after_vetoes</span><span class="p">,</span> <span class="n">found_idx</span><span class="p">,</span> <span class="n">veto_idx</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Detector utils:</span>
+<span class="c1"># * Function to calculate the antenna response F+^2 + Fx^2</span>
+<span class="c1"># * Function to calculate the antenna distance factor</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_antenna_single_response</span><span class="p">(</span><span class="n">antenna</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">geocent_time</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the antenna response F+^2 + Fx^2 of an IFO (passed as pycbc</span>
+<span class="sd">    Detector type) at a given sky location and time.&quot;&quot;&quot;</span>
+
+    <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">antenna</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">geocent_time</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fp</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">fc</span><span class="o">**</span><span class="mi">2</span>
+
+
+<span class="c1"># Vectorize the function above on all but the first argument</span>
+<span class="n">get_antenna_responses</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">_get_antenna_single_response</span><span class="p">,</span>
+                                        <span class="n">otypes</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span>
+<span class="n">get_antenna_responses</span><span class="o">.</span><span class="n">excluded</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_antenna_dist_factor">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.get_antenna_dist_factor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_antenna_dist_factor</span><span class="p">(</span><span class="n">antenna</span><span class="p">,</span> <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">geocent_time</span><span class="p">,</span> <span class="n">inc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the antenna factors (defined as eq. 4.3 on page 57 of</span>
+<span class="sd">    Duncan Brown&#39;s Ph.D.) for an IFO (passed as pycbc Detector type) at</span>
+<span class="sd">    a given sky location and time.&quot;&quot;&quot;</span>
+
+    <span class="n">fp</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">antenna</span><span class="o">.</span><span class="n">antenna_pattern</span><span class="p">(</span><span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">geocent_time</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fp</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">inc</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">+</span> <span class="n">fc</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Construct sorted triggers from trials</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="sort_trigs">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.sort_trigs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sort_trigs</span><span class="p">(</span><span class="n">trial_dict</span><span class="p">,</span> <span class="n">trigs</span><span class="p">,</span> <span class="n">slide_dict</span><span class="p">,</span> <span class="n">seg_dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs sorted triggers from a trials dictionary for the slides</span>
+<span class="sd">    requested via slide_dict.&quot;&quot;&quot;</span>
+
+    <span class="n">sorted_trigs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Begin by sorting the triggers into each slide</span>
+    <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">:</span>
+        <span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">slide_id</span><span class="p">,</span> <span class="n">event_id</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/slide_id&#39;</span><span class="p">],</span>
+                                  <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/event_id&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">:</span>
+            <span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">:</span>
+        <span class="c1"># These can only *reduce* the analysis time</span>
+        <span class="n">curr_seg_list</span> <span class="o">=</span> <span class="n">seg_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span>
+
+        <span class="c1"># Check the triggers are all in the analysed segment lists</span>
+        <span class="k">for</span> <span class="n">event_id</span> <span class="ow">in</span> <span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/event_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">event_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/end_time_gc&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">end_time</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">curr_seg_list</span><span class="p">:</span>
+                <span class="c1"># This can be raised if the trigger is on the segment boundary,</span>
+                <span class="c1"># so check if the trigger is within 1/100 of a second within</span>
+                <span class="c1"># the list</span>
+                <span class="k">if</span> <span class="n">end_time</span> <span class="o">+</span> <span class="mf">0.01</span> <span class="ow">in</span> <span class="n">curr_seg_list</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">end_time</span> <span class="o">-</span> <span class="mf">0.01</span> <span class="ow">in</span> <span class="n">curr_seg_list</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Triggers found in input files not in the list of &quot;</span>
+                <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;analysed segments. This should not happen.&quot;</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="c1"># END OF CHECK #</span>
+
+        <span class="c1"># Keep triggers that are in trial_dict</span>
+        <span class="n">num_trigs_before</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">])</span>
+        <span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">event_id</span> <span class="k">for</span> <span class="n">event_id</span> <span class="ow">in</span>
+                                  <span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span>
+                                  <span class="k">if</span> <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/end_time_gc&#39;</span><span class="p">][</span>
+                                      <span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/event_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">event_id</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                                  <span class="ow">in</span> <span class="n">trial_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]]</span>
+
+        <span class="c1"># Check that the number of triggers has not increased after vetoes</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="n">num_trigs_before</span><span class="p">,</span> \
+            <span class="sa">f</span><span class="s2">&quot;Slide </span><span class="si">{</span><span class="n">slide_id</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="n">num_trigs_before</span><span class="si">}</span><span class="s2"> triggers before the &quot;</span>\
+            <span class="sa">f</span><span class="s2">&quot;trials dictionary was used and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">])</span><span class="si">}</span><span class="s2"> &quot;</span>\
+            <span class="s2">&quot;after. This should not happen.&quot;</span>
+        <span class="c1"># END OF CHECK #</span>
+
+    <span class="k">return</span> <span class="n">sorted_trigs</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Extract trigger properties and store them as dictionaries</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="extract_trig_properties">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.extract_trig_properties">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_trig_properties</span><span class="p">(</span><span class="n">trial_dict</span><span class="p">,</span> <span class="n">trigs</span><span class="p">,</span> <span class="n">slide_dict</span><span class="p">,</span> <span class="n">seg_dict</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and store as dictionaries specific keys of time-slid</span>
+<span class="sd">    triggers (trigs) compatibly with the trials dictionary (trial_dict)&quot;&quot;&quot;</span>
+
+    <span class="c1"># Sort the triggers into each slide</span>
+    <span class="n">sorted_trigs</span> <span class="o">=</span> <span class="n">sort_trigs</span><span class="p">(</span><span class="n">trial_dict</span><span class="p">,</span> <span class="n">trigs</span><span class="p">,</span> <span class="n">slide_dict</span><span class="p">,</span> <span class="n">seg_dict</span><span class="p">)</span>
+    <span class="n">n_surviving_trigs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_trigs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n_surviving_trigs</span><span class="si">}</span><span class="s2"> triggers found within the trials dictionary &quot;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;and sorted.&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">found_trigs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="n">found_trigs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">:</span>
+        <span class="n">slide_trigs</span> <span class="o">=</span> <span class="n">sorted_trigs</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;network/event_id&#39;</span><span class="p">],</span> <span class="n">slide_trigs</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">slide_trigs</span><span class="p">:</span>
+                <span class="n">found_trigs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">slide_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_coinc_snr</span><span class="p">(</span><span class="n">trigs</span><span class="p">)[</span><span class="n">indices</span><span class="p">]</span> \
+                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;network/coincident_snr&#39;</span> <span class="k">else</span> <span class="n">trigs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">indices</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">found_trigs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">slide_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">([])</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Triggers information extracted.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">found_trigs</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to extract ifos from hdfs</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="extract_ifos">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.extract_ifos">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_ifos</span><span class="p">(</span><span class="n">trig_file</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts IFOs from hdf file and checks for presence of a specific IFO&quot;&quot;&quot;</span>
+
+    <span class="c1"># Load hdf file</span>
+    <span class="n">hdf_file</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="n">trig_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Extract IFOs</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">hdf_file</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+    <span class="c1"># Remove unwanted keys from key list to reduce it to the ifos</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;network&#39;</span><span class="p">,</span> <span class="s1">&#39;found&#39;</span><span class="p">,</span> <span class="s1">&#39;missed&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">ifos</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="c1"># Exit gracefully if the requested IFO is not available</span>
+    <span class="k">if</span> <span class="n">ifo</span> <span class="ow">and</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The IFO selected with --ifo is unavailable in the data.&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ifos</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to load timeslides</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="load_time_slides">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.load_time_slides">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_time_slides</span><span class="p">(</span><span class="n">hdf_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads timeslides from PyGRB output file as a dictionary&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading timeslides.&quot;</span><span class="p">)</span>
+    <span class="n">hdf_file</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="n">hdf_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="n">extract_ifos</span><span class="p">(</span><span class="n">hdf_file_path</span><span class="p">)</span>
+    <span class="n">ids</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hdf_file</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">/search/time_slides&#39;</span><span class="p">]))</span>
+    <span class="n">time_slide_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">slide_id</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">ifo</span><span class="p">:</span> <span class="n">hdf_file</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s1">/search/time_slides&#39;</span><span class="p">][</span><span class="n">slide_id</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">}</span>
+
+    <span class="c1"># Check time_slide_ids are ordered correctly.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ids</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">==</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ids</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;time_slide_ids list should start at zero and increase by &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;one for every element&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="c1"># Check that the zero-lag slide has time_slide_id == 0.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">time_slide_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The slide with time_slide_id == 0 should be the &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;zero-lag-slide but it has non-zero slide values: &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">time_slide_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">time_slide_dict</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to load the segment dicitonary</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="load_segment_dict">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.load_segment_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_segment_dict</span><span class="p">(</span><span class="n">hdf_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads the segment dictionary with the format</span>
+<span class="sd">    {slide_id: segmentlist(segments analyzed)}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading segments.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Long time slides will require mapping between slides and segments</span>
+    <span class="n">hdf_file</span> <span class="o">=</span> <span class="n">HFile</span><span class="p">(</span><span class="n">hdf_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="n">extract_ifos</span><span class="p">(</span><span class="n">hdf_file_path</span><span class="p">)</span>
+    <span class="c1"># Get slide IDs</span>
+    <span class="n">slide_ids</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hdf_file</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">/search/time_slides&#39;</span><span class="p">]))</span>
+    <span class="c1"># Get segment start/end times</span>
+    <span class="n">seg_starts</span> <span class="o">=</span> <span class="n">hdf_file</span><span class="p">[</span><span class="s1">&#39;network/search/segments/start_times&#39;</span><span class="p">][:]</span>
+    <span class="n">seg_ends</span> <span class="o">=</span> <span class="n">hdf_file</span><span class="p">[</span><span class="s1">&#39;network/search/segments/end_times&#39;</span><span class="p">][:]</span>
+    <span class="c1"># Write list of segments</span>
+    <span class="n">seg_list</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([</span><span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">seg_start</span><span class="p">,</span> <span class="n">seg_ends</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">seg_start</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seg_starts</span><span class="p">)])</span>
+
+    <span class="c1"># Write segment_dict in proper format</span>
+    <span class="c1"># At the moment of this comment, there is only one segment</span>
+    <span class="n">segment_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">slide</span><span class="p">:</span> <span class="n">seg_list</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span> <span class="k">for</span> <span class="n">slide</span> <span class="ow">in</span> <span class="n">slide_ids</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">segment_dict</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Construct the trials from the timeslides, segments, and vetoes</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="construct_trials">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.construct_trials">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_trials</span><span class="p">(</span><span class="n">seg_files</span><span class="p">,</span> <span class="n">seg_dict</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">slide_dict</span><span class="p">,</span> <span class="n">veto_file</span><span class="p">,</span>
+                     <span class="n">hide_onsource</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs trials from segments, timeslides, and vetoes&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Constructing trials.&quot;</span><span class="p">)</span>
+    <span class="n">trial_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Get segments</span>
+    <span class="n">segs</span> <span class="o">=</span> <span class="n">_read_seg_files</span><span class="p">(</span><span class="n">seg_files</span><span class="p">)</span>
+
+    <span class="c1"># Separate segments</span>
+    <span class="n">trial_time</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">segs</span><span class="p">[</span><span class="s1">&#39;on&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Determine the veto segments</span>
+    <span class="n">vetoes</span> <span class="o">=</span> <span class="n">_extract_vetoes</span><span class="p">(</span><span class="n">veto_file</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">segs</span><span class="p">[</span><span class="s1">&#39;off&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Slide vetoes over trials: this can only *reduce* the analysis time</span>
+    <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">:</span>
+        <span class="n">curr_seg_list</span> <span class="o">=</span> <span class="n">seg_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span>
+
+        <span class="c1"># Fill in the buffer segment list if the onsource data must be hidden</span>
+        <span class="n">seg_buffer</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">hide_onsource</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                <span class="n">slide_offset</span> <span class="o">=</span> <span class="n">slide_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">][</span><span class="n">ifo</span><span class="p">]</span>
+                <span class="n">seg_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">segs</span><span class="p">[</span><span class="s1">&#39;buffer&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span>
+                                                   <span class="n">slide_offset</span><span class="p">,</span>
+                                                   <span class="n">segs</span><span class="p">[</span><span class="s1">&#39;buffer&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span>
+                                                   <span class="n">slide_offset</span><span class="p">))</span>
+            <span class="n">seg_buffer</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+
+        <span class="c1"># Construct the ifo-indexed dictionary of slid veteoes</span>
+        <span class="n">slid_vetoes</span> <span class="o">=</span> <span class="n">_slide_vetoes</span><span class="p">(</span><span class="n">vetoes</span><span class="p">,</span> <span class="n">slide_dict</span><span class="p">,</span> <span class="n">slide_id</span><span class="p">,</span> <span class="n">ifos</span><span class="p">)</span>
+
+        <span class="c1"># Construct trial list and check against buffer</span>
+        <span class="n">trial_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">curr_seg</span> <span class="ow">in</span> <span class="n">curr_seg_list</span><span class="p">:</span>
+            <span class="n">iter_int</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">trial_end</span> <span class="o">=</span> <span class="n">curr_seg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">trial_time</span><span class="o">*</span><span class="n">iter_int</span>
+                <span class="k">if</span> <span class="n">trial_end</span> <span class="o">&gt;</span> <span class="n">curr_seg</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">break</span>
+                <span class="n">curr_trial</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">trial_end</span> <span class="o">-</span> <span class="n">trial_time</span><span class="p">,</span>
+                                              <span class="n">trial_end</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">seg_buffer</span><span class="o">.</span><span class="n">intersects_segment</span><span class="p">(</span><span class="n">curr_trial</span><span class="p">):</span>
+                    <span class="n">intersect</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">slid_vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span>
+                                           <span class="n">intersects_segment</span><span class="p">(</span><span class="n">curr_trial</span><span class="p">)</span>
+                                           <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">intersect</span><span class="p">:</span>
+                        <span class="n">trial_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_trial</span><span class="p">)</span>
+
+                <span class="n">iter_int</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">total_trials</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">trial_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">])</span> <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> trials generated.&quot;</span><span class="p">,</span> <span class="n">total_trials</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trial_dict</span><span class="p">,</span> <span class="n">total_trials</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Find max and median of loudest SNRs or BestNRs</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="sort_stat">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.sort_stat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sort_stat</span><span class="p">(</span><span class="n">time_veto_max_stat</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sort a dictionary of loudest SNRs/BestNRs&quot;&quot;&quot;</span>
+
+    <span class="n">full_time_veto_max_stat</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">time_veto_max_stat</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">full_time_veto_max_stat</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">full_time_veto_max_stat</span><span class="p">)</span>
+    <span class="n">full_time_veto_max_stat</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">full_time_veto_max_stat</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Find max and median of loudest SNRs or BestNRs</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="max_median_stat">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.max_median_stat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">max_median_stat</span><span class="p">(</span><span class="n">slide_dict</span><span class="p">,</span> <span class="n">time_veto_max_stat</span><span class="p">,</span> <span class="n">trig_stat</span><span class="p">,</span> <span class="n">total_trials</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return maximum and median of trig_stat and sorted time_veto_max_stat&quot;&quot;&quot;</span>
+
+    <span class="n">max_stat</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">trig_stat</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">if</span> <span class="n">trig_stat</span><span class="p">[</span><span class="n">slide_id</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+                   <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="n">slide_dict</span><span class="p">)</span>
+
+    <span class="n">full_time_veto_max_stat</span> <span class="o">=</span> <span class="n">sort_stat</span><span class="p">(</span><span class="n">time_veto_max_stat</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">total_trials</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">median_stat</span> <span class="o">=</span> <span class="n">full_time_veto_max_stat</span><span class="p">[(</span><span class="n">total_trials</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">median_stat</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">full_time_veto_max_stat</span><span class="p">)</span>
+                                 <span class="p">[</span><span class="n">total_trials</span><span class="o">//</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span> <span class="n">total_trials</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">max_stat</span><span class="p">,</span> <span class="n">median_stat</span><span class="p">,</span> <span class="n">full_time_veto_max_stat</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to determine calibration and waveform errors for injection sets</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="mc_cal_wf_errs">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.mc_cal_wf_errs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mc_cal_wf_errs</span><span class="p">(</span><span class="n">num_mc_injs</span><span class="p">,</span> <span class="n">inj_dists</span><span class="p">,</span> <span class="n">cal_err</span><span class="p">,</span> <span class="n">wf_err</span><span class="p">,</span> <span class="n">max_dc_cal_err</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Includes calibration and waveform errors by running an MC&quot;&quot;&quot;</span>
+
+    <span class="c1"># The efficiency calculations include calibration and waveform</span>
+    <span class="c1"># errors incorporated by running over each injection num_mc_injs times,</span>
+    <span class="c1"># where each time we draw a random value of distance.</span>
+
+    <span class="n">num_injs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inj_dists</span><span class="p">)</span>
+
+    <span class="n">inj_dist_mc</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="p">((</span><span class="n">num_mc_injs</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_injs</span><span class="p">))</span>
+    <span class="n">inj_dist_mc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">inj_dists</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_mc_injs</span><span class="p">):</span>
+        <span class="n">cal_dist_red</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">num_injs</span><span class="p">)</span> <span class="o">*</span> <span class="n">cal_err</span>
+        <span class="n">wf_dist_red</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">num_injs</span><span class="p">)</span> <span class="o">*</span> <span class="n">wf_err</span><span class="p">)</span>
+        <span class="n">inj_dist_mc</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">inj_dists</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_dc_cal_err</span> <span class="o">*</span>
+                                           <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">cal_dist_red</span><span class="p">)</span> <span class="o">*</span>
+                                           <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">wf_dist_red</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">inj_dist_mc</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to calculate the coincident SNR</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_coinc_snr">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.get_coinc_snr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_coinc_snr</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Calculate coincident SNR using coherent and null SNRs&quot;&quot;&quot;</span>
+
+    <span class="n">coinc_snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="k">if</span> <span class="s1">&#39;network/coherent_snr&#39;</span> <span class="ow">in</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> \
+            <span class="s1">&#39;network/null_snr&#39;</span> <span class="ow">in</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">coh_snr_sq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="p">[</span><span class="s1">&#39;network/coherent_snr&#39;</span><span class="p">][:])</span>
+        <span class="n">null_snr_sq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="p">[</span><span class="s1">&#39;network/null_snr&#39;</span><span class="p">][:])</span>
+        <span class="n">coinc_snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">coh_snr_sq</span> <span class="o">+</span> <span class="n">null_snr_sq</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">coinc_snr</span></div>
+
+
+
+<div class="viewcode-block" id="template_hash_to_id">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_postprocessing_utils.template_hash_to_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">template_hash_to_id</span><span class="p">(</span><span class="n">trigger_file</span><span class="p">,</span> <span class="n">bank_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function converts the template hashes from a trigger file</span>
+<span class="sd">    into &#39;template_id&#39;s that represent indices of the</span>
+<span class="sd">    templates within the bank.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trigger_file: HFile object for trigger file</span>
+<span class="sd">    bank_file: filepath for template bank</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigger_file</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;network&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;/template_hash&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trigger_file</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">HFile</span><span class="p">(</span><span class="n">bank_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">bank</span><span class="p">:</span>
+        <span class="n">hashes</span> <span class="o">=</span> <span class="n">bank</span><span class="p">[</span><span class="s1">&#39;template_hash&#39;</span><span class="p">][:]</span>
+    <span class="n">trig_hashes</span> <span class="o">=</span> <span class="n">trigger_file</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">/template_hash&#39;</span><span class="p">][:]</span>
+    <span class="n">trig_ids</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">trig_hashes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">t_hash</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hashes</span><span class="p">):</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">trig_hashes</span> <span class="o">==</span> <span class="n">t_hash</span><span class="p">)</span>
+        <span class="n">trig_ids</span><span class="p">[</span><span class="n">matches</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+    <span class="k">return</span> <span class="n">trig_ids</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

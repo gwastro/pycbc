@@ -1,0 +1,421 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc_make_inference_inj_workflow: A parameter estimation workflow generator for injections &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Sampler API" href="../inference/sampler_api.html" />
+    <link rel="prev" title="pycbc_make_inference_workflow: A parameter estimation workflow generator" href="pycbc_make_inference_workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../inference.html#workflows">Workflows</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pycbc_make_inference_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_workflow</span></code>: A parameter estimation workflow generator</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_inj_workflow</span></code>: A parameter estimation workflow generator for injections</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example-bbh-injections-with-dynesty">Example: BBH injections with <code class="docutils literal notranslate"><span class="pre">dynesty</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active"><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_inj_workflow</span></code>: A parameter estimation workflow generator for injections</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/pycbc_make_inference_inj_workflow.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-make-inference-inj-workflow-a-parameter-estimation-workflow-generator-for-injections">
+<h1><code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_inj_workflow</span></code>: A parameter estimation workflow generator for injections<a class="headerlink" href="#pycbc-make-inference-inj-workflow-a-parameter-estimation-workflow-generator-for-injections" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The executable <code class="docutils literal notranslate"><span class="pre">pycbc_make_inference_inj_workflow</span></code> is a workflow generator to
+setup a parameter estimation analysis on one or more simulated signals.
+Optionally, it can also run a percentile-percentile on the injections it
+analyzed.</p>
+<p>The workflow is very similar to the standard inference workflow created by
+<a class="reference external" href="pycbc_make_inference_workflow">pycbc_make_inference_workflow</a>. The main
+differences are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Rather than providing one or more <code class="docutils literal notranslate"><span class="pre">[event-{label}]</span></code> sections in the
+workflow config file, you provide a single <code class="docutils literal notranslate"><span class="pre">[workflow-inference]</span></code> section.
+The syntax for this section is very similar to the <code class="docutils literal notranslate"><span class="pre">[event]</span></code> section(s) in
+the standard workflow, as it sets the configuration files that are used
+by <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>. The difference is that the same settings are used
+for all injections.</p></li>
+<li><p>When you create the workflow, you either pass it a <code class="docutils literal notranslate"><span class="pre">--num-injections</span></code>
+or a <code class="docutils literal notranslate"><span class="pre">--injection-file</span></code>. If the former, the workflow will draw the
+specified number of injections from the prior given to <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>
+and analyze them. If the latter, the workflow will analyze the injections
+specified in the given injection file. The file must be an HDF file;
+see <code class="docutils literal notranslate"><span class="pre">pycbc_create_injections</span></code> for details. In either case, each injection
+is treated as an independent event, with its own summary section in the
+results page.</p></li>
+<li><p>You may optionally have the workflow do a percentile-percentile test on
+the injections. You do this by adding the necessary executables and
+corresponding sections to the <code class="docutils literal notranslate"><span class="pre">workflow_config.ini</span></code> file. See the example
+below for details. If a percentile-percentile test is done, the results
+page will have an additional tab that gives a summary of the PP test on
+all of the parameters, as well as PP plots and plots of injected versus
+recoverd values.</p></li>
+<li><p>It is recommend (though not required) that you add
+<code class="docutils literal notranslate"><span class="pre">plot-injection-parameters</span></code> to the <code class="docutils literal notranslate"><span class="pre">[plot_posterior]</span></code> and
+<code class="docutils literal notranslate"><span class="pre">[plot_posterior_summary]</span></code> sections. Doing so will cause redlines to
+be plotted at the injected parameter values on the posterior plots, so
+that you may visually inspect how well the injected values are recovered.
+This may also require providing an <code class="docutils literal notranslate"><span class="pre">injection-samples-map</span></code> argument.
+See the example file below for details.</p></li>
+</ul>
+</div></blockquote>
+<p>In the <a class="reference external" href="pycbc_make_inference_workflow">standard workflow</a> we used two
+workflow configuration files, a <code class="docutils literal notranslate"><span class="pre">workflow_config.ini</span></code> and an <code class="docutils literal notranslate"><span class="pre">events.ini</span></code>.
+For the injection workflow, we can use the same <code class="docutils literal notranslate"><span class="pre">workflow_config.ini</span></code>; we
+just need to setup an <code class="docutils literal notranslate"><span class="pre">injections_config.ini</span></code> to add the needed sections
+and arguments for the injections workflow.</p>
+<p>In the example below, we demonstrate how to use the injections workflow
+using the same prior and sampler settings as given in the
+<a class="reference external" href="pycbc_make_inference_workflow">standard workflow</a> example.</p>
+</section>
+<section id="example-bbh-injections-with-dynesty">
+<h2>Example: BBH injections with <code class="docutils literal notranslate"><span class="pre">dynesty</span></code><a class="headerlink" href="#example-bbh-injections-with-dynesty" title="Link to this heading"></a></h2>
+<p>In this example we use the same prior and sampler settings as the example
+of analyzing GW150914 and GW170814 in the
+<a class="reference external" href="pycbc_make_inference_workflow">pycbc_make_inference_workflow</a>
+documentation. We will analyze 10 injections, and do a percentile-percentile
+test on them. (This is only as an example. To do a full PP test, we recommend
+using at least 100 injections.)</p>
+<section id="get-the-inference-configuration-files">
+<h3>Get the inference configuration files<a class="headerlink" href="#get-the-inference-configuration-files" title="Link to this heading"></a></h3>
+<p>We can use the same
+<a class="reference download internal" download="" href="../_downloads/d205631f1625389c6b67350c2db9a26e/bbh-uniform_comoving_volume.ini"><code class="xref download docutils literal notranslate"><span class="pre">prior</span></code></a>,
+<a class="reference download internal" download="" href="../_downloads/0fd41f1f8236d85bd2e6fa3106697fe7/marginalized_phase.ini"><code class="xref download docutils literal notranslate"><span class="pre">model</span></code></a>,
+and <a class="reference download internal" download="" href="../_downloads/ba3e77b56722b3347718ce2474cc659a/dynesty.ini"><code class="xref download docutils literal notranslate"><span class="pre">sampler</span></code></a>
+configuration files as used in the
+<a class="reference external" href="pycbc_make_inference_workflow">pycbc_make_inference_workflow</a> example.
+However, instead of analyzing O1 or O2 data, we will create fake Gaussian
+noise. To do that, we will use the
+<a class="reference download internal" download="" href="../_downloads/c52aede3bdd122cab25845b644d071cc/data.ini"><code class="xref download docutils literal notranslate"><span class="pre">data.ini</span></code></a> file
+used for the <a class="reference external" href="../inference/examples/bbh">BBH simulation example</a>.</p>
+</section>
+<section id="setup-the-workflow-configuration-file">
+<h3>Setup the workflow configuration file<a class="headerlink" href="#setup-the-workflow-configuration-file" title="Link to this heading"></a></h3>
+<p>As discussed above, we can use the same <a class="reference download internal" download="" href="../_downloads/760e775b293160b7541f556c441151f5/workflow_config.ini"><code class="xref download docutils literal notranslate"><span class="pre">workflow</span> <span class="pre">configuration</span> <span class="pre">file</span></code></a> as used in
+the <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> example in the standard workflow. We need to create
+an <code class="docutils literal notranslate"><span class="pre">injections_config.ini</span></code> file to go along with the <code class="docutils literal notranslate"><span class="pre">workflow_config.ini</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[workflow-inference]</span>
+<span class="c1">; The inference configuration file(s) and any overrides to use for all of the</span>
+<span class="c1">; injections.</span>
+<span class="c1">; If no injection file is provided on the command line, injections will be</span>
+<span class="c1">; drawn from the prior specified in the inference config file</span>
+<span class="na">config-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">bbh-uniform_comoving_volume.ini</span>
+<span class="w">               </span><span class="na">marginalized_phase.ini</span>
+<span class="w">               </span><span class="na">dynesty.ini</span>
+<span class="w">               </span><span class="na">data.ini</span>
+<span class="c1">; As with events sections in the standard workflow, you can specify</span>
+<span class="c1">; config-overrides for the above file(s). Here, we will change the prior from</span>
+<span class="c1">; uniform in comoving volume to uniform in the log10 of the comoving volume.</span>
+<span class="c1">; We&#39;ll do this so as to get a distribution of injections with appreciable</span>
+<span class="c1">; SNR. (A uniform in comoving volume prior leads to most of the injections</span>
+<span class="c1">; having SNR &lt; 7, and so we mostly end up seeing prior-in, prior-out.)</span>
+<span class="na">config-overrides</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">prior-comoving_volume:name:uniform_log10</span>
+<span class="c1">; Optionally, you may also specify the number of times to run inference on</span>
+<span class="c1">; each injection by setting nruns. Each run will use different random seeds,</span>
+<span class="c1">; and samples from the runs will be combined into a single posterior file for</span>
+<span class="c1">; each injection. Not setting this is equivalent to nruns = 1</span>
+<span class="c1">;nruns = 1</span>
+
+<span class="c1">; For the injection workflow, we need to add an executable to create the</span>
+<span class="c1">; injections. Optionally, we may also add executables to perform</span>
+<span class="c1">; percentile-percentile (pp) tests.</span>
+<span class="k">[executables]</span>
+<span class="na">create_injections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${which:pycbc_create_injections}</span>
+<span class="c1">; Executables for percentile-percentile test. These are optional. If you do</span>
+<span class="c1">; not include them in this section, no PP test will be done. If you do</span>
+<span class="c1">; include them, all 3 must be included.</span>
+<span class="na">pp_table_summary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${which:pycbc_inference_pp_table_summary}</span>
+<span class="na">plot_pp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${which:pycbc_inference_plot_pp}</span>
+<span class="na">inj_recovery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${which:pycbc_inference_plot_inj_recovery}</span>
+<span class="c1">; We do not need to provide any of the other executables since they are</span>
+<span class="c1">; specified in workflow_config.ini. When this file is combined with</span>
+<span class="c1">; workflow_config.ini, these options are automatically added to the</span>
+<span class="c1">; [executables] section in that file.</span>
+
+
+<span class="k">[workflow-pp_test]</span>
+<span class="c1">; Since we have included the executables to make the PP plots, we need to</span>
+<span class="c1">; provide this section.</span>
+<span class="c1">; The pp-params option specifies what parameters to perform the percentile-</span>
+<span class="c1">; percentile test on. If you do not provide anything, all parameters</span>
+<span class="c1">; in the posterior file will be used (that is set by the parameters</span>
+<span class="c1">; argument in the [extract_posterior] section in workflow_config.ini). A</span>
+<span class="c1">; p-value of p-values will be calculated for all parameters and reported</span>
+<span class="c1">; in the summary table on the Percentile-Percentile table of the results</span>
+<span class="c1">; page. We therefore do not want to include all parameters in the posterior</span>
+<span class="c1">; file, since we have added parameters that are derived from the others in</span>
+<span class="c1">; [extract_posterior] section. For this reason, we manually list all the</span>
+<span class="c1">; parameters we want to do the pp test on here:</span>
+<span class="na">pp-params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">delta_tc srcmass1 srcmass2 spin1_a spin1_azimuthal spin1_polar</span>
+<span class="w">            </span><span class="na">spin2_a spin2_azimuthal spin2_polar distance inclination</span>
+<span class="w">            </span><span class="na">polarization ra dec</span>
+<span class="c1">; In order to do the PP test, the code needs to know what parameters in the</span>
+<span class="c1">; posterior correspond to which injection parameters. Since we have applied</span>
+<span class="c1">; some functions to the samples parameters when creating the posterior file</span>
+<span class="c1">; (again, refer to the [extract_posterior] section in workflow_config.ini),</span>
+<span class="c1">; the mapping between posterior parameters and injection parameters is no</span>
+<span class="c1">; longer a 1:1. To tell the code how to map from the injections parameters</span>
+<span class="c1">; the posterior parameters, we provide the following injection-samples-map.</span>
+<span class="c1">; We can just copy most of the parameters argument from the [extract_posterior]</span>
+<span class="c1">; section for this (we can&#39;t just do a reference because the wildcard (*) that</span>
+<span class="c1">; is there is not understood by the injection-samples-map option.</span>
+<span class="na">injection-samples-map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&#39;primary_mass(srcmass1, srcmass2):srcmass1&#39;</span>
+<span class="w">             </span><span class="na">&#39;secondary_mass(srcmass1, srcmass2)</span><span class="o">:</span><span class="s">srcmass2&#39;</span>
+<span class="w">             </span><span class="na">&#39;primary_spin(srcmass1, srcmass2, spin1_a, spin2_a)</span><span class="o">:</span><span class="s">spin1_a&#39;</span>
+<span class="w">             </span><span class="na">&#39;primary_spin(srcmass1, srcmass2, spin1_azimuthal, spin2_azimuthal)</span><span class="o">:</span><span class="s">spin1_azimuthal&#39;</span>
+<span class="w">             </span><span class="na">&#39;primary_spin(srcmass1, srcmass2, spin1_polar, spin2_polar)</span><span class="o">:</span><span class="s">spin1_polar&#39;</span>
+<span class="w">             </span><span class="na">&#39;secondary_spin(srcmass1, srcmass2, spin1_a, spin2_a)</span><span class="o">:</span><span class="s">spin2_a&#39;</span>
+<span class="w">             </span><span class="na">&#39;secondary_spin(srcmass1, srcmass2, spin1_azimuthal, spin2_azimuthal)</span><span class="o">:</span><span class="s">spin2_azimuthal&#39;</span>
+<span class="w">             </span><span class="na">&#39;secondary_spin(srcmass1, srcmass2, spin1_polar, spin2_polar)</span><span class="o">:</span><span class="s">spin2_polar&#39;</span>
+<span class="w">             </span><span class="na">&#39;mchirp_from_mass1_mass2(srcmass1, srcmass2)</span><span class="o">:</span><span class="s">srcmchirp&#39;</span>
+<span class="w">             </span><span class="na">&#39;chi_eff_from_spherical(srcmass1, srcmass2, spin1_a, spin1_polar, spin2_a, spin2_polar)</span><span class="o">:</span><span class="s">chi_eff&#39;</span>
+<span class="w">             </span><span class="na">&#39;chi_p_from_spherical(srcmass1, srcmass2, spin1_a, spin1_azimuthal, spin1_polar, spin2_a, spin2_azimuthal, spin2_polar)</span><span class="o">:</span><span class="s">chi_p&#39;</span>
+<span class="w">             </span><span class="na">&#39;redshift_from_comoving_volume(comoving_volume)</span><span class="o">:</span><span class="s">redshift&#39;</span>
+<span class="w">             </span><span class="na">&#39;distance_from_comoving_volume(comoving_volume)</span><span class="o">:</span><span class="s">distance&#39;</span>
+<span class="c1">; Notice that we can provide more parameters to the injection-samples-map then</span>
+<span class="c1">; what we will be using in the PP test. This is fine, extra parameters are</span>
+<span class="c1">; just ignored. By providing all of the parameters here, we can re-use this</span>
+<span class="c1">; argument for the posterior plots (see below).</span>
+
+<span class="k">[create_injections]</span>
+<span class="c1">; Options for the create_injections executable. Do not provide a config file</span>
+<span class="c1">; nor the number of injections to create here. The inference</span>
+<span class="c1">; config file is used for generating injections, and the number is determined</span>
+<span class="c1">; by the command-line options given to make_inference_inj_workflow</span>
+
+<span class="k">[plot_posterior_summary]</span>
+<span class="c1">; Adding plot-injection-parameters will cause a red line to be plotted on</span>
+<span class="c1">; the posterior plots showing the injection parameters.</span>
+<span class="na">plot-injection-parameters</span><span class="w"> </span><span class="o">=</span>
+<span class="c1">; In order for the redline to be plotted in the right place, we have to</span>
+<span class="c1">; provide an injection samples map. We can just use what was used in the</span>
+<span class="c1">; workflow-pp_test section.</span>
+<span class="na">injection-samples-map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${workflow-pp_test|injection-samples-map}</span>
+<span class="c1">; We do not need to provide any arguments, as the rest are set in</span>
+<span class="c1">; workflow_config.ini.</span>
+
+<span class="k">[plot_posterior]</span>
+<span class="c1">; Do the same for the full corner plots.</span>
+<span class="na">plot-injection-parameters</span><span class="w"> </span><span class="o">=</span>
+<span class="na">injection-samples-map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${workflow-pp_test|injection-samples-map}</span>
+<span class="c1">; We do not need to provide any arguments, as the rest are set in</span>
+<span class="c1">; workflow_config.ini.</span>
+
+<span class="k">[pp_table_summary]</span>
+<span class="c1">; command line options for percentile-percentile table summary</span>
+<span class="c1">; do not provide parameters or injection-samples map here, as that is read</span>
+<span class="c1">; from the [workflow-pp_test] section</span>
+
+<span class="k">[plot_pp]</span>
+<span class="c1">; command line options for percentile-percentile plot</span>
+<span class="c1">; do not provide parameters or injection-samples map here, as that is read</span>
+<span class="c1">; from the [workflow-pp_test] section</span>
+
+<span class="k">[inj_recovery]</span>
+<span class="c1">; command line options for injection recovery plots</span>
+<span class="c1">; do not provide parameters or injection-samples map here, as that is read</span>
+<span class="c1">; from the [workflow-pp_test] section</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../_downloads/7f8d58c639fb4cc275959516ff119eec/injections_config.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</section>
+<section id="generate-the-workflow">
+<h3>Generate the workflow<a class="headerlink" href="#generate-the-workflow" title="Link to this heading"></a></h3>
+<p>Assuming that you have downloaded all of the configuration files to the
+same directory, you can generate the workflow by running the following script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="w"> </span>-e
+
+<span class="nv">WORKFLOW_NAME</span><span class="o">=</span>bbh_injections-dynesty
+<span class="c1"># Set the HTML_DIR to point to your public html page. This is where the results</span>
+<span class="c1"># page will be written.</span>
+<span class="nv">HTML_DIR</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">HTML_DIR</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Please set an HTML_DIR&quot;</span>
+<span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<span class="k">fi</span>
+<span class="nv">SEED</span><span class="o">=</span><span class="m">983124</span>
+<span class="c1"># Set the number of injections to create. For a full PP test, we suggest using</span>
+<span class="c1"># 100.</span>
+<span class="nv">NINJ</span><span class="o">=</span><span class="m">10</span>
+pycbc_make_inference_inj_workflow<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="si">${</span><span class="nv">SEED</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--num-injections<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-files<span class="w"> </span>workflow_config.ini<span class="w"> </span>injections_config.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--workflow-name<span class="w"> </span><span class="si">${</span><span class="nv">WORKFLOW_NAME</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-overrides<span class="w"> </span>results_page:output-path:<span class="si">${</span><span class="nv">HTML_DIR</span><span class="si">}</span>/<span class="si">${</span><span class="nv">WORKFLOW_NAME</span><span class="si">}</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../_downloads/5764f3018b9c87223974259998419897/create_inj_workflow.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Note that you need to set the <code class="docutils literal notranslate"><span class="pre">HTML_DIR</span></code> before running. This tells the
+workflow where to save the results page when done. You can also change
+<code class="docutils literal notranslate"><span class="pre">WORKFLOW_NAME</span></code> if you like.</p>
+<p>You should also change the <code class="docutils literal notranslate"><span class="pre">SEED</span></code> everytime you create a different workflow.
+This sets the seed that is passed to <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> (you set it here
+because it will be incremented for every <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> job that will be
+run in the workflow).</p>
+<p>After the workflow has finished it will have created a directory named
+<code class="docutils literal notranslate"><span class="pre">${WORKFLOW_NAME}-output</span></code>. This contains the <code class="docutils literal notranslate"><span class="pre">dax</span></code> and all necessary files
+to run the workflow.</p>
+</section>
+<section id="plan-and-execute-the-workflow">
+<h3>Plan and execute the workflow<a class="headerlink" href="#plan-and-execute-the-workflow" title="Link to this heading"></a></h3>
+<p>You can either submit the workflow immediately using the <code class="docutils literal notranslate"><span class="pre">--submit-now</span></code> option
+or generate it, and then use the <code class="docutils literal notranslate"><span class="pre">./start</span></code> executable generated in the output directory.</p>
+<p>If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, add it
+to your config files. <code class="docutils literal notranslate"><span class="pre">request_disk</span></code> and <code class="docutils literal notranslate"><span class="pre">request_memory</span></code> may also be required.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">accounting_group</span> <span class="o">=</span> <span class="n">accounting</span><span class="o">.</span><span class="n">tag</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_disk</span> <span class="o">=</span> <span class="mi">1024</span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">${ACCOUNTING_GROUP}</span></code> is the appropriate tag for your workflow.</p>
+<p>Once it is running, you can monitor the status of the workflow by running
+<code class="docutils literal notranslate"><span class="pre">./status</span></code> from within the <code class="docutils literal notranslate"><span class="pre">${WORKFLOW_NAME}-output</span></code> directory. If your
+workflow fails for any reason, you can see what caused the failure by running
+<code class="docutils literal notranslate"><span class="pre">./debug</span></code>. If you need to stop the workflow at any point, run <code class="docutils literal notranslate"><span class="pre">./stop</span></code>.
+To resume a workflow, run <code class="docutils literal notranslate"><span class="pre">./start</span></code>. If the <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> jobs were
+still running, and they had checkpointed, they will resume from their last
+checkpoint upon restart.</p>
+</section>
+<section id="results-page">
+<h3>Results page<a class="headerlink" href="#results-page" title="Link to this heading"></a></h3>
+<p>When the workflow has completed successfully it will write out the results
+page to the directory you specified in the <code class="docutils literal notranslate"><span class="pre">create_inj_workflow.sh</span></code> script.
+You can see what the result page will look like <a class="reference external" href="https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/bbh_injections-dynesty/">here</a>.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc_make_inference_workflow.html" class="btn btn-neutral float-left" title="pycbc_make_inference_workflow: A parameter estimation workflow generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../inference/sampler_api.html" class="btn btn-neutral float-right" title="Sampler API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,449 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.decompress_cupy &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.decompress_cupy</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.decompress_cupy</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2024  The PyCBC team</span>
+
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mako.template</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span>
+
+<span class="c1"># The interpolation is the result of the call of two kernels.</span>
+<span class="c1">#</span>
+<span class="c1"># The first, find_block_indices(), will find the correct upper</span>
+<span class="c1"># and lower indices into the frequency texture for each thread</span>
+<span class="c1"># block in the second kernel. These are placed into global memory,</span>
+<span class="c1"># as that is the only way to communicate between kernels. The</span>
+<span class="c1"># indices are found by binary search on the sample frequencies</span>
+<span class="c1"># texture.</span>
+<span class="c1">#</span>
+<span class="c1"># The second kernel, linear_interp, takes these upper and lower</span>
+<span class="c1"># bounds, the texture of freqency samples, and textures containing</span>
+<span class="c1"># values of the amplitude and phase at those frequencies, and fills</span>
+<span class="c1"># an array with the (complex) value of the interpolated waveform.</span>
+<span class="c1">#</span>
+<span class="c1"># The three interpolation arrays (node locations, amplitude values,</span>
+<span class="c1"># and phase values) are stored as 1D textures on the GPU, because many</span>
+<span class="c1"># threads will need to read them concurrently but never write them, and</span>
+<span class="c1"># the access pattern of a binary search precludes guaranteeing that</span>
+<span class="c1"># sequential threads will access sequential memory locations.</span>
+
+<span class="n">kernel_sources</span> <span class="o">=</span> <span class="n">Template</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">#include &lt;cuda_runtime.h&gt;</span>
+<span class="s2">#include &lt;device_launch_parameters.h&gt;     </span>
+
+<span class="s2">__device__ int binary_search(float freq, int lower, int upper, const float* freq_tex){</span>
+
+<span class="s2">    /*</span>
+
+<span class="s2">       Input parameters:</span>
+<span class="s2">       =================</span>
+
+<span class="s2">       freq:  The target frequency</span>
+
+<span class="s2">       lower: The index into the frequency texture at which</span>
+<span class="s2">              to start the search</span>
+
+<span class="s2">       upper: The index into the frequency texture at which</span>
+<span class="s2">              to end the search</span>
+<span class="s2">       freq_tex: The frequency values array</span>
+
+<span class="s2">       Return value:</span>
+<span class="s2">       =============</span>
+<span class="s2">       The largest index into the frequency texture for</span>
+<span class="s2">       which the value of the texture at that index is less</span>
+<span class="s2">       than or equal to the target frequency &#39;freq&#39;.</span>
+
+<span class="s2">     */</span>
+
+<span class="s2">    int begin = lower;</span>
+<span class="s2">    int end = upper;</span>
+
+<span class="s2">    while (begin != end){</span>
+<span class="s2">        int mid = (begin + end)/2;</span>
+<span class="s2">        float fcomp = freq_tex[mid];</span>
+<span class="s2">        if (fcomp &lt;= freq){</span>
+<span class="s2">          begin = mid+1;</span>
+<span class="s2">        } else {</span>
+<span class="s2">          end = mid;</span>
+<span class="s2">        }</span>
+<span class="s2">    }</span>
+
+<span class="s2">    return begin - 1;</span>
+<span class="s2">}</span>
+
+
+<span class="s2">extern &quot;C&quot; __global__ void find_block_indices(</span>
+<span class="s2">    int *lower, int *upper, int texlen, float df, float flow, const float *freq_tex){</span>
+
+<span class="s2">    /*</span>
+
+<span class="s2">      Input parameters:</span>
+<span class="s2">      =================</span>
+
+<span class="s2">      texlen: The length of the sample frequency texture</span>
+
+<span class="s2">      df:     The difference between successive frequencies in the</span>
+<span class="s2">              output array</span>
+
+<span class="s2">      flow:   The minimum frequency at which to generate an interpolated</span>
+<span class="s2">              waveform</span>
+
+<span class="s2">      Global variable:</span>
+<span class="s2">      ===================</span>
+
+<span class="s2">      freq_tex: Texture of sample frequencies (its length is texlen)</span>
+
+<span class="s2">      Output parameters:</span>
+<span class="s2">      ==================</span>
+
+<span class="s2">      lower: array of indices, one per thread block, of the lower</span>
+<span class="s2">             limit for each block within the frequency arrays.</span>
+
+<span class="s2">      upper: array of indices, one per thread block, of the upper</span>
+<span class="s2">             limit for each block within the frequency arrays.</span>
+
+<span class="s2">    */</span>
+
+<span class="s2">    // This kernel is launched with only one block; the number of</span>
+<span class="s2">    // threads will equal the number of blocks in the next kernel.</span>
+<span class="s2">    int i = threadIdx.x;</span>
+
+<span class="s2">    // We want to find the index of the smallest freqency in our</span>
+<span class="s2">    // texture which is greater than the freqency fmatch below:</span>
+
+<span class="s2">    float ffirst = i*df*$</span><span class="si">{ntpb}</span><span class="s2">;</span>
+<span class="s2">    float flast = (i+1)*df*$</span><span class="si">{ntpb}</span><span class="s2">-df;</span>
+<span class="s2">    if (ffirst &lt; flow){</span>
+<span class="s2">       ffirst = flow;</span>
+<span class="s2">    }</span>
+
+<span class="s2">    lower[i] = binary_search(ffirst, 0, texlen, freq_tex);</span>
+<span class="s2">    upper[i] = binary_search(flast, 0, texlen, freq_tex) + 1;</span>
+
+<span class="s2">    return;</span>
+<span class="s2">}</span>
+
+
+<span class="s2">extern &quot;C&quot; __global__ void linear_interp(</span>
+<span class="s2">    float2 *h, float df, int hlen, float flow, float fmax, int texlen,</span>
+<span class="s2">    const float *freq_tex, const float *amp_tex, const float *phase_tex,                    </span>
+<span class="s2">    const int *lower, const int *upper){</span>
+
+<span class="s2">    /*</span>
+
+<span class="s2">      Input parameters:</span>
+<span class="s2">      =================</span>
+
+<span class="s2">      df:     The difference between successive frequencies in the</span>
+<span class="s2">              output array</span>
+
+<span class="s2">      hlen:   The length of the output array</span>
+
+<span class="s2">      flow:   The minimum frequency at which to generate an interpolated</span>
+<span class="s2">              waveform</span>
+
+<span class="s2">      fmax:   The maximum frequency in the sample frequency texture; i.e.,</span>
+<span class="s2">              freq_tex[texlen-1]</span>
+
+<span class="s2">      texlen: The common length of the three sample textures</span>
+
+<span class="s2">      lower:  Array that for each thread block stores the index into the</span>
+<span class="s2">              sample frequency array of the largest sample frequency that</span>
+<span class="s2">              is less than or equal to the smallest frequency considered</span>
+<span class="s2">              by that thread block.</span>
+
+<span class="s2">      upper:  Array that for each thread block stores the index into the</span>
+<span class="s2">              sample frequency array of the smallest sample frequency that</span>
+<span class="s2">              is greater than the next frequency considered *after* that</span>
+<span class="s2">              thread block.</span>
+
+<span class="s2">      freq_tex:  Array of sample frequencies (its length is texlen)</span>
+
+<span class="s2">      amp_tex:   Array of amplitudes corresponding to sample frequencies</span>
+
+<span class="s2">      phase_tex: Array of phases corresponding to sample frequencies</span>
+
+
+<span class="s2">      Output parameters:</span>
+<span class="s2">      ==================</span>
+
+<span class="s2">      h: array of complex</span>
+
+<span class="s2">    */</span>
+
+<span class="s2">    __shared__ int low[1];</span>
+<span class="s2">    __shared__ int high[1];</span>
+
+<span class="s2">    if (threadIdx.x == 0) {</span>
+<span class="s2">        low[0] = lower[blockIdx.x];</span>
+<span class="s2">        high[0] = upper[blockIdx.x];</span>
+<span class="s2">    }</span>
+<span class="s2">    __syncthreads();</span>
+
+<span class="s2">    int i = $</span><span class="si">{ntpb}</span><span class="s2"> * blockIdx.x + threadIdx.x;</span>
+
+<span class="s2">    if (i &lt; hlen){</span>
+
+<span class="s2">        float freq = df*i;</span>
+<span class="s2">        float2 tmp;</span>
+
+<span class="s2">        if ( (freq&lt;flow) || (freq&gt;fmax) ){</span>
+<span class="s2">          tmp.x = 0.0;</span>
+<span class="s2">          tmp.y = 0.0;</span>
+<span class="s2">        } else {</span>
+<span class="s2">          int idx = binary_search(freq, low[0], high[0], freq_tex);</span>
+<span class="s2">          float amp, phase, inv_df, x, y;</span>
+<span class="s2">          float a0, a1, f0, f1, p0, p1;</span>
+<span class="s2">          </span>
+<span class="s2">          if (idx &lt; texlen - 1) {</span>
+<span class="s2">              f0 = freq_tex[idx];</span>
+<span class="s2">              f1 = freq_tex[idx+1];</span>
+<span class="s2">              inv_df = 1.0/(f1-f0);</span>
+<span class="s2">              a0 = amp_tex[idx];</span>
+<span class="s2">              a1 = amp_tex[idx+1];</span>
+<span class="s2">              p0 = phase_tex[idx];</span>
+<span class="s2">              p1 = phase_tex[idx+1];</span>
+<span class="s2">                          </span>
+<span class="s2">              amp = a0*inv_df*(f1-freq) + a1*inv_df*(freq-f0);</span>
+<span class="s2">              phase = p0*inv_df*(f1-freq) + p1*inv_df*(freq-f0);</span>
+<span class="s2">          } else {</span>
+<span class="s2">             // We must have idx = texlen-1, so this frequency</span>
+<span class="s2">             // exactly equals fmax</span>
+<span class="s2">             amp = amp_tex[idx];</span>
+<span class="s2">             phase = phase_tex[idx];</span>
+<span class="s2">          }</span>
+<span class="s2">          __sincosf(phase, &amp;y, &amp;x);</span>
+<span class="s2">          tmp.x = amp*x;</span>
+<span class="s2">          tmp.y = amp*y;</span>
+<span class="s2">        }</span>
+
+<span class="s2">       h[i] = tmp;</span>
+<span class="s2">    }</span>
+
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">dckernel_cache</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="viewcode-block" id="get_dckernel">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.decompress_cupy.get_dckernel">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dckernel</span><span class="p">(</span><span class="n">slen</span><span class="p">):</span>
+    <span class="c1"># Right now, hardcoding the number of threads per block</span>
+    <span class="n">nt</span> <span class="o">=</span> <span class="mi">1024</span>
+    <span class="n">nb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">slen</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">nb</span> <span class="o">&gt;</span> <span class="mi">1024</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;More than 1024 blocks not supported yet&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nb</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dckernel_cache</span><span class="p">:</span>
+        <span class="n">mod</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">RawModule</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="n">kernel_sources</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ntpb</span><span class="o">=</span><span class="n">nt</span><span class="p">))</span>
+        <span class="n">fn1</span> <span class="o">=</span> <span class="n">mod</span><span class="o">.</span><span class="n">get_function</span><span class="p">(</span><span class="s2">&quot;find_block_indices&quot;</span><span class="p">)</span>
+        <span class="n">fn2</span> <span class="o">=</span> <span class="n">mod</span><span class="o">.</span><span class="n">get_function</span><span class="p">(</span><span class="s2">&quot;linear_interp&quot;</span><span class="p">)</span>
+        <span class="n">dckernel_cache</span><span class="p">[</span><span class="n">nb</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">fn1</span><span class="p">,</span> <span class="n">fn2</span><span class="p">,</span> <span class="n">nt</span><span class="p">,</span> <span class="n">nb</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dckernel_cache</span><span class="p">[</span><span class="n">nb</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="CUPYLinearInterpolate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.decompress_cupy.CUPYLinearInterpolate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CUPYLinearInterpolate</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+        <span class="n">lookups</span> <span class="o">=</span> <span class="n">get_dckernel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hlen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn1</span> <span class="o">=</span> <span class="n">lookups</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn2</span> <span class="o">=</span> <span class="n">lookups</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nt</span> <span class="o">=</span> <span class="n">lookups</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nb</span> <span class="o">=</span> <span class="n">lookups</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lower</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upper</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CUPYLinearInterpolate.interpolate">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.decompress_cupy.CUPYLinearInterpolate.interpolate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">amps</span><span class="p">,</span> <span class="n">phases</span><span class="p">):</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+        <span class="n">texlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">))</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">texlen</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">freqs_gpu</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+        <span class="n">amps_gpu</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">amps</span><span class="p">)</span>
+        <span class="n">phases_gpu</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">phases</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn1</span><span class="p">(</span>
+            <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">,</span> <span class="n">texlen</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">freqs_gpu</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn2</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb</span><span class="p">,),</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nt</span><span class="p">,),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hlen</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">texlen</span><span class="p">,</span> <span class="n">freqs_gpu</span><span class="p">,</span> <span class="n">amps_gpu</span><span class="p">,</span> <span class="n">phases_gpu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span></div>
+</div>
+
+
+<div class="viewcode-block" id="inline_linear_interp">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.decompress_cupy.inline_linear_interp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">inline_linear_interp</span><span class="p">(</span><span class="n">amps</span><span class="p">,</span> <span class="n">phases</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">imin</span><span class="p">,</span> <span class="n">start_index</span><span class="p">):</span>
+    <span class="c1"># Note that imin and start_index are ignored in the GPU code; they are only</span>
+    <span class="c1"># needed for CPU.</span>
+    <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Double precision linear interpolation not currently supported on CUDA scheme&quot;</span><span class="p">)</span>
+    <span class="n">flow</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+    <span class="n">texlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">))</span>
+    <span class="n">fmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">texlen</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">hlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+    <span class="p">(</span><span class="n">fn1</span><span class="p">,</span> <span class="n">fn2</span><span class="p">,</span> <span class="n">nt</span><span class="p">,</span> <span class="n">nb</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_dckernel</span><span class="p">(</span><span class="n">hlen</span><span class="p">)</span>
+
+    <span class="n">freqs_gpu</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span>
+    <span class="n">amps_gpu</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">amps</span><span class="p">)</span>
+    <span class="n">phases_gpu</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">phases</span><span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">g_out</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nb</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">fn1</span><span class="p">(</span>
+        <span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="p">(</span><span class="n">nb</span><span class="p">,),</span>
+        <span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">texlen</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">freqs_gpu</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">fn2</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">nb</span><span class="p">,),</span> <span class="p">(</span><span class="n">nt</span><span class="p">,),</span>
+        <span class="p">(</span><span class="n">g_out</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">hlen</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">fmax</span><span class="p">,</span> <span class="n">texlen</span><span class="p">,</span> <span class="n">freqs_gpu</span><span class="p">,</span> <span class="n">amps_gpu</span><span class="p">,</span> <span class="n">phases_gpu</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

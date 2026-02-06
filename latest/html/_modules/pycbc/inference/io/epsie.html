@@ -1,0 +1,445 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.io.epsie &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">pycbc.inference.io</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.io.epsie</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.io.epsie</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This module provides IO classes for epsie samplers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnpicklingError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">epsie</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_state</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_sampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSamplerFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_mcmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MCMCMetadataIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_multitemper</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">CommonMultiTemperedMetadataIO</span><span class="p">,</span>
+                               <span class="n">write_samples</span><span class="p">,</span>
+                               <span class="n">read_raw_samples</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="EpsieFile">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EpsieFile</span><span class="p">(</span><span class="n">MCMCMetadataIO</span><span class="p">,</span> <span class="n">CommonMultiTemperedMetadataIO</span><span class="p">,</span>
+                <span class="n">BaseSamplerFile</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to handle IO for Epsie&#39;s parallel-tempered sampler.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;epsie_file&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nchains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alias for nwalkers.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nwalkers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">betas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The betas that were used.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">][</span><span class="s1">&#39;betas&#39;</span><span class="p">][()]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">swap_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The interval that temperature swaps occurred at.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;swap_interval&#39;</span><span class="p">]</span>
+
+    <span class="nd">@swap_interval</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">swap_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">swap_interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores the swap interval to the sampler group&#39;s attrs.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;swap_interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">swap_interval</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The sampler&#39;s seed.&quot;&quot;&quot;</span>
+        <span class="c1"># convert seed from str back to int (see setter below for reason)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">])</span>
+
+    <span class="nd">@seed</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the sampler&#39;s seed.&quot;&quot;&quot;</span>
+        <span class="c1"># epsie uses the numpy&#39;s new random generators, which use long integers</span>
+        <span class="c1"># for seeds. hdf5 doesn&#39;t know how to handle long integers, so we&#39;ll</span>
+        <span class="c1"># store it as a string</span>
+        <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EpsieFile.write_sampler_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.write_sampler_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_sampler_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds writing seed and betas to MultiTemperedMCMCIO.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EpsieFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">write_sampler_metadata</span><span class="p">(</span><span class="n">sampler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s2">&quot;betas&quot;</span><span class="p">,</span> <span class="n">sampler</span><span class="o">.</span><span class="n">betas</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.thin">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.thin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thin_interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thins the samples on disk to the given thinning interval.</span>
+
+<span class="sd">        Also thins the acceptance ratio and the temperature data, both of</span>
+<span class="sd">        which are stored in the ``sampler_info`` group.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># We&#39;ll need to know what the new interval to thin by will be</span>
+        <span class="c1"># so we can properly thin the acceptance ratio and temperatures swaps.</span>
+        <span class="c1"># We need to do this before calling the base thin, as we need to know</span>
+        <span class="c1"># what the current thinned by is.</span>
+        <span class="n">new_interval</span> <span class="o">=</span> <span class="n">thin_interval</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="c1"># now thin the samples</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EpsieFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">thin</span><span class="p">(</span><span class="n">thin_interval</span><span class="p">)</span>
+        <span class="c1"># thin the acceptance ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thin_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;acceptance_ratio&#39;</span><span class="p">],</span>
+                        <span class="n">new_interval</span><span class="p">)</span>
+        <span class="c1"># thin the temperature swaps; since these may not happen every</span>
+        <span class="c1"># iteration, the thin interval we use for these is different</span>
+        <span class="n">ts_group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">,</span> <span class="s1">&#39;temperature_swaps&#39;</span><span class="p">])</span>
+        <span class="n">ts_thin_interval</span> <span class="o">=</span> <span class="n">new_interval</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">swap_interval</span>
+        <span class="k">if</span> <span class="n">ts_thin_interval</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_thin_data</span><span class="p">(</span><span class="n">ts_group</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;swap_index&#39;</span><span class="p">],</span>
+                            <span class="n">ts_thin_interval</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_thin_data</span><span class="p">(</span><span class="n">ts_group</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;acceptance_ratio&#39;</span><span class="p">],</span>
+                            <span class="n">ts_thin_interval</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.write_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.write_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Writes samples to the given file.</span>
+
+<span class="sd">        Calls :py:func:`base_multitemper.write_samples`. See that function for</span>
+<span class="sd">        details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        samples : dict</span>
+<span class="sd">            The samples to write. Each array in the dictionary should have</span>
+<span class="sd">            shape ntemps x nwalkers x niterations.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to</span>
+<span class="sd">            :py:func:`base_multitemper.write_samples`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">write_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.read_raw_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.read_raw_samples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Base function for reading samples.</span>
+
+<span class="sd">        Calls :py:func:`base_multitemper.read_raw_samples`. See that</span>
+<span class="sd">        function for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        fields : list</span>
+<span class="sd">            The list of field names to retrieve.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to</span>
+<span class="sd">            :py:func:`base_multitemper.read_raw_samples`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of field name -&gt; numpy array pairs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">read_raw_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.write_acceptance_ratio">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.write_acceptance_ratio">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_acceptance_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acceptance_ratio</span><span class="p">,</span> <span class="n">last_iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the acceptance ratios to the sampler info group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        acceptance_ratio : array</span>
+<span class="sd">            The acceptance ratios to write. Should have shape</span>
+<span class="sd">            ``ntemps x nchains x niterations``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># we&#39;ll use the write_samples machinery to write the acceptance ratios</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_samples</span><span class="p">({</span><span class="s1">&#39;acceptance_ratio&#39;</span><span class="p">:</span> <span class="n">acceptance_ratio</span><span class="p">},</span>
+                           <span class="n">last_iteration</span><span class="o">=</span><span class="n">last_iteration</span><span class="p">,</span>
+                           <span class="n">samples_group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.read_acceptance_ratio">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.read_acceptance_ratio">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_acceptance_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the acceptance ratios.</span>
+
+<span class="sd">        Ratios larger than 1 are set back to 1 before returning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        temps : (list of) int, optional</span>
+<span class="sd">            The temperature index (or a list of indices) to retrieve. If None,</span>
+<span class="sd">            acceptance ratios from all temperatures and all chains will be</span>
+<span class="sd">            retrieved.</span>
+<span class="sd">        chains : (list of) int, optional</span>
+<span class="sd">            The chain index (or a list of indices) to retrieve. If None,</span>
+<span class="sd">            ratios from all chains will be obtained.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">            Array of acceptance ratios with shape (requested temps,</span>
+<span class="sd">            requested chains, niterations).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span> <span class="o">+</span> <span class="s1">&#39;/acceptance_ratio&#39;</span>
+        <span class="k">if</span> <span class="n">chains</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wmask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wmask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">wmask</span><span class="p">[</span><span class="n">chains</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">temps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tmask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tmask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ntemps</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">tmask</span><span class="p">[</span><span class="n">temps</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">all_ratios</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="p">][:]</span>
+        <span class="c1"># make sure values &gt; 1 are set back to 1</span>
+        <span class="n">all_ratios</span><span class="p">[</span><span class="n">all_ratios</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="k">return</span> <span class="n">all_ratios</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">tmask</span><span class="p">,</span> <span class="n">wmask</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.read_acceptance_rate">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.read_acceptance_rate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_acceptance_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads the acceptance rate.</span>
+
+<span class="sd">        This calls :py:func:`read_acceptance_ratio`, then averages the ratios</span>
+<span class="sd">        over all iterations to get the average rate.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        temps : (list of) int, optional</span>
+<span class="sd">            The temperature index (or a list of indices) to retrieve. If None,</span>
+<span class="sd">            acceptance rates from all temperatures and all chains will be</span>
+<span class="sd">            retrieved.</span>
+<span class="sd">        chains : (list of) int, optional</span>
+<span class="sd">            The chain index (or a list of indices) to retrieve. If None,</span>
+<span class="sd">            rates from all chains will be obtained.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">            Array of acceptance ratios with shape (requested temps,</span>
+<span class="sd">            requested chains).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_ratios</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_acceptance_ratio</span><span class="p">(</span><span class="n">temps</span><span class="p">,</span> <span class="n">chains</span><span class="p">)</span>
+        <span class="c1"># average over the number of iterations</span>
+        <span class="n">all_ratios</span> <span class="o">=</span> <span class="n">all_ratios</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_ratios</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.read_acceptance_fraction">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.read_acceptance_fraction">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_acceptance_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">temps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Alias for :py:func:`read_acceptance_rate`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_acceptance_rate</span><span class="p">(</span><span class="n">temps</span><span class="o">=</span><span class="n">temps</span><span class="p">,</span> <span class="n">chains</span><span class="o">=</span><span class="n">walkers</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.write_temperature_data">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.write_temperature_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_temperature_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">swap_index</span><span class="p">,</span> <span class="n">acceptance_ratio</span><span class="p">,</span>
+                               <span class="n">swap_interval</span><span class="p">,</span> <span class="n">last_iteration</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes temperature swaps and acceptance ratios.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        swap_index : array</span>
+<span class="sd">            The indices indicating which temperatures were swapped. Should have</span>
+<span class="sd">            shape ``ntemps x nchains x (niterations/swap_interval)``.</span>
+<span class="sd">        acceptance_ratio : array</span>
+<span class="sd">            The array of acceptance ratios between temperatures. Should</span>
+<span class="sd">            have shape ``(ntemps-1) x nchains x (niterations/swap_interval)``.</span>
+<span class="sd">            arrays.</span>
+<span class="sd">        swap_interval : int</span>
+<span class="sd">            The number of iterations between temperature swaps.</span>
+<span class="sd">        last_iteration : int</span>
+<span class="sd">            The iteration of the last sample.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">swap_interval</span> <span class="o">=</span> <span class="n">swap_interval</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">,</span> <span class="s1">&#39;temperature_swaps&#39;</span><span class="p">])</span>
+        <span class="c1"># we&#39;ll use the write_samples machinery to write the acceptance ratios;</span>
+        <span class="c1"># if temperature swaps didn&#39;t happen every iteration, then a smaller</span>
+        <span class="c1"># thinning interval than what is used for the samples should be used</span>
+        <span class="n">thin_by</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span> <span class="o">//</span> <span class="n">swap_interval</span>
+        <span class="c1"># we&#39;ll also tell the write samples that the last &quot;iteration&quot; is the</span>
+        <span class="c1"># last iteration / the swap interval, to get the spacing correct</span>
+        <span class="n">last_iteration</span> <span class="o">=</span> <span class="n">last_iteration</span> <span class="o">//</span> <span class="n">swap_interval</span>
+        <span class="c1"># we need to write the two arrays separately, since they have different</span>
+        <span class="c1"># dimensions in temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_samples</span><span class="p">({</span><span class="s1">&#39;swap_index&#39;</span><span class="p">:</span> <span class="n">swap_index</span><span class="p">},</span>
+                           <span class="n">last_iteration</span><span class="o">=</span><span class="n">last_iteration</span><span class="p">,</span>
+                           <span class="n">samples_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_samples</span><span class="p">({</span><span class="s1">&#39;acceptance_ratio&#39;</span><span class="p">:</span> <span class="n">acceptance_ratio</span><span class="p">},</span>
+                           <span class="n">last_iteration</span><span class="o">=</span><span class="n">last_iteration</span><span class="p">,</span>
+                           <span class="n">samples_group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EpsieFile.validate">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.epsie.EpsieFile.validate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds attemp to load checkpoint to validation test.&quot;&quot;&quot;</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">EpsieFile</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+        <span class="c1"># try to load the checkpoint</span>
+        <span class="k">if</span> <span class="n">valid</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">load_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="n">UnpicklingError</span><span class="p">):</span>
+                <span class="c1"># will get this if the state wasn&#39;t written, or it was</span>
+                <span class="c1"># corrupted for some reason</span>
+                <span class="n">valid</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">valid</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_optional_args</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">err_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># need this to make sure options called &quot;walkers&quot; are renamed to</span>
+        <span class="c1"># &quot;chains&quot;</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">BaseSamplerFile</span><span class="o">.</span><span class="n">_get_optional_args</span><span class="p">(</span>
+            <span class="n">args</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">err_on_missing</span><span class="o">=</span><span class="n">err_on_missing</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">chains</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;walkers&#39;</span><span class="p">)</span>
+            <span class="n">parsed</span><span class="p">[</span><span class="s1">&#39;chains&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chains</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">parsed</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

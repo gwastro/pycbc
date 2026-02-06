@@ -1,0 +1,1108 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.io.base_mcmc &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../io.html">pycbc.inference.io</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.io.base_mcmc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.io.base_mcmc</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016 Christopher M. Biwer, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># self.option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Provides I/O that is specific to MCMC samplers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CommonMCMCMetadataIO</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides functions for reading/writing MCMC metadata to file.</span>
+
+<span class="sd">    The functions here are common to both standard MCMC (in which chains</span>
+<span class="sd">    are independent) and ensemble MCMC (in which chains/walkers share</span>
+<span class="sd">    information).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="CommonMCMCMetadataIO.write_resume_point">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.write_resume_point">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_resume_point</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Keeps a list of the number of iterations that were in a file when a</span>
+<span class="sd">        run was resumed from a checkpoint.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resume_pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;resume_points&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">resume_pts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">niterations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">niterations</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">resume_pts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">niterations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;resume_points&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">resume_pts</span></div>
+
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO.write_niterations">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.write_niterations">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_niterations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">niterations</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the given number of iterations to the sampler group.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;niterations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">niterations</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">niterations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of iterations the sampler was run for.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;niterations&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nwalkers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of walkers used by the sampler.</span>
+
+<span class="sd">        Alias of ``nchains``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;nwalkers&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;nchains&#39;</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nchains</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of chains used by the sampler.</span>
+
+<span class="sd">        Alias of ``nwalkers``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;nchains&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;nwalkers&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_thin_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">thin_interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thins data on disk by the given interval.</span>
+
+<span class="sd">        This makes no effort to record the thinning interval that is applied.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        group : str</span>
+<span class="sd">            The group where the datasets to thin live.</span>
+<span class="sd">        params : list</span>
+<span class="sd">            The list of dataset names to thin.</span>
+<span class="sd">        thin_interval : int</span>
+<span class="sd">            The interval to thin the samples on disk by.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_raw_samples</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                        <span class="n">thin_interval</span><span class="o">=</span><span class="n">thin_interval</span><span class="p">,</span>
+                                        <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="c1"># now resize and write the data back to disk</span>
+        <span class="n">fpgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="c1"># resize the arrays on disk</span>
+            <span class="n">fpgroup</span><span class="p">[</span><span class="n">param</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="c1"># and write</span>
+            <span class="n">fpgroup</span><span class="p">[</span><span class="n">param</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO.thin">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.thin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thin_interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thins the samples on disk to the given thinning interval.</span>
+
+<span class="sd">        The interval must be a multiple of the file&#39;s current ``thinned_by``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        thin_interval : int</span>
+<span class="sd">            The interval the samples on disk should be thinned by.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the new interval to thin by</span>
+        <span class="n">new_interval</span> <span class="o">=</span> <span class="n">thin_interval</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="k">if</span> <span class="n">new_interval</span> <span class="o">%</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;thin interval (</span><span class="si">{}</span><span class="s2">) must be a multiple of the &quot;</span>
+                             <span class="s2">&quot;current thinned_by (</span><span class="si">{}</span><span class="s2">)&quot;</span>
+                             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">thin_interval</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">))</span>
+        <span class="n">new_interval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_interval</span><span class="p">)</span>
+        <span class="c1"># now thin the data on disk</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thin_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">new_interval</span><span class="p">)</span>
+        <span class="c1"># store the interval that samples were thinned by</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span> <span class="o">=</span> <span class="n">thin_interval</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thinned_by</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns interval samples have been thinned by on disk.</span>
+
+<span class="sd">        This looks for ``thinned_by`` in the samples group attrs. If none is</span>
+<span class="sd">        found, will just return 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">thinned_by</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;thinned_by&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">thinned_by</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">thinned_by</span>
+
+    <span class="nd">@thinned_by</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thinned_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thinned_by</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the thinned_by attribute.</span>
+
+<span class="sd">        This is the interval that samples have been thinned by on disk. The</span>
+<span class="sd">        given value is written to</span>
+<span class="sd">        ``self[self.samples_group].attrs[&#39;thinned_by&#39;]``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;thinned_by&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">thinned_by</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO.last_iteration">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.last_iteration">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">last_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the iteration of the last sample of the given parameter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parameter : str, optional</span>
+<span class="sd">            The name of the parameter to get the last iteration for. If</span>
+<span class="sd">            None provided, will just use the first parameter in ``group``.</span>
+<span class="sd">        group : str, optional</span>
+<span class="sd">            The name of the group to get the last iteration from. Default is</span>
+<span class="sd">            the ``samples_group``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_group</span>
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">parameter</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="c1"># nothing has been written yet, just return 0</span>
+                <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lastiter</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">group</span><span class="p">][</span><span class="n">parameter</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># no samples have been written, just return 0</span>
+            <span class="n">lastiter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># account for thinning</span>
+        <span class="k">return</span> <span class="n">lastiter</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span></div>
+
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO.iterations">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.iterations">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">iterations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the iteration each sample occurred at.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_iteration</span><span class="p">(</span><span class="n">parameter</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO.write_sampler_metadata">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.write_sampler_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_sampler_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the sampler&#39;s metadata.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;sampler&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;nchains&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">nchains</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;nwalkers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">nwalkers</span>
+        <span class="c1"># write the model&#39;s metadata</span>
+        <span class="n">sampler</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">write_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_burned_in</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns whether or not chains are burned in.</span>
+
+<span class="sd">        Raises a ``ValueError`` if no burn in tests were done.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">][</span><span class="s1">&#39;is_burned_in&#39;</span><span class="p">][()]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No burn in tests were performed&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">burn_in_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the burn in iteration of all the chains.</span>
+
+<span class="sd">        Raises a ``ValueError`` if no burn in tests were done.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">][</span><span class="s1">&#39;burn_in_iteration&#39;</span><span class="p">][()]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No burn in tests were performed&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">burn_in_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the burn in index.</span>
+
+<span class="sd">        This is the burn in iteration divided by the file&#39;s ``thinned_by``.</span>
+<span class="sd">        Requires the class that this is used with has a ``burn_in_iteration``</span>
+<span class="sd">        attribute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">act</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The autocorrelation time (ACT).</span>
+
+<span class="sd">        This is the ACL times the file&#39;s thinned by. Raises a ``ValueError``</span>
+<span class="sd">        if the ACT has not been calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">][</span><span class="s1">&#39;act&#39;</span><span class="p">][()]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ACT has not been calculated&quot;</span><span class="p">)</span>
+
+    <span class="nd">@act</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">act</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">act</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the autocorrelation time(s).</span>
+
+<span class="sd">        ACT(s) are written to the ``sample_group`` as a dataset with name</span>
+<span class="sd">        ``act``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        act : array or int</span>
+<span class="sd">            ACT(s) to write.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=no-member</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;act&#39;</span><span class="p">,</span> <span class="n">act</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary of parameter names -&gt; raw autocorrelation time(s).</span>
+
+<span class="sd">        Depending on the sampler, the autocorrelation times may be floats,</span>
+<span class="sd">        or [ntemps x] [nchains x] arrays.</span>
+
+<span class="sd">        Raises a ``ValueError`` is no raw acts have been set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">][</span><span class="s1">&#39;raw_acts&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ACTs have not been calculated&quot;</span><span class="p">)</span>
+        <span class="n">acts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+            <span class="n">acts</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">param</span><span class="p">][()]</span>
+        <span class="k">return</span> <span class="n">acts</span>
+
+    <span class="nd">@raw_acts</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the raw autocorrelation times.</span>
+
+<span class="sd">        The ACT of each parameter is saved to</span>
+<span class="sd">        ``[sampler_group]/raw_acts/{param}&#39;]``. Works for all types of MCMC</span>
+<span class="sd">        samplers (independent chains, ensemble, parallel tempering).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        acts : dict</span>
+<span class="sd">            A dictionary of ACTs keyed by the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span> <span class="o">+</span> <span class="s1">&#39;/raw_acts&#39;</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">acts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">acts</span><span class="p">[</span><span class="n">param</span><span class="p">],</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The autocorrelation length (ACL) of the samples.</span>
+
+<span class="sd">        This is the autocorrelation time (ACT) divided by the file&#39;s</span>
+<span class="sd">        ``thinned_by`` attribute. Raises a ``ValueError`` if the ACT has not</span>
+<span class="sd">        been calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span>
+
+    <span class="nd">@acl</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acl</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the autocorrelation length (ACL) of the samples.</span>
+
+<span class="sd">        This will convert the given value(s) to autocorrelation time(s) and</span>
+<span class="sd">        save to the ``act`` attribute; see that attribute for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">act</span> <span class="o">=</span> <span class="n">acl</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dictionary of parameter names -&gt; raw autocorrelation length(s).</span>
+
+<span class="sd">        Depending on the sampler, the autocorrelation lengths may be floats,</span>
+<span class="sd">        or [ntemps x] [nchains x] arrays.</span>
+
+<span class="sd">        The ACLs are the autocorrelation times (ACT) divided by the file&#39;s</span>
+<span class="sd">        ``thinned_by`` attribute. Raises a ``ValueError`` is no raw acts have</span>
+<span class="sd">        been set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_acts</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_acts</span><span class="p">}</span>
+
+    <span class="nd">@raw_acls</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_acls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the raw autocorrelation lengths.</span>
+
+<span class="sd">        The given ACLs are converted to autocorrelation times (ACTs) and saved</span>
+<span class="sd">        to the ``raw_acts`` attribute; see that attribute for details.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        acls : dict</span>
+<span class="sd">            A dictionary of ACLs keyed by the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_acts</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">acls</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">acls</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_sampler_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the number of iterations, effective number of samples,</span>
+<span class="sd">        autocorrelation times, and burn-in iteration to the history.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">sampler_group</span><span class="p">,</span> <span class="s1">&#39;checkpoint_history&#39;</span><span class="p">])</span>
+        <span class="c1"># write the current number of iterations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;niterations&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+                        <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;effective_nsamples&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_nsamples</span><span class="p">,</span>
+                        <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># write the act: we&#39;ll make sure that this is 2D, so that the acts</span>
+        <span class="c1"># can be appened along the last dimension</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># no acts were calculate</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">act</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">act</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">act</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">+</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;act&#39;</span><span class="p">,</span> <span class="n">act</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># write the burn in iteration in the same way</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">burn_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_iteration</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># no burn in tests were done</span>
+            <span class="n">burn_in</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">burn_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">burn_in</span> <span class="o">=</span> <span class="n">burn_in</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">burn_in</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">+</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="s1">&#39;burn_in_iteration&#39;</span><span class="p">,</span> <span class="n">burn_in</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+                            <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CommonMCMCMetadataIO.extra_args_parser">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.extra_args_parser">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extra_args_parser</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Create a parser to parse sampler-specific arguments for loading</span>
+<span class="sd">        samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parser : argparse.ArgumentParser, optional</span>
+<span class="sd">            Instead of creating a parser, add arguments to the given one. If</span>
+<span class="sd">            none provided, will create one.</span>
+<span class="sd">        skip_args : list, optional</span>
+<span class="sd">            Don&#39;t parse the given options. Options should be given as the</span>
+<span class="sd">            option string, minus the &#39;--&#39;. For example,</span>
+<span class="sd">            ``skip_args=[&#39;iteration&#39;]`` would cause the ``--iteration``</span>
+<span class="sd">            argument not to be included.</span>
+<span class="sd">        \**kwargs :</span>
+<span class="sd">            All other keyword arguments are passed to the parser that is</span>
+<span class="sd">            created.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        parser : argparse.ArgumentParser</span>
+<span class="sd">            An argument parser with th extra arguments added.</span>
+<span class="sd">        actions : list of argparse.Action</span>
+<span class="sd">            A list of the actions that were added.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No other keyword arguments should be provded if &quot;</span>
+                             <span class="s2">&quot;a parser is provided.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skip_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">skip_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">actions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;thin-start&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--thin-start&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Sample number to start collecting samples. If &quot;</span>
+                     <span class="s2">&quot;none provided, will use the input file&#39;s `thin_start` &quot;</span>
+                     <span class="s2">&quot;attribute.&quot;</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;thin-interval&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--thin-interval&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Interval to use for thinning samples. If none provided, &quot;</span>
+                     <span class="s2">&quot;will use the input file&#39;s `thin_interval` attribute.&quot;</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;thin-end&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--thin-end&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Sample number to stop collecting samples. If &quot;</span>
+                     <span class="s2">&quot;none provided, will use the input file&#39;s `thin_end` &quot;</span>
+                     <span class="s2">&quot;attribute.&quot;</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;iteration&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--iteration&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only retrieve the given iteration. To load &quot;</span>
+                     <span class="s2">&quot;the last n-th sampe use -n, e.g., -1 will &quot;</span>
+                     <span class="s2">&quot;load the last iteration. This overrides &quot;</span>
+                     <span class="s2">&quot;the thin-start/interval/end options.&quot;</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;walkers&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span> <span class="ow">and</span> <span class="s1">&#39;chains&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_args</span><span class="p">:</span>
+            <span class="n">act</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+                <span class="s2">&quot;--walkers&quot;</span><span class="p">,</span> <span class="s2">&quot;--chains&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only retrieve samples from the listed &quot;</span>
+                     <span class="s2">&quot;walkers/chains. Default is to retrieve from all &quot;</span>
+                     <span class="s2">&quot;walkers/chains.&quot;</span><span class="p">)</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parser</span><span class="p">,</span> <span class="n">actions</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MCMCMetadataIO">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.MCMCMetadataIO">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MCMCMetadataIO</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides functions for reading/writing metadata to file for MCMCs in</span>
+<span class="sd">    which all chains are independent of each other.</span>
+
+<span class="sd">    Overrides the ``BaseInference`` file&#39;s ``thin_start`` and ``thin_interval``</span>
+<span class="sd">    attributes. Instead of integers, these return arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the default thin start to use for reading samples.</span>
+
+<span class="sd">        If burn-in tests were done, this will return the burn-in index of every</span>
+<span class="sd">        chain that has burned in. The start index for chains that have not</span>
+<span class="sd">        burned in will be greater than the number of samples, so that those</span>
+<span class="sd">        chains return no samples. If no burn-in tests were done, returns 0</span>
+<span class="sd">        for all chains.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pylint: disable=no-member</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">thin_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_index</span>
+            <span class="c1"># replace any that have not been burned in with the number</span>
+            <span class="c1"># of iterations; this will cause those chains to not return</span>
+            <span class="c1"># any samples</span>
+            <span class="n">thin_start</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">is_burned_in</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">niterations</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">thin_start</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># no burn in, just return array of zeros</span>
+            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the default thin interval to use for reading samples.</span>
+
+<span class="sd">        If a finite ACL exists in the file, will return that. Otherwise,</span>
+<span class="sd">        returns 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acl</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nchains</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="c1"># replace any infs with the number of samples</span>
+        <span class="n">acl</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">acl</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">niterations</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinned_by</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">acl</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="EnsembleMCMCMetadataIO">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.EnsembleMCMCMetadataIO">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnsembleMCMCMetadataIO</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides functions for reading/writing metadata to file for ensemble</span>
+<span class="sd">    MCMCs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the default thin start to use for reading samples.</span>
+
+<span class="sd">        If burn-in tests were done, returns the burn in index. Otherwise,</span>
+<span class="sd">        returns 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">burn_in_index</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># no burn in, just return 0</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thin_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the default thin interval to use for reading samples.</span>
+
+<span class="sd">        If a finite ACL exists in the file, will return that. Otherwise,</span>
+<span class="sd">        returns 1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acl</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">acl</span><span class="p">):</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">acl</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">acl</span></div>
+
+
+
+<div class="viewcode-block" id="write_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.write_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_samples</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">samples_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Writes samples to the given file.</span>
+
+<span class="sd">    This works for both standard MCMC and ensemble MCMC samplers without</span>
+<span class="sd">    parallel tempering.</span>
+
+<span class="sd">    Results are written to ``samples_group/{vararg}``, where ``{vararg}``</span>
+<span class="sd">    is the name of a model params. The samples are written as an</span>
+<span class="sd">    ``nwalkers x niterations`` array. If samples already exist, the new</span>
+<span class="sd">    samples are appended to the current.</span>
+
+<span class="sd">    If the current samples on disk have been thinned (determined by the</span>
+<span class="sd">    ``thinned_by`` attribute in the samples group), then the samples will</span>
+<span class="sd">    be thinned by the same amount before being written. The thinning is</span>
+<span class="sd">    started at the sample in ``samples`` that occured at the iteration</span>
+<span class="sd">    equal to the last iteration on disk plus the ``thinned_by`` interval.</span>
+<span class="sd">    If this iteration is larger than the iteration of the last given</span>
+<span class="sd">    sample, then none of the samples will be written.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    fp : BaseInferenceFile</span>
+<span class="sd">        Open file handler to write files to. Must be an instance of</span>
+<span class="sd">        BaseInferenceFile with CommonMCMCMetadataIO methods added.</span>
+<span class="sd">    samples : dict</span>
+<span class="sd">        The samples to write. Each array in the dictionary should have</span>
+<span class="sd">        shape nwalkers x niterations.</span>
+<span class="sd">    parameters : list, optional</span>
+<span class="sd">        Only write the specified parameters to the file. If None, will</span>
+<span class="sd">        write all of the keys in the ``samples`` dict.</span>
+<span class="sd">    last_iteration : int, optional</span>
+<span class="sd">        The iteration of the last sample. If the file&#39;s ``thinned_by``</span>
+<span class="sd">        attribute is &gt; 1, this is needed to determine where to start</span>
+<span class="sd">        thinning the samples such that the interval between the last sample</span>
+<span class="sd">        currently on disk and the first new sample is the same as all of</span>
+<span class="sd">        the other samples.</span>
+<span class="sd">    samples_group : str, optional</span>
+<span class="sd">        Which group to write the samples to. Default (None) will result</span>
+<span class="sd">        in writing to &quot;samples&quot;.</span>
+<span class="sd">    thin_by : int, optional</span>
+<span class="sd">        Override the ``thinned_by`` attribute in the file with the given</span>
+<span class="sd">        value. **Only set this if you are using this function to write</span>
+<span class="sd">        something other than inference samples!**</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nwalkers</span><span class="p">,</span> <span class="n">nsamples</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">)</span>
+               <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="p">(</span>
+           <span class="s2">&quot;all samples must have the same shape&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">samples_group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">samples_group</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span>
+    <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="c1"># thin the samples</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">thin_samples_for_writing</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span>
+                                       <span class="n">last_iteration</span><span class="p">,</span> <span class="n">samples_group</span><span class="p">,</span>
+                                       <span class="n">thin_by</span><span class="o">=</span><span class="n">thin_by</span><span class="p">)</span>
+    <span class="c1"># loop over number of dimensions</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">samples_group</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">{name}</span><span class="s1">&#39;</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+        <span class="n">dataset_name</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">param</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="c1"># check that there&#39;s something to write after thinning</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># nothing to write, move along</span>
+            <span class="k">continue</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fp_nsamples</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">istart</span> <span class="o">=</span> <span class="n">fp_nsamples</span>
+            <span class="n">istop</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">istop</span> <span class="o">&gt;</span> <span class="n">fp_nsamples</span><span class="p">:</span>
+                <span class="c1"># resize the dataset</span>
+                <span class="n">fp</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">]</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">istop</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># dataset doesn&#39;t exist yet</span>
+            <span class="n">istart</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">istop</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">istop</span><span class="p">),</span>
+                              <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                              <span class="n">dtype</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                              <span class="n">fletcher32</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fp</span><span class="p">[</span><span class="n">dataset_name</span><span class="p">][:,</span> <span class="n">istart</span><span class="p">:</span><span class="n">istop</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="ensemble_read_raw_samples">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.ensemble_read_raw_samples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensemble_read_raw_samples</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">thin_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base function for reading samples from ensemble MCMC files without</span>
+<span class="sd">    parallel tempering.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    fp : BaseInferenceFile</span>
+<span class="sd">        Open file handler to write files to. Must be an instance of</span>
+<span class="sd">        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.</span>
+<span class="sd">    fields : list</span>
+<span class="sd">        The list of field names to retrieve.</span>
+<span class="sd">    thin_start : int, optional</span>
+<span class="sd">        Start reading from the given iteration. Default is to start from</span>
+<span class="sd">        the first iteration.</span>
+<span class="sd">    thin_interval : int, optional</span>
+<span class="sd">        Only read every ``thin_interval`` -th sample. Default is 1.</span>
+<span class="sd">    thin_end : int, optional</span>
+<span class="sd">        Stop reading at the given iteration. Default is to end at the last</span>
+<span class="sd">        iteration.</span>
+<span class="sd">    iteration : int, optional</span>
+<span class="sd">        Only read the given iteration. If this provided, it overrides</span>
+<span class="sd">        the ``thin_(start|interval|end)`` options.</span>
+<span class="sd">    walkers : (list of) int, optional</span>
+<span class="sd">        Only read from the given walkers. Default (``None``) is to read all.</span>
+<span class="sd">    flatten : bool, optional</span>
+<span class="sd">        Flatten the samples to 1D arrays before returning. Otherwise, the</span>
+<span class="sd">        returned arrays will have shape (requested walkers x</span>
+<span class="sd">        requested iteration(s)). Default is True.</span>
+<span class="sd">    group : str, optional</span>
+<span class="sd">        The name of the group to read sample datasets from. Default is</span>
+<span class="sd">        the file&#39;s ``samples_group``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary of field name -&gt; numpy array pairs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">fields</span><span class="p">]</span>
+    <span class="c1"># walkers to load</span>
+    <span class="n">widx</span><span class="p">,</span> <span class="n">nwalkers</span> <span class="o">=</span> <span class="n">_ensemble_get_walker_index</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">walkers</span><span class="p">)</span>
+    <span class="c1"># get the slice to use</span>
+    <span class="n">get_index</span> <span class="o">=</span> <span class="n">_ensemble_get_index</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">thin_start</span><span class="p">,</span> <span class="n">thin_interval</span><span class="p">,</span> <span class="n">thin_end</span><span class="p">,</span>
+                                    <span class="n">iteration</span><span class="p">)</span>
+    <span class="c1"># load</span>
+    <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="n">group</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">{name}</span><span class="s1">&#39;</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)][</span><span class="n">widx</span><span class="p">,</span> <span class="n">get_index</span><span class="p">]</span>
+        <span class="n">niterations</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">iteration</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">flatten</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># ensure that the returned array is 2D</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">niterations</span><span class="p">))</span>
+        <span class="n">arrays</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
+    <span class="k">return</span> <span class="n">arrays</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensemble_get_walker_index</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">walkers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function to determine which walkers to load.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fp : BaseInferenceFile</span>
+<span class="sd">        Open file handler to write files to. Must be an instance of</span>
+<span class="sd">        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.</span>
+<span class="sd">    walkers : (list of) int, optional</span>
+<span class="sd">        Only read from the given walkers. Default (``None``) is to read all.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    widx : array or slice</span>
+<span class="sd">        The walker indices to load.</span>
+<span class="sd">    nwalkers : int</span>
+<span class="sd">        The number of walkers that will be loaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">walkers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">widx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">nwalkers</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">widx</span><span class="p">[</span><span class="n">walkers</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">nwalkers</span> <span class="o">=</span> <span class="n">widx</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">widx</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">nwalkers</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">nwalkers</span>
+    <span class="k">return</span> <span class="n">widx</span><span class="p">,</span> <span class="n">nwalkers</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensemble_get_index</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determines the sample indices to retrieve for an ensemble MCMC.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    fp : BaseInferenceFile</span>
+<span class="sd">        Open file handler to write files to. Must be an instance of</span>
+<span class="sd">        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.</span>
+<span class="sd">    thin_start : int, optional</span>
+<span class="sd">        Start reading from the given iteration. Default is to start from</span>
+<span class="sd">        the first iteration.</span>
+<span class="sd">    thin_interval : int, optional</span>
+<span class="sd">        Only read every ``thin_interval`` -th sample. Default is 1.</span>
+<span class="sd">    thin_end : int, optional</span>
+<span class="sd">        Stop reading at the given iteration. Default is to end at the last</span>
+<span class="sd">        iteration.</span>
+<span class="sd">    iteration : int, optional</span>
+<span class="sd">        Only read the given iteration. If this provided, it overrides</span>
+<span class="sd">        the ``thin_(start|interval|end)`` options.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    slice or int</span>
+<span class="sd">        The indices to retrieve.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">iteration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">get_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">iteration</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">thin_start</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thin_start</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_start</span>
+        <span class="k">if</span> <span class="n">thin_interval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thin_interval</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_interval</span>
+        <span class="k">if</span> <span class="n">thin_end</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">thin_end</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_end</span>
+        <span class="n">get_index</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">thin_start</span><span class="o">=</span><span class="n">thin_start</span><span class="p">,</span>
+                                 <span class="n">thin_interval</span><span class="o">=</span><span class="n">thin_interval</span><span class="p">,</span>
+                                 <span class="n">thin_end</span><span class="o">=</span><span class="n">thin_end</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">get_index</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_index</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">chains</span><span class="p">,</span> <span class="n">thin_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_interval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thin_end</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">iteration</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determines the sample indices to retrieve for an MCMC with independent</span>
+<span class="sd">    chains.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    fp : BaseInferenceFile</span>
+<span class="sd">        Open file handler to read samples from. Must be an instance of</span>
+<span class="sd">        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.</span>
+<span class="sd">    chains : array of int</span>
+<span class="sd">        The chains to load.</span>
+<span class="sd">    thin_start : array or int, optional</span>
+<span class="sd">        Start reading from the given sample. May either provide an array</span>
+<span class="sd">        indicating the start index for each chain, or an integer. If the</span>
+<span class="sd">        former, the array must have the same length as the number of chains</span>
+<span class="sd">        that will be retrieved. If the latter, the given value will be used</span>
+<span class="sd">        for all chains. Default (None) is to use the file&#39;s ``thin_start``</span>
+<span class="sd">        attribute.</span>
+<span class="sd">    thin_interval : array or int, optional</span>
+<span class="sd">        Only read every ``thin_interval``-th sample. May either provide an</span>
+<span class="sd">        array indicating the interval to use for each chain, or an integer. If</span>
+<span class="sd">        the former, the array must have the same length as the number of chains</span>
+<span class="sd">        that will be retrieved. If the latter, the given value will be used for</span>
+<span class="sd">        all chains. Default (None) is to use the file&#39;s ``thin_interval``</span>
+<span class="sd">        attribute.</span>
+<span class="sd">    thin_end : array or int, optional</span>
+<span class="sd">        Stop reading at the given sample index. May either provide an</span>
+<span class="sd">        array indicating the end index to use for each chain, or an integer. If</span>
+<span class="sd">        the former, the array must have the same length as the number of chains</span>
+<span class="sd">        that will be retrieved. If the latter, the given value will be used for</span>
+<span class="sd">        all chains. Default (None) is to use the the file&#39;s ``thin_end``</span>
+<span class="sd">        attribute.</span>
+<span class="sd">    iteration : int, optional</span>
+<span class="sd">        Only read the given iteration from all chains. If provided, it</span>
+<span class="sd">        overrides the ``thin_(start|interval|end)`` options.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    get_index : list of slice or int</span>
+<span class="sd">        The indices to retrieve.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nchains</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chains</span><span class="p">)</span>
+    <span class="c1"># convenience function to get the right thin start/interval/end</span>
+    <span class="k">if</span> <span class="n">iteration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">get_index</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">iteration</span><span class="p">)]</span><span class="o">*</span><span class="n">nchains</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># get the slice arguments</span>
+        <span class="n">thin_start</span> <span class="o">=</span> <span class="n">_format_slice_arg</span><span class="p">(</span><span class="n">thin_start</span><span class="p">,</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_start</span><span class="p">,</span> <span class="n">chains</span><span class="p">)</span>
+        <span class="n">thin_interval</span> <span class="o">=</span> <span class="n">_format_slice_arg</span><span class="p">(</span><span class="n">thin_interval</span><span class="p">,</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_interval</span><span class="p">,</span>
+                                          <span class="n">chains</span><span class="p">)</span>
+        <span class="n">thin_end</span> <span class="o">=</span> <span class="n">_format_slice_arg</span><span class="p">(</span><span class="n">thin_end</span><span class="p">,</span> <span class="n">fp</span><span class="o">.</span><span class="n">thin_end</span><span class="p">,</span> <span class="n">chains</span><span class="p">)</span>
+        <span class="c1"># the slices to use for each chain</span>
+        <span class="n">get_index</span> <span class="o">=</span> <span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">thin_start</span><span class="o">=</span><span class="n">thin_start</span><span class="p">[</span><span class="n">ci</span><span class="p">],</span>
+                                  <span class="n">thin_interval</span><span class="o">=</span><span class="n">thin_interval</span><span class="p">[</span><span class="n">ci</span><span class="p">],</span>
+                                  <span class="n">thin_end</span><span class="o">=</span><span class="n">thin_end</span><span class="p">[</span><span class="n">ci</span><span class="p">])</span>
+                     <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nchains</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">get_index</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_slice_arg</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">default</span><span class="p">,</span> <span class="n">chains</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Formats a start/interval/end argument for picking out chains.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : None, int, array or list of int</span>
+<span class="sd">        The thin-start/interval/end value to format. ``None`` indicates the</span>
+<span class="sd">        user did not specify anything, in which case ``default`` will be used.</span>
+<span class="sd">        If an integer, then it will be repeated to match the length of</span>
+<span class="sd">        ``chains```. If an array or list, it must have the same length as</span>
+<span class="sd">        ``chains``.</span>
+<span class="sd">    default : array</span>
+<span class="sd">        What to use instead if ``value`` is ``None``.</span>
+<span class="sd">    chains : array of int</span>
+<span class="sd">        The index values of chains that will be loaded.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    array</span>
+<span class="sd">        Array giving the value to use for each chain in ``chains``. The array</span>
+<span class="sd">        will have the same length as ``chains``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">default</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># no value provided, and default is None, just return Nones with the</span>
+        <span class="c1"># same length as chains</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">chains</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># use the default, with the desired values extracted</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">default</span><span class="p">[</span><span class="n">chains</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">int_</span><span class="p">)):</span>
+        <span class="c1"># a single integer was provided, repeat into an array</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chains</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chains</span><span class="p">):</span>
+        <span class="c1"># a list of values was provided, but the length does not match the</span>
+        <span class="c1"># chains, raise an error</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of requested thin-start/interval/end values &quot;</span>
+                         <span class="s2">&quot;(</span><span class="si">{}</span><span class="s2">) does not match number of requested chains (</span><span class="si">{}</span><span class="s2">)&quot;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chains</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+
+<div class="viewcode-block" id="thin_samples_for_writing">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.thin_samples_for_writing">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">thin_samples_for_writing</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">last_iteration</span><span class="p">,</span>
+                             <span class="n">group</span><span class="p">,</span> <span class="n">thin_by</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Thins samples for writing to disk.</span>
+
+<span class="sd">    The thinning interval to use is determined by the given file handler&#39;s</span>
+<span class="sd">    ``thinned_by`` attribute. If that attribute is 1, just returns the samples.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fp : CommonMCMCMetadataIO instance</span>
+<span class="sd">        The file the sampels will be written to. Needed to determine the</span>
+<span class="sd">        thin interval used on disk.</span>
+<span class="sd">    samples : dict</span>
+<span class="sd">        Dictionary mapping parameter names to arrays of (unthinned) samples.</span>
+<span class="sd">        The arrays are thinned along their last dimension.</span>
+<span class="sd">    parameters : list of str</span>
+<span class="sd">        The parameters to thin in ``samples`` before writing. All listed</span>
+<span class="sd">        parameters must be in ``samples``.</span>
+<span class="sd">    last_iteration : int</span>
+<span class="sd">        The iteration that the last sample in ``samples`` occurred at. This is</span>
+<span class="sd">        needed to figure out where to start the thinning in ``samples``, such</span>
+<span class="sd">        that the interval between the last sample on disk and the first new</span>
+<span class="sd">        sample is the same as all of the other samples.</span>
+<span class="sd">    group : str</span>
+<span class="sd">        The name of the group that the samples will be written to. This is</span>
+<span class="sd">        needed to determine what the last iteration saved on disk was.</span>
+<span class="sd">    thin_by : int, optional</span>
+<span class="sd">        Override the ``thinned_by`` attribute in the file for with the given</span>
+<span class="sd">        value. **Only do this if you are thinning something other than</span>
+<span class="sd">        inference samples!**</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of the thinned samples to write.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">thin_by</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">thin_by</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">thinned_by</span>
+    <span class="k">if</span> <span class="n">thin_by</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">last_iteration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;File&#39;s thinned_by attribute is &gt; 1 (</span><span class="si">{}</span><span class="s2">), &quot;</span>
+                             <span class="s2">&quot;but last_iteration not provided.&quot;</span>
+                             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">thin_by</span><span class="p">))</span>
+        <span class="n">thinned_samples</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="n">nsamples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># To figure out where to start:</span>
+            <span class="c1"># the last iteration in the file + the file&#39;s thinning interval</span>
+            <span class="c1"># gives the iteration of the next sample that should be written;</span>
+            <span class="c1"># last_iteration - nsamples gives the iteration of the first</span>
+            <span class="c1"># sample in samples. Subtracting the latter from the former - 1</span>
+            <span class="c1"># (-1 to convert from iteration to index) therefore gives the index</span>
+            <span class="c1"># in the samples data to start using samples.</span>
+            <span class="n">thin_start</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">last_iteration</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span> <span class="o">+</span> <span class="n">thin_by</span> \
+                <span class="o">-</span> <span class="p">(</span><span class="n">last_iteration</span> <span class="o">-</span> <span class="n">nsamples</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">thinned_samples</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">thin_start</span><span class="p">::</span><span class="n">thin_by</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">thinned_samples</span> <span class="o">=</span> <span class="n">samples</span>
+    <span class="k">return</span> <span class="n">thinned_samples</span></div>
+
+
+
+<div class="viewcode-block" id="nsamples_in_chain">
+<a class="viewcode-back" href="../../../../pycbc.inference.io.html#pycbc.inference.io.base_mcmc.nsamples_in_chain">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nsamples_in_chain</span><span class="p">(</span><span class="n">start_iter</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">niterations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the number of samples in an MCMC chain given a thinning</span>
+<span class="sd">    start, end, and interval.</span>
+
+<span class="sd">    This function will work with either python scalars, or numpy arrays.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    start_iter : (array of) int</span>
+<span class="sd">        Start iteration. If negative, will count as being how many iterations</span>
+<span class="sd">        to start before the end; otherwise, counts how many iterations to</span>
+<span class="sd">        start before the beginning. If this is larger than niterations, will</span>
+<span class="sd">        just return 0.</span>
+<span class="sd">    interval : (array of) int</span>
+<span class="sd">        Thinning interval.</span>
+<span class="sd">    niterations : (array of) int</span>
+<span class="sd">        The number of iterations.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    num_samples : (array of) numpy.int</span>
+<span class="sd">        The number of samples in a chain, &gt;= 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># this is written in a slightly wonky way so that it will work with either</span>
+    <span class="c1"># python scalars or numpy arrays; it is equivalent to:</span>
+    <span class="c1">#    if start_iter &lt; 0:</span>
+    <span class="c1">#        count = min(abs(start_iter), niterations)</span>
+    <span class="c1">#    else:</span>
+    <span class="c1">#        count = max(niterations - start_iter, 0)</span>
+    <span class="n">slt0</span> <span class="o">=</span> <span class="n">start_iter</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="n">sgt0</span> <span class="o">=</span> <span class="n">start_iter</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">slt0</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">start_iter</span><span class="p">)</span> <span class="o">+</span> <span class="n">sgt0</span><span class="o">*</span><span class="p">(</span><span class="n">niterations</span> <span class="o">-</span> <span class="n">start_iter</span><span class="p">)</span>
+    <span class="c1"># ensure count is in [0, niterations]</span>
+    <span class="n">cgtn</span> <span class="o">=</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="n">niterations</span>
+    <span class="n">cok</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">count</span> <span class="o">&lt;=</span> <span class="n">niterations</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">cgtn</span><span class="o">*</span><span class="n">niterations</span> <span class="o">+</span> <span class="n">cok</span><span class="o">*</span><span class="n">count</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">count</span> <span class="o">/</span> <span class="n">interval</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

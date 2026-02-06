@@ -1,0 +1,673 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using the single template model &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Using the relative model" href="relative.html" />
+    <link rel="prev" title="Marginalized time model" href="margtime.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Using the single template model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#quickstart-example">Quickstart example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#marginalization-subset-of-parameters">Marginalization subset of parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#marginalization-over-all-parameters">Marginalization over all parameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#abitrary-sampling-coordinates-with-nested-samplers">Abitrary sampling coordinates with nested samplers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Using the single template model</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/single.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-the-single-template-model">
+<span id="single-template-examples"></span><h1>Using the single template model<a class="headerlink" href="#using-the-single-template-model" title="Link to this heading"></a></h1>
+<section id="quickstart-example">
+<h2>Quickstart example<a class="headerlink" href="#quickstart-example" title="Link to this heading"></a></h2>
+<p>The single template model is useful for when you know all the intrinsic parameters
+of your signal (say the masses, spins, etc of a merger). In this case, we don’t
+need to recalculate the waveform model to sample different possible extrinsic
+parameters (i.e. distance, sky location, inclination). This can greatly
+speed up the calculation of the likelihood. To use this model
+you provide the intrinsic parameters as fixed arguments as in the configuration
+file below.</p>
+<p>This example demonstrates using the <code class="docutils literal notranslate"><span class="pre">single_template</span></code> model with the
+<code class="docutils literal notranslate"><span class="pre">dynesty</span></code> sampler. First, we create the following configuration file:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Configuration File</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">single_template</span>
+
+<span class="c1">#; This model precalculates the SNR time series at a fixed rate.</span>
+<span class="c1">#; If you need a higher time resolution, this may be increased</span>
+<span class="na">sample_rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">32768</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30.0</span>
+
+<span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1 V1</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008482</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008892</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:LOSC-STRAIN L1:LOSC-STRAIN V1:LOSC-STRAIN</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf L1:L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf V1:V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">sample</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">rwalk</span>
+<span class="na">bound</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">multi</span>
+<span class="na">dlogz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">200</span>
+<span class="na">checkpoint_time_interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+<span class="na">maxcall</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10000</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TaylorF2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+
+<span class="c1">#; we&#39;ll choose not to sample over these, but you could</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">3.44615914</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-0.40808407</span>
+
+<span class="c1">#; You could also set additional parameters if your waveform model supports / requires it.</span>
+<span class="c1">; spin1z = 0</span>
+
+<span class="k">[prior-tc]</span>
+<span class="c1">; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.4</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.5</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">#; following gives a uniform in volume</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">60</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+</pre></div>
+</div>
+<p class="sd-card-text"><a class="reference download internal" download="" href="../../_downloads/8c739005a11bef7b653130c71ad2b224/single_simple.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</div>
+</details><p>For this example, we’ll need to download gravitational-wave data for GW170817:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="w"> </span>-e
+
+<span class="k">for</span><span class="w"> </span>ifo<span class="w"> </span><span class="k">in</span><span class="w"> </span>H-H1<span class="w"> </span>L-L1<span class="w"> </span>V-V1
+<span class="k">do</span>
+<span class="w">    </span><span class="nv">file</span><span class="o">=</span><span class="si">${</span><span class="nv">ifo</span><span class="si">}</span>_LOSC_CLN_4_V1-1187007040-2048.gwf
+<span class="w">    </span><span class="nb">test</span><span class="w"> </span>-f<span class="w"> </span><span class="si">${</span><span class="nv">file</span><span class="si">}</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="k">continue</span>
+<span class="w">    </span>curl<span class="w"> </span>-O<span class="w"> </span>-L<span class="w"> </span>--show-error<span class="w"> </span>--silent<span class="w"> </span>https://dcc.ligo.org/public/0146/P1700349/001/<span class="si">${</span><span class="nv">file</span><span class="si">}</span>
+<span class="k">done</span>
+</pre></div>
+</div>
+<p>By setting the model name to <code class="docutils literal notranslate"><span class="pre">single_template</span></code> we are using
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.single_template.SingleTemplate" title="pycbc.inference.models.single_template.SingleTemplate"><code class="xref py py-class docutils literal notranslate"><span class="pre">SingleTemplate</span></code></a>.</p>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-file<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/single_simple.ini<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single.hdf<span class="w"> </span><span class="se">\</span>
+--seed<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/ce7407033baf800f8cf99443cdab10ca/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will run the <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> sampler. When it is done, you will have a file called
+<code class="docutils literal notranslate"><span class="pre">single.hdf</span></code> which contains the results. It should take about a minute or two to
+run.</p>
+<p>To plot the posterior distribution, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>single.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single.png<span class="w"> </span><span class="se">\</span>
+--z-arg<span class="w"> </span>snr
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/1ea0da9e1c660534f3126d3190f72090/plot.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/single.png"><img alt="../../_images/single.png" class="align-center" src="../../_images/single.png" style="width: 400px;" />
+</a>
+<p>The scatter points show position of different posterior samples. The
+points are colored by the log likelihood at that point, with the 50th and 90th
+percentile contours drawn.</p>
+</section>
+<section id="marginalization-subset-of-parameters">
+<h2>Marginalization subset of parameters<a class="headerlink" href="#marginalization-subset-of-parameters" title="Link to this heading"></a></h2>
+<p>The single template model supports marginalization over its parameters. This
+can greatly speed up parameter estimation. The
+marginalized parameters can also be recovered as in the example below which
+extends the previous example to include all the parameters the model supports.</p>
+<p>In this example, the sampler will only explore inclination, whereas all other
+parameters are either numerically or analytically marginalized over. Note
+that the marginalization still takes into account the priors you choose. This
+includes if you have placed boundaries or constraints.</p>
+<p>First, you’ll need the configuration file.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Configuration File</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">single_template</span>
+
+<span class="c1">#; This model precalculates the SNR time series at a fixed rate.</span>
+<span class="c1">#; If you need a higher time resolution, this may be increased</span>
+<span class="na">sample_rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8192</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30.0</span>
+
+<span class="na">marginalize_vector_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">tc, ra, dec, polarization</span>
+<span class="na">marginalize_vector_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="c1"># These lines enable the marginalization to only use information</span>
+<span class="c1"># around SNR peaks for drawing possible sky / time positions. Remove</span>
+<span class="c1"># if you want to use the entire prior range as possible</span>
+<span class="na">peak_lock_snr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.0</span>
+<span class="na">peak_min_snr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.0</span>
+
+<span class="na">marginalize_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+
+<span class="na">marginalize_distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">marginalize_distance_param</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">distance</span>
+<span class="na">marginalize_distance_interpolator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">marginalize_distance_snr_range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5, 50</span>
+<span class="na">marginalize_distance_density</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">200, 200</span>
+<span class="na">marginalize_distance_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1 V1</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008482</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008892</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:LOSC-STRAIN L1:LOSC-STRAIN V1:LOSC-STRAIN</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf L1:L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf V1:V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">dlogz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.5</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="c1">#coa_phase =</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TaylorF2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+
+<span class="c1">#; we&#39;ll choose not to sample over these, but you could</span>
+<span class="c1">#polarization = 0</span>
+<span class="c1">#ra = 3.44615914</span>
+<span class="c1">#dec = -0.40808407</span>
+
+<span class="c1">#tc = 1187008882.42825</span>
+
+<span class="c1">#; You could also set additional parameters if your waveform model supports / requires it.</span>
+<span class="c1">; spin1z = 0</span>
+
+<span class="c1">#[prior-coa_phase]</span>
+<span class="c1">#name = uniform_angle</span>
+
+<span class="c1">#[prior-ra+dec]</span>
+<span class="c1">#name = uniform_sky</span>
+
+<span class="k">[prior-ra]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">cos_angle</span>
+
+<span class="k">[prior-tc]</span>
+<span class="c1">#; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.4</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.5</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">#; following gives a uniform in volume</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">60</span>
+
+<span class="k">[prior-polarization]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+</pre></div>
+</div>
+<p class="sd-card-text"><a class="reference download internal" download="" href="../../_downloads/d73d3e210099e1aaf36612ca66d2a703/single.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</div>
+</details><p>Run this script to use this configuration file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-file<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/single.ini<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single_marg.hdf<span class="w"> </span><span class="se">\</span>
+--seed<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+
+pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>single_marg.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single_marg.png<span class="w"> </span><span class="se">\</span>
+--z-arg<span class="w"> </span>snr<span class="w"> </span>--vmin<span class="w"> </span><span class="m">31</span>.85<span class="w"> </span>--vmax<span class="w"> </span><span class="m">32</span>.15
+
+<span class="c1"># This reconstructs any marginalized parameters</span>
+<span class="c1"># and would be optional if you don&#39;t need them or</span>
+<span class="c1"># have sampled over all parameters directly (see single.ini)</span>
+pycbc_inference_model_stats<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>single_marg.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single_demarg.hdf<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--reconstruct-parameters<span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+
+pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>single_demarg.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single_demarg.png<span class="w"> </span><span class="se">\</span>
+--parameters<span class="w"> </span>distance<span class="w"> </span>inclination<span class="w"> </span>polarization<span class="w"> </span>coa_phase<span class="w"> </span>tc<span class="w"> </span>ra<span class="w"> </span>dec<span class="w"> </span><span class="se">\</span>
+--z-arg<span class="w"> </span>snr<span class="w"> </span>--vmin<span class="w"> </span><span class="m">31</span>.85<span class="w"> </span>--vmax<span class="w"> </span><span class="m">32</span>.15<span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/7f2d876d705ae9b0d2cb84a9e52901b3/run_marg.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will create the following plots:</p>
+<p>Before demarginalization:</p>
+<a class="reference internal image-reference" href="../../_images/single_marg.png"><img alt="../../_images/single_marg.png" class="align-center" src="../../_images/single_marg.png" style="width: 400px;" />
+</a>
+<p>After demarginalization:</p>
+<a class="reference internal image-reference" href="../../_images/single_demarg.png"><img alt="../../_images/single_demarg.png" class="align-center" src="../../_images/single_demarg.png" style="width: 400px;" />
+</a>
+</section>
+<section id="marginalization-over-all-parameters">
+<h2>Marginalization over all parameters<a class="headerlink" href="#marginalization-over-all-parameters" title="Link to this heading"></a></h2>
+<p>All parameters that the single_template model supports can be marginalized over
+to do so, you would just configure the model section to include each parameter
+(minus any you choose to be static). PyCBC Inference will simply reconstruct
+the missing parameters rather than performing any sampling over the parameter
+space. The number of samples to take from the posterior is configurable.</p>
+<p>First, you’ll need the configuration file. Note that in the <cite>sampler</cite> section
+you can set the number of samples to draw from the posterior.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Configuration File</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">single_template</span>
+
+<span class="c1">#; This model precalculates the SNR time series at a fixed rate.</span>
+<span class="c1">#; If you need a higher time resolution, this may be increased</span>
+<span class="na">sample_rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16384</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30.0</span>
+
+<span class="na">marginalize_vector_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">tc, ra, dec, polarization, inclination</span>
+<span class="na">marginalize_vector_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="na">marginalize_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+
+<span class="na">marginalize_distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">marginalize_distance_param</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">distance</span>
+<span class="na">marginalize_distance_interpolator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
+<span class="na">marginalize_distance_snr_range</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5, 50</span>
+<span class="na">marginalize_distance_density</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">200, 200</span>
+<span class="na">marginalize_distance_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1 V1</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008482</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008892</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:LOSC-STRAIN L1:LOSC-STRAIN V1:LOSC-STRAIN</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf L1:L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf V1:V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dummy</span>
+<span class="na">num_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5000</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="c1">#coa_phase =</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TaylorF2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+
+<span class="c1">#; we&#39;ll choose not to sample over these, but you could</span>
+<span class="c1">#polarization = 0</span>
+<span class="c1">#ra = 3.44615914</span>
+<span class="c1">#dec = -0.40808407</span>
+
+<span class="c1">#tc = 1187008882.42825</span>
+
+<span class="c1">#; You could also set additional parameters if your waveform model supports / requires it.</span>
+<span class="c1">; spin1z = 0</span>
+
+<span class="c1">#[prior-coa_phase]</span>
+<span class="c1">#name = uniform_angle</span>
+
+<span class="c1">#[prior-ra+dec]</span>
+<span class="c1">#name = uniform_sky</span>
+
+<span class="k">[prior-ra]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">cos_angle</span>
+
+<span class="k">[prior-tc]</span>
+<span class="c1">#; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.4</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.5</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">#; following gives a uniform in volume</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">60</span>
+
+<span class="k">[prior-polarization]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+</pre></div>
+</div>
+<p class="sd-card-text"><a class="reference download internal" download="" href="../../_downloads/d73d3e210099e1aaf36612ca66d2a703/single.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</div>
+</details><p>Run this script to use this configuration file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-file<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/single_instant.ini<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single_instant.hdf<span class="w"> </span><span class="se">\</span>
+--seed<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+
+pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+--input-file<span class="w"> </span>single_instant.hdf<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>single_instant.png<span class="w"> </span><span class="se">\</span>
+--parameters<span class="w"> </span>distance<span class="w"> </span>inclination<span class="w"> </span>polarization<span class="w"> </span>coa_phase<span class="w"> </span>tc<span class="w"> </span>ra<span class="w"> </span>dec<span class="w"> </span><span class="se">\</span>
+--z-arg<span class="w"> </span>snr<span class="w"> </span>--vmin<span class="w"> </span><span class="m">31</span>.85<span class="w"> </span>--vmax<span class="w"> </span><span class="m">32</span>.15<span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/7f2d876d705ae9b0d2cb84a9e52901b3/run_marg.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will create the following plot:</p>
+<p>After demarginalization:</p>
+<a class="reference internal image-reference" href="../../_images/single_instant.png"><img alt="../../_images/single_instant.png" class="align-center" src="../../_images/single_instant.png" style="width: 400px;" />
+</a>
+</section>
+<section id="abitrary-sampling-coordinates-with-nested-samplers">
+<h2>Abitrary sampling coordinates with nested samplers<a class="headerlink" href="#abitrary-sampling-coordinates-with-nested-samplers" title="Link to this heading"></a></h2>
+<p>The single template model also supports marginalization over the polarization
+angle by numerical sampling. The following example features arbitrary sampling
+coordinates with nested samplers
+using the <code class="docutils literal notranslate"><span class="pre">fixed_samples</span></code> distribution. Here we sample in the time delay
+space rather than sky location directly. This functionality is generic
+to pycbc inference and could be used with other models or samplers.</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Configuration File</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">single_template</span>
+
+<span class="c1">#; This model precalculates the SNR time series at a fixed rate.</span>
+<span class="c1">#; If you need a higher time resolution, this may be increased</span>
+<span class="na">sample_rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">32768</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30.0</span>
+<span class="na">marginalized_vector_samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+<span class="na">marginalized_vector_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">polarization</span>
+
+<span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1 V1</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008482</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008892</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">16</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:LOSC-STRAIN L1:LOSC-STRAIN V1:LOSC-STRAIN</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf L1:L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf V1:V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+<span class="na">dh</span><span class="w"> </span><span class="o">=</span>
+<span class="na">dhl</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TaylorF2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">30</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.3757</span>
+<span class="c1">#polarization = 0</span>
+
+<span class="k">[prior-tc]</span>
+<span class="c1">; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.4</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1187008882.5</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">#; following gives a uniform in volume</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">60</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+
+<span class="k">[prior-dh+dhl]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">fixed_samples</span>
+<span class="na">subname</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mysky</span>
+<span class="na">sample-size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e6</span>
+
+<span class="k">[mysky_sample-ra+dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_sky</span>
+
+<span class="k">[mysky_transform-dh+dhl]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ra, dec</span>
+<span class="na">dh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">det_tc(&#39;H1&#39;, ra, dec, 1187008882.0, relative=1)</span>
+<span class="na">dhl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">det_tc(&#39;L1&#39;, ra, dec, 1187008882.0, relative=1) - det_tc(&#39;H1&#39;, ra, dec, 1187008882.0, relative=1)</span>
+
+<span class="k">[waveform_transforms-ra+dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mysky</span>
+</pre></div>
+</div>
+</div>
+</details></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="margtime.html" class="btn btn-neutral float-left" title="Marginalized time model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="relative.html" class="btn btn-neutral float-right" title="Using the relative model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

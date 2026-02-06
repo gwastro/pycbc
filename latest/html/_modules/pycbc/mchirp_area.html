@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.mchirp_area &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.mchirp_area</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.mchirp_area</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Module with utilities for estimating candidate events source probabilities</span>
+<span class="c1"># Initial code by A. Curiel Barroso, August 2019</span>
+<span class="c1"># Modified by V. Villa-Ortega, January 2020, March 2021</span>
+
+<span class="sd">&quot;&quot;&quot;Functions to compute the area corresponding to different CBC on the m1 &amp; m2</span>
+<span class="sd">plane when given a central mchirp value and uncertainty.</span>
+<span class="sd">It also includes a function that calculates the source frame when given the</span>
+<span class="sd">detector frame mass and redshift.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">quad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">FlatLambdaCDM</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">_redshift</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">mass2_from_mchirp_mass1</span> <span class="k">as</span> <span class="n">m2mcm1</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.mchirp_area&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="insert_args">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.insert_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_args</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+    <span class="n">mchirp_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Arguments for estimating the &quot;</span>
+                                             <span class="s2">&quot;source probabilities of a &quot;</span>
+                                             <span class="s2">&quot;candidate event using the snr, &quot;</span>
+                                             <span class="s2">&quot;mchirp, and effective distance.&quot;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-mass-limits&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                              <span class="n">metavar</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;MIN_M2&#39;</span><span class="p">,</span> <span class="s1">&#39;MAX_NS&#39;</span><span class="p">,</span> <span class="s1">&#39;MAX_M1&#39;</span><span class="p">),</span>
+                              <span class="n">default</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">45.0</span><span class="p">],</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum and maximum values for the mass &quot;</span>
+                                   <span class="s2">&quot;of the binary components and maximum mass &quot;</span>
+                                   <span class="s2">&quot;of a neutron star, used as limits &quot;</span>
+                                   <span class="s2">&quot;when computing the area corresponding&quot;</span>
+                                   <span class="s2">&quot;to different CBC sources.&quot;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-mass-gap-max&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                              <span class="n">metavar</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;MAX_GAP&#39;</span><span class="p">),</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Upper limit of the mass gap, corresponding&quot;</span>
+                                   <span class="s2">&quot; to the minimum mass of a black hole. &quot;</span>
+                                   <span class="s2">&quot;Used as limit of integration of the &quot;</span>
+                                   <span class="s2">&quot;different CBC regions when considering &quot;</span>
+                                   <span class="s2">&quot;the MassGap category.&quot;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-mchirp-to-delta&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                              <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;m0&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Coefficient to estimate the value of the &#39;</span>
+                                   <span class="s1">&#39;mchirp uncertainty by mchirp_delta = &#39;</span>
+                                   <span class="s1">&#39;m0 * mchirp.&#39;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-eff-to-lum-distance&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                              <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;a0&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Coefficient to estimate the value of the &#39;</span>
+                                   <span class="s1">&#39;luminosity distance from the minimum &#39;</span>
+                                   <span class="s1">&#39;eff distance by D_lum = a0 * min(D_eff).&#39;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-lum-distance-to-delta&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                              <span class="n">nargs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;b0&#39;</span><span class="p">,</span> <span class="s1">&#39;b1&#39;</span><span class="p">),</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Coefficients to estimate the value of the &#39;</span>
+                                   <span class="s1">&#39;uncertainty on the luminosity distance &#39;</span>
+                                   <span class="s1">&#39;from the estimated luminosity distance and&#39;</span>
+                                   <span class="s1">&#39; the coinc snr by delta_lum = D_lum * &#39;</span>
+                                   <span class="s1">&#39;exp(b0) * coinc_snr ** b1.&#39;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-mass-gap-separate&#39;</span><span class="p">,</span>
+                              <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Gives separate probabilities for each kind&#39;</span>
+                                   <span class="s1">&#39; of mass gap CBC sources: GNS, GG, BHG.&#39;</span><span class="p">)</span>
+    <span class="n">mchirp_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--src-class-lal-cosmology&#39;</span><span class="p">,</span>
+                              <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Uses the Planck15 cosmology defined in &#39;</span>
+                                   <span class="s1">&#39;lalsuite instead of the astropy Planck15 &#39;</span>
+                                   <span class="s1">&#39;default model.&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="from_cli">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+    <span class="n">mass_limits_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">src_class_mass_limits</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mass_gap_max</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mass_gap_max</span> <span class="o">&lt;</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;MAX_GAP value cannot be lower than MAX_NS limit&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;mass_limits&#39;</span><span class="p">:</span>
+                 <span class="p">{</span><span class="s1">&#39;max_m1&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                  <span class="s1">&#39;min_m2&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]},</span>
+                <span class="s1">&#39;mass_bdary&#39;</span><span class="p">:</span>
+                 <span class="p">{</span><span class="s1">&#39;ns_max&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s1">&#39;gap_max&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mass_gap_max</span><span class="p">},</span>
+                <span class="s1">&#39;estimation_coeff&#39;</span><span class="p">:</span>
+                 <span class="p">{</span><span class="s1">&#39;a0&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_eff_to_lum_distance</span><span class="p">,</span>
+                  <span class="s1">&#39;b0&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_lum_distance_to_delta</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                  <span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_lum_distance_to_delta</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="s1">&#39;m0&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mchirp_to_delta</span><span class="p">},</span>
+                <span class="s1">&#39;mass_gap&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;mass_gap_separate&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mass_gap_separate</span><span class="p">,</span>
+                <span class="s1">&#39;lal_cosmology&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_lal_cosmology</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;mass_limits&#39;</span><span class="p">:</span>
+             <span class="p">{</span><span class="s1">&#39;max_m1&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+              <span class="s1">&#39;min_m2&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]},</span>
+            <span class="s1">&#39;mass_bdary&#39;</span><span class="p">:</span>
+             <span class="p">{</span><span class="s1">&#39;ns_max&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+              <span class="s1">&#39;gap_max&#39;</span><span class="p">:</span> <span class="n">mass_limits_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]},</span>
+            <span class="s1">&#39;estimation_coeff&#39;</span><span class="p">:</span>
+             <span class="p">{</span><span class="s1">&#39;a0&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_eff_to_lum_distance</span><span class="p">,</span>
+              <span class="s1">&#39;b0&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_lum_distance_to_delta</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+              <span class="s1">&#39;b1&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_lum_distance_to_delta</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+              <span class="s1">&#39;m0&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mchirp_to_delta</span><span class="p">},</span>
+            <span class="s1">&#39;mass_gap&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;mass_gap_separate&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_mass_gap_separate</span><span class="p">,</span>
+            <span class="s1">&#39;lal_cosmology&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">src_class_lal_cosmology</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="redshift_estimation">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.redshift_estimation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">redshift_estimation</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="n">distance_std</span><span class="p">,</span> <span class="n">lal_cosmology</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes values of distance and its uncertainty and returns a</span>
+<span class="sd">       dictionary with estimates of the redshift and its uncertainty.</span>
+<span class="sd">       If the argument &#39;lal_cosmology&#39; is True, it uses Planck15 cosmology</span>
+<span class="sd">       model as defined in lalsuite instead of the astropy default.</span>
+<span class="sd">       Constants for lal_cosmology taken from Planck15_lal_cosmology() in</span>
+<span class="sd">       https://git.ligo.org/lscsoft/pesummary/-/blob/master/pesummary/gw/</span>
+<span class="sd">       cosmology.py.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">lal_cosmology</span><span class="p">:</span>
+        <span class="n">cosmology</span> <span class="o">=</span> <span class="n">FlatLambdaCDM</span><span class="p">(</span><span class="n">H0</span><span class="o">=</span><span class="mf">67.90</span><span class="p">,</span> <span class="n">Om0</span><span class="o">=</span><span class="mf">0.3065</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cosmology</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">z_estimation</span> <span class="o">=</span> <span class="n">_redshift</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="n">cosmology</span><span class="o">=</span><span class="n">cosmology</span><span class="p">)</span>
+    <span class="n">z_est_max</span> <span class="o">=</span> <span class="n">_redshift</span><span class="p">((</span><span class="n">distance</span> <span class="o">+</span> <span class="n">distance_std</span><span class="p">),</span>
+                          <span class="n">cosmology</span><span class="o">=</span><span class="n">cosmology</span><span class="p">)</span>
+    <span class="n">z_est_min</span> <span class="o">=</span> <span class="n">_redshift</span><span class="p">((</span><span class="n">distance</span> <span class="o">-</span> <span class="n">distance_std</span><span class="p">),</span>
+                          <span class="n">cosmology</span><span class="o">=</span><span class="n">cosmology</span><span class="p">)</span>
+    <span class="n">z_std_estimation</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">z_est_max</span> <span class="o">-</span> <span class="n">z_est_min</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;central&#39;</span><span class="p">:</span> <span class="n">z_estimation</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span><span class="p">:</span> <span class="n">z_std_estimation</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">z</span></div>
+
+
+
+<div class="viewcode-block" id="src_mass_from_z_det_mass">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.src_mass_from_z_det_mass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">src_mass_from_z_det_mass</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">del_z</span><span class="p">,</span> <span class="n">mdet</span><span class="p">,</span> <span class="n">del_mdet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes values of redshift, redshift uncertainty, detector mass and its</span>
+<span class="sd">    uncertainty and computes the source mass and its uncertainty.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">msrc</span> <span class="o">=</span> <span class="n">mdet</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">z</span><span class="p">)</span>
+    <span class="n">del_msrc</span> <span class="o">=</span> <span class="n">msrc</span> <span class="o">*</span> <span class="p">((</span><span class="n">del_mdet</span> <span class="o">/</span> <span class="n">mdet</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.</span>
+                       <span class="o">+</span> <span class="p">(</span><span class="n">del_z</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">z</span><span class="p">))</span> <span class="o">**</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">msrc</span><span class="p">,</span> <span class="n">del_msrc</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="intmc">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.intmc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">intmc</span><span class="p">(</span><span class="n">mc</span><span class="p">,</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the integral of m2 over m1 between x_min and x_max,</span>
+<span class="sd">       assuming that mchirp is fixed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">integral</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">mc</span><span class="p">:</span> <span class="n">m2mcm1</span><span class="p">(</span><span class="n">mc</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">mc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">integral</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_area">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.get_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="n">lim_h1</span><span class="p">,</span> <span class="n">lim_h2</span><span class="p">,</span> <span class="n">lim_v1</span><span class="p">,</span> <span class="n">lim_v2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the area under the chirp mass contour in a region of the m1-m2</span>
+<span class="sd">    plane (m1 &gt; m2).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trig_mc : sequence of two values</span>
+<span class="sd">        first represents central estimate of mchirp in source frame,</span>
+<span class="sd">        second its uncertainty</span>
+<span class="sd">    lim_h1, lim_h2 : floats or the string &#39;diagonal&#39;</span>
+<span class="sd">        upper and lower horizontal limits of the region (limits on m2)</span>
+<span class="sd">    lim_v1, lim_v2 : floats</span>
+<span class="sd">        right and left vertical limits of the region (limits on m1)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    area : float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mc_max</span> <span class="o">=</span> <span class="n">trig_mc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">trig_mc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">mc_min</span> <span class="o">=</span> <span class="n">trig_mc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">trig_mc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># The points where the equal mass line and a chirp mass</span>
+    <span class="c1"># curve intersect is m1 = m2 = 2**0.2 * mchirp</span>
+    <span class="n">mi_max</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.</span><span class="o">**</span><span class="mf">0.2</span><span class="p">)</span> <span class="o">*</span> <span class="n">mc_max</span>
+    <span class="n">mi_min</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.</span><span class="o">**</span><span class="mf">0.2</span><span class="p">)</span> <span class="o">*</span> <span class="n">mc_min</span>
+
+    <span class="k">if</span> <span class="n">lim_h1</span> <span class="o">==</span> <span class="s1">&#39;diagonal&#39;</span><span class="p">:</span>
+        <span class="n">max_h1</span> <span class="o">=</span> <span class="n">mi_max</span>
+        <span class="n">min_h1</span> <span class="o">=</span> <span class="n">mi_min</span>
+        <span class="n">fun_sup</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_h1</span> <span class="o">=</span> <span class="n">m2mcm1</span><span class="p">(</span><span class="n">mc_max</span><span class="p">,</span> <span class="n">lim_h1</span><span class="p">)</span>
+        <span class="n">min_h1</span> <span class="o">=</span> <span class="n">m2mcm1</span><span class="p">(</span><span class="n">mc_min</span><span class="p">,</span> <span class="n">lim_h1</span><span class="p">)</span>
+        <span class="n">fun_sup</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">lim_h1</span>
+
+    <span class="n">max_h2</span> <span class="o">=</span> <span class="n">m2mcm1</span><span class="p">(</span><span class="n">mc_max</span><span class="p">,</span> <span class="n">lim_h2</span><span class="p">)</span>
+    <span class="n">min_h2</span> <span class="o">=</span> <span class="n">m2mcm1</span><span class="p">(</span><span class="n">mc_min</span><span class="p">,</span> <span class="n">lim_h2</span><span class="p">)</span>
+    <span class="n">fun_inf</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">lim_h2</span>
+
+    <span class="n">lim_max1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">max_h1</span><span class="p">,</span> <span class="n">lim_v1</span><span class="p">,</span> <span class="n">lim_v2</span><span class="p">)</span>
+    <span class="n">lim_max2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">max_h2</span><span class="p">,</span> <span class="n">lim_v1</span><span class="p">,</span> <span class="n">lim_v2</span><span class="p">)</span>
+    <span class="n">lim_min1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">min_h1</span><span class="p">,</span> <span class="n">lim_v1</span><span class="p">,</span> <span class="n">lim_v2</span><span class="p">)</span>
+    <span class="n">lim_min2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">min_h2</span><span class="p">,</span> <span class="n">lim_v1</span><span class="p">,</span> <span class="n">lim_v2</span><span class="p">)</span>
+
+    <span class="n">int_max</span> <span class="o">=</span> <span class="n">intmc</span><span class="p">(</span><span class="n">mc_max</span><span class="p">,</span> <span class="n">lim_max1</span><span class="p">,</span> <span class="n">lim_max2</span><span class="p">)</span>
+    <span class="n">int_min</span> <span class="o">=</span> <span class="n">intmc</span><span class="p">(</span><span class="n">mc_min</span><span class="p">,</span> <span class="n">lim_min1</span><span class="p">,</span> <span class="n">lim_min2</span><span class="p">)</span>
+    <span class="n">intline_sup</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">fun_sup</span><span class="p">,</span> <span class="n">lim_min1</span><span class="p">,</span> <span class="n">lim_max1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">intline_inf</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">fun_inf</span><span class="p">,</span> <span class="n">lim_min2</span><span class="p">,</span> <span class="n">lim_max2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">int_max</span> <span class="o">+</span> <span class="n">intline_sup</span> <span class="o">-</span> <span class="n">int_min</span> <span class="o">-</span> <span class="n">intline_inf</span>
+    <span class="k">return</span> <span class="n">area</span></div>
+
+
+
+<div class="viewcode-block" id="calc_areas">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.calc_areas">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_areas</span><span class="p">(</span>
+        <span class="n">trig_mc_det</span><span class="p">,</span>
+        <span class="n">mass_limits</span><span class="p">,</span>
+        <span class="n">mass_bdary</span><span class="p">,</span>
+        <span class="n">z</span><span class="p">,</span>
+        <span class="n">mass_gap</span><span class="p">,</span>
+        <span class="n">mass_gap_separate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the area inside the lines of the second component mass as a</span>
+<span class="sd">    function of the first component mass for the two extreme values</span>
+<span class="sd">    of mchirp: mchirp +/- mchirp_uncertainty, for each region of the source</span>
+<span class="sd">    classifying diagram.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trig_mc</span> <span class="o">=</span> <span class="n">src_mass_from_z_det_mass</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="s2">&quot;central&quot;</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="s2">&quot;delta&quot;</span><span class="p">],</span>
+                                       <span class="n">trig_mc_det</span><span class="p">[</span><span class="s2">&quot;central&quot;</span><span class="p">],</span>
+                                       <span class="n">trig_mc_det</span><span class="p">[</span><span class="s2">&quot;delta&quot;</span><span class="p">])</span>
+    <span class="n">m2_min</span> <span class="o">=</span> <span class="n">mass_limits</span><span class="p">[</span><span class="s2">&quot;min_m2&quot;</span><span class="p">]</span>
+    <span class="n">m1_max</span> <span class="o">=</span> <span class="n">mass_limits</span><span class="p">[</span><span class="s2">&quot;max_m1&quot;</span><span class="p">]</span>
+    <span class="n">ns_max</span> <span class="o">=</span> <span class="n">mass_bdary</span><span class="p">[</span><span class="s2">&quot;ns_max&quot;</span><span class="p">]</span>
+    <span class="n">gap_max</span> <span class="o">=</span> <span class="n">mass_bdary</span><span class="p">[</span><span class="s2">&quot;gap_max&quot;</span><span class="p">]</span>
+
+    <span class="n">abbh</span> <span class="o">=</span> <span class="n">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="s1">&#39;diagonal&#39;</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">,</span> <span class="n">m1_max</span><span class="p">)</span>
+    <span class="n">abhg</span> <span class="o">=</span> <span class="n">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">,</span> <span class="n">m1_max</span><span class="p">)</span>
+    <span class="n">ansbh</span> <span class="o">=</span> <span class="n">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">,</span> <span class="n">m2_min</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">,</span> <span class="n">m1_max</span><span class="p">)</span>
+    <span class="n">agg</span> <span class="o">=</span> <span class="n">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="s1">&#39;diagonal&#39;</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">)</span>
+    <span class="n">agns</span> <span class="o">=</span> <span class="n">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">,</span> <span class="n">m2_min</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">,</span> <span class="n">gap_max</span><span class="p">)</span>
+    <span class="n">abns</span> <span class="o">=</span> <span class="n">get_area</span><span class="p">(</span><span class="n">trig_mc</span><span class="p">,</span> <span class="s1">&#39;diagonal&#39;</span><span class="p">,</span> <span class="n">m2_min</span><span class="p">,</span> <span class="n">m2_min</span><span class="p">,</span> <span class="n">ns_max</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mass_gap</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mass_gap_separate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="n">abns</span><span class="p">,</span>
+                <span class="s2">&quot;GNS&quot;</span><span class="p">:</span> <span class="n">agns</span><span class="p">,</span>
+                <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="n">ansbh</span><span class="p">,</span>
+                <span class="s2">&quot;GG&quot;</span><span class="p">:</span> <span class="n">agg</span><span class="p">,</span>
+                <span class="s2">&quot;BHG&quot;</span><span class="p">:</span> <span class="n">abhg</span><span class="p">,</span>
+                <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="n">abbh</span>
+                <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="n">abns</span><span class="p">,</span>
+            <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="n">ansbh</span><span class="p">,</span>
+            <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="n">abbh</span><span class="p">,</span>
+            <span class="s2">&quot;Mass Gap&quot;</span><span class="p">:</span> <span class="n">agns</span> <span class="o">+</span> <span class="n">agg</span> <span class="o">+</span> <span class="n">abhg</span>
+            <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="n">abns</span><span class="p">,</span>
+        <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="n">ansbh</span><span class="p">,</span>
+        <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="n">abbh</span>
+        <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="calc_probabilities">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.mchirp_area.calc_probabilities">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_probabilities</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">eff_distance</span><span class="p">,</span> <span class="n">src_args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes the different probabilities that a candidate event belongs to</span>
+<span class="sd">       each CBC source category taking as arguments the chirp mass, the</span>
+<span class="sd">       coincident SNR and the effective distance, and estimating the</span>
+<span class="sd">       chirp mass uncertainty, the luminosity distance (and its uncertainty)</span>
+<span class="sd">       and the redshift (and its uncertainty). Probability is estimated to be</span>
+<span class="sd">       directly proportional to the area of the corresponding CBC region.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mass_limits</span> <span class="o">=</span> <span class="n">src_args</span><span class="p">[</span><span class="s1">&#39;mass_limits&#39;</span><span class="p">]</span>
+    <span class="n">mass_bdary</span> <span class="o">=</span> <span class="n">src_args</span><span class="p">[</span><span class="s1">&#39;mass_bdary&#39;</span><span class="p">]</span>
+    <span class="n">coeff</span> <span class="o">=</span> <span class="n">src_args</span><span class="p">[</span><span class="s1">&#39;estimation_coeff&#39;</span><span class="p">]</span>
+    <span class="n">trig_mc_det</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;central&#39;</span><span class="p">:</span> <span class="n">mchirp</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span><span class="p">:</span> <span class="n">mchirp</span> <span class="o">*</span> <span class="n">coeff</span><span class="p">[</span><span class="s1">&#39;m0&#39;</span><span class="p">]}</span>
+    <span class="n">dist_estimation</span> <span class="o">=</span> <span class="n">coeff</span><span class="p">[</span><span class="s1">&#39;a0&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">eff_distance</span>
+    <span class="n">dist_std_estimation</span> <span class="o">=</span> <span class="p">(</span><span class="n">dist_estimation</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">coeff</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">])</span> <span class="o">*</span>
+                           <span class="n">snr</span> <span class="o">**</span> <span class="n">coeff</span><span class="p">[</span><span class="s1">&#39;b1&#39;</span><span class="p">])</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">redshift_estimation</span><span class="p">(</span><span class="n">dist_estimation</span><span class="p">,</span> <span class="n">dist_std_estimation</span><span class="p">,</span>
+                            <span class="n">src_args</span><span class="p">[</span><span class="s1">&#39;lal_cosmology&#39;</span><span class="p">])</span>
+    <span class="n">mass_gap</span> <span class="o">=</span> <span class="n">src_args</span><span class="p">[</span><span class="s1">&#39;mass_gap&#39;</span><span class="p">]</span>
+    <span class="n">mass_gap_separate</span> <span class="o">=</span> <span class="n">src_args</span><span class="p">[</span><span class="s1">&#39;mass_gap_separate&#39;</span><span class="p">]</span>
+
+    <span class="c1"># If the mchirp is greater than the mchirp corresponding to two masses</span>
+    <span class="c1"># equal to the maximum mass, the probability for BBH is 100%.</span>
+    <span class="c1"># If it is less than the mchirp corresponding to two masses equal to the</span>
+    <span class="c1"># minimum mass, the probability for BNS is 100%.</span>
+    <span class="n">mc_max</span> <span class="o">=</span> <span class="n">mass_limits</span><span class="p">[</span><span class="s1">&#39;max_m1&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">mc_min</span> <span class="o">=</span> <span class="n">mass_limits</span><span class="p">[</span><span class="s1">&#39;min_m2&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">trig_mc_det</span><span class="p">[</span><span class="s1">&#39;central&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">mc_max</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z</span><span class="p">[</span><span class="s1">&#39;central&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">mass_gap</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mass_gap_separate</span><span class="p">:</span>
+                <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;GNS&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                                 <span class="s2">&quot;GG&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BHG&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                                 <span class="s2">&quot;Mass Gap&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+
+    <span class="k">elif</span> <span class="n">trig_mc_det</span><span class="p">[</span><span class="s1">&#39;central&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">mc_min</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z</span><span class="p">[</span><span class="s1">&#39;central&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">mass_gap</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mass_gap_separate</span><span class="p">:</span>
+                <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;GNS&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                                 <span class="s2">&quot;GG&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BHG&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                                 <span class="s2">&quot;Mass Gap&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;BNS&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;NSBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;BBH&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">areas</span> <span class="o">=</span> <span class="n">calc_areas</span><span class="p">(</span><span class="n">trig_mc_det</span><span class="p">,</span> <span class="n">mass_limits</span><span class="p">,</span> <span class="n">mass_bdary</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span>
+            <span class="n">mass_gap</span><span class="p">,</span> <span class="n">mass_gap_separate</span><span class="p">)</span>
+        <span class="n">total_area</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">areas</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">probabilities</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">areas</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_area</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">areas</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">probabilities</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

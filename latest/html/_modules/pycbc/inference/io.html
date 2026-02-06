@@ -1,0 +1,947 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.io &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inference.io</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.io</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018  Collin Capano</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;I/O utilities for pycbc inference</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">textwrap</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_h5py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.record</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">FieldArray</span><span class="p">,</span> <span class="n">_numpy_function_lib</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform</span> <span class="k">as</span> <span class="n">_waveform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.hdf</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">dump_state</span><span class="p">,</span> <span class="n">load_state</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.inference.option_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">ParseLabelArg</span><span class="p">,</span> <span class="n">ParseParametersArg</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.emcee</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmceeFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.emcee_pt</span><span class="w"> </span><span class="kn">import</span> <span class="n">EmceePTFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.ptemcee</span><span class="w"> </span><span class="kn">import</span> <span class="n">PTEmceeFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.cpnest</span><span class="w"> </span><span class="kn">import</span> <span class="n">CPNestFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.multinest</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultinestFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dynesty</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynestyFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.ultranest</span><span class="w"> </span><span class="kn">import</span> <span class="n">UltranestFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.snowline</span><span class="w"> </span><span class="kn">import</span> <span class="n">SnowlineFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.nessai</span><span class="w"> </span><span class="kn">import</span> <span class="n">NessaiFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.posterior</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosteriorFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.txt</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceTXTFile</span>
+
+<span class="n">filetypes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">EmceeFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">EmceeFile</span><span class="p">,</span>
+    <span class="n">EmceePTFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">EmceePTFile</span><span class="p">,</span>
+    <span class="n">PTEmceeFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">PTEmceeFile</span><span class="p">,</span>
+    <span class="n">CPNestFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">CPNestFile</span><span class="p">,</span>
+    <span class="n">MultinestFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">MultinestFile</span><span class="p">,</span>
+    <span class="n">DynestyFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">DynestyFile</span><span class="p">,</span>
+    <span class="n">PosteriorFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">PosteriorFile</span><span class="p">,</span>
+    <span class="n">UltranestFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">UltranestFile</span><span class="p">,</span>
+    <span class="n">NessaiFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">NessaiFile</span><span class="p">,</span>
+    <span class="n">SnowlineFile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">SnowlineFile</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.epsie</span><span class="w"> </span><span class="kn">import</span> <span class="n">EpsieFile</span>
+    <span class="n">filetypes</span><span class="p">[</span><span class="n">EpsieFile</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">EpsieFile</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="get_file_type">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.get_file_type">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_file_type</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Returns I/O object to use for file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">        Name of file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    file_type : {InferenceFile, InferenceTXTFile}</span>
+<span class="sd">        The type of inference file object to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">txt_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;.dat&quot;</span><span class="p">,</span> <span class="s2">&quot;.csv&quot;</span><span class="p">]</span>
+    <span class="n">hdf_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;.hdf&quot;</span><span class="p">,</span> <span class="s2">&quot;.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;.bkup&quot;</span><span class="p">,</span> <span class="s2">&quot;.checkpoint&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">hdf_extensions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">_h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">filetype</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;filetype&#39;</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">filetype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">filetype</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+            <span class="k">return</span> <span class="n">filetypes</span><span class="p">[</span><span class="n">filetype</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">txt_extensions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ext</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">InferenceTXTFile</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Extension is not supported.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="loadfile">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.loadfile">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">loadfile</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads the given file using the appropriate InferenceFile class.</span>
+
+<span class="sd">    If ``filetype`` is not provided, this will try to retreive the ``filetype``</span>
+<span class="sd">    from the file&#39;s ``attrs``. If the file does not exist yet, an IOError will</span>
+<span class="sd">    be raised if ``filetype`` is not provided.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The filename to load.</span>
+<span class="sd">    mode : str, optional</span>
+<span class="sd">        What mode to load the file with, e.g., &#39;w&#39; for write, &#39;r&#39; for read,</span>
+<span class="sd">        &#39;a&#39; for append. Default will default to h5py.File&#39;s mode, which is &#39;a&#39;.</span>
+<span class="sd">    filetype : str, optional</span>
+<span class="sd">        Force the file to be loaded with the given class name. This must be</span>
+<span class="sd">        provided if creating a new file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filetype instance</span>
+<span class="sd">        An open file handler to the file. The class used for IO with the file</span>
+<span class="sd">        is determined by the ``filetype`` keyword (if provided) or the</span>
+<span class="sd">        ``filetype`` stored in the file (if not provided).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">filetype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># try to read the file to get its filetype</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fileclass</span> <span class="o">=</span> <span class="n">get_file_type</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+            <span class="c1"># file doesn&#39;t exist, filetype must be provided</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;The file appears not to exist. In this case, &quot;</span>
+                          <span class="s2">&quot;filetype must be provided.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fileclass</span> <span class="o">=</span> <span class="n">filetypes</span><span class="p">[</span><span class="n">filetype</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">fileclass</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                         HDF Utilities</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="check_integrity">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.check_integrity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_integrity</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks the integrity of an InferenceFile.</span>
+
+<span class="sd">    Checks done are:</span>
+
+<span class="sd">        * can the file open?</span>
+<span class="sd">        * do all of the datasets in the samples group have the same shape?</span>
+<span class="sd">        * can the first and last sample in all of the datasets in the samples</span>
+<span class="sd">          group be read?</span>
+
+<span class="sd">    If any of these checks fail, an IOError is raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename: str</span>
+<span class="sd">        Name of an InferenceFile to check.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the given file does not exist.</span>
+<span class="sd">    KeyError</span>
+<span class="sd">        If the samples group does not exist.</span>
+<span class="sd">    IOError</span>
+<span class="sd">        If any of the checks fail.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check that the file exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;file </span><span class="si">{}</span><span class="s2"> does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+    <span class="c1"># if the file is corrupted such that it cannot be opened, the next line</span>
+    <span class="c1"># will raise an IOError</span>
+    <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="c1"># check that all datasets in samples have the same shape</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># but only do the check if parameters have been written</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span> <span class="o">+</span> <span class="s1">&#39;/</span><span class="si">{}</span><span class="s1">&#39;</span>
+            <span class="c1"># use the first parameter as a reference shape</span>
+            <span class="n">ref_shape</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">)]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">ref_shape</span>
+                       <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;not all datasets in the samples group have &quot;</span>
+                              <span class="s2">&quot;the same shape&quot;</span><span class="p">)</span>
+            <span class="c1"># check that we can read the first/last sample</span>
+            <span class="n">firstidx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">))</span>
+            <span class="n">lastidx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">ref_shape</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">)][</span><span class="n">firstidx</span><span class="p">]</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">param</span><span class="p">)][</span><span class="n">lastidx</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="validate_checkpoint_files">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.validate_checkpoint_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_checkpoint_files</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="n">backup_file</span><span class="p">,</span>
+                              <span class="n">check_nsamples</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks if the given checkpoint and/or backup files are valid.</span>
+
+<span class="sd">    The checkpoint file is considered valid if:</span>
+
+<span class="sd">        * it passes all tests run by ``check_integrity``;</span>
+<span class="sd">        * it has at least one sample written to it (indicating at least one</span>
+<span class="sd">          checkpoint has happened).</span>
+
+<span class="sd">    The same applies to the backup file. The backup file must also have the</span>
+<span class="sd">    same number of samples as the checkpoint file, otherwise, the backup is</span>
+<span class="sd">    considered invalid.</span>
+
+<span class="sd">    If the checkpoint (backup) file is found to be valid, but the backup</span>
+<span class="sd">    (checkpoint) file is not valid, then the checkpoint (backup) is copied to</span>
+<span class="sd">    the backup (checkpoint). Thus, this function ensures that checkpoint and</span>
+<span class="sd">    backup files are either both valid or both invalid.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    checkpoint_file : string</span>
+<span class="sd">        Name of the checkpoint file.</span>
+<span class="sd">    backup_file : string</span>
+<span class="sd">        Name of the backup file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    checkpoint_valid : bool</span>
+<span class="sd">        Whether or not the checkpoint (and backup) file may be used for loading</span>
+<span class="sd">        samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check if checkpoint file exists and is valid</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">check_integrity</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">):</span>
+        <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># backup file</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">check_integrity</span><span class="p">(</span><span class="n">backup_file</span><span class="p">)</span>
+        <span class="n">backup_valid</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">):</span>
+        <span class="n">backup_valid</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># since we can open the file, run self diagnostics</span>
+    <span class="k">if</span> <span class="n">checkpoint_valid</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">backup_valid</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">backup_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">backup_valid</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">check_nsamples</span><span class="p">:</span>
+        <span class="c1"># This check is not required by nested samplers</span>
+        <span class="c1"># check that the checkpoint and backup have the same number of samples;</span>
+        <span class="c1"># if not, assume the checkpoint has the correct number</span>
+        <span class="k">if</span> <span class="n">checkpoint_valid</span> <span class="ow">and</span> <span class="n">backup_valid</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">nsamples</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">][</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+            <span class="k">with</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">backup_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">backup_nsamples</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">][</span><span class="n">group</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+            <span class="n">backup_valid</span> <span class="o">=</span> <span class="n">nsamples</span> <span class="o">==</span> <span class="n">backup_nsamples</span>
+        <span class="c1"># decide what to do based on the files&#39; statuses</span>
+    <span class="k">if</span> <span class="n">checkpoint_valid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">backup_valid</span><span class="p">:</span>
+        <span class="c1"># copy the checkpoint to the backup</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Backup invalid; copying checkpoint file&quot;</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">checkpoint_file</span><span class="p">,</span> <span class="n">backup_file</span><span class="p">)</span>
+        <span class="n">backup_valid</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">backup_valid</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">checkpoint_valid</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checkpoint invalid; copying backup file&quot;</span><span class="p">)</span>
+        <span class="c1"># copy the backup to the checkpoint</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">backup_file</span><span class="p">,</span> <span class="n">checkpoint_file</span><span class="p">)</span>
+        <span class="n">checkpoint_valid</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">checkpoint_valid</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                         Command-line Utilities</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="get_common_parameters">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.get_common_parameters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_common_parameters</span><span class="p">(</span><span class="n">input_files</span><span class="p">,</span> <span class="n">collection</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets a list of variable params that are common across all input files.</span>
+
+<span class="sd">    If no common parameters are found, a ``ValueError`` is raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_files : list of str</span>
+<span class="sd">        List of input files to load.</span>
+<span class="sd">    collection : str, optional</span>
+<span class="sd">        What group of parameters to load. Can be the name of a list of</span>
+<span class="sd">        parameters stored in the files&#39; attrs (e.g., &quot;variable_params&quot;), or</span>
+<span class="sd">        &quot;all&quot;. If &quot;all&quot;, will load all of the parameters in the files&#39;</span>
+<span class="sd">        samples group. Default is to load all.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list :</span>
+<span class="sd">        List of the parameter names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">collection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">collection</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">samples_group</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">collection</span><span class="p">]</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ps</span><span class="p">))</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">parameters</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">parameters</span> <span class="o">==</span> <span class="p">[]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;no common parameters found for collection </span><span class="si">{}</span><span class="s2"> in &quot;</span>
+                         <span class="s2">&quot;files </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">input_files</span><span class="p">)))</span>
+    <span class="c1"># if using python 3 to read a file created in python 2, need to convert</span>
+    <span class="c1"># parameters to strs</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">parameters</span></div>
+
+
+
+<div class="viewcode-block" id="NoInputFileError">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.NoInputFileError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoInputFileError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised in custom argparse Actions by arguments needing input-files when</span>
+<span class="sd">    no file(s) were provided.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="PrintFileParams">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.PrintFileParams">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrintFileParams</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">Action</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Argparse action that will load input files and print possible parameters</span>
+<span class="sd">    to screen. Once this is done, the program is forced to exit immediately.</span>
+
+<span class="sd">    The behvior is similar to --help, except that the input-file is read.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        The ``input_file`` attribute must be set in the parser namespace before</span>
+<span class="sd">        this action is called. Otherwise, a ``NoInputFileError`` is raised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">nargs</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;nargs for this action must be 0&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PrintFileParams</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">nargs</span><span class="o">=</span><span class="n">nargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_args</span> <span class="o">=</span> <span class="n">skip_args</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">option_string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># get the input file(s)</span>
+        <span class="n">input_files</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="n">input_file</span>
+        <span class="k">if</span> <span class="n">input_files</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># see if we should raise an error</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">raise_err</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">parser</span><span class="o">.</span><span class="n">no_input_file_err</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">raise_err</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">raise_err</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NoInputFileError</span><span class="p">(</span><span class="s2">&quot;must provide at least one input file&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># just return to stop further processing</span>
+                <span class="k">return</span>
+        <span class="n">filesbytype</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">fileparsers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">filesbytype</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">filesbytype</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">fn</span><span class="p">]</span>
+                <span class="c1"># get any extra options</span>
+                <span class="n">fileparsers</span><span class="p">[</span><span class="n">fp</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">extra_args_parser</span><span class="p">(</span>
+                    <span class="n">skip_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_args</span><span class="p">,</span> <span class="n">add_help</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># now print information about the intersection of all parameters</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">get_common_parameters</span><span class="p">(</span><span class="n">input_files</span><span class="p">,</span> <span class="n">collection</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">+</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;Parameters available with this (these) &quot;</span>
+                                 <span class="s2">&quot;input file(s):&quot;</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">parameters</span><span class="p">))),</span>
+              <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># information about the pycbc functions</span>
+        <span class="n">pfuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">FieldArray</span><span class="o">.</span><span class="n">functionlib</span><span class="o">.</span><span class="n">fget</span><span class="p">(</span><span class="n">FieldArray</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;Available pycbc functions (see &quot;</span>
+                            <span class="s2">&quot;http://pycbc.org/pycbc/latest/html for &quot;</span>
+                            <span class="s2">&quot;more details):&quot;</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pfuncs</span><span class="p">)),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># numpy funcs</span>
+        <span class="n">npfuncs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">name</span> <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_numpy_function_lib</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                          <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ufunc</span><span class="p">)])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;Available numpy functions:&quot;</span><span class="p">),</span>
+              <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">npfuncs</span><span class="p">)),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># misc</span>
+        <span class="n">consts</span> <span class="o">=</span> <span class="s2">&quot;e euler_gamma inf nan pi&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;Recognized constants:&quot;</span><span class="p">),</span>
+              <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">consts</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;Python arthimetic (+ - * / // ** %), &quot;</span>
+                            <span class="s2">&quot;binary (&amp;, |, etc.), and comparison (&gt;, &lt;, &gt;=, &quot;</span>
+                            <span class="s2">&quot;etc.) operators may also be used.&quot;</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print out the extra arguments that may be used</span>
+        <span class="n">outstr</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;The following are additional command-line &quot;</span>
+                               <span class="s2">&quot;options that may be provided, along with the &quot;</span>
+                               <span class="s2">&quot;input files that understand them:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">+</span><span class="n">outstr</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ftype</span><span class="p">,</span> <span class="n">fparser</span> <span class="ow">in</span> <span class="n">fileparsers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">fnames</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">filesbytype</span><span class="p">[</span><span class="n">ftype</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">fparser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">outstr</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span>
+                    <span class="s2">&quot;File(s) </span><span class="si">{}</span><span class="s2"> use no additional options.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fnames</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">outstr</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fparser</span><span class="o">.</span><span class="n">usage</span> <span class="o">=</span> <span class="n">fnames</span>
+                <span class="n">fparser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ResultsArgumentParser">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.ResultsArgumentParser">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ResultsArgumentParser</span><span class="p">(</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wraps argument parser, and preloads arguments needed for loading samples</span>
+<span class="sd">    from a file.</span>
+
+<span class="sd">    This parser class should be used by any program that wishes to use the</span>
+<span class="sd">    standard arguments for loading samples. It provides functionality to parse</span>
+<span class="sd">    file specific options. These file-specific arguments are not included in</span>
+<span class="sd">    the standard ``--help`` (since they depend on what input files are given),</span>
+<span class="sd">    but can be seen by running ``--file-help/-H``. The ``--file-help`` will</span>
+<span class="sd">    also print off information about what parameters may be used given the</span>
+<span class="sd">    input files.</span>
+
+<span class="sd">    As with the standard ``ArgumentParser``, running this class&#39;s</span>
+<span class="sd">    ``parse_args`` will result in an error if arguments are provided that are</span>
+<span class="sd">    not recognized by the parser, nor by any of the file-specific arguments.</span>
+<span class="sd">    For example, ``parse_args`` would work on the command</span>
+<span class="sd">    ``--input-file results.hdf --walker 0`` if</span>
+<span class="sd">    ``results.hdf`` was created by a sampler that recognizes a ``--walker``</span>
+<span class="sd">    argument, but would raise an error if ``results.hdf`` was created by a</span>
+<span class="sd">    sampler that does not recognize a ``--walker`` argument. The extra</span>
+<span class="sd">    arguments that are recognized are determined by the sampler IO class&#39;s</span>
+<span class="sd">    ``extra_args_parser``.</span>
+
+<span class="sd">    Some arguments may be excluded from the parser using the ``skip_args``</span>
+<span class="sd">    optional parameter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    skip_args : list of str, optional</span>
+<span class="sd">        Do not add the given arguments to the parser. Arguments should be</span>
+<span class="sd">        specified as the option string minus the leading &#39;--&#39;; e.g.,</span>
+<span class="sd">        ``skip_args=[&#39;thin-start&#39;]`` would cause the ``thin-start`` argument</span>
+<span class="sd">        to not be included. May also specify sampler-specific arguments. Note</span>
+<span class="sd">        that ``input-file``, ``file-help``, and ``parameters`` are always</span>
+<span class="sd">        added.</span>
+<span class="sd">    defaultparams : {&#39;variable_params&#39;, &#39;all&#39;}, optional</span>
+<span class="sd">        If no ``--parameters`` provided, which collection of parameters to</span>
+<span class="sd">        load. If &#39;all&#39; will load all parameters in the file&#39;s</span>
+<span class="sd">        ``samples_group``. If &#39;variable_params&#39; or None (the default) will load</span>
+<span class="sd">        the variable parameters.</span>
+<span class="sd">    autoparamlabels : bool, optional</span>
+<span class="sd">        Passed to ``add_results_option_group``; see that function for details.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to ``argparse.ArgumentParser``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">defaultparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">autoparamlabels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ResultsArgumentParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># add attribute to communicate to arguments what to do when there is</span>
+        <span class="c1"># no input files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_input_file_err</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">skip_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">skip_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_args</span> <span class="o">=</span> <span class="n">skip_args</span>
+        <span class="k">if</span> <span class="n">defaultparams</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">defaultparams</span> <span class="o">=</span> <span class="s1">&#39;variable_params&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defaultparams</span> <span class="o">=</span> <span class="n">defaultparams</span>
+        <span class="c1"># add the results option grup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_results_option_group</span><span class="p">(</span><span class="n">autoparamlabels</span><span class="o">=</span><span class="n">autoparamlabels</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">actions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Exposes the actions this parser can do as a dictionary.</span>
+
+<span class="sd">        The dictionary maps the ``dest`` to actions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">act</span><span class="o">.</span><span class="n">dest</span><span class="p">:</span> <span class="n">act</span> <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_unset_required</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to turn off required arguments for first parse.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_required_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">act</span> <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actions</span> <span class="k">if</span> <span class="n">act</span><span class="o">.</span><span class="n">required</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_required_args</span><span class="p">:</span>
+            <span class="n">act</span><span class="o">.</span><span class="n">required</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reset_required</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience function to turn required arguments back on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_required_args</span><span class="p">:</span>
+            <span class="n">act</span><span class="o">.</span><span class="n">required</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="ResultsArgumentParser.parse_known_args">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.ResultsArgumentParser.parse_known_args">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_known_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse args method to handle input-file dependent arguments.&quot;&quot;&quot;</span>
+        <span class="c1"># run parse args once to make sure the name space is populated with</span>
+        <span class="c1"># the input files. We&#39;ll turn off raising NoInputFileErrors on this</span>
+        <span class="c1"># pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_input_file_err</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unset_required</span><span class="p">()</span>
+        <span class="n">opts</span><span class="p">,</span> <span class="n">extra_opts</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ResultsArgumentParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span>
+            <span class="n">args</span><span class="p">,</span> <span class="n">namespace</span><span class="p">)</span>
+        <span class="c1"># now do it again</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">no_input_file_err</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_required</span><span class="p">()</span>
+        <span class="n">opts</span><span class="p">,</span> <span class="n">extra_opts</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ResultsArgumentParser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span>
+            <span class="n">args</span><span class="p">,</span> <span class="n">opts</span><span class="p">)</span>
+        <span class="c1"># populate the parameters option if it wasn&#39;t specified</span>
+        <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="n">get_common_parameters</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">input_file</span><span class="p">,</span>
+                                               <span class="n">collection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">defaultparams</span><span class="p">)</span>
+            <span class="c1"># now call parse parameters action to re-populate the namespace</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">](</span><span class="bp">self</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+        <span class="c1"># check if we&#39;re being greedy or not</span>
+        <span class="k">elif</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="c1"># remove the * from the parameters and the labels</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span> <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="s1">&#39;*&#39;</span><span class="p">]</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">parameters_labels</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># add the rest of the parameters not used</span>
+            <span class="n">all_params</span> <span class="o">=</span> <span class="n">get_common_parameters</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">input_file</span><span class="p">,</span>
+                                               <span class="n">collection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">defaultparams</span><span class="p">)</span>
+            <span class="c1"># extract the used parameters from the parameters option</span>
+            <span class="n">used_params</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">parse_parameters</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                                                      <span class="n">all_params</span><span class="p">)</span>
+            <span class="n">add_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">all_params</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">used_params</span><span class="p">)</span>
+            <span class="c1"># repopulate the name space with the additional parameters</span>
+            <span class="k">if</span> <span class="n">add_params</span><span class="p">:</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">add_params</span><span class="p">)</span>
+                <span class="c1"># update the labels</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">parameters_labels</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">p</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">add_params</span><span class="p">})</span>
+        <span class="c1"># parse the sampler-specific options and check for any unknowns</span>
+        <span class="n">unknown</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">input_file</span><span class="p">:</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">sampler_parser</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">extra_args_parser</span><span class="p">(</span><span class="n">skip_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_args</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sampler_parser</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">opts</span><span class="p">,</span> <span class="n">still_unknown</span> <span class="o">=</span> <span class="n">sampler_parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span>
+                    <span class="n">extra_opts</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">opts</span><span class="p">)</span>
+                <span class="n">unknown</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">still_unknown</span><span class="p">))</span>
+        <span class="c1"># the intersection of the unknowns are options not understood by</span>
+        <span class="c1"># any of the files</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="o">*</span><span class="n">unknown</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">opts</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ResultsArgumentParser.add_results_option_group">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.ResultsArgumentParser.add_results_option_group">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_results_option_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">autoparamlabels</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds the options used to call pycbc.inference.io.results_from_cli</span>
+<span class="sd">        function to the parser.</span>
+
+<span class="sd">        These are options releated to loading the results from a run of</span>
+<span class="sd">        pycbc_inference, for purposes of plotting and/or creating tables.</span>
+
+<span class="sd">        Any argument strings included in the ``skip_args`` attribute will not</span>
+<span class="sd">        be added.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        autoparamlabels : bool, optional</span>
+<span class="sd">            If True, the ``--parameters`` option will use labels from</span>
+<span class="sd">            ``waveform.parameters`` if a parameter name is the same as a</span>
+<span class="sd">            parameter there. Otherwise, will just use whatever label is</span>
+<span class="sd">            provided. Default is True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results_reading_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Arguments for loading results&quot;</span><span class="p">,</span>
+            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Additional, file-specific arguments may also be &quot;</span>
+            <span class="s2">&quot;provided, depending on what input-files are given. See &quot;</span>
+            <span class="s2">&quot;--file-help for details.&quot;</span><span class="p">)</span>
+        <span class="n">results_reading_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">&quot;--input-file&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="n">ParseLabelArg</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;FILE[:LABEL]&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to input HDF file(s). A label may be specified for &quot;</span>
+                 <span class="s2">&quot;each input file to use for plots when multiple files are &quot;</span>
+                 <span class="s2">&quot;specified.&quot;</span><span class="p">)</span>
+        <span class="c1"># advanced help</span>
+        <span class="n">results_reading_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">&quot;-H&quot;</span><span class="p">,</span> <span class="s2">&quot;--file-help&quot;</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="n">PrintFileParams</span><span class="p">,</span> <span class="n">skip_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_args</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Based on the provided input-file(s), print all available &quot;</span>
+                 <span class="s2">&quot;parameters that may be retrieved and all possible functions &quot;</span>
+                 <span class="s2">&quot;on those parameters. Also print available additional &quot;</span>
+                 <span class="s2">&quot;arguments that may be passed. This option is like an &quot;</span>
+                 <span class="s2">&quot;advanced --help: if run, the program will just print the &quot;</span>
+                 <span class="s2">&quot;information to screen, then exit.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">autoparamlabels</span><span class="p">:</span>
+            <span class="n">paramparser</span> <span class="o">=</span> <span class="n">ParseParametersArg</span>
+            <span class="n">lblhelp</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;If LABEL is the same as a parameter in &quot;</span>
+                <span class="s2">&quot;pycbc.waveform.parameters, the label &quot;</span>
+                <span class="s2">&quot;property of that parameter will be used (e.g., if LABEL &quot;</span>
+                <span class="s2">&quot;were &#39;mchirp&#39; then </span><span class="si">{}</span><span class="s2"> would be used). &quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_waveform</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">mchirp</span><span class="o">.</span><span class="n">label</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paramparser</span> <span class="o">=</span> <span class="n">ParseLabelArg</span>
+            <span class="n">lblhelp</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">results_reading_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">&quot;--parameters&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;PARAM[:LABEL]&quot;</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="n">paramparser</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of parameters to load; default is to load all. The &quot;</span>
+                 <span class="s2">&quot;parameters can be any of the model params or posterior &quot;</span>
+                 <span class="s2">&quot;stats (loglikelihood, logprior, etc.) in the input file(s), &quot;</span>
+                 <span class="s2">&quot;derived parameters from them, or any function of them. If &quot;</span>
+                 <span class="s2">&quot;multiple files are provided, any parameter common to all &quot;</span>
+                 <span class="s2">&quot;files may be used. Syntax for functions is python; any math &quot;</span>
+                 <span class="s2">&quot;functions in the numpy libary may be used. Can optionally &quot;</span>
+                 <span class="s2">&quot;also specify a LABEL for each parameter. If no LABEL is &quot;</span>
+                 <span class="s2">&quot;provided, PARAM will used as the LABEL. </span><span class="si">{}</span><span class="s2">&quot;</span>
+                 <span class="s2">&quot;To see all possible parameters that may be used with the &quot;</span>
+                 <span class="s2">&quot;given input file(s), as well as all avaiable functions, &quot;</span>
+                 <span class="s2">&quot;run --file-help, along with one or more input files. &quot;</span>
+                 <span class="s2">&quot;If &#39;*&#39; is provided in addition to other parameters names, &quot;</span>
+                 <span class="s2">&quot;then parameters will be loaded in a greedy fashion; i.e., &quot;</span>
+                 <span class="s2">&quot;all other parameters that exist in the file(s) that are not &quot;</span>
+                 <span class="s2">&quot;explicitly mentioned will also be loaded. For example, &quot;</span>
+                 <span class="s2">&quot;if the input-file(s) contains &#39;srcmass1&#39;, &quot;</span>
+                 <span class="s2">&quot;&#39;srcmass2&#39;, and &#39;distance&#39;, and  &quot;</span>
+                 <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">&#39;primary_mass(srcmass1, srcmass2):mass1&#39; &#39;*&#39;</span><span class="se">\&quot;</span><span class="s2">, is given &quot;</span>
+                 <span class="s2">&quot;then &#39;mass1&#39; and &#39;distance&#39; will be loaded. Otherwise, &quot;</span>
+                 <span class="s2">&quot;without the &#39;*&#39;, only &#39;mass1&#39; would be loaded. &quot;</span>
+                 <span class="s2">&quot;Note that any parameter that is used in a function &quot;</span>
+                 <span class="s2">&quot;will not automatically be added. Tip: enclose &quot;</span>
+                 <span class="s2">&quot;arguments in single quotes, or else special characters will &quot;</span>
+                 <span class="s2">&quot;be interpreted as shell commands. For example, the &quot;</span>
+                 <span class="s2">&quot;wildcard should be given as either &#39;*&#39; or </span><span class="se">\\</span><span class="s2">*, otherwise &quot;</span>
+                 <span class="s2">&quot;bash will expand the * into the names of all the files in &quot;</span>
+                 <span class="s2">&quot;the current directory.&quot;</span>
+                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lblhelp</span><span class="p">))</span>
+        <span class="n">results_reading_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">&quot;--constraint&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;CONSTRAINT[:FILE]&quot;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Apply a constraint to the samples. If a file is provided &quot;</span>
+                 <span class="s2">&quot;after the constraint, it will only be applied to the given &quot;</span>
+                 <span class="s2">&quot;file. Otherwise, the constraint will be applied to all &quot;</span>
+                 <span class="s2">&quot;files. Only one constraint may be applied to a file. &quot;</span>
+                 <span class="s2">&quot;Samples that violate the constraint will be removed. Syntax &quot;</span>
+                 <span class="s2">&quot;is python; any parameter or function of parameter can be &quot;</span>
+                 <span class="s2">&quot;used, similar to the parameters argument. Multiple &quot;</span>
+                 <span class="s2">&quot;constraints may be combined by using &#39;&amp;&#39; and &#39;|&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results_reading_group</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="results_from_cli">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.results_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">results_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">load_samples</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Loads an inference result file along with any labels associated with it</span>
+<span class="sd">    from the command line options.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : ArgumentParser options</span>
+<span class="sd">        The options from the command line.</span>
+<span class="sd">    load_samples : bool, optional</span>
+<span class="sd">        Load the samples from the file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    fp_all : (list of) BaseInferenceFile type</span>
+<span class="sd">        The result file as an hdf file. If more than one input file,</span>
+<span class="sd">        then it returns a list.</span>
+<span class="sd">    parameters : list of str</span>
+<span class="sd">        List of the parameters to use, parsed from the parameters option.</span>
+<span class="sd">    labels : dict</span>
+<span class="sd">        Dictionary of labels to associate with the parameters.</span>
+<span class="sd">    samples_all : (list of) FieldArray(s) or None</span>
+<span class="sd">        If load_samples, the samples as a FieldArray; otherwise, None.</span>
+<span class="sd">        If more than one input file, then it returns a list.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        Any other keyword arguments that are passed to read samples using</span>
+<span class="sd">        samples_from_cli</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># lists for files and samples from all input files</span>
+    <span class="n">fp_all</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">samples_all</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">input_files</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">input_file</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_files</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_files</span><span class="p">]</span>
+
+    <span class="c1"># load constraints</span>
+    <span class="n">constraints</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">opts</span><span class="o">.</span><span class="n">constraint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">constraint</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">constraint</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">constraint</span><span class="p">,</span> <span class="n">fn</span> <span class="o">=</span> <span class="n">constraint</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                <span class="n">constraints</span><span class="p">[</span><span class="n">fn</span><span class="p">]</span> <span class="o">=</span> <span class="n">constraint</span>
+            <span class="c1"># no file provided, make sure there&#39;s only one constraint</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">opts</span><span class="o">.</span><span class="n">constraint</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must provide a file to apply constraints &quot;</span>
+                                 <span class="s2">&quot;to if providing more than one constraint&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># this means no file, only one constraint, apply to all</span>
+                <span class="c1"># files</span>
+                <span class="n">constraints</span> <span class="o">=</span> <span class="p">{</span><span class="n">fn</span><span class="p">:</span> <span class="n">constraint</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">}</span>
+
+    <span class="c1"># loop over all input files</span>
+    <span class="k">for</span> <span class="n">input_file</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reading input file </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">input_file</span><span class="p">)</span>
+
+        <span class="c1"># read input file</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+
+        <span class="c1"># load the samples</span>
+        <span class="k">if</span> <span class="n">load_samples</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading samples&quot;</span><span class="p">)</span>
+
+            <span class="c1"># read samples from file</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">samples_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loaded </span><span class="si">{}</span><span class="s2"> samples&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">input_file</span> <span class="ow">in</span> <span class="n">constraints</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying constraints&quot;</span><span class="p">)</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">constraints</span><span class="p">[</span><span class="n">input_file</span><span class="p">]]</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">samples</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No samples remain after constraint </span><span class="si">{}</span><span class="s2"> &quot;</span>
+                                     <span class="s2">&quot;applied&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">constraints</span><span class="p">[</span><span class="n">input_file</span><span class="p">]))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> samples remain&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+
+        <span class="c1"># else do not read samples</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># add results to lists from all input files</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fp_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="n">samples_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+        <span class="c1"># else only one input file then do not return lists</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fp_all</span> <span class="o">=</span> <span class="n">fp</span>
+            <span class="n">samples_all</span> <span class="o">=</span> <span class="n">samples</span>
+
+    <span class="k">return</span> <span class="n">fp_all</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">parameters_labels</span><span class="p">,</span> <span class="n">samples_all</span></div>
+
+
+
+<div class="viewcode-block" id="injections_from_cli">
+<a class="viewcode-back" href="../../../pycbc.inference.io.html#pycbc.inference.io.injections_from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">injections_from_cli</span><span class="p">(</span><span class="n">opts</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets injection parameters from the inference file(s).</span>
+
+<span class="sd">    If the opts have a ``injection_samples_map`` option, the injection</span>
+<span class="sd">    parameters will be remapped accordingly. See</span>
+<span class="sd">    :py:func:`pycbc.inference.option_utils.add_injsamples_map_opt` for</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opts : argparser</span>
+<span class="sd">        Argparser object that has the command-line objects to parse.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    FieldArray</span>
+<span class="sd">        Array of the injection parameters from all of the input files given</span>
+<span class="sd">        by ``opts.input_file``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># see if a mapping was provided</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opts</span><span class="p">,</span> <span class="s1">&#39;injection_samples_map&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opts</span><span class="o">.</span><span class="n">injection_samples_map</span><span class="p">:</span>
+        <span class="n">param_map</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">opts</span><span class="o">.</span><span class="n">injection_samples_map</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">param_map</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">input_files</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">input_file</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_files</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_files</span><span class="p">]</span>
+    <span class="n">injections</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># loop over all input files getting the injection files</span>
+    <span class="k">for</span> <span class="n">input_file</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">:</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">loadfile</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">these_injs</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read_injections</span><span class="p">()</span>
+        <span class="c1"># apply mapping if it was provided</span>
+        <span class="k">if</span> <span class="n">param_map</span><span class="p">:</span>
+            <span class="n">mapvals</span> <span class="o">=</span> <span class="p">{</span><span class="n">sp</span><span class="p">:</span> <span class="n">these_injs</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">param_map</span><span class="p">}</span>
+            <span class="c1"># if any of the new parameters are the same as the old, just</span>
+            <span class="c1"># overwrite the values</span>
+            <span class="n">common_params</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">these_injs</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">mapvals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">common_params</span><span class="p">:</span>
+                <span class="n">these_injs</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapvals</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+            <span class="c1"># add the rest as new fields</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mapvals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">these_injs</span> <span class="o">=</span> <span class="n">these_injs</span><span class="o">.</span><span class="n">add_fields</span><span class="p">([</span><span class="n">mapvals</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ps</span><span class="p">],</span>
+                                               <span class="n">names</span><span class="o">=</span><span class="n">ps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">injections</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">injections</span> <span class="o">=</span> <span class="n">these_injs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">injections</span> <span class="o">=</span> <span class="n">injections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">these_injs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">injections</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

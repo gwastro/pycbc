@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.plugin &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.plugin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.plugin</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Utilities for handling waveform plugins</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="add_custom_waveform">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.plugin.add_custom_waveform">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_custom_waveform</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span>
+                        <span class="n">sequence</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">has_det_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Make custom waveform available to pycbc</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        The name of the waveform</span>
+<span class="sd">    function : function</span>
+<span class="sd">        The function to generate the waveform</span>
+<span class="sd">    domain : str</span>
+<span class="sd">        Either &#39;frequency&#39; or &#39;time&#39; to indicate the domain of the waveform.</span>
+<span class="sd">    sequence : bool, False</span>
+<span class="sd">        Function evaluates waveform at only chosen points (instead of a</span>
+<span class="sd">        equal-spaced grid).</span>
+<span class="sd">    has_det_response : bool, False</span>
+<span class="sd">        Check if waveform generator has built-in detector response.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">cpu_fd</span><span class="p">,</span> <span class="n">cpu_td</span><span class="p">,</span> <span class="n">fd_sequence</span><span class="p">,</span>
+                                         <span class="n">fd_det</span><span class="p">,</span> <span class="n">fd_det_sequence</span><span class="p">)</span>
+
+    <span class="n">used</span> <span class="o">=</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t load plugin waveform </span><span class="si">{}</span><span class="s2">, the name is&quot;</span>
+                        <span class="s2">&quot; already in use.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">approximant</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;time&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">cpu_td</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">used</span>
+        <span class="n">cpu_td</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span>
+    <span class="k">elif</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;frequency&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sequence</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">has_det_response</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">fd_sequence</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">used</span>
+                <span class="n">fd_sequence</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">fd_det_sequence</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">used</span>
+                <span class="n">fd_det_sequence</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">has_det_response</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">cpu_fd</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">used</span>
+                <span class="n">cpu_fd</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">approximant</span> <span class="ow">in</span> <span class="n">fd_det</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">used</span>
+                <span class="n">fd_det</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid domain (</span><span class="si">{}</span><span class="s2">), should be &quot;</span>
+                         <span class="s2">&quot;&#39;time&#39; or &#39;frequency&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="add_length_estimator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.plugin.add_length_estimator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_length_estimator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add length estimator for an approximant</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        Name of approximant</span>
+<span class="sd">    function : function</span>
+<span class="sd">        A function which takes kwargs and returns the waveform length</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">_filter_time_lengths</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">_filter_time_lengths</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t load length estimator </span><span class="si">{}</span><span class="s2">, the name is&quot;</span>
+                           <span class="s2">&quot; already in use.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">approximant</span><span class="p">))</span>
+    <span class="n">_filter_time_lengths</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">td_fd_waveform_transform</span>
+    <span class="n">td_fd_waveform_transform</span><span class="p">(</span><span class="n">approximant</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_end_frequency_estimator">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.plugin.add_end_frequency_estimator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_end_frequency_estimator</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Add end frequency estimator for an approximant</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        Name of approximant</span>
+<span class="sd">    function : function</span>
+<span class="sd">        A function which takes kwargs and returns the waveform end frequency</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">_filter_ends</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="n">_filter_ends</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t load freqeuncy estimator </span><span class="si">{}</span><span class="s2">, the name is&quot;</span>
+                           <span class="s2">&quot; already in use.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">approximant</span><span class="p">))</span>
+
+    <span class="n">_filter_ends</span><span class="p">[</span><span class="n">approximant</span><span class="p">]</span> <span class="o">=</span> <span class="n">function</span></div>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">entry_points</span>
+
+<div class="viewcode-block" id="retrieve_waveform_plugins">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.plugin.retrieve_waveform_plugins">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">retrieve_waveform_plugins</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Process external waveform plugins</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Check for fd waveforms (no detector response)</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.fd&#39;</span><span class="p">):</span>
+        <span class="n">add_custom_waveform</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">(),</span> <span class="s1">&#39;frequency&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Check for fd waveforms (has detector response)</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.fd_det&#39;</span><span class="p">):</span>
+        <span class="n">add_custom_waveform</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">(),</span> <span class="s1">&#39;frequency&#39;</span><span class="p">,</span>
+                            <span class="n">has_det_response</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Check for fd sequence waveforms (no detector response)</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.fd_sequence&#39;</span><span class="p">):</span>
+        <span class="n">add_custom_waveform</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">(),</span> <span class="s1">&#39;frequency&#39;</span><span class="p">,</span>
+                            <span class="n">sequence</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Check for fd sequence waveforms (has detector response)</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.fd_det_sequence&#39;</span><span class="p">):</span>
+        <span class="n">add_custom_waveform</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">(),</span> <span class="s1">&#39;frequency&#39;</span><span class="p">,</span>
+                            <span class="n">sequence</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">has_det_response</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Check for td waveforms</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.td&#39;</span><span class="p">):</span>
+        <span class="n">add_custom_waveform</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">(),</span> <span class="s1">&#39;time&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Check for waveform length estimates</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.length&#39;</span><span class="p">):</span>
+        <span class="n">add_length_estimator</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">())</span>
+
+    <span class="c1"># Check for waveform end frequency estimates</span>
+    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;pycbc.waveform.end_freq&#39;</span><span class="p">):</span>
+        <span class="n">add_end_frequency_estimator</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin</span><span class="o">.</span><span class="n">load</span><span class="p">())</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

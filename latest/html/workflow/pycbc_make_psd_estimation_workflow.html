@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc_make_psd_estimation_workflow: A workflow generator for noise estimation &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pycbc_make_offline_search_workflow: A workflow to search for gravitational waves" href="pycbc_make_offline_search_workflow.html" />
+    <link rel="prev" title="Applications and Workflows" href="../apps.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-file">Configuration file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generating-and-running-the-workflow">Generating and running the workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_make_offline_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mock_data_generation.html"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/pycbc_make_psd_estimation_workflow.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-make-psd-estimation-workflow-a-workflow-generator-for-noise-estimation">
+<h1><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation<a class="headerlink" href="#pycbc-make-psd-estimation-workflow-a-workflow-generator-for-noise-estimation" title="Link to this heading"></a></h1>
+<p>It can be useful to estimate the average noise PSD of a long period of data, for
+instance for building template banks manually or doing bank simulations. The
+program <code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code> is devoted to this task.</p>
+<p>The program sets up a Pegasus workflow which is basically a small subset of a
+coincident search workflow:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Find the data frames and the segments</p></li>
+<li><p>Segment the analyzable data in each detector</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">pycbc_calculate_psd</span></code> to estimate the PSD in each segment in each detector</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">pycbc_average_psd</span></code> to combine the PSD estimates over time for each detector, as well as over time and detectors.</p></li>
+</ul>
+</div></blockquote>
+<section id="configuration-file">
+<h2>Configuration file<a class="headerlink" href="#configuration-file" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code> is configured through an .ini file,
+similarly to search workflows. An example for ER8 data, broken by sections, is
+given here.</p>
+<p>The sections below control which data are being used and they are basically the
+same as found in a coincidence workflow. In this example, ER8 data are used,
+the analyzable time is broken into 2048 s segments for PSD estimation and each
+PSD estimation job processes up to 100 segments.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="p">]</span>
+<span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="o">=</span> <span class="mi">1123858817</span>
+<span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="o">=</span> <span class="mi">1125217722</span>
+<span class="n">h1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+<span class="n">l1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+<span class="n">file</span><span class="o">-</span><span class="n">retention</span><span class="o">-</span><span class="n">level</span> <span class="o">=</span> <span class="n">no_intermediates</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">ifos</span><span class="p">]</span>
+<span class="n">h1</span> <span class="o">=</span>
+<span class="n">l1</span> <span class="o">=</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">datafind</span><span class="p">]</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">H1_HOFT_C00</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">L1_HOFT_C00</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">AT_RUNTIME_SINGLE_FRAMES</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">gaps</span> <span class="o">=</span> <span class="n">update_times</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">frames</span><span class="o">-</span><span class="n">exist</span> <span class="o">=</span> <span class="n">raise_error</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">summary</span> <span class="o">=</span> <span class="n">warn</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">segments</span><span class="p">]</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">database</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">segments</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">org</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">definer</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">detchar</span><span class="o">/</span><span class="n">veto</span><span class="o">-</span><span class="n">definitions</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">d06231daa8edf28c4760106599f86c8d8659cc3e</span><span class="o">/</span><span class="n">cbc</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">H1L1</span><span class="o">-</span><span class="n">HOFT_C00_ER8B_CBC</span><span class="o">.</span><span class="n">xml</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">veto</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">groups</span> <span class="o">=</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">final</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">group</span> <span class="o">=</span> <span class="mi">12</span><span class="n">H</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">ALL_SINGLE_IFO_TIME</span>
+
+<span class="p">[</span><span class="n">datafind</span><span class="p">]</span>
+<span class="n">urltype</span> <span class="o">=</span> <span class="n">file</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">matchedfilter</span><span class="p">]</span>
+<span class="n">matchedfilter</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">WORKFLOW_INDEPENDENT_IFOS</span>
+<span class="n">analysis</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">2048</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">segments</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">job</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="n">segments</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="n">segments</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">output</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">hdf</span>
+</pre></div>
+</div>
+<p>The sections below specifies the location of the various executables called by
+the workflow. The <code class="docutils literal notranslate"><span class="pre">${which:X}</span></code> syntax replaces the line with the full path to
+the executable, wherever that happens to be at the time of running
+<code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[executables]
+segment_query = ${which:ligolw_segment_query_dqsegdb}
+segments_from_cats = ${which:ligolw_segments_from_cats_dqsegdb}
+llwadd = ${which:ligolw_add}
+ligolw_combine_segments = ${which:ligolw_combine_segments}
+plot_segments = ${which:pycbc_page_segments}
+calculate_psd = ${which:pycbc_calculate_psd}
+average_psd = ${which:pycbc_average_psd}
+merge_psds = ${which:pycbc_merge_psds}
+plot_spectrum = ${which:pycbc_plot_psd_file}
+plot_range = ${which:pycbc_plot_range}
+page_segtable = ${which:pycbc_page_segtable}
+page_segplot = ${which:pycbc_page_segplot}
+results_page = ${which:pycbc_make_html_page}
+</pre></div>
+</div>
+<p>The sections below control how the PSD is estimated in each segment. The program
+devoted to this is <code class="docutils literal notranslate"><span class="pre">pycbc_calculate_psd</span></code>, see its <code class="docutils literal notranslate"><span class="pre">--help</span></code> for details. In
+this example, two instances of <code class="docutils literal notranslate"><span class="pre">pycbc_calculate_psd</span></code> are launched (one per
+detector) and each instance uses 4 CPU cores. For details on PSD estimation,
+see for instance the <a class="reference external" href="http://arxiv.org/abs/gr-qc/0509116">FindChirp paper</a>.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">calculate_psd</span><span class="p">]</span>
+<span class="n">cores</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">pad</span><span class="o">-</span><span class="n">data</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">strain</span><span class="o">-</span><span class="n">high</span><span class="o">-</span><span class="k">pass</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="o">=</span> <span class="mi">4096</span>
+<span class="n">segment</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">segment</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">pad</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">segment</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">pad</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">estimation</span> <span class="o">=</span> <span class="n">median</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="p">[</span><span class="n">calculate_psd</span><span class="o">-</span><span class="n">h1</span><span class="p">]</span>
+<span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+
+<span class="p">[</span><span class="n">calculate_psd</span><span class="o">-</span><span class="n">l1</span><span class="p">]</span>
+<span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+
+<span class="p">[</span><span class="n">pegasus_profile</span><span class="o">-</span><span class="n">calculate_psd</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_cpus</span> <span class="o">=</span> <span class="mi">4</span>
+</pre></div>
+</div>
+<p>The next section is related to <code class="docutils literal notranslate"><span class="pre">pycbc_merge_psds</span></code> which has no options.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">merge_psds</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The section below controls how the averaging of the PSDs over time and detector
+is done, i.e. it contains options for the <code class="docutils literal notranslate"><span class="pre">pycbc_average_psd</span></code> program.
+Currently the program does not take options and the only supported averaging
+method is the harmonic mean.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">average_psd</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The sections below control plotting jobs.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">plot_segments</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">plot_range</span><span class="p">]</span>
+<span class="n">mass1</span> <span class="o">=</span> <span class="mf">1.4</span>
+<span class="n">mass2</span> <span class="o">=</span> <span class="mf">1.4</span>
+<span class="n">approximant</span> <span class="o">=</span> <span class="n">SPAtmplt</span>
+
+<span class="p">[</span><span class="n">plot_spectrum</span><span class="p">]</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="o">=</span> <span class="n">aLIGOZeroDetHighPower</span>
+
+<span class="p">[</span><span class="n">page_segtable</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">page_segplot</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">results_page</span><span class="p">]</span>
+<span class="n">output</span><span class="o">-</span><span class="n">path</span><span class="o">=../../</span><span class="n">html</span>
+<span class="n">analysis</span><span class="o">-</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;PSD Estimation&quot;</span>
+<span class="n">analysis</span><span class="o">-</span><span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+</pre></div>
+</div>
+<p>If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, add it
+to your config files. <code class="docutils literal notranslate"><span class="pre">request_disk</span></code> and <code class="docutils literal notranslate"><span class="pre">request_memory</span></code> may also be required.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">accounting_group</span> <span class="o">=</span> <span class="n">accounting</span><span class="o">.</span><span class="n">tag</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_disk</span> <span class="o">=</span> <span class="mi">1024</span>
+</pre></div>
+</div>
+</section>
+<section id="generating-and-running-the-workflow">
+<h2>Generating and running the workflow<a class="headerlink" href="#generating-and-running-the-workflow" title="Link to this heading"></a></h2>
+<p>Once you have an .ini file at <code class="docutils literal notranslate"><span class="pre">/path/to/ini/file</span></code>, create the workflow in the
+following way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_psd_estimation_workflow</span> \
+    <span class="o">--</span><span class="n">workflow</span><span class="o">-</span><span class="n">name</span> <span class="n">RUN_NAME</span> \
+    <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">directory</span> \
+    <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">ini</span><span class="o">/</span><span class="n">file</span> \
+    <span class="o">--</span><span class="n">submit</span><span class="o">-</span><span class="n">now</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">RUN_NAME</span></code> should be replaced with a meaningful descriptive name for the
+workflow and <code class="docutils literal notranslate"><span class="pre">/path/to/run/directory</span></code> should point to the directory where the
+run is supposed to take place.</p>
+<p>If you don’t want the workflow to start immediately, omit the <code class="docutils literal notranslate"><span class="pre">--submit-now</span></code> option.
+Then after the workflow is generated, move to
+<code class="docutils literal notranslate"><span class="pre">/path/to/run/directory</span></code> and start the workflow with</p>
+<dl class="simple">
+<dt>::</dt><dd><p>./start</p>
+</dd>
+</dl>
+<p>When the workflow completes, the average PSDs should be available in
+<code class="docutils literal notranslate"><span class="pre">/path/to/run/directory/psds</span></code> and diagnostic plots should be in
+<code class="docutils literal notranslate"><span class="pre">/path/to/run/directory/plots</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../apps.html" class="btn btn-neutral float-left" title="Applications and Workflows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc_make_offline_search_workflow.html" class="btn btn-neutral float-right" title="pycbc_make_offline_search_workflow: A workflow to search for gravitational waves" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

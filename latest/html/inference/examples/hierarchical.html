@@ -1,0 +1,486 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using the hierarchical model &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="LISA parameter estimation for simulated SMBHB from LDC" href="lisa_smbhb_ldc_pe.html" />
+    <link rel="prev" title="Using the relative model" href="relative.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Using the hierarchical model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lensing-example">Lensing example</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Using the hierarchical model</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/hierarchical.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="using-the-hierarchical-model">
+<span id="hierachical-model"></span><h1>Using the hierarchical model<a class="headerlink" href="#using-the-hierarchical-model" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel" title="pycbc.inference.models.hierarchical.HierarchicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">HierarchicalModel</span></code></a> is for performing a joint Bayesian analysis over two or
+more events that share one or more common parameters. For example, you may wish
+to analyze two different binary neutron star mergers assuming the neutron stars
+share the same equation of state, or you want to analyze two signals that
+arrived at different times under the assumption that they are lensed copies of
+the same event.</p>
+<p>The events are assumed to not share the same data, and may not even be
+observations from the same type of detector. What type of data is read for each
+event is determined by the model used for that event. Upon initialization,
+the hierarchical model passes the relevant parameters and sections in the
+config file to each sub-model’s <code class="docutils literal notranslate"><span class="pre">from_config</span></code> method. During the analysis, the
+sub-models’ loglikelihood functions are called and summed over. In that regard,
+the hierarchical model treats the sub-models as black boxes.</p>
+<p>To set up the hierarchical model, you provide a list of sub-model labels in
+the <code class="docutils literal notranslate"><span class="pre">[model]</span></code> section of your config file that represent each event to
+analyze. For each sub-model label provided, you provide a <code class="docutils literal notranslate"><span class="pre">[{label}__model]</span></code>
+section that in turn specifies how to initialize that event’s model.</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">[variable_params]</span></code> and <code class="docutils literal notranslate"><span class="pre">[static_params]</span></code> sections you specify
+which parameters belong to which event by prepending the parameter name with
+the event’s label, followed by a <code class="docutils literal notranslate"><span class="pre">__</span></code>; i.e., <code class="docutils literal notranslate"><span class="pre">{label}__{param}</span></code>. To specify
+that a parameter is common to a sub-set of events, you prepend each event’s
+label (separated by a <code class="docutils literal notranslate"><span class="pre">_</span></code>). Parameters that have no event labels prepended to
+them are treated as common to all events.</p>
+<p>For example, say we have three events <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, and <code class="docutils literal notranslate"><span class="pre">c</span></code>, who’s models
+take two parameters, <code class="docutils literal notranslate"><span class="pre">foo</span></code> and <code class="docutils literal notranslate"><span class="pre">bar</span></code>. Say we want <code class="docutils literal notranslate"><span class="pre">foo</span></code> to be common
+between <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>, but unique to <code class="docutils literal notranslate"><span class="pre">c</span></code>, and <code class="docutils literal notranslate"><span class="pre">bar</span></code> to common all events.
+Our analysis would therefore have three parameters, <code class="docutils literal notranslate"><span class="pre">a_b__foo</span></code>, <code class="docutils literal notranslate"><span class="pre">c__foo</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">bar</span></code>.</p>
+<p>Additional sections that are required by each model should have the model label
+prepended to them in the same manner. In the above example, if the models for
+events <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code>, and <code class="docutils literal notranslate"><span class="pre">c</span></code> require a <code class="docutils literal notranslate"><span class="pre">data</span></code> section, then the config file
+should have sections <code class="docutils literal notranslate"><span class="pre">[a__data]</span></code>, <code class="docutils literal notranslate"><span class="pre">[b__data]</span></code>, and <code class="docutils literal notranslate"><span class="pre">[c__data]</span></code>.</p>
+<p>When sub-models are initialized, the event labels are stripped from the
+parameter names (and section headers), then passed to the sub-model. Sub-models
+do not need any special features to be run in a hierarchical analysis; any
+model that inherits from <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.base.BaseModel" title="pycbc.inference.models.base.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></a> can be used as a sub-model.</p>
+<section id="lensing-example">
+<h2>Lensing example<a class="headerlink" href="#lensing-example" title="Link to this heading"></a></h2>
+<p>To illustrate how to use the <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel" title="pycbc.inference.models.hierarchical.HierarchicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">HierarchicalModel</span></code></a> here we perform a simple
+lensing analysis of two binary black hole simulations. The two simulations
+are injected into fake noise ~one week apart, with slightly different apparent
+sky locations (the difference may not be physically possible; this is only
+for illustration purposes). We will analyze the two events allowing them to
+have different sky locations and coalescence times, but sharing the same
+masses.</p>
+<p>First, we need to create the simulations using <code class="docutils literal notranslate"><span class="pre">pycbc_create_injections</span></code>.
+To create the two injections we’ll use the configuration files:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="c1"># A GW150914-like injection, with approximately the same time and location.</span>
+
+<span class="k">[variable_params]</span>
+
+<span class="k">[static_params]</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomD</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.430</span>
+<span class="na">srcmass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">35</span>
+<span class="na">srcmass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">35</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">500</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2.2</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.2</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18</span>
+<span class="na">taper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">start</span>
+
+<span class="k">[waveform_transforms-mass1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass1, distance</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass1 * (1+redshift(distance))</span>
+
+<span class="k">[waveform_transforms-mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass2, distance</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass2 * (1+redshift(distance))</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/091595c508e0c42e0ba19195b18adb84/event1_inj.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="c1"># A &quot;lensed&quot; version of event1. This has the same parameters except for the sky</span>
+<span class="c1"># location and time: the event happens ~one week later, with a slightly</span>
+<span class="c1"># different sky location. The sky location and time were picked arbitrarily;</span>
+<span class="c1"># no attempt was made at making sure these are actually physically possible.</span>
+
+<span class="k">[variable_params]</span>
+
+<span class="k">[static_params]</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomD</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126859462.0</span>
+<span class="na">srcmass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">35</span>
+<span class="na">srcmass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">35</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">500</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2.0</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18</span>
+<span class="na">taper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">start</span>
+
+<span class="k">[waveform_transforms-mass1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass1, distance</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass1 * (1+redshift(distance))</span>
+
+<span class="k">[waveform_transforms-mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass2, distance</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmass2 * (1+redshift(distance))</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/e9a79c2f7e52d454ca6e8f46c16628d7/event2_inj.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Create the injection hdf files by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_create_injections<span class="w"> </span>--verbose<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ninjections<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span>event1_inj.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>event1_inj.hdf
+
+pycbc_create_injections<span class="w"> </span>--verbose<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ninjections<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span>event2_inj.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>event2_inj.hdf
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/2523563fd823dd07217350f2227a2e0d/make_injections.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Now we’ll setup the configuration files to run the hierarchical analysis on
+these two events. First we’ll set the <code class="docutils literal notranslate"><span class="pre">[model]</span></code> section to use the
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.hierarchical.HierarchicalModel" title="pycbc.inference.models.hierarchical.HierarchicalModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">HierarchicalModel</span></code></a>, and tell it to analyze two events called <code class="docutils literal notranslate"><span class="pre">event1</span></code> and
+<code class="docutils literal notranslate"><span class="pre">event2</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">hierarchical</span>
+<span class="na">submodels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1 event2</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/ee4f0142804bbd323df33620a7cdcff7/model.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>We now need to specify the model to use for each event. For this analysis
+we’ll use the <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">Relative</span></code></a>
+model for both events:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[event1__model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">relative</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18.0</span>
+<span class="na">high-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1024.0</span>
+<span class="na">epsilon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.005</span>
+<span class="na">mass1_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">35</span>
+<span class="na">mass2_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">35</span>
+<span class="na">tc_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FROM_INJECTION:tc</span>
+<span class="na">ra_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FROM_INJECTION:ra</span>
+<span class="na">dec_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FROM_INJECTION:dec</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/b13d523dd860aa810518be58c4d0f0af/model-event1_relbin.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[event2__model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">relative</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__model|low-frequency-cutoff}</span>
+<span class="na">high-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__model|high-frequency-cutoff}</span>
+<span class="na">epsilon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__model|epsilon}</span>
+<span class="na">mass1_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__model|mass1_ref}</span>
+<span class="na">mass2_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__model|mass2_ref}</span>
+<span class="na">tc_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FROM_INJECTION:tc</span>
+<span class="na">ra_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FROM_INJECTION:ra</span>
+<span class="na">dec_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">FROM_INJECTION:dec</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/37334d71e56635960fe1d1e52c4ec96f/model-event2_relbin.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>We also need to provide data sections for each event:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="c1"># We&#39;ll inject the simulated signals into fake noise generated with the aLIGO</span>
+<span class="c1"># design sensitivity. We need two separate data sections, one for each event.</span>
+<span class="k">[event1__data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.430</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-6</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+<span class="na">fake-strain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:aLIGOaLIGODesignSensitivityT1800044 L1:aLIGOaLIGODesignSensitivityT1800044</span>
+<span class="na">fake-strain-seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:237 L1:82</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median-mean</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4</span>
+<span class="na">psd-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-256</span>
+<span class="na">psd-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">256</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:STRAIN L1:STRAIN</span>
+<span class="na">injection-file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1_inj.hdf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+
+<span class="c1"># For event2, we&#39;ll reuse many of the same settings, just changing the seed,</span>
+<span class="c1"># injection file, and the trigger time.</span>
+<span class="k">[event2__data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|instruments}</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126859462.0</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|analysis-start-time}</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|analysis-end-time}</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|sample-rate}</span>
+<span class="na">fake-strain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|fake-strain}</span>
+<span class="na">fake-strain-seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:918 L1:6610</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|psd-estimation}</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|psd-inverse-length}</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|psd-segment-length}</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|psd-segment-stride}</span>
+<span class="na">psd-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|psd-start-time}</span>
+<span class="na">psd-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|psd-end-time}</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|channel-name}</span>
+<span class="na">injection-file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event2_inj.hdf</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|strain-high-pass}</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|pad-data}</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/934fabb608786362d316cbea04e6cd73/data.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Now the prior:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+<span class="c1"># common parameters</span>
+<span class="na">srcmchirp</span><span class="w"> </span><span class="o">=</span>
+<span class="na">q</span><span class="w"> </span><span class="o">=</span>
+<span class="c1"># parameters unique to event1</span>
+<span class="na">event1__delta_tc</span><span class="w"> </span><span class="o">=</span>
+<span class="na">event1__ra</span><span class="w"> </span><span class="o">=</span>
+<span class="na">event1__dec</span><span class="w"> </span><span class="o">=</span>
+<span class="c1"># parameters unique to event2</span>
+<span class="na">event2__delta_tc</span><span class="w"> </span><span class="o">=</span>
+<span class="c1"># We&#39;ll make event2&#39;s sky location be dependent on</span>
+<span class="c1"># event1. We&#39;ll do that by making the variable</span>
+<span class="c1"># parameter be a deviation from event1&#39;s sky location.</span>
+<span class="c1"># The ra and dec for event2 will be set with a</span>
+<span class="c1"># transform, below.</span>
+<span class="na">event2__dra</span><span class="w"> </span><span class="o">=</span>
+<span class="na">event2__ddec</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomD</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">500</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+
+<span class="c1"># Prior bounds taken from 4-OGC</span>
+<span class="k">[prior-srcmchirp]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mchirp_from_uniform_mass1_mass2</span>
+<span class="na">min-srcmchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">23</span>
+<span class="na">max-srcmchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">42</span>
+
+<span class="k">[prior-q]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">q_from_uniform_mass1_mass2</span>
+<span class="na">min-q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.</span>
+<span class="na">max-q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.</span>
+
+<span class="k">[waveform_transforms-mass1+mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">srcmchirp, q</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mass1_from_mchirp_q(srcmchirp,q) * (1 + 0.105)</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mass2_from_mchirp_q(srcmchirp,q) * (1 + 0.105)</span>
+
+<span class="k">[prior-event1__delta_tc]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-event1__delta_tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-0.1</span>
+<span class="na">max-event1__delta_tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+
+<span class="k">[prior-event2__delta_tc]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-event2__delta_tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-0.1</span>
+<span class="na">max-event2__delta_tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+
+<span class="c1"># Note that the output of waveform transforms that output parameters specific</span>
+<span class="c1"># to a particular sub-model must include that model&#39;s label in the parameter</span>
+<span class="c1"># name, just as the variable and static params do.</span>
+<span class="k">[waveform_transforms-event1__tc]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1__delta_tc</span>
+<span class="na">event1__tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event1__data|trigger-time} + event1__delta_tc</span>
+
+<span class="k">[waveform_transforms-event2__tc]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event2__delta_tc</span>
+<span class="na">event2__tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${event2__data|trigger-time} + event2__delta_tc</span>
+
+<span class="c1"># We&#39;ll use a uniform prior for the sky location of event1...</span>
+<span class="k">[prior-event1__ra+event1__dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_sky</span>
+<span class="na">azimuthal-angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1__ra</span>
+<span class="na">polar-angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1__dec</span>
+
+<span class="c1"># ...and a Gaussian centered on event1 for event2.</span>
+<span class="k">[prior-event2__dra+event2__ddec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">gaussian</span>
+<span class="na">event2__dra_mean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">event2__dra_var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1</span>
+<span class="na">event2__ddec_mean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">event2__ddec_var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1</span>
+
+<span class="k">[waveform_transforms-event2__ra+event2__dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1__ra, event1__dec, event2__dra, event2__ddec</span>
+<span class="na">event2__ra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1__ra + event2__dra</span>
+<span class="na">event2__dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">event1__dec + event2__ddec</span>
+
+<span class="k">[constraint-event2dec]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">constraint_arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">(event1__dec + event2__ddec &gt;= -pi/2) &amp; (event1__dec + event2__ddec &lt;= pi/2)</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/983c45d5b32e9369a8daa7a1a4f7f856/prior.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>And finally the sampler configuration:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">dlogz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2000</span>
+<span class="na">checkpoint_time_interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1800</span>
+<span class="na">maxcall</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10000</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/d5d7ccdf3b1a148dc72903c494f37265/dynesty.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-files<span class="w"> </span>model.ini<span class="w"> </span>model-event1_relbin.ini<span class="w"> </span>model-event2_relbin.ini<span class="w"> </span>prior.ini<span class="w"> </span>data.ini<span class="w"> </span>dynesty.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--nprocesses<span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>hierarchical.hdf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--verbose
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/780a9b7de700f57e47f071a0546c9e4a/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>When it is done, you will have a file called <code class="docutils literal notranslate"><span class="pre">hierarchical.hdf</span></code> which
+contains the results.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="relative.html" class="btn btn-neutral float-left" title="Using the relative model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lisa_smbhb_ldc_pe.html" class="btn btn-neutral float-right" title="LISA parameter estimation for simulated SMBHB from LDC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

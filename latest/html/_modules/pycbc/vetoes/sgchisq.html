@@ -1,0 +1,321 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.vetoes.sgchisq &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.vetoes.sgchisq</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.vetoes.sgchisq</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Chisq based on sine-gaussian tiles.</span>
+<span class="sd">See https://arxiv.org/abs/1709.08974 for a discussion.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_fseries_time_shift</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">sigma</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">sinegauss</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.vetoes.chisq</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleDetPowerChisq</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">ranking</span>
+
+<div class="viewcode-block" id="SingleDetSGChisq">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.sgchisq.SingleDetSGChisq">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleDetSGChisq</span><span class="p">(</span><span class="n">SingleDetPowerChisq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class that handles precomputation and memory management for efficiently</span>
+<span class="sd">    running the sine-Gaussian chisq</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">returns</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sg_chisq&#39;</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bank</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">snr_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">chisq_locations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Create sine-Gaussian Chisq Calculator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bank: pycbc.waveform.TemplateBank</span>
+<span class="sd">            The template bank that will be processed.</span>
+<span class="sd">        num_bins: str</span>
+<span class="sd">            The string determining the number of power chisq bins</span>
+<span class="sd">        snr_threshold: float</span>
+<span class="sd">            The threshold to calculate the sine-Gaussian chisq</span>
+<span class="sd">        chisq_locations: list of strs</span>
+<span class="sd">            List of strings which detail where to place a sine-Gaussian.</span>
+<span class="sd">            The format is &#39;region-boolean:q1-offset1,q2-offset2&#39;.</span>
+<span class="sd">            The offset is relative to the end frequency of the approximant.</span>
+<span class="sd">            The region is a boolean expression such as &#39;mtotal&gt;40&#39; indicating</span>
+<span class="sd">            which templates to apply this set of sine-Gaussians to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">snr_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_bins</span> <span class="o">=</span> <span class="n">num_bins</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span> <span class="o">=</span> <span class="n">snr_threshold</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">descr</span> <span class="ow">in</span> <span class="n">chisq_locations</span><span class="p">:</span>
+                <span class="n">region</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">bank</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span> <span class="n">region</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">hashes</span> <span class="o">=</span> <span class="n">bank</span><span class="o">.</span><span class="n">table</span><span class="p">[</span><span class="s1">&#39;template_hash&#39;</span><span class="p">][</span><span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)]</span>
+                <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hashes</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="SingleDetSGChisq.insert_option_group">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.sgchisq.SingleDetSGChisq.insert_option_group">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">insert_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Sine-Gaussian Chisq&quot;</span><span class="p">)</span>
+        <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--sgchisq-snr-threshold&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum SNR threshold to use SG chisq&quot;</span><span class="p">)</span>
+        <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--sgchisq-locations&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Frequency offsets and quality factors of the sine-Gaussians&quot;</span>
+                 <span class="s2">&quot; to use, format &#39;region-boolean:q1-offset1,q2-offset2&#39;. &quot;</span>
+                 <span class="s2">&quot;Offset is relative to the end frequency of the approximant.&quot;</span>
+                 <span class="s2">&quot; Region is a boolean expression selecting templates to &quot;</span>
+                 <span class="s2">&quot;apply the sine-Gaussians to, ex. &#39;mtotal&gt;40&#39;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SingleDetSGChisq.from_cli">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.sgchisq.SingleDetSGChisq.from_cli">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">bank</span><span class="p">,</span> <span class="n">chisq_bins</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">bank</span><span class="p">,</span> <span class="n">chisq_bins</span><span class="p">,</span>
+                   <span class="n">args</span><span class="o">.</span><span class="n">sgchisq_snr_threshold</span><span class="p">,</span>
+                   <span class="n">args</span><span class="o">.</span><span class="n">sgchisq_locations</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SingleDetSGChisq.values">
+<a class="viewcode-back" href="../../../pycbc.vetoes.html#pycbc.vetoes.sgchisq.SingleDetSGChisq.values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stilde</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">,</span> <span class="n">snrv</span><span class="p">,</span> <span class="n">snr_norm</span><span class="p">,</span>
+                     <span class="n">bchisq</span><span class="p">,</span> <span class="n">bchisq_dof</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate sine-Gaussian chisq</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        stilde: pycbc.types.Frequencyseries</span>
+<span class="sd">            The overwhitened strain</span>
+<span class="sd">        template: pycbc.types.Frequencyseries</span>
+<span class="sd">            The waveform template being analyzed</span>
+<span class="sd">        psd: pycbc.types.Frequencyseries</span>
+<span class="sd">            The power spectral density of the data</span>
+<span class="sd">        snrv: numpy.ndarray</span>
+<span class="sd">            The peak unnormalized complex SNR values</span>
+<span class="sd">        snr_norm: float</span>
+<span class="sd">            The normalization factor for the snr</span>
+<span class="sd">        bchisq: numpy.ndarray</span>
+<span class="sd">            The Bruce Allen power chisq values for these triggers</span>
+<span class="sd">        bchisq_dof: numpy.ndarray</span>
+<span class="sd">            The degrees of freedom of the Bruce chisq</span>
+<span class="sd">        indics: numpy.ndarray</span>
+<span class="sd">            The indices of the snr peaks.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        chisq: Array</span>
+<span class="sd">            Chisq values, one for each sample index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">do</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">template_hash</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snrv</span><span class="p">))</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">template</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">template_hash</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Get the chisq bins to use as the frequency reference point</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_chisq_bins</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span>
+
+        <span class="c1"># This is implemented slowly, so let&#39;s not call it often, OK?</span>
+        <span class="n">chisq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snrv</span><span class="p">))</span>
+        <span class="n">gtem</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">values</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">snrvi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">snrv</span><span class="p">):</span>
+            <span class="c1">#Skip if newsnr too low</span>
+            <span class="n">snr</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">snrvi</span> <span class="o">*</span> <span class="n">snr_norm</span><span class="p">)</span>
+            <span class="n">nsnr</span> <span class="o">=</span> <span class="n">ranking</span><span class="o">.</span><span class="n">newsnr</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">bchisq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">bchisq_dof</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">nsnr</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr_threshold</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">N</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">N</span> <span class="o">*</span> <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+            <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">f_lower</span> <span class="o">/</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Shift the time of interest to be centered on 0</span>
+            <span class="n">stilde_shift</span> <span class="o">=</span> <span class="n">apply_fseries_time_shift</span><span class="p">(</span><span class="n">stilde</span><span class="p">,</span> <span class="o">-</span><span class="n">time</span><span class="p">)</span>
+
+            <span class="c1"># Only apply the sine-Gaussian in a +-50 Hz range around the</span>
+            <span class="c1"># central frequency</span>
+            <span class="n">qwindow</span> <span class="o">=</span> <span class="mi">50</span>
+            <span class="n">chisq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c1"># Estimate the maximum frequency up to which the waveform has</span>
+            <span class="c1"># power by approximating power per frequency</span>
+            <span class="c1"># as constant over the last 2 chisq bins. We cannot use the final</span>
+            <span class="c1"># chisq bin edge as it does not have to be where the waveform</span>
+            <span class="c1"># terminates.</span>
+            <span class="n">fstep</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">bins</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">fpeak</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">fstep</span><span class="p">)</span> <span class="o">*</span> <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span>
+
+            <span class="c1"># This is 90% of the Nyquist frequency of the data</span>
+            <span class="c1"># This allows us to avoid issues near Nyquist due to resample</span>
+            <span class="c1"># Filtering</span>
+            <span class="n">fstop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stilde</span><span class="p">)</span> <span class="o">*</span> <span class="n">stilde</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">*</span> <span class="mf">0.9</span>
+
+            <span class="n">dof</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Calculate the sum of SNR^2 for the sine-Gaussians specified</span>
+            <span class="k">for</span> <span class="n">idxx</span><span class="p">,</span> <span class="n">descr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+                <span class="c1"># Get the q and frequency offset from the descriptor</span>
+                <span class="n">q</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+                <span class="n">q</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+                <span class="n">fcen</span> <span class="o">=</span> <span class="n">fpeak</span> <span class="o">+</span> <span class="n">offset</span>
+                <span class="n">flow</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">kmin</span> <span class="o">*</span> <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">fcen</span> <span class="o">-</span> <span class="n">qwindow</span><span class="p">)</span>
+                <span class="n">fhigh</span> <span class="o">=</span> <span class="n">fcen</span> <span class="o">+</span> <span class="n">qwindow</span>
+
+                <span class="c1"># If any sine-gaussian tile has an upper frequency near</span>
+                <span class="c1"># nyquist return 1 instead.</span>
+                <span class="k">if</span> <span class="n">fhigh</span> <span class="o">&gt;</span> <span class="n">fstop</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snrv</span><span class="p">))</span>
+
+                <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">flow</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+                <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fhigh</span> <span class="o">/</span> <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+
+                <span class="c1">#Calculate sine-gaussian tile</span>
+                <span class="k">if</span> <span class="n">gtem</span><span class="p">[</span><span class="n">idxx</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># These are always the same values for a template, so</span>
+                    <span class="c1"># if computing 10 sgchisq points, don&#39;t want to call</span>
+                    <span class="c1"># this 10 times (for each SG template)</span>
+                    <span class="n">gtem</span><span class="p">[</span><span class="n">idxx</span><span class="p">]</span> <span class="o">=</span> <span class="n">sinegauss</span><span class="o">.</span><span class="n">fd_sine_gaussian</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">fcen</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span>
+                                      <span class="nb">len</span><span class="p">(</span><span class="n">template</span><span class="p">)</span> <span class="o">*</span> <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span>
+                                      <span class="n">template</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+                <span class="n">gsigma</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">(</span><span class="n">gtem</span><span class="p">[</span><span class="n">idxx</span><span class="p">],</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span>
+                                     <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+                                     <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">fhigh</span><span class="p">)</span>
+                <span class="c1">#Calculate the SNR of the tile</span>
+                <span class="n">gsnr</span> <span class="o">=</span> <span class="p">(</span><span class="n">gtem</span><span class="p">[</span><span class="n">idxx</span><span class="p">][</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">]</span> <span class="o">*</span> <span class="n">stilde_shift</span><span class="p">[</span><span class="n">kmin</span><span class="p">:</span><span class="n">kmax</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">gsnr</span> <span class="o">*=</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">gtem</span><span class="p">[</span><span class="n">idxx</span><span class="p">]</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">/</span> <span class="n">gsigma</span>
+                <span class="n">chisq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">gsnr</span><span class="p">)</span><span class="o">**</span><span class="mf">2.0</span>
+                <span class="n">dof</span> <span class="o">+=</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="n">dof</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">chisq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">chisq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/=</span> <span class="n">dof</span>
+        <span class="k">return</span> <span class="n">chisq</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

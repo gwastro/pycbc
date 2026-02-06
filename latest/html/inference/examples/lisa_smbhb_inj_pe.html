@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LISA SMBHB injection and parameter estimation &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Trying out different samplers" href="sampler_platter.html" />
+    <link rel="prev" title="LISA parameter estimation for simulated SMBHB from LDC" href="lisa_smbhb_ldc_pe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">LISA SMBHB injection and parameter estimation</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/lisa_smbhb_inj_pe.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lisa-smbhb-injection-and-parameter-estimation">
+<span id="inference-example-lisa-smbhb-inj"></span><h1>LISA SMBHB injection and parameter estimation<a class="headerlink" href="#lisa-smbhb-injection-and-parameter-estimation" title="Link to this heading"></a></h1>
+<p>This example shows how to use PyCBC for time-domain LISA TDI noise generation and
+supermassive black hole binaries (SMBHB) signal injection. This one is similar to
+<a class="reference internal" href="lisa_smbhb_ldc_pe.html#inference-example-lisa-smbhb-ldc"><span class="std std-ref">LISA parameter estimation for simulated SMBHB from LDC example</span></a>, the main difference is we generate our own mock data
+in this example. In order to to that, we use
+<a class="reference external" href="https://pycbc.org/pycbc/latest/html/pycbc.psd.html#module-pycbc.psd.analytical_space">LISA TDI PSD module</a>
+to generate the stationary and Gaussian noise for each TDI channel in the time domain, then we use
+<a class="reference external" href="https://pycbc.org/pycbc/latest/html/_modules/pycbc/waveform/waveform.html#get_td_det_waveform_from_fd_det">waveform injection module</a>
+to add the simulated signal into the simulated noise.</p>
+<p>First, we use the following configuration file to define the parameters of our SMBHB injection, we use the
+same parameters from the SMBHB signal in <a class="reference internal" href="lisa_smbhb_ldc_pe.html#inference-example-lisa-smbhb-ldc"><span class="std std-ref">LISA parameter estimation for simulated SMBHB from LDC example</span></a>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; This assumes all those values are in LISA frame.</span>
+<span class="c1">; You can set &quot;ref_frame = SSB&quot;, but then you should also add it to</span>
+<span class="c1">; &quot;static_params&quot; section in PE .ini file.</span>
+<span class="na">ref_frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">BBHX_PhenomD</span>
+<span class="c1">; You can use &quot;1.5&quot; or &quot;2.0&quot; for TDI.</span>
+<span class="c1">; Please use the same TDI version for PSD and static_params in the PE .ini file.</span>
+<span class="na">tdi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1015522.4376</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">796849.1091</span>
+<span class="na">spin1z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.597755394865021</span>
+<span class="na">spin2z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.36905807298613247</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">17758.367941273442</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5970175301911231</span>
+<span class="na">coa_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.275929308696054</span>
+<span class="na">eclipticlongitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5.4431083771985165</span>
+<span class="na">eclipticlatitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.2734504596198182</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.22558110042980073</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4799624.274911478</span>
+<span class="na">t_obs_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">31536000</span>
+<span class="c1">; Put LISA behind the Earth by ~20 degrees.</span>
+<span class="na">t_offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7365189.431698299</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-4</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-4</span>
+<span class="na">f_final</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/ce004edee3d0a35c37cbd214a293a231/injection_smbhb.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Then we run the following bash script to create a .hdf file that contains same information:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+pycbc_create_injections<span class="w"> </span>--verbose<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--config-files<span class="w"> </span>injection_smbhb.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--ninjections<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--seed<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-file<span class="w"> </span>injection_smbhb.hdf<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--variable-params-section<span class="w"> </span>variable_params<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--static-params-section<span class="w"> </span>static_params<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--dist-section<span class="w"> </span>prior<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--force
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/1bcf4f46ede00892b26eaecdcbecb898/injection_smbhb.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Here, we use a similar configuration file for parameter estimation, we also use
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">Relative</span></code></a> model. We also just
+set chirp mass, mass ratio and tc as variable parameters, <cite>tc</cite>, <cite>eclipticlongitude</cite>, <cite>eclipticlatitude</cite>
+and <cite>polarization</cite> are defined in the LISA frame:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A LISA_E LISA_T</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4800021.15572853</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-4800021</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">26735979</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.2</span>
+<span class="na">fake-strain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A:analytical_psd_lisa_tdi_AE LISA_E:analytical_psd_lisa_tdi_AE LISA_T:analytical_psd_lisa_tdi_T</span>
+<span class="c1">; fake-strain-extra-args = LISA_A:len_arm:2.5e9 LISA_A:acc_noise_level:2.4e-15 LISA_A:oms_noise_level:7.9e-12 LISA_A:tdi:1.5 LISA_E:len_arm:2.5e9 LISA_E:acc_noise_level:2.4e-15 LISA_E:oms_noise_level:7.9e-12 LISA_E:tdi:1.5 LISA_T:len_arm:2.5e9 LISA_T:acc_noise_level:2.4e-15 LISA_T:oms_noise_level:7.9e-12 LISA_T:tdi:1.5</span>
+<span class="na">fake-strain-extra-args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">len_arm:2.5e9 acc_noise_level:2.4e-15 oms_noise_level:7.9e-12 tdi:1.5</span>
+<span class="na">fake-strain-seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A:100 LISA_E:150 LISA_T:200</span>
+<span class="na">fake-strain-flow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0001</span>
+<span class="na">fake-strain-sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.2</span>
+<span class="na">fake-strain-filter-duration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">31536000</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median-mean</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">267840</span>
+<span class="na">invpsd-trunc-method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">hann</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">267840</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">133920</span>
+<span class="na">psd-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-4800021</span>
+<span class="na">psd-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">26735979</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A:LISA_A LISA_E:LISA_E LISA_T:LISA_T</span>
+<span class="na">injection-file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">injection_smbhb.hdf</span>
+
+<span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">relative</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0001</span>
+<span class="na">high-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+<span class="na">epsilon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.01</span>
+<span class="na">mass1_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1015522.4376</span>
+<span class="na">mass2_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">796849.1091</span>
+<span class="na">tc_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4799624.274911478</span>
+<span class="na">spin1z_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.597755394865021</span>
+<span class="na">spin2z_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.36905807298613247</span>
+
+<span class="k">[variable_params]</span>
+<span class="na">mchirp</span><span class="w"> </span><span class="o">=</span>
+<span class="na">q</span><span class="w"> </span><span class="o">=</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; Change it to &quot;ref_frame = SSB&quot;, if you use SSB frame in injection file.</span>
+<span class="na">ref_frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">BBHX_PhenomD</span>
+<span class="c1">; You can use &quot;1.5&quot; or &quot;2.0&quot; for TDI.</span>
+<span class="c1">; Please use the same TDI version for PSD and injection file.</span>
+<span class="na">tdi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5</span>
+<span class="na">coa_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.275929308696054</span>
+<span class="na">eclipticlongitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5.4431083771985165</span>
+<span class="na">eclipticlatitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.2734504596198182</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.22558110042980073</span>
+<span class="na">spin1z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.597755394865021</span>
+<span class="na">spin2z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.36905807298613247</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">17758.367941273442</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5970175301911231</span>
+<span class="na">t_obs_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">31536000</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-4</span>
+<span class="c1">; Put LISA behind the Earth by ~20 degrees.</span>
+<span class="na">t_offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7365189.431698299</span>
+
+<span class="k">[prior-mchirp]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">703772.7245316936</span>
+<span class="na">max-mchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">860166.6633165143</span>
+
+<span class="k">[prior-q]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.1469802543574181</span>
+<span class="na">max-q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.401864755325733</span>
+
+<span class="k">[prior-tc]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4798221.15572853</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4801821.15572853</span>
+
+<span class="k">[waveform_transforms-mass1+mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mchirp_q_to_mass1_mass2</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">dlogz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">150</span>
+
+<span class="c1">; NOTE: While this example doesn&#39;t sample in polarization, if doing this we</span>
+<span class="c1">; recommend the following transformation, and then sampling in this coordinate</span>
+<span class="c1">;</span>
+<span class="c1">; [waveform_transforms-polarization]</span>
+<span class="c1">; name = custom</span>
+<span class="c1">; inputs = better_pol, eclipticlongitude</span>
+<span class="c1">; polarization = better_pol + eclipticlongitude</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/e4fb10637416fd9054296bbe56d69231/lisa_smbhb_relbin.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span>
+pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-files<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/lisa_smbhb_relbin.ini<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>lisa_smbhb_inj_pe.hdf<span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--fft-backends<span class="w"> </span>fftw<span class="w"> </span><span class="se">\</span>
+--verbose
+
+<span class="c1"># PLEASE NOTE: This example is currently forcing a FFTW backend because MKL</span>
+<span class="c1">#              seems to fail for FFT lengths &gt; 2^24. This is fine for most LIGO</span>
+<span class="c1">#              applications, but an issue for most LISA applications.</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/1eb58ba7243dac08da42b48e64be8d77/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>To plot the posterior distribution after the last iteration, you can run the following script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--input-file<span class="w"> </span>lisa_smbhb_inj_pe.hdf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>lisa_smbhb_mass_tc.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--z-arg<span class="w"> </span>snr<span class="w"> </span>--plot-scatter<span class="w"> </span>--plot-marginal<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot-contours<span class="w"> </span>--contour-color<span class="w"> </span>black<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--parameters<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass1_from_mchirp_q(mchirp,q)&#39;</span>:mass1<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass2_from_mchirp_q(mchirp,q)&#39;</span>:mass2<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tc<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--expected-parameters<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass1_from_mchirp_q(mchirp,q)&#39;</span>:1015522.4376<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass2_from_mchirp_q(mchirp,q)&#39;</span>:796849.1091<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tc:4799624.274911478<span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/2df0dea54aa32af1d188acbf81a3a738/plot.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>In this example it will create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/lisa_smbhb_mass_tc.png"><img alt="../../_images/lisa_smbhb_mass_tc.png" class="align-center" src="../../_images/lisa_smbhb_mass_tc.png" style="width: 540.6px; height: 386.4px;" />
+</a>
+<p>The scatter points show each walker’s position after the last iteration. The
+points are colored by the SNR at that point, with the 50th and 90th
+percentile contours drawn. The red lines represent the true parameters of injected signal.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="lisa_smbhb_ldc_pe.html" class="btn btn-neutral float-left" title="LISA parameter estimation for simulated SMBHB from LDC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sampler_platter.html" class="btn btn-neutral float-right" title="Trying out different samplers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.fixedsamples &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.fixedsamples</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.fixedsamples</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2020 Alexander Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides classes for evaluating distributions based on a fixed</span>
+<span class="sd">set of points</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.random</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">VARARGS_DELIM</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.fixedsamples&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FixedSamples">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FixedSamples</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A distribution consisting of a collection of a large number of fixed points.</span>
+<span class="sd">    Only these values can be drawn from, so the number of points may need to be</span>
+<span class="sd">    large to properly reflect the paramter space. This distribution is intended</span>
+<span class="sd">    to aid in using nested samplers for semi-abitrary or complicated</span>
+<span class="sd">    distributions where it is possible to provide or draw samples but less</span>
+<span class="sd">    straightforward to provide an analytic invcdf. This class numerically</span>
+<span class="sd">    approximates the invcdf for 1 or 2 dimensional distributions</span>
+<span class="sd">    (but no higher).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    params :</span>
+<span class="sd">        This of parameters this distribution should use</span>
+<span class="sd">    samples : dict of arrays or FieldArray</span>
+<span class="sd">        Sampled points of the distribution. May contain transformed parameters</span>
+<span class="sd">        which are different from the original distribution. If so, an inverse</span>
+<span class="sd">        mapping is provided to associate points with other parameters provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;fixed_samples&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frac</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p1sorted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sort</span><span class="p">]</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only one or two parameters supported &quot;</span>
+                             <span class="s2">&quot;for fixed sample distribution&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FixedSamples.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="s2">&quot;Draw random value&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="FixedSamples.cdfinv">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples.cdfinv">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cdfinv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">original</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map unit cube to parameters in the space&quot;&quot;&quot;</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1">#First dimension</span>
+        <span class="n">u1</span> <span class="o">=</span> <span class="n">original</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">i1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">u1</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">i1</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">):</span>
+            <span class="n">i1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">i1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">i1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">new</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">p1v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p1sorted</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">new</span>
+
+        <span class="c1"># possible second dimension, probably shouldn&#39;t</span>
+        <span class="c1"># do more dimensions than this</span>
+        <span class="n">u2</span> <span class="o">=</span> <span class="n">original</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1sorted</span><span class="p">,</span> <span class="n">p1v</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">frac</span><span class="p">))</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1sorted</span><span class="p">,</span> <span class="n">p1v</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">frac</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="n">l</span><span class="p">:</span>
+            <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">,</span> <span class="n">l</span>
+
+        <span class="n">region</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort</span><span class="p">[</span><span class="n">l</span><span class="p">:</span><span class="n">r</span><span class="p">],</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">p2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">p2part</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p2</span><span class="p">[</span><span class="n">region</span><span class="p">],</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">p2part</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+        <span class="n">p2part</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p2part</span><span class="p">[</span><span class="n">l</span><span class="p">],</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">i2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">u2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">p2part</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">i2</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p2part</span><span class="p">):</span>
+            <span class="n">i2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p2part</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">i2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">i2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">new</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">p2part</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+
+        <span class="n">p1part</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1</span><span class="p">[</span><span class="n">region</span><span class="p">[</span><span class="n">l</span><span class="p">]],</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">new</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">p1part</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">new</span></div>
+
+
+<div class="viewcode-block" id="FixedSamples.apply_boundary_conditions">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples.apply_boundary_conditions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_boundary_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Apply boundary conditions (none here) &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">params</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Dummy function, not the actual pdf &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="FixedSamples.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return instance based on config file</span>
+
+<span class="sd">        Return a new instance based on the config file. This will draw from</span>
+<span class="sd">        a single distribution section provided in the config file and</span>
+<span class="sd">        apply a single transformation section if desired. If a transformation</span>
+<span class="sd">        is applied, an inverse mapping is also provided for use in the config</span>
+<span class="sd">        file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_distributions_from_config</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">read_transforms_from_config</span><span class="p">,</span>
+                                      <span class="n">apply_transforms</span><span class="p">,</span> <span class="n">BaseTransform</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">global_transforms</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="n">tag</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+        <span class="n">subname</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;subname&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;sample-size&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+
+        <span class="n">distsec</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_sample&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subname</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">read_distributions_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="o">=</span><span class="n">distsec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Fixed sample distrubtion only supports a single&quot;</span>
+                             <span class="s2">&quot; distribution to sample from.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Drawing samples for fixed sample distribution:</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">dist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">size</span><span class="p">)))</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">}</span>
+
+        <span class="n">transec</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_transform&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subname</span><span class="p">)</span>
+        <span class="n">trans</span> <span class="o">=</span> <span class="n">read_transforms_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="o">=</span><span class="n">transec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trans</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">trans</span> <span class="o">=</span> <span class="n">trans</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">apply_transforms</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="p">[</span><span class="n">trans</span><span class="p">])</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+            <span class="c1"># We have transformed parameters, so automatically provide the</span>
+            <span class="c1"># inverse transform for use in passing to waveform approximants</span>
+            <span class="k">class</span><span class="w"> </span><span class="nc">Thook</span><span class="p">(</span><span class="n">BaseTransform</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">subname</span>
+                <span class="n">_inputs</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">outputs</span>
+                <span class="n">_outputs</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">inputs</span>
+                <span class="n">p1name</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">sort</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+                <span class="n">p1sorted</span> <span class="o">=</span> <span class="n">p1</span><span class="p">[</span><span class="n">sort</span><span class="p">]</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maps</span><span class="p">):</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p1sorted</span><span class="p">,</span> <span class="n">maps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">p1name</span><span class="p">])</span>
+                    <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">sort</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span><span class="p">}</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_output</span><span class="p">(</span><span class="n">maps</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+            <span class="n">global_transforms</span><span class="p">[</span><span class="n">Thook</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Thook</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span></div>
+</div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;FixedSamples&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,796 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.strain.recalibrate &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../strain.html">pycbc.strain</a></li>
+      <li class="breadcrumb-item active">pycbc.strain.recalibrate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.strain.recalibrate</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; Classes and functions for adjusting strain data.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># Copyright (C) 2015 Ben Lackey, Christopher M. Biwer,</span>
+<span class="c1">#                    Daniel Finstad, Colm Talbot, Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnivariateSpline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.frame.gwosc</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_run</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">InterpolatedUnivariateSpline</span>
+
+
+<div class="viewcode-block" id="Recalibrate">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.Recalibrate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Recalibrate</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Base class for modifying calibration &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span> <span class="o">=</span> <span class="n">ifo_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Recalibrate.apply_calibration">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.Recalibrate.apply_calibration">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_calibration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply calibration model</span>
+
+<span class="sd">        This method should be overwritten by subclasses</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="Recalibrate.map_to_adjust">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.Recalibrate.map_to_adjust">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">map_to_adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;recalib_&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map an input dictionary of sampling parameters to the</span>
+<span class="sd">        adjust_strain function by filtering the dictionary for the</span>
+<span class="sd">        calibration parameters, then calling adjust_strain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+<span class="sd">        prefix: str</span>
+<span class="sd">            Prefix for calibration parameter names</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            Dictionary of sampling parameters which includes</span>
+<span class="sd">            calibration parameters.</span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+            <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]:</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span> <span class="k">if</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span> <span class="ow">in</span> <span class="n">key</span><span class="p">})</span>
+
+        <span class="n">strain_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_calibration</span><span class="p">(</span><span class="n">strain</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">strain_adjusted</span></div>
+
+
+<div class="viewcode-block" id="Recalibrate.from_config">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.Recalibrate.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a config file to get calibration options and transfer</span>
+<span class="sd">        functions which will be used to intialize the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            An open config file.</span>
+<span class="sd">        ifo : string</span>
+<span class="sd">            The detector (H1, L1) for which the calibration model will</span>
+<span class="sd">            be loaded.</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section name in the config file from which to retrieve</span>
+<span class="sd">            the calibration options.</span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        instance</span>
+<span class="sd">            An instance of the class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">))</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:]:</span> <span class="n">all_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                  <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_params</span> <span class="k">if</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">key</span><span class="p">}</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span><span class="p">}</span>
+        <span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ifo_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CubicSpline">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.CubicSpline">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CubicSpline</span><span class="p">(</span><span class="n">Recalibrate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cubic spline recalibration</span>
+
+<span class="sd">    see https://dcc.ligo.org/LIGO-T1400682/public</span>
+
+<span class="sd">    This assumes the spline points follow</span>
+<span class="sd">    np.logspace(np.log(minimum_frequency), np.log(maximum_frequency),</span>
+<span class="sd">    n_points)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    minimum_frequency: float</span>
+<span class="sd">    minimum frequency of spline points</span>
+<span class="sd">    maximum_frequency: float</span>
+<span class="sd">    maximum frequency of spline points</span>
+<span class="sd">    n_points: int</span>
+<span class="sd">    number of spline points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;cubic_spline&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum_frequency</span><span class="p">,</span> <span class="n">maximum_frequency</span><span class="p">,</span> <span class="n">n_points</span><span class="p">,</span>
+                 <span class="n">ifo_name</span><span class="p">):</span>
+        <span class="n">Recalibrate</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo_name</span><span class="o">=</span><span class="n">ifo_name</span><span class="p">)</span>
+        <span class="n">minimum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">)</span>
+        <span class="n">maximum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">)</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_points</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Use at least 4 spline points for calibration model&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_points</span> <span class="o">=</span> <span class="n">n_points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spline_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">),</span>
+                                         <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">),</span> <span class="n">n_points</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CubicSpline.apply_calibration">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.CubicSpline.apply_calibration">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_calibration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply calibration model</span>
+
+<span class="sd">        This applies cubic spline calibration to the strain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">amplitude_parameters</span> <span class="o">=</span>\
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;amplitude_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span><span class="p">,</span> <span class="n">ii</span><span class="p">)]</span>
+             <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="p">)]</span>
+        <span class="n">amplitude_spline</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spline_points</span><span class="p">,</span>
+                                            <span class="n">amplitude_parameters</span><span class="p">)</span>
+        <span class="n">delta_amplitude</span> <span class="o">=</span> <span class="n">amplitude_spline</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+        <span class="n">phase_parameters</span> <span class="o">=</span>\
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;phase_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span><span class="p">,</span> <span class="n">ii</span><span class="p">)]</span>
+             <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="p">)]</span>
+        <span class="n">phase_spline</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spline_points</span><span class="p">,</span> <span class="n">phase_parameters</span><span class="p">)</span>
+        <span class="n">delta_phase</span> <span class="o">=</span> <span class="n">phase_spline</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+        <span class="n">strain_adjusted</span> <span class="o">=</span> <span class="n">strain</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">delta_amplitude</span><span class="p">)</span>\
+            <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">delta_phase</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">delta_phase</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">strain_adjusted</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PhysicalModel">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PhysicalModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Class for adjusting time-varying calibration parameters of given</span>
+<span class="sd">    strain data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain : FrequencySeries</span>
+<span class="sd">        The strain to be adjusted.</span>
+<span class="sd">    freq : array</span>
+<span class="sd">        The frequencies corresponding to the values of c0, d0, a0 in Hertz.</span>
+<span class="sd">    fc0 : float</span>
+<span class="sd">        Coupled-cavity (CC) pole at time t0, when c0=c(t0) and a0=a(t0) are</span>
+<span class="sd">        measured.</span>
+<span class="sd">    c0 : array</span>
+<span class="sd">        Initial sensing function at t0 for the frequencies.</span>
+<span class="sd">    d0 : array</span>
+<span class="sd">        Digital filter for the frequencies.</span>
+<span class="sd">    a_tst0 : array</span>
+<span class="sd">        Initial actuation function for the test mass at t0 for the</span>
+<span class="sd">        frequencies.</span>
+<span class="sd">    a_pu0 : array</span>
+<span class="sd">        Initial actuation function for the penultimate mass at t0 for the</span>
+<span class="sd">        frequencies.</span>
+<span class="sd">    fs0 : float</span>
+<span class="sd">        Initial spring frequency at t0 for the signal recycling cavity.</span>
+<span class="sd">    qinv0 : float</span>
+<span class="sd">        Initial inverse quality factor at t0 for the signal recycling</span>
+<span class="sd">        cavity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;physical_model&#39;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fc0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">c0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">d0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">a_tst0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">a_pu0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fs0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qinv0</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c0</span> <span class="o">=</span> <span class="n">c0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d0</span> <span class="o">=</span> <span class="n">d0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_tst0</span> <span class="o">=</span> <span class="n">a_tst0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_pu0</span> <span class="o">=</span> <span class="n">a_pu0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fc0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fs0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fs0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qinv0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">qinv0</span><span class="p">)</span>
+
+        <span class="c1"># initial detuning at time t0</span>
+        <span class="n">init_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">*</span> \
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">fs0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinv0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs0</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># initial open loop gain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">d0</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_tst0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_pu0</span><span class="p">)</span>
+
+        <span class="c1"># initial response function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r0</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">g0</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">c0</span>
+
+        <span class="c1"># residual of c0 after factoring out the coupled cavity pole fc0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c_res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c0</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc0</span><span class="p">)</span><span class="o">/</span><span class="n">init_detuning</span>
+
+<div class="viewcode-block" id="PhysicalModel.update_c">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.update_c">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_c</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate the sensing function c(f,t) given the new parameters</span>
+<span class="sd">        kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fc : float</span>
+<span class="sd">            Coupled-cavity (CC) pole at time t.</span>
+<span class="sd">        kappa_c : float</span>
+<span class="sd">            Scalar correction factor for sensing function at time t.</span>
+<span class="sd">        fs : float</span>
+<span class="sd">            Spring frequency for signal recycling cavity.</span>
+<span class="sd">        qinv : float</span>
+<span class="sd">            Inverse quality factor for signal recycling cavity.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        c : numpy.array</span>
+<span class="sd">            The new sensing function c(f,t).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">detuning_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">*</span><span class="n">fs</span> <span class="o">*</span> \
+                                        <span class="n">qinv</span> <span class="o">+</span> <span class="n">fs</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_res</span> <span class="o">*</span> <span class="n">kappa_c</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="n">fc</span><span class="p">)</span><span class="o">*</span><span class="n">detuning_term</span></div>
+
+
+<div class="viewcode-block" id="PhysicalModel.update_g">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.update_g">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_g</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kappa_tst_re</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">kappa_tst_im</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">kappa_pu_re</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kappa_pu_im</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">kappa_c</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate the open loop gain g(f,t) given the new parameters</span>
+<span class="sd">        kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fc : float</span>
+<span class="sd">            Coupled-cavity (CC) pole at time t.</span>
+<span class="sd">        kappa_c : float</span>
+<span class="sd">            Scalar correction factor for sensing function c at time t.</span>
+<span class="sd">        kappa_tst_re : float</span>
+<span class="sd">            Real part of scalar correction factor for actuation function</span>
+<span class="sd">            a_tst0 at time t.</span>
+<span class="sd">        kappa_pu_re : float</span>
+<span class="sd">            Real part of scalar correction factor for actuation function</span>
+<span class="sd">            a_pu0 at time t.</span>
+<span class="sd">        kappa_tst_im : float</span>
+<span class="sd">            Imaginary part of scalar correction factor for actuation function</span>
+<span class="sd">            a_tst0 at time t.</span>
+<span class="sd">        kappa_pu_im : float</span>
+<span class="sd">            Imaginary part of scalar correction factor for actuation function</span>
+<span class="sd">            a_pu0 at time t.</span>
+<span class="sd">        fs : float</span>
+<span class="sd">            Spring frequency for signal recycling cavity.</span>
+<span class="sd">        qinv : float</span>
+<span class="sd">            Inverse quality factor for signal recycling cavity.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        g : numpy.array</span>
+<span class="sd">            The new open loop gain g(f,t).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_c</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="n">qinv</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">fc</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="n">kappa_c</span><span class="p">)</span>
+        <span class="n">a_tst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_tst0</span> <span class="o">*</span> <span class="p">(</span><span class="n">kappa_tst_re</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">kappa_tst_im</span><span class="p">)</span>
+        <span class="n">a_pu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_pu0</span> <span class="o">*</span> <span class="p">(</span><span class="n">kappa_pu_re</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">kappa_pu_im</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">c</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">d0</span> <span class="o">*</span> <span class="p">(</span><span class="n">a_tst</span> <span class="o">+</span> <span class="n">a_pu</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhysicalModel.update_r">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.update_r">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">kappa_tst_re</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kappa_tst_im</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">kappa_pu_re</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">kappa_pu_im</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Calculate the response function R(f,t) given the new parameters</span>
+<span class="sd">        kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fc : float</span>
+<span class="sd">            Coupled-cavity (CC) pole at time t.</span>
+<span class="sd">        kappa_c : float</span>
+<span class="sd">            Scalar correction factor for sensing function c at time t.</span>
+<span class="sd">        kappa_tst_re : float</span>
+<span class="sd">            Real part of scalar correction factor for actuation function</span>
+<span class="sd">            a_tst0 at time t.</span>
+<span class="sd">        kappa_pu_re : float</span>
+<span class="sd">            Real part of scalar correction factor for actuation function</span>
+<span class="sd">            a_pu0 at time t.</span>
+<span class="sd">        kappa_tst_im : float</span>
+<span class="sd">            Imaginary part of scalar correction factor for actuation function</span>
+<span class="sd">            a_tst0 at time t.</span>
+<span class="sd">        kappa_pu_im : float</span>
+<span class="sd">            Imaginary part of scalar correction factor for actuation function</span>
+<span class="sd">            a_pu0 at time t.</span>
+<span class="sd">        fs : float</span>
+<span class="sd">            Spring frequency for signal recycling cavity.</span>
+<span class="sd">        qinv : float</span>
+<span class="sd">            Inverse quality factor for signal recycling cavity.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        r : numpy.array</span>
+<span class="sd">            The new response function r(f,t).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_c</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="n">qinv</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">fc</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="n">kappa_c</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_g</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="n">qinv</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">fc</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="n">kappa_c</span><span class="p">,</span>
+                          <span class="n">kappa_tst_re</span><span class="o">=</span><span class="n">kappa_tst_re</span><span class="p">,</span>
+                          <span class="n">kappa_tst_im</span><span class="o">=</span><span class="n">kappa_tst_im</span><span class="p">,</span>
+                          <span class="n">kappa_pu_re</span><span class="o">=</span><span class="n">kappa_pu_re</span><span class="p">,</span> <span class="n">kappa_pu_im</span><span class="o">=</span><span class="n">kappa_pu_im</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">g</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span></div>
+
+
+<div class="viewcode-block" id="PhysicalModel.adjust_strain">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.adjust_strain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adjust_strain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">delta_fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delta_qinv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">delta_fc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kappa_tst_re</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                      <span class="n">kappa_tst_im</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">kappa_pu_re</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kappa_pu_im</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adjust the FrequencySeries strain by changing the time-dependent</span>
+<span class="sd">        calibration parameters kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain data to be adjusted.</span>
+<span class="sd">        delta_fc : float</span>
+<span class="sd">            Change in coupled-cavity (CC) pole at time t.</span>
+<span class="sd">        kappa_c : float</span>
+<span class="sd">            Scalar correction factor for sensing function c0 at time t.</span>
+<span class="sd">        kappa_tst_re : float</span>
+<span class="sd">            Real part of scalar correction factor for actuation function</span>
+<span class="sd">            A_{tst0} at time t.</span>
+<span class="sd">        kappa_tst_im : float</span>
+<span class="sd">            Imaginary part of scalar correction factor for actuation function</span>
+<span class="sd">            A_tst0 at time t.</span>
+<span class="sd">        kappa_pu_re : float</span>
+<span class="sd">            Real part of scalar correction factor for actuation function</span>
+<span class="sd">            A_{pu0} at time t.</span>
+<span class="sd">        kappa_pu_im : float</span>
+<span class="sd">            Imaginary part of scalar correction factor for actuation function</span>
+<span class="sd">            A_{pu0} at time t.</span>
+<span class="sd">        fs : float</span>
+<span class="sd">            Spring frequency for signal recycling cavity.</span>
+<span class="sd">        qinv : float</span>
+<span class="sd">            Inverse quality factor for signal recycling cavity.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The adjusted strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc0</span> <span class="o">+</span> <span class="n">delta_fc</span> <span class="k">if</span> <span class="n">delta_fc</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc0</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs0</span> <span class="o">+</span> <span class="n">delta_fs</span> <span class="k">if</span> <span class="n">delta_fs</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs0</span>
+        <span class="n">qinv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinv0</span> <span class="o">+</span> <span class="n">delta_qinv</span> <span class="k">if</span> <span class="n">delta_qinv</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">qinv0</span>
+
+        <span class="c1"># calculate adjusted response function</span>
+        <span class="n">r_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_r</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">qinv</span><span class="o">=</span><span class="n">qinv</span><span class="p">,</span> <span class="n">fc</span><span class="o">=</span><span class="n">fc</span><span class="p">,</span> <span class="n">kappa_c</span><span class="o">=</span><span class="n">kappa_c</span><span class="p">,</span>
+                                   <span class="n">kappa_tst_re</span><span class="o">=</span><span class="n">kappa_tst_re</span><span class="p">,</span>
+                                   <span class="n">kappa_tst_im</span><span class="o">=</span><span class="n">kappa_tst_im</span><span class="p">,</span>
+                                   <span class="n">kappa_pu_re</span><span class="o">=</span><span class="n">kappa_pu_re</span><span class="p">,</span>
+                                   <span class="n">kappa_pu_im</span><span class="o">=</span><span class="n">kappa_pu_im</span><span class="p">)</span>
+
+        <span class="c1"># calculate error function</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">r_adjusted</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">r0</span>
+
+        <span class="c1"># decompose into amplitude and unwrapped phase</span>
+        <span class="n">k_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">k_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+        <span class="c1"># convert to FrequencySeries by interpolating then resampling</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">k_amp_off</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">k_amp</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">k_phase_off</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="n">k_phase</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">freq_even</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">k_even_sample</span> <span class="o">=</span> <span class="n">k_amp_off</span><span class="p">(</span><span class="n">freq_even</span><span class="p">)</span> <span class="o">*</span> \
+                        <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">k_phase_off</span><span class="p">(</span><span class="n">freq_even</span><span class="p">))</span>
+        <span class="n">strain_adjusted</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">*</span> \
+                                          <span class="n">k_even_sample</span><span class="p">,</span>
+                                          <span class="n">delta_f</span><span class="o">=</span><span class="n">strain</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">strain_adjusted</span></div>
+
+
+<div class="viewcode-block" id="PhysicalModel.tf_from_file">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.tf_from_file">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tf_from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the contents of a file with the columns</span>
+<span class="sd">        [freq, real(h), imag(h)] to a numpy.array with columns</span>
+<span class="sd">        [freq, real(h)+j*imag(h)].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : string</span>
+<span class="sd">        delimiter : {&quot; &quot;, string}</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        numpy.array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">)</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span> <span class="o">*</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">freq</span><span class="p">,</span> <span class="n">h</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PhysicalModel.from_config">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a config file to get calibration options and transfer</span>
+<span class="sd">        functions which will be used to intialize the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            An open config file.</span>
+<span class="sd">        ifo : string</span>
+<span class="sd">            The detector (H1, L1) for which the calibration model will</span>
+<span class="sd">            be loaded.</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section name in the config file from which to retrieve</span>
+<span class="sd">            the calibration options.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        instance</span>
+<span class="sd">            An instance of the Recalibrate class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># read transfer functions</span>
+        <span class="n">tfs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tf_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a-tst&quot;</span><span class="p">,</span> <span class="s2">&quot;a-pu&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">ifo</span><span class="p">,</span> <span class="s2">&quot;transfer-function&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">tf_names</span><span class="p">]:</span>
+            <span class="n">tf_path</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">tfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">tf_from_file</span><span class="p">(</span><span class="n">tf_path</span><span class="p">))</span>
+        <span class="n">a_tst0</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">[</span><span class="mi">0</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">a_pu0</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">[</span><span class="mi">1</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">c0</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">[</span><span class="mi">2</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">d0</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">[</span><span class="mi">3</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">[</span><span class="mi">0</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># if upper stage actuation is included, read that in and add it</span>
+        <span class="c1"># to a_pu0</span>
+        <span class="n">uim_tag</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">ifo</span><span class="p">,</span> <span class="s1">&#39;transfer-function-a-uim&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">uim_tag</span><span class="p">):</span>
+            <span class="n">tf_path</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">uim_tag</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">a_pu0</span> <span class="o">+=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">tf_from_file</span><span class="p">(</span><span class="n">tf_path</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># read fc0, fs0, and qinv0</span>
+        <span class="n">fc0</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">ifo</span><span class="p">,</span> <span class="s2">&quot;fc0&quot;</span><span class="p">]),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">fs0</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">ifo</span><span class="p">,</span> <span class="s2">&quot;fs0&quot;</span><span class="p">]),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">qinv0</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">ifo</span><span class="p">,</span> <span class="s2">&quot;qinv0&quot;</span><span class="p">]),</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span> <span class="n">fc0</span><span class="o">=</span><span class="n">fc0</span><span class="p">,</span> <span class="n">c0</span><span class="o">=</span><span class="n">c0</span><span class="p">,</span> <span class="n">d0</span><span class="o">=</span><span class="n">d0</span><span class="p">,</span> <span class="n">a_tst0</span><span class="o">=</span><span class="n">a_tst0</span><span class="p">,</span>
+                   <span class="n">a_pu0</span><span class="o">=</span><span class="n">a_pu0</span><span class="p">,</span> <span class="n">fs0</span><span class="o">=</span><span class="n">fs0</span><span class="p">,</span> <span class="n">qinv0</span><span class="o">=</span><span class="n">qinv0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PhysicalModel.map_to_adjust">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.map_to_adjust">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">map_to_adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map an input dictionary of sampling parameters to the</span>
+<span class="sd">        adjust_strain function by filtering the dictionary for the</span>
+<span class="sd">        calibration parameters, then calling adjust_strain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            Dictionary of sampling parameters which includes</span>
+<span class="sd">            calibration parameters.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># calibration param names</span>
+        <span class="n">arg_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;delta_fs&#39;</span><span class="p">,</span> <span class="s1">&#39;delta_fc&#39;</span><span class="p">,</span> <span class="s1">&#39;delta_qinv&#39;</span><span class="p">,</span> <span class="s1">&#39;kappa_c&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;kappa_tst_re&#39;</span><span class="p">,</span> <span class="s1">&#39;kappa_tst_im&#39;</span><span class="p">,</span> <span class="s1">&#39;kappa_pu_re&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;kappa_pu_im&#39;</span><span class="p">]</span>
+        <span class="c1"># calibration param labels as they exist in config files</span>
+        <span class="n">arg_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;calib_&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">arg_names</span><span class="p">]</span>
+        <span class="c1"># default values for calibration params</span>
+        <span class="n">default_values</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+        <span class="c1"># make list of calibration param values</span>
+        <span class="n">calib_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">arg_labels</span><span class="p">,</span> <span class="n">default_values</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="n">calib_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">arg</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">calib_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="c1"># adjust the strain using calibration param values</span>
+        <span class="n">strain_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjust_strain</span><span class="p">(</span><span class="n">strain</span><span class="p">,</span> <span class="n">delta_fs</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                              <span class="n">delta_fc</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">delta_qinv</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                              <span class="n">kappa_c</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                              <span class="n">kappa_tst_re</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+                              <span class="n">kappa_tst_im</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+                              <span class="n">kappa_pu_re</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span>
+                              <span class="n">kappa_pu_im</span><span class="o">=</span><span class="n">calib_args</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">strain_adjusted</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="read_calibration_envelop_file">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.read_calibration_envelop_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_calibration_envelop_file</span><span class="p">(</span><span class="n">calibration_file</span><span class="p">,</span> <span class="n">correction_type</span><span class="p">,</span>
+                                  <span class="n">minimum_frequency</span><span class="p">,</span> <span class="n">maximum_frequency</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function reads the calibration envelop file and provide arrays</span>
+<span class="sd">    needed to construct cubic splines</span>
+
+<span class="sd">    Input:</span>
+<span class="sd">      calibration_file: Calibration envelop file</span>
+<span class="sd">      correction_type: Specify the correction type between &#39;data&#39; and &#39;template&#39;</span>
+<span class="sd">      minimum_frequency: Lower cut-off frequency to apply calibration</span>
+<span class="sd">      maximum_frequency: Upper cut-off frequency to apply calibration</span>
+<span class="sd">      n_nodes: Nodal points for cubic-splines</span>
+
+<span class="sd">    Output:</span>
+<span class="sd">      log_nodes: Values of log-frequency for nodal points</span>
+<span class="sd">      amplitude_median_nodes: Median values of Amplitude correction at frequency nodal points</span>
+<span class="sd">      amplitude_sigma_nodes: Standard deviation values of Amplitude correction at frequency nodal points</span>
+<span class="sd">      phase_median_nodes: Median values of Phase correction at frequency nodal points</span>
+<span class="sd">      phase_sigma_nodes: Standard deviation values of Phase correction at frequency nodal points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">calibration_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">calibration_file</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">log_frequency_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">log_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">),</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">),</span> <span class="n">n_nodes</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">correction_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;template&#39;</span><span class="p">:</span>
+        <span class="n">amplitude_median</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">phase_median</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">amplitude_sigma</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">phase_sigma</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">elif</span> <span class="n">correction_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">==</span><span class="s1">&#39;data&#39;</span><span class="p">:</span>
+        <span class="n">amplitude_median</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">phase_median</span> <span class="o">=</span> <span class="o">-</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">amplitude_sigma</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">phase_sigma</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="c1"># Some sanity checks</span>
+    <span class="k">if</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">maximum_frequency</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">maximum_frequency</span> <span class="o">-</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="n">maximum_frequency</span> <span class="o">=</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Maximum frequency (=</span><span class="si">%d</span><span class="s2">) for tc=</span><span class="si">%s</span><span class="s2"> is more than&quot;</span>
+                         <span class="s2">&quot;maximum frequency in calibration envelop (=</span><span class="si">%.3g</span><span class="s2">)&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">,</span><span class="n">gps_time</span><span class="p">,</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">minimum_frequency</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Minimum frequency (=</span><span class="si">%d</span><span class="s2">) for tc=</span><span class="si">%s</span><span class="s2"> is less than&quot;</span>
+                         <span class="s2">&quot;minimum frequency in calibration envelop (=</span><span class="si">%.3g</span><span class="s2">)&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">,</span><span class="n">gps_time</span><span class="p">,</span><span class="n">calibration_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">amplitude_median_nodes</span> <span class="o">=</span> \
+            <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">log_frequency_array</span><span class="p">,</span> <span class="n">amplitude_median</span><span class="p">)(</span><span class="n">log_nodes</span><span class="p">)</span>
+    <span class="n">amplitude_sigma_nodes</span> <span class="o">=</span> \
+            <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">log_frequency_array</span><span class="p">,</span> <span class="n">amplitude_sigma</span><span class="p">)(</span><span class="n">log_nodes</span><span class="p">)</span>
+    <span class="n">phase_median_nodes</span> <span class="o">=</span> \
+            <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">log_frequency_array</span><span class="p">,</span> <span class="n">phase_median</span><span class="p">)(</span><span class="n">log_nodes</span><span class="p">)</span>
+    <span class="n">phase_sigma_nodes</span> <span class="o">=</span> \
+            <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">log_frequency_array</span><span class="p">,</span> <span class="n">phase_sigma</span><span class="p">)(</span><span class="n">log_nodes</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">log_nodes</span><span class="p">,</span> <span class="n">amplitude_median_nodes</span><span class="p">,</span> <span class="n">amplitude_sigma_nodes</span><span class="p">,</span> <span class="n">phase_median_nodes</span><span class="p">,</span> <span class="n">phase_sigma_nodes</span></div>
+
+
+
+<div class="viewcode-block" id="get_calibration_files_O1_O2_O3">
+<a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.recalibrate.get_calibration_files_O1_O2_O3">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_calibration_files_O1_O2_O3</span><span class="p">(</span><span class="n">ifos</span><span class="p">,</span> <span class="n">gps_time</span><span class="p">,</span> <span class="n">calibration_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function provides a dictionary of calibration envelop files</span>
+<span class="sd">    for each IFO around a given GPS time for O1, O2, and O3 observation</span>
+<span class="sd">    run.</span>
+
+<span class="sd">    Input:</span>
+<span class="sd">     ifos: List of detectors in the network</span>
+<span class="sd">     gps_time: GPS time around which the calibration envelop is required</span>
+<span class="sd">     calibration_file_path: Top level directory of locally downloaded calibration envelopes</span>
+
+<span class="sd">    Output:</span>
+<span class="sd">     A dictionary of calibration envelop file path for each IFO.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dict_calibration_file</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">all_calibration_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">/*FinalResults.txt&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">calibration_file_path</span><span class="p">,</span> <span class="n">ifo</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ifo</span> <span class="o">!=</span><span class="s1">&#39;V1&#39;</span><span class="p">:</span>
+            <span class="c1"># H1 and L1 detector files are treated seperately compared to V1 detector</span>
+            <span class="c1"># This list of GPS times can be coded in a better way!!!</span>
+            <span class="n">list_gpstimes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">4</span><span class="p">])</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">all_calibration_files</span><span class="p">])</span>
+            <span class="n">dt_list</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">list_gpstimes</span> <span class="o">-</span> <span class="n">gps_time</span><span class="p">)</span>
+            <span class="n">ifo_calibration_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">all_calibration_files</span><span class="p">[</span><span class="n">dt_list</span><span class="o">.</span><span class="n">argmin</span><span class="p">()])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">RUN_NAME</span> <span class="o">=</span> <span class="n">get_run</span><span class="p">(</span><span class="n">gps_time</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">RUN_NAME</span><span class="o">==</span><span class="s1">&#39;O2&#39;</span><span class="p">:</span>
+                <span class="n">ifo_calibration_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/calibration_envelops/V1/V_calibrationUncertaintyEnvelope_magnitude5p1percent_phase40mraddeg20microsecond.txt&#39;</span><span class="o">%</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">RUN_NAME</span><span class="o">==</span><span class="s1">&#39;O3a&#39;</span><span class="p">:</span>
+                <span class="n">ifo_calibration_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/calibration_envelops/V1/V_O3a_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt&#39;</span><span class="o">%</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">RUN_NAME</span><span class="o">==</span><span class="s1">&#39;O3b&#39;</span><span class="p">:</span>
+                <span class="n">ifo_calibration_file</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/calibration_envelops/V1/V_O3b_calibrationUncertaintyEnvelope_magnitude5percent_phase35milliradians10microseconds.txt&#39;</span><span class="o">%</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Virgo GPS time is not in valid range&quot;</span><span class="p">)</span>
+
+        <span class="n">dict_calibration_file</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">calibration_file_path</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span><span class="n">ifo_calibration_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">dict_calibration_file</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

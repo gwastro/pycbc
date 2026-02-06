@@ -1,0 +1,1420 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.pnutils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.pnutils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.pnutils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;This module contains convenience pN functions. This includes calculating conversions</span>
+<span class="sd">between quantities.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">bisect</span><span class="p">,</span> <span class="n">brentq</span><span class="p">,</span> <span class="n">minimize</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span><span class="p">,</span> <span class="n">libutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">PI</span><span class="p">,</span> <span class="n">MTSUN_SI</span><span class="p">,</span> <span class="n">PC_SI</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.pnutils&#39;</span><span class="p">)</span>
+
+<span class="n">lalsim</span> <span class="o">=</span> <span class="n">libutils</span><span class="o">.</span><span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lalsimulation&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="nearest_larger_binary_number">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.nearest_larger_binary_number">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nearest_larger_binary_number</span><span class="p">(</span><span class="n">input_len</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return the nearest binary number larger than input_len.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">input_len</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="chirp_distance">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.chirp_distance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chirp_distance</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">mchirp</span><span class="p">,</span> <span class="n">ref_mass</span><span class="o">=</span><span class="mf">1.4</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">chirp_distance</span><span class="p">(</span><span class="n">dist</span><span class="p">,</span> <span class="n">mchirp</span><span class="p">,</span> <span class="n">ref_mass</span><span class="o">=</span><span class="n">ref_mass</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mass1_mass2_to_mtotal_eta">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mass1_mass2_to_mtotal_eta">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mass1_mass2_to_mtotal_eta</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">):</span>
+    <span class="n">m_total</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mtotal_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">eta_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">m_total</span><span class="p">,</span><span class="n">eta</span></div>
+
+
+<div class="viewcode-block" id="mtotal_eta_to_mass1_mass2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mtotal_eta_to_mass1_mass2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mtotal_eta_to_mass1_mass2</span><span class="p">(</span><span class="n">m_total</span><span class="p">,</span> <span class="n">eta</span><span class="p">):</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass1_from_mtotal_eta</span><span class="p">(</span><span class="n">m_total</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass2_from_mtotal_eta</span><span class="p">(</span><span class="n">m_total</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span><span class="n">mass2</span></div>
+
+
+<div class="viewcode-block" id="mass1_mass2_to_mchirp_eta">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mass1_mass2_to_mchirp_eta">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mass1_mass2_to_mchirp_eta</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">):</span>
+    <span class="n">m_chirp</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">eta_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">m_chirp</span><span class="p">,</span><span class="n">eta</span></div>
+
+
+<div class="viewcode-block" id="mchirp_eta_to_mass1_mass2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mchirp_eta_to_mass1_mass2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_eta_to_mass1_mass2</span><span class="p">(</span><span class="n">m_chirp</span><span class="p">,</span> <span class="n">eta</span><span class="p">):</span>
+    <span class="n">mtotal</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mtotal_from_mchirp_eta</span><span class="p">(</span><span class="n">m_chirp</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass1_from_mtotal_eta</span><span class="p">(</span><span class="n">mtotal</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass2_from_mtotal_eta</span><span class="p">(</span><span class="n">mtotal</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span></div>
+
+
+<div class="viewcode-block" id="mchirp_mass1_to_mass2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mchirp_mass1_to_mass2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_mass1_to_mass2</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">mass1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function takes a value of mchirp and one component mass and returns</span>
+<span class="sd">    the second component mass. As this is a cubic equation this requires</span>
+<span class="sd">    finding the roots and returning the one that is real.</span>
+<span class="sd">    Basically it can be shown that:</span>
+
+<span class="sd">    m2^3 - a(m2 + m1) = 0</span>
+
+<span class="sd">    where</span>
+
+<span class="sd">    a = Mc^5 / m1^3</span>
+
+<span class="sd">    this has 3 solutions but only one will be real.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass2_from_mchirp_mass1</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">mass1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="eta_mass1_to_mass2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.eta_mass1_to_mass2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">eta_mass1_to_mass2</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">return_mass_heavier</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">force_real</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function takes values for eta and one component mass and returns the</span>
+<span class="sd">    second component mass. Similar to mchirp_mass1_to_mass2 this requires</span>
+<span class="sd">    finding the roots of a quadratic equation. Basically:</span>
+
+<span class="sd">    eta m2^2 + (2 eta - 1)m1 m2 + eta m1^2 = 0</span>
+
+<span class="sd">    This has two solutions which correspond to mass1 being the heavier mass</span>
+<span class="sd">    or it being the lighter mass. By default the value corresponding to</span>
+<span class="sd">    mass1 &gt; mass2 is returned. Use the return_mass_heavier kwarg to invert this</span>
+<span class="sd">    behaviour.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass_from_knownmass_eta</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span>
+        <span class="n">known_is_secondary</span><span class="o">=</span><span class="n">return_mass_heavier</span><span class="p">,</span> <span class="n">force_real</span><span class="o">=</span><span class="n">force_real</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mchirp_q_to_mass1_mass2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mchirp_q_to_mass1_mass2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mchirp_q_to_mass1_mass2</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; This function takes a value of mchirp and the mass ratio</span>
+<span class="sd">    mass1/mass2 and returns the two component masses.</span>
+
+<span class="sd">    The map from q to eta is</span>
+
+<span class="sd">        eta = (mass1*mass2)/(mass1+mass2)**2 = (q)/(1+q)**2</span>
+
+<span class="sd">    Then we can map from (mchirp,eta) to (mass1,mass2).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">eta_from_q</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass1_from_mchirp_eta</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mass2_from_mchirp_eta</span><span class="p">(</span><span class="n">mchirp</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span></div>
+
+
+<div class="viewcode-block" id="A0">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.A0">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">A0</span><span class="p">(</span><span class="n">f_lower</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437</span>
+<span class="sd">       appendix 1, also lalinspiral/python/sbank/tau0tau3.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">_a0</span><span class="p">(</span><span class="n">f_lower</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="A3">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.A3">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">A3</span><span class="p">(</span><span class="n">f_lower</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;another parameter used for chirp times&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">_a3</span><span class="p">(</span><span class="n">f_lower</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mass1_mass2_to_tau0_tau3">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mass1_mass2_to_tau0_tau3">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mass1_mass2_to_tau0_tau3</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">):</span>
+    <span class="n">tau0</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">tau0_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">)</span>
+    <span class="n">tau3</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">tau3_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tau0</span><span class="p">,</span><span class="n">tau3</span></div>
+
+
+<div class="viewcode-block" id="tau0_tau3_to_mtotal_eta">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.tau0_tau3_to_mtotal_eta">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tau0_tau3_to_mtotal_eta</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">tau3</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">):</span>
+    <span class="n">mtotal</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">mtotal_from_tau0_tau3</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">tau3</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">)</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">eta_from_tau0_tau3</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">tau3</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mtotal</span><span class="p">,</span> <span class="n">eta</span></div>
+
+
+<div class="viewcode-block" id="tau0_tau3_to_mass1_mass2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.tau0_tau3_to_mass1_mass2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tau0_tau3_to_mass1_mass2</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">tau3</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">):</span>
+    <span class="n">m_total</span><span class="p">,</span><span class="n">eta</span> <span class="o">=</span> <span class="n">tau0_tau3_to_mtotal_eta</span><span class="p">(</span><span class="n">tau0</span><span class="p">,</span> <span class="n">tau3</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mtotal_eta_to_mass1_mass2</span><span class="p">(</span><span class="n">m_total</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span>
+                                                  <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">):</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">mass1_mass2_to_mtotal_eta</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="c1"># get_beta_sigma_from_aligned_spins() takes</span>
+    <span class="c1"># the spin of the heaviest body first</span>
+    <span class="n">heavy_spin</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mass2</span> <span class="o">&lt;=</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">)</span>
+    <span class="n">light_spin</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mass2</span> <span class="o">&gt;</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">)</span>
+    <span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">gamma</span> <span class="o">=</span> <span class="n">get_beta_sigma_from_aligned_spins</span><span class="p">(</span>
+        <span class="n">eta</span><span class="p">,</span> <span class="n">heavy_spin</span><span class="p">,</span> <span class="n">light_spin</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">gamma</span></div>
+
+
+<div class="viewcode-block" id="get_beta_sigma_from_aligned_spins">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.get_beta_sigma_from_aligned_spins">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_beta_sigma_from_aligned_spins</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the various PN spin combinations from the masses and spins.</span>
+<span class="sd">    See &lt;http://arxiv.org/pdf/0810.5336v3.pdf&gt;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    eta : float or numpy.array</span>
+<span class="sd">        Symmetric mass ratio of the input system(s)</span>
+<span class="sd">    spin1z : float or numpy.array</span>
+<span class="sd">        Spin(s) parallel to the orbit of the heaviest body(ies)</span>
+<span class="sd">    spin2z : float or numpy.array</span>
+<span class="sd">        Spin(s) parallel to the orbit of the smallest body(ies)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    beta : float or numpy.array</span>
+<span class="sd">        The 1.5PN spin combination</span>
+<span class="sd">    sigma : float or numpy.array</span>
+<span class="sd">        The 2PN spin combination</span>
+<span class="sd">    gamma : float or numpy.array</span>
+<span class="sd">        The 2.5PN spin combination</span>
+<span class="sd">    chis : float or numpy.array</span>
+<span class="sd">        (spin1z + spin2z) / 2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chiS</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">spin1z</span> <span class="o">+</span> <span class="n">spin2z</span><span class="p">)</span>
+    <span class="n">chiA</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">spin1z</span> <span class="o">-</span> <span class="n">spin2z</span><span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="n">spinspin</span> <span class="o">=</span> <span class="n">spin1z</span> <span class="o">*</span> <span class="n">spin2z</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">113.</span> <span class="o">/</span> <span class="mf">12.</span> <span class="o">-</span> <span class="mf">19.</span> <span class="o">/</span> <span class="mf">3.</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">chiS</span>
+    <span class="n">beta</span> <span class="o">+=</span> <span class="mf">113.</span> <span class="o">/</span> <span class="mf">12.</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">chiA</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">eta</span> <span class="o">/</span> <span class="mf">48.</span> <span class="o">*</span> <span class="p">(</span><span class="mi">474</span> <span class="o">*</span> <span class="n">spinspin</span><span class="p">)</span>
+    <span class="n">sigma</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">81.</span> <span class="o">/</span> <span class="mf">16.</span> <span class="o">*</span> <span class="p">(</span><span class="n">chiS</span> <span class="o">*</span> <span class="n">chiS</span> <span class="o">+</span> <span class="n">chiA</span> <span class="o">*</span> <span class="n">chiA</span><span class="p">))</span>
+    <span class="n">sigma</span> <span class="o">+=</span> <span class="n">delta</span> <span class="o">*</span> <span class="p">(</span><span class="mf">81.</span> <span class="o">/</span> <span class="mf">8.</span> <span class="o">*</span> <span class="p">(</span><span class="n">chiS</span> <span class="o">*</span> <span class="n">chiA</span><span class="p">))</span>
+    <span class="n">gamma</span> <span class="o">=</span> <span class="p">(</span><span class="mf">732985.</span> <span class="o">/</span> <span class="mf">2268.</span> <span class="o">-</span> <span class="mf">24260.</span> <span class="o">/</span> <span class="mf">81.</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">-</span> \
+            <span class="mf">340.</span> <span class="o">/</span> <span class="mf">9.</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">chiS</span>
+    <span class="n">gamma</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">732985.</span> <span class="o">/</span> <span class="mf">2268.</span> <span class="o">+</span> <span class="mf">140.</span> <span class="o">/</span> <span class="mf">9.</span> <span class="o">*</span> <span class="n">eta</span><span class="p">)</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">chiA</span>
+    <span class="k">return</span> <span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">gamma</span></div>
+
+
+<div class="viewcode-block" id="solar_mass_to_kg">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.solar_mass_to_kg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">solar_mass_to_kg</span><span class="p">(</span><span class="n">solar_masses</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">solar_masses</span> <span class="o">*</span> <span class="n">MSUN_SI</span></div>
+
+
+<div class="viewcode-block" id="parsecs_to_meters">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.parsecs_to_meters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parsecs_to_meters</span><span class="p">(</span><span class="n">distance</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">distance</span> <span class="o">*</span> <span class="n">PC_SI</span></div>
+
+
+<div class="viewcode-block" id="megaparsecs_to_meters">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.megaparsecs_to_meters">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">megaparsecs_to_meters</span><span class="p">(</span><span class="n">distance</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">parsecs_to_meters</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span></div>
+
+
+<div class="viewcode-block" id="velocity_to_frequency">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.velocity_to_frequency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">velocity_to_frequency</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">velocity_to_frequency</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="frequency_to_velocity">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.frequency_to_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">frequency_to_velocity</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">M</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">frequency_to_velocity</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">M</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="f_SchwarzISCO">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.f_SchwarzISCO">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_SchwarzISCO</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Innermost stable circular orbit (ISCO) for a test particle</span>
+<span class="sd">    orbiting a Schwarzschild black hole</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    M : float or numpy.array</span>
+<span class="sd">        Total mass in solar mass units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">conversions</span><span class="o">.</span><span class="n">f_schwarzchild_isco</span><span class="p">(</span><span class="n">M</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="f_BKLISCO">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.f_BKLISCO">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_BKLISCO</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mass ratio dependent ISCO derived from estimates of the final spin</span>
+<span class="sd">    of a merged black hole in a paper by Buonanno, Kidder, Lehner</span>
+<span class="sd">    (arXiv:0709.3839).  See also arxiv:0801.4297v2 eq.(5)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float or numpy.array</span>
+<span class="sd">        First component mass in solar mass units</span>
+<span class="sd">    m2 : float or numpy.array</span>
+<span class="sd">        Second component mass in solar mass units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># q is defined to be in [0,1] for this formula</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">m1</span><span class="o">/</span><span class="n">m2</span><span class="p">,</span> <span class="n">m2</span><span class="o">/</span><span class="n">m1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f_SchwarzISCO</span><span class="p">(</span><span class="n">m1</span><span class="o">+</span><span class="n">m2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span> <span class="mi">1</span> <span class="o">+</span> <span class="mf">2.8</span><span class="o">*</span><span class="n">q</span> <span class="o">-</span> <span class="mf">2.6</span><span class="o">*</span><span class="n">q</span><span class="o">*</span><span class="n">q</span> <span class="o">+</span> <span class="mf">0.8</span><span class="o">*</span><span class="n">q</span><span class="o">*</span><span class="n">q</span><span class="o">*</span><span class="n">q</span> <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="f_LightRing">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.f_LightRing">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_LightRing</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gravitational wave frequency corresponding to the light-ring orbit,</span>
+<span class="sd">    equal to 1/(3**(3/2) pi M) : see InspiralBankGeneration.c</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    M : float or numpy.array</span>
+<span class="sd">        Total mass in solar mass units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">3.0</span><span class="o">**</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="n">MTSUN_SI</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="f_ERD">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.f_ERD">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_ERD</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Effective RingDown frequency studied in Pan et al. (arXiv:0704.1964)</span>
+<span class="sd">    found to give good fit between stationary-phase templates and</span>
+<span class="sd">    numerical relativity waveforms [NB equal-mass &amp; nonspinning!]</span>
+<span class="sd">    Equal to 1.07*omega_220/2*pi</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    M : float or numpy.array</span>
+<span class="sd">        Total mass in solar mass units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.07</span> <span class="o">*</span> <span class="mf">0.5326</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">PI</span> <span class="o">*</span> <span class="mf">0.955</span> <span class="o">*</span> <span class="n">M</span> <span class="o">*</span> <span class="n">MTSUN_SI</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="f_FRD">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.f_FRD">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_FRD</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fundamental RingDown frequency calculated from the Berti, Cardoso and</span>
+<span class="sd">    Will (gr-qc/0512160) value for the omega_220 QNM frequency using</span>
+<span class="sd">    mass-ratio dependent fits to the final BH mass and spin from Buonanno</span>
+<span class="sd">    et al. (arXiv:0706.3732) : see also InspiralBankGeneration.c</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float or numpy.array</span>
+<span class="sd">        First component mass in solar mass units</span>
+<span class="sd">    m2 : float or numpy.array</span>
+<span class="sd">        Second component mass in solar mass units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m_total</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">mass1_mass2_to_mtotal_eta</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="mf">0.63</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="mf">3.4641016</span><span class="o">*</span><span class="n">eta</span> <span class="o">+</span> <span class="mf">2.9</span><span class="o">*</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">0.3</span><span class="p">))</span> <span class="o">/</span>
+    <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="mf">0.057191</span><span class="o">*</span><span class="n">eta</span> <span class="o">-</span> <span class="mf">0.498</span><span class="o">*</span><span class="n">eta</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">tmp</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">PI</span> <span class="o">*</span> <span class="n">m_total</span><span class="o">*</span><span class="n">MTSUN_SI</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="f_LRD">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.f_LRD">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_LRD</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lorentzian RingDown frequency = 1.2*FRD which captures part of</span>
+<span class="sd">    the Lorentzian tail from the decay of the QNMs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float or numpy.array</span>
+<span class="sd">        First component mass in solar mass units</span>
+<span class="sd">    m2 : float or numpy.array</span>
+<span class="sd">        Second component mass in solar mass units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">f_FRD</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_freq</span><span class="p">(</span><span class="n">freqfunc</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper of the LALSimulation function returning the frequency</span>
+<span class="sd">    for a given frequency function and template parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    freqfunc : lalsimulation FrequencyFunction wrapped object e.g.</span>
+<span class="sd">        lalsimulation.fEOBNRv2RD</span>
+<span class="sd">    m1 : float-ish, i.e. castable to float</span>
+<span class="sd">        First component mass in solar masses</span>
+<span class="sd">    m2 : float-ish</span>
+<span class="sd">        Second component mass in solar masses</span>
+<span class="sd">    s1z : float-ish</span>
+<span class="sd">        First component dimensionless spin S_1/m_1^2 projected onto L</span>
+<span class="sd">    s2z : float-ish</span>
+<span class="sd">        Second component dimensionless spin S_2/m_2^2 projected onto L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimInspiralGetFrequency</span><span class="p">(</span>
+        <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">m1</span><span class="p">),</span>
+        <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">m2</span><span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">s1z</span><span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">s2z</span><span class="p">),</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">freqfunc</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="c1"># vectorize to enable calls with numpy arrays</span>
+<span class="n">_vec_get_freq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">_get_freq</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_freq">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.get_freq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_freq</span><span class="p">(</span><span class="n">freqfunc</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the LALSimulation function which evaluates the frequency</span>
+<span class="sd">    for the given frequency function and template parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    freqfunc : string</span>
+<span class="sd">        Name of the frequency function to use, e.g., &#39;fEOBNRv2RD&#39;</span>
+<span class="sd">    m1 : float or numpy.array</span>
+<span class="sd">        First component mass in solar masses</span>
+<span class="sd">    m2 : float or numpy.array</span>
+<span class="sd">        Second component mass in solar masses</span>
+<span class="sd">    s1z : float or numpy.array</span>
+<span class="sd">        First component dimensionless spin S_1/m_1^2 projected onto L</span>
+<span class="sd">    s2z : float or numpy.array</span>
+<span class="sd">        Second component dimensionless spin S_2/m_2^2 projected onto L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lalsim_ffunc</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lalsim</span><span class="p">,</span> <span class="n">freqfunc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_vec_get_freq</span><span class="p">(</span><span class="n">lalsim_ffunc</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_final_freq</span><span class="p">(</span><span class="n">approx</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper of the LALSimulation function returning the final (highest)</span>
+<span class="sd">    frequency for a given approximant an template parameters</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approx : lalsimulation approximant wrapped object e.g.</span>
+<span class="sd">        lalsimulation.EOBNRv2</span>
+<span class="sd">    m1 : float-ish, i.e. castable to float</span>
+<span class="sd">        First component mass in solar masses</span>
+<span class="sd">    m2 : float-ish</span>
+<span class="sd">        Second component mass in solar masses</span>
+<span class="sd">    s1z : float-ish</span>
+<span class="sd">        First component dimensionless spin S_1/m_1^2 projected onto L</span>
+<span class="sd">    s2z : float-ish</span>
+<span class="sd">        Second component dimensionless spin S_2/m_2^2 projected onto L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimInspiralGetFinalFreq</span><span class="p">(</span>
+        <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">m1</span><span class="p">),</span>
+        <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">m2</span><span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">s1z</span><span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">s2z</span><span class="p">),</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">approx</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="c1"># vectorize to enable calls with numpy arrays</span>
+<span class="n">_vec_get_final_freq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">_get_final_freq</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_final_freq">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.get_final_freq">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_final_freq</span><span class="p">(</span><span class="n">approx</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the final (highest) frequency for a given approximant using</span>
+<span class="sd">    given template parameters.</span>
+
+<span class="sd">    NOTE: TaylorTx and TaylorFx are currently all given an ISCO cutoff !!</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approx : string</span>
+<span class="sd">        Name of the approximant e.g. &#39;EOBNRv2&#39;</span>
+<span class="sd">    m1 : float or numpy.array</span>
+<span class="sd">        First component mass in solar masses</span>
+<span class="sd">    m2 : float or numpy.array</span>
+<span class="sd">        Second component mass in solar masses</span>
+<span class="sd">    s1z : float or numpy.array</span>
+<span class="sd">        First component dimensionless spin S_1/m_1^2 projected onto L</span>
+<span class="sd">    s2z : float or numpy.array</span>
+<span class="sd">        Second component dimensionless spin S_2/m_2^2 projected onto L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Unfortunately we need a few special cases (quite hacky in the case of</span>
+    <span class="c1"># IMRPhenomXAS) because some useful approximants are not understood by</span>
+    <span class="c1"># GetApproximantFromString().</span>
+    <span class="k">if</span> <span class="n">approx</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;IMRPhenomD&#39;</span><span class="p">,</span> <span class="s1">&#39;IMRPhenomXAS&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">frequency_cutoff_from_name</span><span class="p">(</span><span class="s1">&#39;IMRPhenomDPeak&#39;</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">approx</span> <span class="o">==</span> <span class="s1">&#39;SEOBNRv5&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">frequency_cutoff_from_name</span><span class="p">(</span><span class="s1">&#39;SEOBNRv5RD&#39;</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="n">lalsim_approx</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">GetApproximantFromString</span><span class="p">(</span><span class="n">approx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_vec_get_final_freq</span><span class="p">(</span><span class="n">lalsim_approx</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span></div>
+
+
+<span class="c1"># Dictionary of functions with uniform API taking a</span>
+<span class="c1"># parameter dict indexed on mass1, mass2, spin1z, spin2z</span>
+<span class="n">named_frequency_cutoffs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># functions depending on the total mass alone</span>
+    <span class="s2">&quot;SchwarzISCO&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">f_SchwarzISCO</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">]</span><span class="o">+</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;LightRing&quot;</span>  <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">f_LightRing</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">]</span><span class="o">+</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;ERD&quot;</span>        <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">f_ERD</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">]</span><span class="o">+</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">]),</span>
+    <span class="c1"># functions depending on the 2 component masses</span>
+    <span class="s2">&quot;BKLISCO&quot;</span>    <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">f_BKLISCO</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;FRD&quot;</span>        <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">f_FRD</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;LRD&quot;</span>        <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">f_LRD</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">]),</span>
+    <span class="c1"># functions depending on 2 component masses and aligned spins</span>
+    <span class="s2">&quot;MECO&quot;</span>       <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">meco_frequency</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;HybridMECO&quot;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">hybrid_meco_frequency</span><span class="p">(</span>
+        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">],</span> <span class="n">qm1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qm2</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+    <span class="s2">&quot;IMRPhenomBFinal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fIMRPhenomBFinal&quot;</span><span class="p">,</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;IMRPhenomCFinal&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fIMRPhenomCFinal&quot;</span><span class="p">,</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;IMRPhenomDPeak&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fIMRPhenomDPeak&quot;</span><span class="p">,</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;EOBNRv2RD&quot;</span>   <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fEOBNRv2RD&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;EOBNRv2HMRD&quot;</span> <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fEOBNRv2HMRD&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv1RD&quot;</span>  <span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv1RD&quot;</span><span class="p">,</span>  <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv1Peak&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv1Peak&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                              <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv2RD&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv2RD&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                     <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv2Peak&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv2Peak&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                       <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv4RD&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv4RD&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                     <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv4Peak&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv4Peak&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                       <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv5RD&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv5RD&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                     <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;SEOBNRv5Peak&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">get_freq</span><span class="p">(</span><span class="s2">&quot;fSEOBNRv5Peak&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass1&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;mass2&quot;</span><span class="p">],</span>
+                                       <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin1z&quot;</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;spin2z&quot;</span><span class="p">])</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="frequency_cutoff_from_name">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.frequency_cutoff_from_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">frequency_cutoff_from_name</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the result of evaluating the frequency cutoff function</span>
+<span class="sd">    specified by &#39;name&#39; on a template with given parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : string</span>
+<span class="sd">        Name of the cutoff function</span>
+<span class="sd">    m1 : float or numpy.array</span>
+<span class="sd">        First component mass in solar masses</span>
+<span class="sd">    m2 : float or numpy.array</span>
+<span class="sd">        Second component mass in solar masses</span>
+<span class="sd">    s1z : float or numpy.array</span>
+<span class="sd">        First component dimensionless spin S_1/m_1^2 projected onto L</span>
+<span class="sd">    s2z : float or numpy.array</span>
+<span class="sd">        Second component dimensionless spin S_2/m_2^2 projected onto L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : float or numpy.array</span>
+<span class="sd">        Frequency in Hz</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mass1&quot;</span><span class="p">:</span> <span class="n">m1</span><span class="p">,</span> <span class="s2">&quot;mass2&quot;</span><span class="p">:</span> <span class="n">m2</span><span class="p">,</span> <span class="s2">&quot;spin1z&quot;</span><span class="p">:</span> <span class="n">s1z</span><span class="p">,</span> <span class="s2">&quot;spin2z&quot;</span><span class="p">:</span> <span class="n">s2z</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">named_frequency_cutoffs</span><span class="p">[</span><span class="n">name</span><span class="p">](</span><span class="n">params</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_imr_duration</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">f_low</span><span class="p">,</span> <span class="n">approximant</span><span class="o">=</span><span class="s2">&quot;SEOBNRv4&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper of lalsimulation template duration approximate formula&quot;&quot;&quot;</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">f_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m1</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">m2</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">s1z</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">s2z</span><span class="p">),</span>\
+                              <span class="nb">float</span><span class="p">(</span><span class="n">f_low</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="o">==</span> <span class="s2">&quot;SEOBNRv2&quot;</span><span class="p">:</span>
+        <span class="n">chi</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRPhenomBComputeChi</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+        <span class="n">time_length</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRSEOBNRv2ChirpTimeSingleSpin</span><span class="p">(</span>
+                                <span class="n">m1</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="n">f_low</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="o">==</span> <span class="s2">&quot;IMRPhenomXAS&quot;</span><span class="p">:</span>
+        <span class="n">time_length</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRPhenomXASDuration</span><span class="p">(</span>
+                           <span class="n">m1</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">f_low</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="o">==</span> <span class="s2">&quot;IMRPhenomD&quot;</span><span class="p">:</span>
+        <span class="n">time_length</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRPhenomDChirpTime</span><span class="p">(</span>
+                           <span class="n">m1</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">f_low</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;SEOBNRv4&quot;</span><span class="p">,</span> <span class="s2">&quot;SEOBNRv4_ROM&quot;</span><span class="p">]:</span>
+        <span class="c1"># NB the LALSim function has f_low as first argument</span>
+        <span class="n">time_length</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRSEOBNRv4ROMTimeOfFrequency</span><span class="p">(</span>
+                           <span class="n">f_low</span><span class="p">,</span> <span class="n">m1</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;SEOBNRv5&quot;</span><span class="p">,</span> <span class="s2">&quot;SEOBNRv5_ROM&quot;</span><span class="p">]:</span>
+        <span class="n">time_length</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRSEOBNRv5ROMTimeOfFrequency</span><span class="p">(</span>
+                           <span class="n">f_low</span><span class="p">,</span> <span class="n">m1</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;SPAtmplt&quot;</span><span class="p">,</span> <span class="s2">&quot;TaylorF2&quot;</span><span class="p">]:</span>
+        <span class="n">chi</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimInspiralTaylorF2ReducedSpinComputeChi</span><span class="p">(</span>
+            <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span>
+        <span class="p">)</span>
+        <span class="n">time_length</span> <span class="o">=</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimInspiralTaylorF2ReducedSpinChirpTime</span><span class="p">(</span>
+            <span class="n">f_low</span><span class="p">,</span> <span class="n">m1</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">chi</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;I can&#39;t calculate a duration for </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">approximant</span><span class="p">)</span>
+    <span class="c1"># FIXME Add an extra factor of 1.1 for &#39;safety&#39; since the duration</span>
+    <span class="c1"># functions are approximate</span>
+    <span class="k">return</span> <span class="n">time_length</span> <span class="o">*</span> <span class="mf">1.1</span>
+
+<span class="n">get_imr_duration</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">_get_imr_duration</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_inspiral_tf">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.get_inspiral_tf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_inspiral_tf</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1</span><span class="p">,</span> <span class="n">spin2</span><span class="p">,</span> <span class="n">f_low</span><span class="p">,</span> <span class="n">n_points</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">pn_2order</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">approximant</span><span class="o">=</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the time-frequency evolution of an inspiral signal.</span>
+
+<span class="sd">    Return a tuple of time and frequency vectors tracking the evolution of an</span>
+<span class="sd">    inspiral signal in the time-frequency plane.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># handle param-dependent approximant specification</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Params</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">Params</span><span class="p">()</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">mass1</span> <span class="o">=</span> <span class="n">mass1</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">mass2</span> <span class="o">=</span> <span class="n">mass2</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">spin1z</span> <span class="o">=</span> <span class="n">spin1</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">spin2z</span> <span class="o">=</span> <span class="n">spin2</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">approximant</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;__builtins__&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+                           <span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">))</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">NameError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;SPAtmplt&#39;</span><span class="p">]:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.spa_tmplt</span><span class="w"> </span><span class="kn">import</span> <span class="n">findchirp_chirptime</span>
+
+        <span class="c1"># FIXME spins are not taken into account</span>
+        <span class="n">f_high</span> <span class="o">=</span> <span class="n">f_SchwarzISCO</span><span class="p">(</span><span class="n">mass1</span> <span class="o">+</span> <span class="n">mass2</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tof_func</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">findchirp_chirptime</span><span class="p">(</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">mass2</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+                <span class="n">pn_2order</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;SEOBNRv&#39;</span><span class="p">):</span>
+        <span class="n">approximant_prefix</span> <span class="o">=</span> <span class="n">approximant</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="s1">&#39;SEOBNRv*&#39;</span><span class="p">)]</span>
+        <span class="n">f_high</span> <span class="o">=</span> <span class="n">get_final_freq</span><span class="p">(</span><span class="n">approximant_prefix</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1</span><span class="p">,</span> <span class="n">spin2</span><span class="p">)</span>
+        <span class="n">f_high</span> <span class="o">*=</span> <span class="mf">0.999</span>  <span class="c1"># avoid errors due to rounding</span>
+        <span class="n">tof_func_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="c1"># use HI function for v2 as it has wider freq range validity</span>
+            <span class="s1">&#39;SEOBNRv2&#39;</span><span class="p">:</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency</span><span class="p">,</span>
+            <span class="s1">&#39;SEOBNRv4&#39;</span><span class="p">:</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRSEOBNRv4ROMTimeOfFrequency</span><span class="p">,</span>
+            <span class="s1">&#39;SEOBNRv5&#39;</span><span class="p">:</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRSEOBNRv5ROMTimeOfFrequency</span>
+        <span class="p">}</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tof_func</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">tof_func_map</span><span class="p">[</span><span class="n">approximant_prefix</span><span class="p">](</span>
+                <span class="n">f</span><span class="p">,</span>
+                <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span>
+                <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">mass2</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">spin1</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">spin2</span><span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;IMRPhenomD&#39;</span><span class="p">,</span> <span class="s1">&#39;IMRPhenomXAS&#39;</span><span class="p">]:</span>
+        <span class="n">f_high</span> <span class="o">=</span> <span class="n">get_final_freq</span><span class="p">(</span><span class="n">approximant</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1</span><span class="p">,</span> <span class="n">spin2</span><span class="p">)</span>
+        <span class="n">tof_func_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;IMRPhenomD&#39;</span><span class="p">:</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRPhenomDChirpTime</span><span class="p">,</span>
+            <span class="s1">&#39;IMRPhenomXAS&#39;</span><span class="p">:</span> <span class="n">lalsim</span><span class="o">.</span><span class="n">SimIMRPhenomXASDuration</span>
+        <span class="p">}</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tof_func</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">tof_func_map</span><span class="p">[</span><span class="n">approximant</span><span class="p">](</span>
+                <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span>
+                <span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">mass2</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">spin1</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">spin2</span><span class="p">),</span>
+                <span class="n">f</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Approximant </span><span class="si">{</span><span class="n">approximant</span><span class="si">}</span><span class="s1"> not supported&#39;</span><span class="p">)</span>
+    <span class="n">track_f</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">f_low</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">f_high</span><span class="p">),</span> <span class="n">n_points</span><span class="p">)</span>
+    <span class="n">tof_func_vec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">tof_func</span><span class="p">)</span>
+    <span class="n">track_t</span> <span class="o">=</span> <span class="n">tc</span> <span class="o">-</span> <span class="n">tof_func_vec</span><span class="p">(</span><span class="n">track_f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">track_t</span><span class="p">,</span> <span class="n">track_f</span><span class="p">)</span></div>
+
+
+
+<span class="c1">##############################This code was taken from Andy ###########</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_energy_coeffs</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return the center-of-mass energy coefficients up to 3.0pN (2.5pN spin)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mtot</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">m1</span><span class="o">*</span><span class="n">m2</span> <span class="o">/</span> <span class="p">(</span><span class="n">mtot</span><span class="o">*</span><span class="n">mtot</span><span class="p">)</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="p">(</span><span class="n">m1</span><span class="o">*</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">m2</span><span class="o">*</span><span class="n">chi2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mtot</span>
+    <span class="n">chisym</span> <span class="o">=</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">113.</span><span class="o">*</span><span class="n">chi</span> <span class="o">-</span> <span class="mf">76.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">chisym</span><span class="p">)</span><span class="o">/</span><span class="mf">12.</span>
+    <span class="n">sigma12</span> <span class="o">=</span> <span class="mf">79.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">chi1</span><span class="o">*</span><span class="n">chi2</span><span class="o">/</span><span class="mf">8.</span>
+    <span class="n">sigmaqm</span> <span class="o">=</span> <span class="mf">81.</span><span class="o">*</span><span class="n">m1</span><span class="o">*</span><span class="n">m1</span><span class="o">*</span><span class="n">chi1</span><span class="o">*</span><span class="n">chi1</span><span class="o">/</span><span class="p">(</span><span class="mf">16.</span><span class="o">*</span><span class="n">mtot</span><span class="o">*</span><span class="n">mtot</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="mf">81.</span><span class="o">*</span><span class="n">m2</span><span class="o">*</span><span class="n">m2</span><span class="o">*</span><span class="n">chi2</span><span class="o">*</span><span class="n">chi2</span><span class="o">/</span><span class="p">(</span><span class="mf">16.</span><span class="o">*</span><span class="n">mtot</span><span class="o">*</span><span class="n">mtot</span><span class="p">)</span>
+
+    <span class="n">energy0</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">eta</span>
+    <span class="n">energy2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.75</span> <span class="o">-</span> <span class="n">eta</span><span class="o">/</span><span class="mf">12.</span>
+    <span class="n">energy3</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">energy4</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.375</span> <span class="o">+</span> <span class="p">(</span><span class="mi">19</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span><span class="o">/</span><span class="mf">8.</span> <span class="o">-</span> <span class="nb">pow</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mf">24.</span>
+    <span class="n">energy5</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">energy6</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10.546875</span> <span class="o">-</span> <span class="p">(</span><span class="mi">155</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="mf">96.</span> <span class="o">-</span> <span class="p">(</span><span class="mi">35</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span><span class="o">/</span><span class="mf">5184.</span> \
+                <span class="o">+</span> <span class="n">eta</span><span class="o">*</span><span class="p">(</span><span class="mf">59.80034722222222</span> <span class="o">-</span> <span class="p">(</span><span class="mi">205</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">PI</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="mf">96.</span><span class="p">)</span>
+
+    <span class="n">energy3</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">32</span><span class="o">*</span><span class="n">beta</span><span class="p">)</span><span class="o">/</span><span class="mf">113.</span> <span class="o">+</span> <span class="p">(</span><span class="mi">52</span><span class="o">*</span><span class="n">chisym</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span><span class="o">/</span><span class="mf">113.</span>
+
+    <span class="n">energy4</span> <span class="o">+=</span> <span class="p">(</span><span class="o">-</span><span class="mi">16</span><span class="o">*</span><span class="n">sigma12</span><span class="p">)</span><span class="o">/</span><span class="mf">79.</span> <span class="o">-</span> <span class="p">(</span><span class="mi">16</span><span class="o">*</span><span class="n">sigmaqm</span><span class="p">)</span><span class="o">/</span><span class="mf">81.</span>
+    <span class="n">energy5</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">96</span><span class="o">*</span><span class="n">beta</span><span class="p">)</span><span class="o">/</span><span class="mf">113.</span> <span class="o">+</span> <span class="p">((</span><span class="o">-</span><span class="mi">124</span><span class="o">*</span><span class="n">beta</span><span class="p">)</span><span class="o">/</span><span class="mf">339.</span> <span class="o">-</span> <span class="p">(</span><span class="mi">522</span><span class="o">*</span><span class="n">chisym</span><span class="p">)</span><span class="o">/</span><span class="mf">113.</span><span class="p">)</span><span class="o">*</span><span class="n">eta</span> \
+                <span class="o">-</span> <span class="p">(</span><span class="mi">710</span><span class="o">*</span><span class="n">chisym</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="mf">339.</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">energy0</span><span class="p">,</span> <span class="n">energy2</span><span class="p">,</span> <span class="n">energy3</span><span class="p">,</span> <span class="n">energy4</span><span class="p">,</span> <span class="n">energy5</span><span class="p">,</span> <span class="n">energy6</span><span class="p">)</span>
+
+<div class="viewcode-block" id="meco_velocity">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.meco_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">meco_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the velocity of the minimum energy cutoff for 3.5pN (2.5pN spin)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float</span>
+<span class="sd">        First component mass in solar masses</span>
+<span class="sd">    m2 : float</span>
+<span class="sd">        Second component mass in solar masses</span>
+<span class="sd">    chi1 : float</span>
+<span class="sd">        First component dimensionless spin S_1/m_1^2 projected onto L</span>
+<span class="sd">    chi2 : float</span>
+<span class="sd">        Second component dimensionless spin S_2/m_2^2 projected onto L</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    v : float</span>
+<span class="sd">        Velocity (dimensionless)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">energy2</span><span class="p">,</span> <span class="n">energy3</span><span class="p">,</span> <span class="n">energy4</span><span class="p">,</span> <span class="n">energy5</span><span class="p">,</span> <span class="n">energy6</span> <span class="o">=</span> \
+        <span class="n">_energy_coeffs</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eprime</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">2.</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">4.</span><span class="o">*</span><span class="n">energy2</span> <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">5.</span><span class="o">*</span><span class="n">energy3</span> \
+                <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">6.</span><span class="o">*</span><span class="n">energy4</span>
+                <span class="o">+</span> <span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">7.</span><span class="o">*</span><span class="n">energy5</span> <span class="o">+</span> <span class="mf">8.</span><span class="o">*</span><span class="n">energy6</span> <span class="o">*</span> <span class="n">v</span><span class="p">))))</span>
+    <span class="k">return</span> <span class="n">bisect</span><span class="p">(</span><span class="n">eprime</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_meco_frequency</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the frequency of the minimum energy cutoff for 3.5pN (2.5pN spin)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">velocity_to_frequency</span><span class="p">(</span><span class="n">meco_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">),</span> <span class="n">m1</span><span class="o">+</span><span class="n">m2</span><span class="p">)</span>
+
+<span class="n">meco_frequency</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">_meco_frequency</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dtdv_coeffs</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Returns the dt/dv coefficients up to 3.5pN (2.5pN spin)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mtot</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">m1</span><span class="o">*</span><span class="n">m2</span> <span class="o">/</span> <span class="p">(</span><span class="n">mtot</span><span class="o">*</span><span class="n">mtot</span><span class="p">)</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="p">(</span><span class="n">m1</span><span class="o">*</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">m2</span><span class="o">*</span><span class="n">chi2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mtot</span>
+    <span class="n">chisym</span> <span class="o">=</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">113.</span><span class="o">*</span><span class="n">chi</span> <span class="o">-</span> <span class="mf">76.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">chisym</span><span class="p">)</span><span class="o">/</span><span class="mf">12.</span>
+    <span class="n">sigma12</span> <span class="o">=</span> <span class="mf">79.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">chi1</span><span class="o">*</span><span class="n">chi2</span><span class="o">/</span><span class="mf">8.</span>
+    <span class="n">sigmaqm</span> <span class="o">=</span> <span class="mf">81.</span><span class="o">*</span><span class="n">m1</span><span class="o">*</span><span class="n">m1</span><span class="o">*</span><span class="n">chi1</span><span class="o">*</span><span class="n">chi1</span><span class="o">/</span><span class="p">(</span><span class="mf">16.</span><span class="o">*</span><span class="n">mtot</span><span class="o">*</span><span class="n">mtot</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="mf">81.</span><span class="o">*</span><span class="n">m2</span><span class="o">*</span><span class="n">m2</span><span class="o">*</span><span class="n">chi2</span><span class="o">*</span><span class="n">chi2</span><span class="o">/</span><span class="p">(</span><span class="mf">16.</span><span class="o">*</span><span class="n">mtot</span><span class="o">*</span><span class="n">mtot</span><span class="p">)</span>
+
+    <span class="n">dtdv0</span> <span class="o">=</span> <span class="mf">1.</span> <span class="c1"># FIXME: Wrong but doesn&#39;t matter for now.</span>
+    <span class="n">dtdv2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">336.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">743.</span> <span class="o">+</span> <span class="mf">924.</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+    <span class="n">dtdv3</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">+</span> <span class="n">beta</span>
+    <span class="n">dtdv4</span> <span class="o">=</span> <span class="p">(</span><span class="mf">3058673.</span> <span class="o">+</span> <span class="mf">5472432.</span><span class="o">*</span><span class="n">eta</span> <span class="o">+</span> <span class="mf">4353552.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span><span class="o">/</span><span class="mf">1016064.</span> <span class="o">-</span> <span class="n">sigma12</span> <span class="o">-</span> <span class="n">sigmaqm</span>
+    <span class="n">dtdv5</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">672.</span><span class="p">)</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">7729.</span> <span class="o">+</span> <span class="mf">1092.</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">146597.</span><span class="o">*</span><span class="n">beta</span><span class="o">/</span><span class="mf">18984.</span> <span class="o">+</span> <span class="mf">42.</span><span class="o">*</span><span class="n">beta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">113.</span> <span class="o">-</span> <span class="mf">417307.</span><span class="o">*</span><span class="n">chisym</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">18984.</span> <span class="o">-</span> <span class="mf">1389.</span><span class="o">*</span><span class="n">chisym</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">226.</span><span class="p">)</span>
+    <span class="n">dtdv6</span> <span class="o">=</span> <span class="mf">22.065</span> <span class="o">+</span> <span class="mf">165.416</span><span class="o">*</span><span class="n">eta</span> <span class="o">-</span> <span class="mf">2.20067</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span> <span class="o">+</span> <span class="mf">4.93152</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span>
+    <span class="n">dtdv6log</span> <span class="o">=</span> <span class="mf">1712.</span><span class="o">/</span><span class="mf">315.</span>
+    <span class="n">dtdv7</span> <span class="o">=</span> <span class="p">(</span><span class="n">PI</span><span class="o">/</span><span class="mf">1016064.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">15419335.</span> <span class="o">-</span> <span class="mf">12718104.</span><span class="o">*</span><span class="n">eta</span> <span class="o">+</span> <span class="mf">4975824.</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">dtdv0</span><span class="p">,</span> <span class="n">dtdv2</span><span class="p">,</span> <span class="n">dtdv3</span><span class="p">,</span> <span class="n">dtdv4</span><span class="p">,</span> <span class="n">dtdv5</span><span class="p">,</span> <span class="n">dtdv6</span><span class="p">,</span> <span class="n">dtdv6log</span><span class="p">,</span> <span class="n">dtdv7</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dtdv_cutoff_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">dtdv2</span><span class="p">,</span> <span class="n">dtdv3</span><span class="p">,</span> <span class="n">dtdv4</span><span class="p">,</span> <span class="n">dtdv5</span><span class="p">,</span> <span class="n">dtdv6</span><span class="p">,</span> <span class="n">dtdv6log</span><span class="p">,</span> <span class="n">dtdv7</span> <span class="o">=</span> <span class="n">_dtdv_coeffs</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">dtdv_func</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">dtdv7</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dtdv6</span> <span class="o">+</span> <span class="n">dtdv6log</span> <span class="o">*</span> <span class="mf">3.</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dtdv5</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dtdv4</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dtdv3</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">dtdv2</span>
+        <span class="k">return</span> <span class="n">v</span> <span class="o">*</span> <span class="n">v</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="mf">1.</span>
+
+    <span class="k">if</span> <span class="n">dtdv_func</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bisect</span><span class="p">(</span><span class="n">dtdv_func</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+
+<div class="viewcode-block" id="energy_coefficients">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.energy_coefficients">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">energy_coefficients</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">s2z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">spin_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return the energy coefficients. This assumes that the system has aligned spins only.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">implemented_phase_order</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">implemented_spin_order</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;</span> <span class="n">implemented_phase_order</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;pN coeffiecients of that order have not been implemented&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">phase_order</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">phase_order</span> <span class="o">=</span> <span class="n">implemented_phase_order</span>
+
+    <span class="k">if</span> <span class="n">spin_order</span> <span class="o">&gt;</span> <span class="n">implemented_spin_order</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;pN coeffiecients of that order have not been implemented&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">spin_order</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">spin_order</span> <span class="o">=</span> <span class="n">implemented_spin_order</span>
+
+    <span class="n">qmdef1</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">qmdef2</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="n">M</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span>
+    <span class="n">dm</span> <span class="o">=</span> <span class="p">(</span><span class="n">m1</span><span class="o">-</span><span class="n">m2</span><span class="p">)</span><span class="o">/</span><span class="n">M</span>
+    <span class="n">m1M</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">/</span> <span class="n">M</span>
+    <span class="n">m2M</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">/</span> <span class="n">M</span>
+
+    <span class="n">s1z</span> <span class="o">=</span> <span class="n">s1z</span> <span class="o">*</span> <span class="n">m1M</span> <span class="o">*</span> <span class="n">m1M</span>
+    <span class="n">s2z</span> <span class="o">=</span> <span class="n">s2z</span> <span class="o">*</span> <span class="n">m2M</span> <span class="o">*</span> <span class="n">m2M</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">mass1_mass2_to_mchirp_eta</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">)</span>
+
+    <span class="n">ecof</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">phase_order</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Orbital terms</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">12.0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">9.0</span> <span class="o">+</span> <span class="n">eta</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">81.0</span> <span class="o">+</span> <span class="mf">57.0</span><span class="o">*</span><span class="n">eta</span> <span class="o">-</span> <span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="p">)</span> <span class="o">/</span> <span class="mf">24.0</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">phase_order</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="mf">675.0</span><span class="o">/</span><span class="mf">64.0</span> <span class="o">+</span> <span class="p">(</span> <span class="mf">34445.0</span><span class="o">/</span><span class="mf">576.0</span>    \
+              <span class="o">-</span> <span class="mf">205.0</span><span class="o">/</span><span class="mf">96.0</span> <span class="o">*</span> <span class="n">PI</span> <span class="o">*</span> <span class="n">PI</span> <span class="p">)</span> <span class="o">*</span> <span class="n">eta</span>  \
+              <span class="o">-</span> <span class="p">(</span><span class="mf">155.0</span><span class="o">/</span><span class="mf">96.0</span><span class="p">)</span> <span class="o">*</span><span class="n">eta</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">-</span> <span class="mf">35.0</span><span class="o">/</span><span class="mf">5184.0</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">eta</span>
+    <span class="c1"># Spin terms</span>
+
+    <span class="n">ESO15s1</span> <span class="o">=</span> <span class="mf">8.0</span><span class="o">/</span><span class="mf">3.0</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">m2</span><span class="o">/</span><span class="n">m1</span>
+    <span class="n">ESO15s2</span> <span class="o">=</span> <span class="mf">8.0</span><span class="o">/</span><span class="mf">3.0</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">m1</span><span class="o">/</span><span class="n">m2</span>
+
+    <span class="n">ESS2</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">eta</span>
+    <span class="n">EQM2s1</span> <span class="o">=</span> <span class="n">qmdef1</span><span class="o">/</span><span class="mf">2.0</span><span class="o">/</span><span class="n">m1M</span><span class="o">/</span><span class="n">m1M</span>
+    <span class="n">EQM2s1L</span> <span class="o">=</span> <span class="o">-</span><span class="n">qmdef1</span><span class="o">*</span><span class="mf">3.0</span><span class="o">/</span><span class="mf">2.0</span><span class="o">/</span><span class="n">m1M</span><span class="o">/</span><span class="n">m1M</span>
+    <span class="c1">#EQM2s2 = qmdef2/2.0/m2M/m2M</span>
+    <span class="n">EQM2s2L</span> <span class="o">=</span> <span class="o">-</span><span class="n">qmdef2</span><span class="o">*</span><span class="mf">3.0</span><span class="o">/</span><span class="mf">2.0</span><span class="o">/</span><span class="n">m2M</span><span class="o">/</span><span class="n">m2M</span>
+
+    <span class="n">ESO25s1</span> <span class="o">=</span> <span class="mf">11.0</span> <span class="o">-</span> <span class="mf">61.0</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">9.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">dm</span><span class="o">/</span><span class="n">m1M</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span> <span class="o">+</span> <span class="mf">10.</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span>
+    <span class="n">ESO25s2</span> <span class="o">=</span> <span class="mf">11.0</span> <span class="o">-</span> <span class="mf">61.0</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">9.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">dm</span><span class="o">/</span><span class="n">m2M</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">-</span> <span class="mf">10.</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span>
+
+    <span class="n">ESO35s1</span> <span class="o">=</span> <span class="mf">135.0</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">-</span> <span class="mf">367.0</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">+</span> <span class="mf">29.0</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">12.0</span> <span class="o">+</span> <span class="p">(</span><span class="n">dm</span><span class="o">/</span><span class="n">m1M</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">27.0</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">+</span> <span class="mf">39.0</span><span class="o">*</span><span class="n">eta</span> <span class="o">-</span> <span class="mf">5.0</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span>
+    <span class="n">ESO35s2</span> <span class="o">=</span> <span class="mf">135.0</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">-</span> <span class="mf">367.0</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">+</span> <span class="mf">29.0</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">12.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">dm</span><span class="o">/</span><span class="n">m2M</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">27.0</span><span class="o">/</span><span class="mf">4.0</span> <span class="o">+</span> <span class="mf">39.0</span><span class="o">*</span><span class="n">eta</span> <span class="o">-</span> <span class="mf">5.0</span><span class="o">*</span><span class="n">eta</span><span class="o">*</span><span class="n">eta</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">spin_order</span> <span class="o">&gt;=</span><span class="mi">3</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ESO15s1</span> <span class="o">*</span> <span class="n">s1z</span> <span class="o">+</span> <span class="n">ESO15s2</span> <span class="o">*</span> <span class="n">s2z</span>
+    <span class="k">if</span> <span class="n">spin_order</span> <span class="o">&gt;=</span><span class="mi">4</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ESS2</span> <span class="o">*</span> <span class="p">(</span><span class="n">s1z</span><span class="o">*</span><span class="n">s2z</span> <span class="o">-</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">s1z</span><span class="o">*</span><span class="n">s2z</span><span class="p">)</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="n">EQM2s1</span><span class="o">*</span><span class="n">s1z</span><span class="o">*</span><span class="n">s1z</span> <span class="o">+</span> <span class="n">EQM2s1</span><span class="o">*</span><span class="n">s2z</span><span class="o">*</span><span class="n">s2z</span> <span class="o">+</span> <span class="n">EQM2s1L</span><span class="o">*</span><span class="n">s1z</span><span class="o">*</span><span class="n">s1z</span> <span class="o">+</span> <span class="n">EQM2s2L</span><span class="o">*</span><span class="n">s2z</span><span class="o">*</span><span class="n">s2z</span>
+    <span class="k">if</span> <span class="n">spin_order</span> <span class="o">&gt;=</span><span class="mi">5</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">ESO25s1</span><span class="o">*</span><span class="n">s1z</span> <span class="o">+</span> <span class="n">ESO25s2</span><span class="o">*</span><span class="n">s2z</span>
+    <span class="k">if</span> <span class="n">spin_order</span> <span class="o">&gt;=</span><span class="mi">7</span><span class="p">:</span>
+        <span class="n">ecof</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ESO35s1</span><span class="o">*</span><span class="n">s1z</span> <span class="o">+</span> <span class="n">ESO35s2</span><span class="o">*</span><span class="n">s2z</span>
+
+    <span class="k">return</span> <span class="n">ecof</span></div>
+
+
+<div class="viewcode-block" id="energy">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.energy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">energy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">s1z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">s2z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">spin_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">ecof</span> <span class="o">=</span> <span class="n">energy_coefficients</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">phase_order</span><span class="p">,</span> <span class="n">spin_order</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">eta</span> <span class="o">=</span> <span class="n">mass1_mass2_to_mchirp_eta</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">)</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ecof</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">e</span> <span class="o">+=</span> <span class="n">v</span><span class="o">**</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">ecof</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">e</span> <span class="o">*</span> <span class="n">amp</span></div>
+
+
+<div class="viewcode-block" id="meco2">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.meco2">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">meco2</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">s2z</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">spin_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">ecof</span> <span class="o">=</span> <span class="n">energy_coefficients</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">s1z</span><span class="p">,</span> <span class="n">s2z</span><span class="p">,</span> <span class="n">phase_order</span><span class="p">,</span> <span class="n">spin_order</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+        <span class="n">de</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ecof</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">de</span> <span class="o">+=</span> <span class="n">v</span><span class="o">**</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mf">1.0</span><span class="p">)</span><span class="o">*</span> <span class="n">ecof</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">de</span>
+
+    <span class="k">return</span> <span class="n">bisect</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="t2_cutoff_velocity">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.t2_cutoff_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t2_cutoff_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">meco_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="n">m2</span><span class="p">,</span><span class="n">chi1</span><span class="p">,</span><span class="n">chi2</span><span class="p">),</span> <span class="n">_dtdv_cutoff_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="n">m2</span><span class="p">,</span><span class="n">chi1</span><span class="p">,</span><span class="n">chi2</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="t2_cutoff_frequency">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.t2_cutoff_frequency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">t2_cutoff_frequency</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">velocity_to_frequency</span><span class="p">(</span><span class="n">t2_cutoff_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">),</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span></div>
+
+
+<span class="n">t4_cutoff_velocity</span> <span class="o">=</span> <span class="n">meco_velocity</span>
+<span class="n">t4_cutoff_frequency</span> <span class="o">=</span> <span class="n">meco_frequency</span>
+
+<span class="c1"># Hybrid MECO in arXiv:1602.03134</span>
+<span class="c1"># To obtain the MECO, find minimum in v of eq. (6)</span>
+
+
+<div class="viewcode-block" id="kerr_lightring">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.kerr_lightring">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">kerr_lightring</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">chi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the function whose first root defines the Kerr light ring&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">v</span><span class="o">**</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">v</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="kerr_lightring_velocity">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.kerr_lightring_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">kerr_lightring_velocity</span><span class="p">(</span><span class="n">chi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the velocity at the Kerr light ring&quot;&quot;&quot;</span>
+    <span class="c1"># If chi &gt; 0.9996, the algorithm cannot solve the function</span>
+    <span class="k">if</span> <span class="n">chi</span> <span class="o">&gt;=</span> <span class="mf">0.9996</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">brentq</span><span class="p">(</span><span class="n">kerr_lightring</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9996</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">brentq</span><span class="p">(</span><span class="n">kerr_lightring</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">chi</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="hybridEnergy">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.hybridEnergy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hybridEnergy</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">qm1</span><span class="p">,</span> <span class="n">qm2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return hybrid MECO energy.</span>
+
+<span class="sd">    Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO</span>
+<span class="sd">    up to 3.5PN (including the 3PN spin-spin)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float</span>
+<span class="sd">        Mass of the primary object in solar masses.</span>
+<span class="sd">    m2 : float</span>
+<span class="sd">        Mass of the secondary object in solar masses.</span>
+<span class="sd">    chi1: float</span>
+<span class="sd">        Dimensionless spin of the primary object.</span>
+<span class="sd">    chi2: float</span>
+<span class="sd">        Dimensionless spin of the secondary object.</span>
+<span class="sd">    qm1: float</span>
+<span class="sd">        Quadrupole-monopole term of the primary object (1 for black holes).</span>
+<span class="sd">    qm2: float</span>
+<span class="sd">        Quadrupole-monopole term of the secondary object (1 for black holes).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    h_E: float</span>
+<span class="sd">        The hybrid energy as a function of v</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pi_sq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">v2</span><span class="p">,</span> <span class="n">v3</span><span class="p">,</span> <span class="n">v4</span><span class="p">,</span> <span class="n">v5</span><span class="p">,</span> <span class="n">v6</span><span class="p">,</span> <span class="n">v7</span> <span class="o">=</span> <span class="n">v</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">v</span><span class="o">**</span><span class="mi">3</span><span class="p">,</span> <span class="n">v</span><span class="o">**</span><span class="mi">4</span><span class="p">,</span> <span class="n">v</span><span class="o">**</span><span class="mi">5</span><span class="p">,</span> <span class="n">v</span><span class="o">**</span><span class="mi">6</span><span class="p">,</span> <span class="n">v</span><span class="o">**</span><span class="mi">7</span>
+    <span class="n">chi1_sq</span><span class="p">,</span> <span class="n">chi2_sq</span> <span class="o">=</span> <span class="n">chi1</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">chi2</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m1</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">M_2</span><span class="p">,</span> <span class="n">M_4</span> <span class="o">=</span> <span class="n">M</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">M</span><span class="o">**</span><span class="mi">4</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">*</span> <span class="n">m2</span> <span class="o">/</span> <span class="n">M_2</span>
+    <span class="n">eta2</span><span class="p">,</span> <span class="n">eta3</span> <span class="o">=</span> <span class="n">eta</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">eta</span><span class="o">**</span><span class="mi">3</span>
+    <span class="n">m1_2</span><span class="p">,</span> <span class="n">m1_4</span> <span class="o">=</span> <span class="n">m1</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">m1</span><span class="o">**</span><span class="mi">4</span>
+    <span class="n">m2_2</span><span class="p">,</span> <span class="n">m2_4</span> <span class="o">=</span> <span class="n">m2</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">m2</span><span class="o">**</span><span class="mi">4</span>
+
+    <span class="n">chi</span> <span class="o">=</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">*</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">m2</span><span class="p">)</span> <span class="o">/</span> <span class="n">M</span>
+    <span class="n">Kerr</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="mf">2.</span> <span class="o">*</span> <span class="n">v2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">v3</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span> <span class="o">/</span> \
+        <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">v3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">v3</span> <span class="o">-</span> <span class="mf">3.</span> <span class="o">*</span> <span class="n">v2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">chi</span> <span class="o">*</span> <span class="n">v3</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)))</span>
+
+    <span class="n">h_E</span> <span class="o">=</span> <span class="n">Kerr</span> <span class="o">-</span> \
+        <span class="p">(</span><span class="n">v2</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">)</span> <span class="o">*</span> \
+        <span class="p">(</span>
+        <span class="o">-</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">v2</span> <span class="o">/</span> <span class="mf">12.</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">v3</span> <span class="o">/</span> <span class="mf">3.</span> <span class="o">+</span>
+        <span class="p">(</span><span class="mf">19.</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">/</span> <span class="mf">8.</span> <span class="o">-</span> <span class="n">eta2</span> <span class="o">/</span> <span class="mf">24.</span> <span class="o">+</span> <span class="n">chi1_sq</span> <span class="o">*</span> <span class="n">m1_2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">qm1</span><span class="p">)</span> <span class="o">/</span> <span class="n">M_2</span> <span class="o">+</span>
+            <span class="n">chi2_sq</span> <span class="o">*</span> <span class="n">m2_2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">qm2</span><span class="p">)</span> <span class="o">/</span> <span class="n">M_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">v4</span>
+        <span class="o">-</span> <span class="mf">1.</span> <span class="o">/</span> <span class="mf">9.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">120.</span> <span class="o">*</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="mf">76.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">+</span> <span class="mf">45.</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">m1_2</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">/</span> <span class="n">M_2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="mf">45.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">+</span> <span class="mf">76.</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">m2_2</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">/</span> <span class="n">M_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">v5</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mf">34445.</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">/</span> <span class="mf">576.</span> <span class="o">-</span> <span class="mf">205.</span> <span class="o">*</span> <span class="n">pi_sq</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">/</span> <span class="mf">96.</span> <span class="o">-</span> <span class="mf">155.</span> <span class="o">*</span> <span class="n">eta2</span> <span class="o">/</span> <span class="mf">96.</span> <span class="o">-</span>
+            <span class="mf">35.</span> <span class="o">*</span> <span class="n">eta3</span> <span class="o">/</span> <span class="mf">5184.</span> <span class="o">+</span>
+            <span class="mf">5.</span> <span class="o">/</span> <span class="mf">18.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">21.</span> <span class="o">*</span> <span class="n">chi1_sq</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">qm1</span><span class="p">)</span> <span class="o">*</span> <span class="n">m1_4</span> <span class="o">/</span> <span class="n">M_4</span> <span class="o">+</span>
+            <span class="mf">21.</span> <span class="o">*</span> <span class="n">chi2_sq</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">qm2</span><span class="p">)</span> <span class="o">*</span> <span class="n">m2_4</span> <span class="o">/</span> <span class="n">M_4</span> <span class="o">+</span>
+            <span class="p">(</span><span class="n">chi1_sq</span> <span class="o">*</span> <span class="p">(</span><span class="mf">56.</span> <span class="o">-</span> <span class="mf">27.</span> <span class="o">*</span> <span class="n">qm1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">20.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">m1_2</span> <span class="o">/</span> <span class="n">M_2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="n">chi2_sq</span> <span class="o">*</span> <span class="p">(</span><span class="mf">56.</span> <span class="o">-</span> <span class="mf">27.</span> <span class="o">*</span> <span class="n">qm2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">20.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">m2_2</span> <span class="o">/</span> <span class="n">M_2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="n">chi1_sq</span> <span class="o">*</span> <span class="p">(</span><span class="mf">31.</span> <span class="o">-</span> <span class="mf">9.</span> <span class="o">*</span> <span class="n">qm1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">38.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">*</span> <span class="n">chi2</span> <span class="o">+</span>
+            <span class="n">chi2_sq</span> <span class="o">*</span> <span class="p">(</span><span class="mf">31.</span> <span class="o">-</span> <span class="mf">9.</span> <span class="o">*</span> <span class="n">qm2</span><span class="p">))</span> <span class="o">*</span> <span class="n">eta2</span><span class="p">))</span> <span class="o">*</span> <span class="n">v6</span>
+        <span class="o">-</span> <span class="n">eta</span> <span class="o">/</span> <span class="mf">12.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">3.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">292.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">+</span> <span class="mf">81.</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">m1_4</span> <span class="o">/</span> <span class="n">M_4</span> <span class="o">+</span>
+            <span class="mf">3.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">81.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">+</span> <span class="mf">292.</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">m2_4</span> <span class="o">/</span> <span class="n">M_4</span> <span class="o">+</span>
+            <span class="mf">4.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">673.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">+</span> <span class="mf">360.</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">m1_2</span> <span class="o">/</span> <span class="n">M_2</span> <span class="o">+</span>
+            <span class="mf">4.</span> <span class="o">*</span> <span class="p">(</span><span class="mf">360.</span> <span class="o">*</span> <span class="n">chi1</span> <span class="o">+</span> <span class="mf">673.</span> <span class="o">*</span> <span class="n">chi2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eta</span> <span class="o">*</span> <span class="n">m2_2</span> <span class="o">/</span> <span class="n">M_2</span> <span class="o">+</span>
+            <span class="mf">3012.</span> <span class="o">*</span> <span class="n">eta2</span> <span class="o">*</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">+</span> <span class="n">chi2</span><span class="p">))</span> <span class="o">*</span> <span class="n">v7</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">h_E</span></div>
+
+
+
+<div class="viewcode-block" id="hybrid_meco_velocity">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.hybrid_meco_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hybrid_meco_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">qm1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qm2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the velocity of the hybrid MECO</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float</span>
+<span class="sd">        Mass of the primary object in solar masses.</span>
+<span class="sd">    m2 : float</span>
+<span class="sd">        Mass of the secondary object in solar masses.</span>
+<span class="sd">    chi1: float</span>
+<span class="sd">        Dimensionless spin of the primary object.</span>
+<span class="sd">    chi2: float</span>
+<span class="sd">        Dimensionless spin of the secondary object.</span>
+<span class="sd">    qm1: {None, float}, optional</span>
+<span class="sd">        Quadrupole-monopole term of the primary object (1 for black holes).</span>
+<span class="sd">        If None, will be set to qm1 = 1.</span>
+<span class="sd">    qm2: {None, float}, optional</span>
+<span class="sd">        Quadrupole-monopole term of the secondary object (1 for black holes).</span>
+<span class="sd">        If None, will be set to qm2 = 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    v: float</span>
+<span class="sd">        The velocity (dimensionless) of the hybrid MECO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">qm1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">qm1</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">qm2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">qm2</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># Set bounds at 0.1 to skip v=0 and at the lightring velocity</span>
+    <span class="n">chi</span> <span class="o">=</span> <span class="p">(</span><span class="n">chi1</span> <span class="o">*</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">chi2</span> <span class="o">*</span> <span class="n">m2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">vmax</span> <span class="o">=</span> <span class="n">kerr_lightring_velocity</span><span class="p">(</span><span class="n">chi</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.01</span>
+
+    <span class="k">return</span> <span class="n">minimize</span><span class="p">(</span><span class="n">hybridEnergy</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">qm1</span><span class="p">,</span> <span class="n">qm2</span><span class="p">),</span>
+                    <span class="n">bounds</span><span class="o">=</span><span class="p">[(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">vmax</span><span class="p">)])</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="hybrid_meco_frequency">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.hybrid_meco_frequency">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hybrid_meco_frequency</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">qm1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">qm2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the frequency of the hybrid MECO</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    m1 : float</span>
+<span class="sd">        Mass of the primary object in solar masses.</span>
+<span class="sd">    m2 : float</span>
+<span class="sd">        Mass of the secondary object in solar masses.</span>
+<span class="sd">    chi1: float</span>
+<span class="sd">        Dimensionless spin of the primary object.</span>
+<span class="sd">    chi2: float</span>
+<span class="sd">        Dimensionless spin of the secondary object.</span>
+<span class="sd">    qm1: {None, float}, optional</span>
+<span class="sd">        Quadrupole-monopole term of the primary object (1 for black holes).</span>
+<span class="sd">        If None, will be set to qm1 = 1.</span>
+<span class="sd">    qm2: {None, float}, optional</span>
+<span class="sd">        Quadrupole-monopole term of the secondary object (1 for black holes).</span>
+<span class="sd">        If None, will be set to qm2 = 1.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f: float</span>
+<span class="sd">        The frequency (in Hz) of the hybrid MECO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">qm1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">qm1</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">qm2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">qm2</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">velocity_to_frequency</span><span class="p">(</span><span class="n">hybrid_meco_velocity</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">chi1</span><span class="p">,</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">qm1</span><span class="p">,</span> <span class="n">qm2</span><span class="p">),</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="jframe_to_l0frame">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.jframe_to_l0frame">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">jframe_to_l0frame</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_ref</span><span class="p">,</span> <span class="n">phiref</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">thetajn</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">phijl</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                      <span class="n">spin1_a</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2_a</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                      <span class="n">spin1_polar</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2_polar</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                      <span class="n">spin12_deltaphi</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts J-frame parameters into L0 frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        The mass of the first component object in the</span>
+<span class="sd">        binary (in solar masses)</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        The mass of the second component object in the</span>
+<span class="sd">        binary (in solar masses)</span>
+<span class="sd">    f_ref : float</span>
+<span class="sd">        The reference frequency.</span>
+<span class="sd">    phiref : float</span>
+<span class="sd">        The reference phase.</span>
+<span class="sd">    thetajn : float</span>
+<span class="sd">        Angle between the line of sight and the total angular momentume J.</span>
+<span class="sd">    phijl : float</span>
+<span class="sd">        Azimuthal angle of L on its cone about J.</span>
+<span class="sd">    spin1_a : float</span>
+<span class="sd">        The dimensionless spin magnitude :math:`|\\vec{{s}}_1/m^2_1|`.</span>
+<span class="sd">    spin2_a : float</span>
+<span class="sd">        The dimensionless spin magnitude :math:`|\\vec{{s}}_2/m^2_2|`.</span>
+<span class="sd">    spin1_polar : float</span>
+<span class="sd">        Angle between L and the spin magnitude of the larger object.</span>
+<span class="sd">    spin2_polar : float</span>
+<span class="sd">        Angle betwen L and the spin magnitude of the smaller object.</span>
+<span class="sd">    spin12_deltaphi : float</span>
+<span class="sd">        Difference between the azimuthal angles of the spin of the larger</span>
+<span class="sd">        object (S1) and the spin of the smaller object (S2).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of:</span>
+
+<span class="sd">        * inclination : float</span>
+<span class="sd">            Inclination (rad), defined as the angle between</span>
+<span class="sd">            the orbital angular momentum L and the</span>
+<span class="sd">            line-of-sight at the reference frequency.</span>
+<span class="sd">        * spin1x : float</span>
+<span class="sd">            The x component of the first binary component&#39;s</span>
+<span class="sd">            dimensionless spin.</span>
+<span class="sd">        * spin1y : float</span>
+<span class="sd">            The y component of the first binary component&#39;s</span>
+<span class="sd">            dimensionless spin.</span>
+<span class="sd">        * spin1z : float</span>
+<span class="sd">            The z component of the first binary component&#39;s</span>
+<span class="sd">            dimensionless spin.</span>
+<span class="sd">        * spin2x : float</span>
+<span class="sd">            The x component of the second binary component&#39;s</span>
+<span class="sd">            dimensionless spin.</span>
+<span class="sd">        * spin2y : float</span>
+<span class="sd">            The y component of the second binary component&#39;s</span>
+<span class="sd">            dimensionless spin.</span>
+<span class="sd">        * spin2z : float</span>
+<span class="sd">            The z component of the second binary component&#39;s</span>
+<span class="sd">            dimensionless spin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">inclination</span><span class="p">,</span> <span class="n">spin1x</span><span class="p">,</span> <span class="n">spin1y</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2x</span><span class="p">,</span> <span class="n">spin2y</span><span class="p">,</span> <span class="n">spin2z</span> <span class="o">=</span> \
+        <span class="n">lalsim</span><span class="o">.</span><span class="n">SimInspiralTransformPrecessingNewInitialConditions</span><span class="p">(</span>
+            <span class="n">thetajn</span><span class="p">,</span> <span class="n">phijl</span><span class="p">,</span> <span class="n">spin1_polar</span><span class="p">,</span> <span class="n">spin2_polar</span><span class="p">,</span> <span class="n">spin12_deltaphi</span><span class="p">,</span>
+            <span class="n">spin1_a</span><span class="p">,</span> <span class="n">spin2_a</span><span class="p">,</span> <span class="n">mass1</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">mass2</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">f_ref</span><span class="p">,</span>
+            <span class="n">phiref</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;inclination&#39;</span><span class="p">:</span> <span class="n">inclination</span><span class="p">,</span>
+           <span class="s1">&#39;spin1x&#39;</span><span class="p">:</span> <span class="n">spin1x</span><span class="p">,</span>
+           <span class="s1">&#39;spin1y&#39;</span><span class="p">:</span> <span class="n">spin1y</span><span class="p">,</span>
+           <span class="s1">&#39;spin1z&#39;</span><span class="p">:</span> <span class="n">spin1z</span><span class="p">,</span>
+           <span class="s1">&#39;spin2x&#39;</span><span class="p">:</span> <span class="n">spin2x</span><span class="p">,</span>
+           <span class="s1">&#39;spin2y&#39;</span><span class="p">:</span> <span class="n">spin2y</span><span class="p">,</span>
+           <span class="s1">&#39;spin2z&#39;</span><span class="p">:</span> <span class="n">spin2z</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="l0frame_to_jframe">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.pnutils.l0frame_to_jframe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">l0frame_to_jframe</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_ref</span><span class="p">,</span> <span class="n">phiref</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">inclination</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                      <span class="n">spin1x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin1y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin1z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                      <span class="n">spin2x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">spin2z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts L0-frame parameters to J-frame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        The mass of the first component object in the</span>
+<span class="sd">        binary (in solar masses)</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        The mass of the second component object in the</span>
+<span class="sd">        binary (in solar masses)</span>
+<span class="sd">    f_ref : float</span>
+<span class="sd">        The reference frequency.</span>
+<span class="sd">    phiref : float</span>
+<span class="sd">        The orbital phase at ``f_ref``.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination (rad), defined as the angle between</span>
+<span class="sd">        the orbital angular momentum L and the</span>
+<span class="sd">        line-of-sight at the reference frequency.</span>
+<span class="sd">    spin1x : float</span>
+<span class="sd">        The x component of the first binary component&#39;s</span>
+<span class="sd">        dimensionless spin.</span>
+<span class="sd">    spin1y : float</span>
+<span class="sd">        The y component of the first binary component&#39;s</span>
+<span class="sd">        dimensionless spin.</span>
+<span class="sd">    spin1z : float</span>
+<span class="sd">        The z component of the first binary component&#39;s</span>
+<span class="sd">        dimensionless spin.</span>
+<span class="sd">    spin2x : float</span>
+<span class="sd">        The x component of the second binary component&#39;s</span>
+<span class="sd">        dimensionless spin.</span>
+<span class="sd">    spin2y : float</span>
+<span class="sd">        The y component of the second binary component&#39;s</span>
+<span class="sd">        dimensionless spin.</span>
+<span class="sd">    spin2z : float</span>
+<span class="sd">        The z component of the second binary component&#39;s</span>
+<span class="sd">        dimensionless spin.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of:</span>
+
+<span class="sd">        * thetajn : float</span>
+<span class="sd">            Angle between the line of sight and the total angular momentume J.</span>
+<span class="sd">        * phijl : float</span>
+<span class="sd">            Azimuthal angle of L on its cone about J.</span>
+<span class="sd">        * spin1_a : float</span>
+<span class="sd">            The dimensionless spin magnitude :math:`|\\vec{{s}}_1/m^2_1|`.</span>
+<span class="sd">        * spin2_a : float</span>
+<span class="sd">            The dimensionless spin magnitude :math:`|\\vec{{s}}_2/m^2_2|`.</span>
+<span class="sd">        * spin1_polar : float</span>
+<span class="sd">            Angle between L and the spin magnitude of the larger object.</span>
+<span class="sd">        * spin2_polar : float</span>
+<span class="sd">            Angle betwen L and the spin magnitude of the smaller object.</span>
+<span class="sd">        * spin12_deltaphi : float</span>
+<span class="sd">            Difference between the azimuthal angles of the spin of the larger</span>
+<span class="sd">            object (S1) and the spin of the smaller object (S2).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Note: unlike other LALSimulation functions, this one takes masses in</span>
+    <span class="c1"># solar masses</span>
+    <span class="n">thetajn</span><span class="p">,</span> <span class="n">phijl</span><span class="p">,</span> <span class="n">s1pol</span><span class="p">,</span> <span class="n">s2pol</span><span class="p">,</span> <span class="n">s12_deltaphi</span><span class="p">,</span> <span class="n">spin1_a</span><span class="p">,</span> <span class="n">spin2_a</span> <span class="o">=</span> \
+        <span class="n">lalsim</span><span class="o">.</span><span class="n">SimInspiralTransformPrecessingWvf2PE</span><span class="p">(</span>
+            <span class="n">inclination</span><span class="p">,</span> <span class="n">spin1x</span><span class="p">,</span> <span class="n">spin1y</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2x</span><span class="p">,</span> <span class="n">spin2y</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+            <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">f_ref</span><span class="p">,</span> <span class="n">phiref</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;thetajn&#39;</span><span class="p">:</span> <span class="n">thetajn</span><span class="p">,</span>
+           <span class="s1">&#39;phijl&#39;</span><span class="p">:</span> <span class="n">phijl</span><span class="p">,</span>
+           <span class="s1">&#39;spin1_polar&#39;</span><span class="p">:</span> <span class="n">s1pol</span><span class="p">,</span>
+           <span class="s1">&#39;spin2_polar&#39;</span><span class="p">:</span> <span class="n">s2pol</span><span class="p">,</span>
+           <span class="s1">&#39;spin12_deltaphi&#39;</span><span class="p">:</span> <span class="n">s12_deltaphi</span><span class="p">,</span>
+           <span class="s1">&#39;spin1_a&#39;</span><span class="p">:</span> <span class="n">spin1_a</span><span class="p">,</span>
+           <span class="s1">&#39;spin2_a&#39;</span><span class="p">:</span> <span class="n">spin2_a</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

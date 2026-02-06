@@ -1,0 +1,432 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The workflow segment generation module &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The workflow datafind and validation module" href="datafind.html" />
+    <link rel="prev" title="Pycbc’s workflow module configuration file(s) and command line interface" href="initialization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../devs.html">Documentation for Developers</a></li>
+          <li class="breadcrumb-item"><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+      <li class="breadcrumb-item active">The workflow segment generation module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/segments.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-workflow-segment-generation-module">
+<span id="workflowsegmentsmod"></span><h1>The workflow segment generation module<a class="headerlink" href="#the-workflow-segment-generation-module" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>This page is designed to give you an introduction to the capabilities of the
+pycbc workflow segment generation module and how to use this as part of a pycbc
+workflow.</p>
+<p>This module is designed to be able to support multiple ways of obtaining these
+segments (different codes/interfaces whatever), although new code will always
+be needed to support some code/interface that is not currently supported.</p>
+<p>This module will generate science segments and any appropriate veto segments
+and combine these together to identify a set of segments to be used in the
+analysis. The various files will also be returned for later use in the analysis
+(ie. for vetoing triggers with data-quality vetoes). If other workflows require
+similar combined files these can be added on request.</p>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Using this module requires a number of things</p>
+<ul class="simple">
+<li><p>A configuration file (or files) containing the information needed to tell this module how to generate the segments (described below).</p></li>
+<li><p>An initialized instance of the pycbc Workflow class, containing the ConfigParser.</p></li>
+</ul>
+<p>The module is then called according to</p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.</span></span><span class="sig-name descname"><span class="pre">get_segments_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/segment.html#get_segments_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get cumulative segments from option name syntax for each ifo.</p>
+<p>Use syntax of configparser string to define the resulting segment_file
+e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
+Each ifo may have a different string and is stored separately in the file.
+Flags which add time must precede flags which subtract time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<em>pycbc.workflow.Workflow</em>)</p></li>
+<li><p><strong>name</strong> (<em>string</em>) – Name of the segment list being created</p></li>
+<li><p><strong>option_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of option in the associated config parser to get the flag list</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – Used to retrieve subsections of the ini file for
+configuration options.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>seg_file</strong> – SegFile intance that points to the segment xml file on disk.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.workflow.SegFile</p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="configuration-file-setup">
+<h3>Configuration file setup<a class="headerlink" href="#configuration-file-setup" title="Link to this heading"></a></h3>
+<p>Here we document the necessary parts of a configuration file for this module.
+We’ll lay this out in a few blocks. First we’ll give an overview of what this might look like in an O3 analysis, to give some background, then we’ll give a more comprehensive description of the input format in the <cite>ini</cite> file, and finally we’ll explain the full syntax that can be used for individual flags.</p>
+<section id="example-config-file">
+<h4>Example config file<a class="headerlink" href="#example-config-file" title="Link to this heading"></a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">pycbc</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">latest</span><span class="o">/</span><span class="n">html</span><span class="o">/</span><span class="n">workflow</span><span class="o">/</span><span class="n">initialization</span><span class="o">.</span><span class="n">html</span>
+<span class="n">h1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+<span class="n">l1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">ifos</span><span class="p">]</span>
+<span class="n">h1</span> <span class="o">=</span>
+<span class="n">l1</span> <span class="o">=</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">datafind</span><span class="p">]</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">H1_HOFT_C00</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">L1_HOFT_C00</span>
+<span class="p">;</span><span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">frames</span><span class="o">-</span><span class="n">exist</span> <span class="o">=</span> <span class="n">no_test</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">segments</span><span class="p">]</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">database</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">segments</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">org</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">definer</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">git</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">detchar</span><span class="o">/</span><span class="n">veto</span><span class="o">-</span><span class="n">definitions</span><span class="o">/</span><span class="n">raw</span><span class="o">/</span><span class="n">db20ca71e65b54c0b073fd3d84d5f43fd822779e</span><span class="o">/</span><span class="n">cbc</span><span class="o">/</span><span class="n">O2</span><span class="o">/</span><span class="n">H1L1</span><span class="o">-</span><span class="n">CBC_VETO_DEFINER_CLEANED_C02_O2_1164556817</span><span class="o">-</span><span class="mf">23176801.</span><span class="n">xml</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">vetoes</span> <span class="o">=</span> <span class="o">+</span><span class="n">CAT_2</span><span class="p">,</span><span class="o">+</span><span class="n">CAT_H</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">segments</span><span class="o">-</span><span class="n">h1</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">NOTE</span><span class="p">:</span> <span class="n">It</span><span class="s1">&#39;s important to check the version number</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">science</span> <span class="o">=</span> <span class="o">+</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="n">CAT_1</span>
+
+<span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">segments</span><span class="o">-</span><span class="n">l1</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">NOTE</span><span class="p">:</span> <span class="n">It</span><span class="s1">&#39;s important to check the version number</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">science</span> <span class="o">=</span> <span class="o">+</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="n">CAT_1</span>
+
+<span class="p">[</span><span class="n">datafind</span><span class="p">]</span>
+<span class="n">urltype</span> <span class="o">=</span> <span class="n">file</span>
+</pre></div>
+</div>
+<p>Note that this includes both datafind and segment instructions. We’ll just
+describe the segment options</p>
+</section>
+<section id="description-of-the-ini-file-contents">
+<h4>Description of the ini file contents<a class="headerlink" href="#description-of-the-ini-file-contents" title="Link to this heading"></a></h4>
+<p>There are three important segments options that we need to provide:</p>
+<ul class="simple">
+<li><p><cite>segments-science</cite>: This decides what times will be analysed to produce triggers. All times in this might be used to compute PSDs used in the results. Normally all times flagged as ready for science analysis, minus times vetoed at CAT_1.</p></li>
+<li><p><cite>segments-vetoes</cite>: This decides what times will be vetoed when producing final candidate event lists. These times <em>are</em> analysed but are discarded after combining single-detector triggers together. Normally the time discarded comprises times vetoed at CAT_2 and times of hardware injections.</p></li>
+<li><p><cite>segments-veto-definer-url</cite>: As previously, this is the location of the veto definer.</p></li>
+</ul>
+<p>Note that this obeys the usual workflow tagging rules. If you supply <cite>segments-science</cite> in <cite>workflow-segments</cite> it will be valid for all ifos. Or, if you want to supply different values for different ifos (e.g. because the Virgo SCIENCE flag is named differently to L1 and H1) you can use <cite>workflow-segments-${ifoname}</cite> (where <cite>${ifoname}</cite> is replaced with the ifo name and this should then be given for all active ifos).</p>
+<p>The <cite>segments-science</cite> and <cite>segments-vetoes</cite> are provided as a <em>comma-separated</em> list of flags. Documented below.</p>
+</section>
+<section id="flag-syntax">
+<h4>Flag syntax<a class="headerlink" href="#flag-syntax" title="Link to this heading"></a></h4>
+<p>We’ve said that <cite>segments-science</cite> and <cite>segments-vetoes</cite> look something like</p>
+<p><cite>segments-science = FLAG_1,FLAG_2</cite></p>
+<p>We start with a simple example of what can be given as the value of FLAG_1:</p>
+<p><cite>+SCIENCE</cite> or <cite>-SCIENCE</cite></p>
+<p>In this case SCIENCE is the flag name. It is what will be queried from the segment server. The ifo will be automatically appended, so this becomes <cite>${IFO}:SCIENCE</cite> when querying. The <cite>+</cite> or <cite>-</cite> is important and not optional. If the sign as a <cite>+</cite> then the flag is added to the list of times, if it is <cite>-</cite> then the flag is removed. All <cite>+</cite> flags are processed first and then all <cite>-</cite> flags are removed from that.</p>
+<p>In <cite>segments-science</cite> <cite>+</cite> means that that time should be included in the analysis. A <cite>-</cite> means it should not be included.</p>
+<p>In <cite>segments-vetoes</cite> <cite>+</cite> means that that time should be included in the vetoed times and so not included in the analysis. A <cite>-</cite> means it should not be included in the vetoed times so that time will be analysed … It is not envisaged that <cite>-</cite> flags will be used often in <cite>segments-vetoes</cite>.</p>
+<section id="version-numbers">
+<h5>Version numbers<a class="headerlink" href="#version-numbers" title="Link to this heading"></a></h5>
+<p>For LVC internal usage, flags should be provided with a version number. So this would be:</p>
+<p><cite>+SCIENCE:1</cite> or <cite>-SCIENCE:1</cite></p>
+<p>not providing a version will query <em>all</em> versions of that flag. That probably won’t be a good thing with a flag like <cite>SCIENCE</cite>, but will be okay if there is only one version of the flag. In general, for LVC usage provide a version number! For GWOSC usage there are no version numbers.</p>
+</section>
+<section id="the-veto-definer-file">
+<h5>The veto-definer file<a class="headerlink" href="#the-veto-definer-file" title="Link to this heading"></a></h5>
+<p>The veto definer file groups a set of flags together, defining what is meant as CAT_1 vetoes. We could explicitly map the veto-definer from the XML file into a list of flags (removing the veto-definer altogether), but it is easier to just use the veto-definer and let the detchar group decide what these flags should be.</p>
+<p>When using a veto-definer we have access to “special” flag names corresponding to what’s in the veto-definer. These special flag names are:</p>
+<ul class="simple">
+<li><p><cite>CAT_1</cite>: All flags given the <cite>category</cite> value of 1 within the veto-definer file.</p></li>
+<li><p><cite>CAT_2</cite>: All flags given the <cite>category</cite> value of 2 within the veto-definer file.</p></li>
+<li><p><cite>CAT_H</cite>: All flags given the <cite>category</cite> value of 3 within the veto-definer file. There’s some history/confusion here: since S6 we’ve been storing hardware injections in the <cite>category=3</cite> field of the veto-definer. Don’t worry about that, this just means all hardware injection flags.</p></li>
+<li><p><cite>CAT_3</cite>. All flags given the <cite>category</cite> value of 4 within the veto-definer file. As mentioned above, this is where category 3 vetoes are traditionally stored. These vetoes have not been used since the start of Advanced LIGO/Virgo, so we can probably ignore this now.</p></li>
+</ul>
+<p>Examples of using these flags are given at the top. All of the stuff below also applies to these “special” flags, but some of these combinations may be a little odd.</p>
+</section>
+<section id="adding-a-ifo">
+<h5>Adding a ifo<a class="headerlink" href="#adding-a-ifo" title="Link to this heading"></a></h5>
+<p>Now let’s start adding complexity. I can explicitly state an ifo, even if the workflow thinks it’s analysing V1, I can supply a <em>different</em> ifo and the workflow will analyse that data as if it was the second ifo. For example</p>
+<p><cite>segments-science-v1 = H1:DMT-ANALYSIS_READY:1</cite></p>
+<p>will use <cite>H1</cite> data as “Virgo”. This functionality is not expected to be used in production runs, but has been useful in the past for testing purposes, e.g. using H1 data as V1 to simulate a true 3-instrument analysis. Probably this won’t be used much, but it’s here for completeness.</p>
+</section>
+<section id="providing-padding">
+<h5>Providing padding<a class="headerlink" href="#providing-padding" title="Link to this heading"></a></h5>
+<p>For some flags we want to include some additional time … Normally for vetoes where we want to cut out a little bit more data as we know the bad time might be a little longer than that recorded. This can be done as:</p>
+<p><cite>+H1:SCIENCE:1&lt;-8:8&gt;</cite> or <cite>-H1:SCIENCE:1&lt;-8:8&gt;</cite></p>
+<p>This corresponds to <cite>start_pad</cite> = -8 and <cite>end_pad</cite> = 8. These numbers are added to the start/end times of every segment coming from this flag, so <cite>segment_start += start_pad</cite> and <cite>segment_end += end_pad</cite>.  Or more simply, in this example the segment is extended by 8s on both the start and the end of every segment.
+This number can be flipped to cause the segment to get shorter. Be careful with this though, glue does not do the right thing if the start of a segment is after the end of the segment - e.g. if you shrink a segment so much that it disappears, weird things will happen!</p>
+<p>The padding must always appear after the flag and version name.</p>
+</section>
+<section id="providing-valid-times">
+<h5>Providing valid times<a class="headerlink" href="#providing-valid-times" title="Link to this heading"></a></h5>
+<p>Some flags are valid between a specific range of times. So if we provide:</p>
+<p><cite>+H1:SCIENCE:1[0:1000000000]</cite> or <cite>-H1:SCIENCE:1[0:1000000000]</cite></p>
+<p>it means that we only query the <cite>SCIENCE</cite> flag for times in [0:1000000000]. If this flag is active outside of this time range, we do not use it.</p>
+<p>At the moment it is not possible to provide a flag that is active in two distinct ranges, but not in between. If that functionality is required, it can probably be added.</p>
+<p>Valid times must also be provided after the flag name and version. If providing <em>both</em> this and a padding it would look like:</p>
+<p><cite>+H1:SCIENCE:1&lt;-8:8&gt;[0:1000000000]</cite> or <cite>-H1:SCIENCE:1&lt;-8:8&gt;[0:1000000000]</cite></p>
+</section>
+<section id="obtaining-segments-from-pre-existing-xml-files">
+<h5>Obtaining segments from pre-existing XML files<a class="headerlink" href="#obtaining-segments-from-pre-existing-xml-files" title="Link to this heading"></a></h5>
+<p>Instead of obtaining science and veto segments from a segment database and veto
+definer file, they can be read directly from XML segment files. This can be
+useful, for example, to test new kinds of vetoes. To do this, use the following
+options in the <cite>[workflow-segments]</cite> section:</p>
+<ul class="simple">
+<li><p><cite>segments-source = file</cite></p></li>
+<li><p><cite>segments-science-file = /path/to/science/segments/file.xml</cite></p></li>
+<li><p><cite>segments-vetoes-file = /path/to/veto/segments/file.xml</cite></p></li>
+</ul>
+<p>In order for this to work, the <cite>name</cite> field of the <cite>segment_definer</cite> tables of
+the science and vetoes files should be set to <cite>science</cite> and <cite>vetoes</cite>
+respectively.</p>
+</section>
+</section>
+</section>
+</section>
+<section id="pycbc-workflow-segment-module">
+<h2><a class="reference internal" href="../pycbc.workflow.html#module-pycbc.workflow.segment" title="pycbc.workflow.segment"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.workflow.segment</span></code></a> Module<a class="headerlink" href="#pycbc-workflow-segment-module" title="Link to this heading"></a></h2>
+<p>This is complete documentation of this module’s code</p>
+<p>This module is responsible for setting up the segment generation stage of
+workflows. For details about this module and its capabilities see here:
+<a class="reference external" href="https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html</a></p>
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.segment.</span></span><span class="sig-name descname"><span class="pre">generate_triggered_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sciencesegs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/segment.html#generate_triggered_segment"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.segment.</span></span><span class="sig-name descname"><span class="pre">get_flag_segments_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/segment.html#get_flag_segments_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get segments from option name syntax for each ifo for indivudal flags.</p>
+<p>Use syntax of configparser string to define the resulting segment_file
+e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
+Each ifo may have a different string and is stored separately in the file.
+Each flag is stored separately in the file.
+Flags which add time must precede flags which subtract time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<em>pycbc.workflow.Workflow</em>)</p></li>
+<li><p><strong>name</strong> (<em>string</em>) – Name of the segment list being created</p></li>
+<li><p><strong>option_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of option in the associated config parser to get the flag list</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – Used to retrieve subsections of the ini file for
+configuration options.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>seg_file</strong> – SegFile intance that points to the segment xml file on disk.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.workflow.SegFile</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.segment.</span></span><span class="sig-name descname"><span class="pre">get_segments_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/segment.html#get_segments_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get cumulative segments from option name syntax for each ifo.</p>
+<p>Use syntax of configparser string to define the resulting segment_file
+e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
+Each ifo may have a different string and is stored separately in the file.
+Flags which add time must precede flags which subtract time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<em>pycbc.workflow.Workflow</em>)</p></li>
+<li><p><strong>name</strong> (<em>string</em>) – Name of the segment list being created</p></li>
+<li><p><strong>option_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of option in the associated config parser to get the flag list</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – Used to retrieve subsections of the ini file for
+configuration options.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>seg_file</strong> – SegFile intance that points to the segment xml file on disk.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pycbc.workflow.SegFile</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.segment.</span></span><span class="sig-name descname"><span class="pre">get_triggered_coherent_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workflow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sciencesegs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/segment.html#get_triggered_coherent_segment"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Construct the coherent network on and off source segments. Can switch to
+construction of segments for a single IFO search when coherent segments
+are insufficient for a search.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – The workflow instance that the calculated segments belong to.</p></li>
+<li><p><strong>sciencesegs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of all science segments within analysis time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>onsource</strong> (<em>igwn_segments.segmentlistdict</em>) – A dictionary containing the on source segments for network IFOs</p></li>
+<li><p><strong>offsource</strong> (<em>igwn_segments.segmentlistdict</em>) – A dictionary containing the off source segments for network IFOs</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">pycbc.workflow.segment.</span></span><span class="sig-name descname"><span class="pre">save_veto_definer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/segment.html#save_veto_definer"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Retrieve the veto definer file and save it locally</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cp</strong> (<em>ConfigParser instance</em>)</p></li>
+<li><p><strong>out_dir</strong> (<em>path</em>)</p></li>
+<li><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>strings</em>) – Used to retrieve subsections of the ini file for
+configuration options.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="initialization.html" class="btn btn-neutral float-left" title="Pycbc’s workflow module configuration file(s) and command line interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="datafind.html" class="btn btn-neutral float-right" title="The workflow datafind and validation module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

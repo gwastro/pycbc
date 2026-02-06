@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.population.fgmc_plots &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.population.fgmc_plots</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.population.fgmc_plots</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2021 Jolien Creighton &amp; Thomas Dent</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">figure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.backends.backend_agg</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureCanvasAgg</span> <span class="k">as</span> <span class="n">FigureCanvas</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_setup</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="c1"># reduce scale of codeclimate complaints</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+    <span class="n">FigureCanvas</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plotodds</span><span class="p">(</span><span class="n">rankstats</span><span class="p">,</span> <span class="n">p_b</span><span class="p">):</span>
+    <span class="c1"># odds vs ranking stat</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_setup</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rankstats</span><span class="p">,</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_b</span><span class="p">)</span> <span class="o">/</span> <span class="n">p_b</span><span class="p">,</span> <span class="s1">&#39;k.&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">rankstats</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">rankstats</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s1">&#39;c--&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Foreground/Background Odds&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ranking statistic&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$P_1/P_0$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.99</span> <span class="o">*</span> <span class="n">rankstats</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">rankstats</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plotpbg</span><span class="p">(</span><span class="n">rankstats</span><span class="p">,</span> <span class="n">p_b</span><span class="p">):</span>
+    <span class="c1"># p_terr vs ranking stat</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_setup</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rankstats</span><span class="p">,</span> <span class="n">p_b</span><span class="p">,</span> <span class="s1">&#39;k.&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Probability of background origin&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ranking statistic&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$P_0$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.99</span> <span class="o">*</span> <span class="n">rankstats</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">rankstats</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plotoddsifar</span><span class="p">(</span><span class="n">ifar</span><span class="p">,</span> <span class="n">p_b</span><span class="p">):</span>
+    <span class="c1"># odds vs IFAR</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_setup</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ifar</span><span class="p">,</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_b</span><span class="p">)</span> <span class="o">/</span> <span class="n">p_b</span><span class="p">,</span> <span class="s1">&#39;k.&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">ifar</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ifar</span><span class="o">.</span><span class="n">max</span><span class="p">()],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="s1">&#39;c--&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Foreground/Background Odds&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;IFAR&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$P_1/P_0$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.9</span> <span class="o">*</span> <span class="n">ifar</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="mf">1.1</span> <span class="o">*</span> <span class="n">ifar</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plotfdr</span><span class="p">(</span><span class="n">p_b</span><span class="p">,</span> <span class="n">ntop</span><span class="p">):</span>
+    <span class="c1"># False dismissal rate vs p_terr</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_setup</span><span class="p">()</span>
+    <span class="c1"># get smallest N p_terr values</span>
+    <span class="n">p_b</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">p_b</span><span class="p">)[:</span><span class="n">ntop</span><span class="p">]</span>
+    <span class="c1"># cumulative probable noise/signal counts</span>
+    <span class="n">cum_false</span> <span class="o">=</span> <span class="n">p_b</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+    <span class="n">cum_true</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">p_b</span><span class="p">)</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p_b</span><span class="p">,</span> <span class="n">cum_false</span> <span class="o">/</span> <span class="n">cum_true</span><span class="p">,</span> <span class="s1">&#39;b+&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p_b</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p_b</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;c--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;1 noise event&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$p_{\rm terr}$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Cumulative $p_{\rm terr}$ / Cumulative $p_{\rm astro}$&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.05</span> <span class="o">*</span> <span class="n">p_b</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">fig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">finalize_plot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">extensions</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">pltype</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+    <span class="c1"># Helper function</span>
+    <span class="k">for</span> <span class="n">extn</span> <span class="ow">in</span> <span class="n">extensions</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">pldir</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">pltype</span> <span class="o">+</span> <span class="n">tag</span> <span class="o">+</span> <span class="n">extn</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;writing </span><span class="si">%s</span><span class="s1"> ...&#39;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="odds_summary">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_plots.odds_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">odds_summary</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">rankstats</span><span class="p">,</span> <span class="n">ifars</span><span class="p">,</span> <span class="n">p_b</span><span class="p">,</span> <span class="n">ntop</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mchirps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">name</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">plot_extensions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Summary of Top </span><span class="si">%i</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ntop</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">title</span><span class="p">()))</span>
+
+    <span class="c1"># do sort in reverse order</span>
+    <span class="n">statsort</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rankstats</span><span class="p">))</span>
+    <span class="n">topn</span> <span class="o">=</span> <span class="n">statsort</span><span class="p">[:</span><span class="n">ntop</span><span class="p">]</span>  <span class="c1"># indices giving top n</span>
+    <span class="n">topgps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">topstat</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">topifar</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">toppastro</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">topn</span><span class="p">):</span>
+        <span class="n">gps</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">times</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">ifar</span> <span class="o">=</span> <span class="n">ifars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">stat</span> <span class="o">=</span> <span class="n">rankstats</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">mchirpstring</span> <span class="o">=</span> <span class="s1">&#39;mchirp </span><span class="si">%.3F</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">mchirps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">mchirps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">topgps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gps</span><span class="p">)</span>
+        <span class="n">topstat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
+        <span class="n">topifar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ifar</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#</span><span class="si">%d</span><span class="s1"> event:&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">gps</span><span class="p">),</span> <span class="n">mchirpstring</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    rankstat = </span><span class="si">%-8.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">stat</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    IFAR     = </span><span class="si">%.2f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ifar</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    odds     = </span><span class="si">%g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">((</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">p_b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">p_b</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="n">toppastro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">p_b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">p_astro_txt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">p_astro_txt</span><span class="p">,</span>
+                      <span class="n">numpy</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">topgps</span><span class="p">,</span> <span class="n">topstat</span><span class="p">,</span> <span class="n">topifar</span><span class="p">,</span> <span class="n">toppastro</span><span class="p">)),</span>
+                      <span class="n">fmt</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">%.3F</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%.2F</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%.2F</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%.5F</span><span class="s1">&#39;</span><span class="p">],</span>
+                      <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span>
+                      <span class="n">header</span><span class="o">=</span><span class="s1">&#39;GPS seconds, stat, IFAR/yr, p_astro&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s1">&#39;json_tag&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">json_tag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># save to catalog-style files</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">dump_json</span><span class="p">(</span><span class="n">gps</span><span class="p">,</span> <span class="n">p_a</span><span class="p">,</span> <span class="n">p_b</span><span class="p">):</span>
+            <span class="n">jfile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">plot_dir</span> <span class="o">+</span> <span class="s1">&#39;H1L1V1-PYCBC_</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">-1.json&#39;</span> <span class="o">%</span> \
+                      <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">json_tag</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">gps</span><span class="p">)))</span>  <span class="c1"># truncate to integer GPS</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">jfile</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">jf</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s1">&#39;Astro&#39;</span><span class="p">:</span> <span class="n">p_a</span><span class="p">,</span> <span class="s1">&#39;Terrestrial&#39;</span><span class="p">:</span> <span class="n">p_b</span><span class="p">},</span> <span class="n">jf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s1">&#39;json_min_ifar&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">json_min_ifar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">ifar</span><span class="p">,</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">ifars</span><span class="p">,</span> <span class="n">p_b</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">ifar</span> <span class="o">&lt;</span> <span class="n">args</span><span class="o">.</span><span class="n">json_min_ifar</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">dump_json</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">pt</span><span class="p">,</span> <span class="n">pt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">g</span><span class="p">,</span> <span class="n">pa</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">topgps</span><span class="p">,</span> <span class="n">toppastro</span><span class="p">):</span>
+                <span class="n">dump_json</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">pa</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="n">pa</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">plot_extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plottag</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">plot_tag</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">plottag</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">plottag</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">plottag</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plotodds</span><span class="p">(</span><span class="n">rankstats</span><span class="p">,</span> <span class="n">p_b</span><span class="p">)</span>
+        <span class="n">finalize_plot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">plot_extensions</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s1">&#39;odds&#39;</span><span class="p">,</span> <span class="n">plottag</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plotpbg</span><span class="p">(</span><span class="n">rankstats</span><span class="p">,</span> <span class="n">p_b</span><span class="p">)</span>
+        <span class="n">finalize_plot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">plot_extensions</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s1">&#39;pbg&#39;</span><span class="p">,</span> <span class="n">plottag</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plotoddsifar</span><span class="p">(</span><span class="n">ifars</span><span class="p">,</span> <span class="n">p_b</span><span class="p">)</span>
+        <span class="n">finalize_plot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">plot_extensions</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s1">&#39;ifarodds&#39;</span><span class="p">,</span> <span class="n">plottag</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plotfdr</span><span class="p">(</span><span class="n">p_b</span><span class="p">,</span> <span class="n">ntop</span><span class="p">)</span>
+        <span class="n">finalize_plot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">plot_extensions</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s1">&#39;fdr&#39;</span><span class="p">,</span> <span class="n">plottag</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="plotdist">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_plots.plotdist">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plotdist</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">plot_lim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">middle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credible_intervals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">):</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+    <span class="n">FigureCanvas</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">symb</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">texsymb</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;texsymb&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">r</span><span class="s1">&#39;x&#39;</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">texunit</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;texunit&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">xlabel</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;$&#39;</span> <span class="o">+</span> <span class="n">symb</span> <span class="o">+</span> <span class="s1">&#39;$&#39;</span>
+    <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">xlabel</span> <span class="o">+=</span> <span class="sa">r</span><span class="s1">&#39; ($&#39;</span> <span class="o">+</span> <span class="n">unit</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;$)&#39;</span>
+
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="mf">0.9999</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">style</span> <span class="o">==</span> <span class="s1">&#39;loglog&#39;</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">()</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;$p(&#39;</span> <span class="o">+</span> <span class="n">symb</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;)$&#39;</span>
+        <span class="n">space</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">rv</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">style</span> <span class="o">==</span> <span class="s1">&#39;semilogx&#39;</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">()</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;$&#39;</span> <span class="o">+</span> <span class="n">symb</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\,p(&#39;</span> <span class="o">+</span> <span class="n">symb</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;)$&#39;</span>
+        <span class="n">space</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">rv</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="n">a</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># linear</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">([])</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;$p(&#39;</span> <span class="o">+</span> <span class="n">symb</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;)$&#39;</span>
+        <span class="n">space</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="n">rv</span><span class="o">.</span><span class="n">pdf</span><span class="p">)</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">space</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">plot_lim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span> <span class="o">=</span> <span class="n">plot_lim</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="n">xmin</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="n">ymin</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ymax</span><span class="o">=</span><span class="mf">2.</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">middle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">middle</span><span class="p">,</span> <span class="n">middle</span><span class="p">],</span> <span class="p">[</span><span class="n">ymin</span><span class="p">,</span> <span class="n">func</span><span class="p">(</span><span class="n">middle</span><span class="p">)],</span> <span class="s1">&#39;k--&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">credible_intervals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># alpha : density of fill shading</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">credible_intervals</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="n">credible_intervals</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">lo</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">lo</span><span class="p">)</span>
+            <span class="n">hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">space</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="dist_summary">
+<a class="viewcode-back" href="../../../pycbc.population.html#pycbc.population.fgmc_plots.dist_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dist_summary</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">rv</span><span class="p">,</span> <span class="n">plot_styles</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;loglog&#39;</span><span class="p">,</span> <span class="s1">&#39;semilogx&#39;</span><span class="p">),</span>
+                 <span class="n">plot_extensions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">middle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">credible_intervals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;posterior&#39;</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">unit</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;unit&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">median</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">mode</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;mode&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Summary of &#39;</span> <span class="o">+</span> <span class="n">name</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mean   =&#39;</span><span class="p">,</span> <span class="n">rv</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;median =&#39;</span><span class="p">,</span> <span class="n">median</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;mode   =&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;stddev =&#39;</span><span class="p">,</span> <span class="n">rv</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span> <span class="n">unit</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">credible_intervals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">credible_intervals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;equal-tailed credible intervals:&#39;</span><span class="p">)</span>
+        <span class="n">equal_tailed_credible_intervals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">cred</span> <span class="ow">in</span> <span class="n">credible_intervals</span><span class="p">:</span>
+            <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="n">cred</span><span class="p">)</span>
+            <span class="n">equal_tailed_credible_intervals</span><span class="p">[</span><span class="n">cred</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%g%%</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cred</span> <span class="o">*</span> <span class="mi">100</span><span class="p">),</span> <span class="s1">&#39;credible interval =&#39;</span><span class="p">,</span> <span class="s1">&#39;[</span><span class="si">%g</span><span class="s1">, </span><span class="si">%g</span><span class="s1">]&#39;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">),</span> <span class="n">unit</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="s1">&#39;hpd_interval&#39;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;highest probability density credible intervals:&#39;</span><span class="p">)</span>
+            <span class="n">hpd_credible_intervals</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">cred</span> <span class="ow">in</span> <span class="n">credible_intervals</span><span class="p">:</span>
+                <span class="n">hpdlo</span><span class="p">,</span> <span class="n">hpdhi</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="n">hpd_interval</span><span class="p">(</span><span class="n">cred</span><span class="p">)</span>
+                <span class="n">hpd_credible_intervals</span><span class="p">[</span><span class="n">cred</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hpdlo</span><span class="p">,</span> <span class="n">hpdhi</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%g%%</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cred</span> <span class="o">*</span> <span class="mi">100</span><span class="p">),</span> <span class="s1">&#39;credible interval =&#39;</span><span class="p">,</span> <span class="s1">&#39;[</span><span class="si">%g</span><span class="s1">, </span><span class="si">%g</span><span class="s1">]&#39;</span> <span class="o">%</span>
+                                             <span class="p">(</span><span class="n">hpdlo</span><span class="p">,</span> <span class="n">hpdhi</span><span class="p">),</span> <span class="n">unit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hpd_credible_intervals</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">credible_intervals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">credible_intervals</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">intervals</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">middle</span> <span class="o">==</span> <span class="s1">&#39;mode&#39;</span> <span class="ow">and</span> <span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">middle</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="k">if</span> <span class="n">credible_intervals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># use hpd intervals with mode</span>
+            <span class="n">intervals</span> <span class="o">=</span> <span class="n">hpd_credible_intervals</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">middle</span> <span class="o">=</span> <span class="n">median</span>
+        <span class="k">if</span> <span class="n">credible_intervals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># use equal tailed intervals with median</span>
+            <span class="n">intervals</span> <span class="o">=</span> <span class="n">equal_tailed_credible_intervals</span>
+
+    <span class="c1"># plot distributions</span>
+    <span class="k">if</span> <span class="n">plot_extensions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plottag</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">plot_tag</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">plottag</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">plottag</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">plottag</span>
+        <span class="k">for</span> <span class="n">style</span> <span class="ow">in</span> <span class="n">plot_styles</span><span class="p">:</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plotdist</span><span class="p">(</span><span class="n">rv</span><span class="p">,</span> <span class="n">plot_lim</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">plot_limits</span><span class="p">,</span> <span class="n">middle</span><span class="o">=</span><span class="n">middle</span><span class="p">,</span>
+                           <span class="n">credible_intervals</span><span class="o">=</span><span class="n">intervals</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">)</span>
+            <span class="n">finalize_plot</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">plot_extensions</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">style</span><span class="p">,</span> <span class="n">plottag</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">credible_intervals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">credible_intervals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">median</span><span class="p">,</span> <span class="n">lo</span> <span class="o">-</span> <span class="n">median</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">median</span>
+    <span class="c1"># keep codeclimate happy with explicit return statement</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plotdist&#39;</span><span class="p">,</span> <span class="s1">&#39;odds_summary&#39;</span><span class="p">,</span> <span class="s1">&#39;dist_summary&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

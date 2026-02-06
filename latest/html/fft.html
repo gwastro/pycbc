@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Performing FFTs in PyCBC &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Signal Processing with GW150914" href="gw150914.html" />
+    <link rel="prev" title="Reading Gravitational-wave Frames" href="frame.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Performing FFTs in PyCBC</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-function-based-api">Using the function based API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-class-based-api">Using the class-based API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#choosing-a-specific-backend">Choosing a specific backend</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Performing FFTs in PyCBC</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/fft.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="performing-ffts-in-pycbc">
+<h1>Performing FFTs in PyCBC<a class="headerlink" href="#performing-ffts-in-pycbc" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>Many applications in gravitational-wave analysis rely on Fast Fourier
+Transforms. These are often the dominant computational cost in analyses. PyCBC
+needs to balance the requirement that analyses be efficient with ease of use
+for end users. To meet this requirement PyCBC provides two different APIs to
+do FFTs:</p>
+<ul class="simple">
+<li><p>A function based API, which is easy to use, but not optimized.</p></li>
+<li><p>A class-based API, which is a little more involved to use, but allows the use of optimized FFT routines.</p></li>
+</ul>
+<p>These APIs offer access to a number of FFT backends. PyCBC knows how to do FFTs
+using the FFTW, MKL and numpy backends, and will enable these if they are
+present on your system. By default FFTW will be used, then MKL if FFTW is not
+and numpy will be used only if the other 2 are not present. However, you can
+override this and choose a specific backend if multiple are available.</p>
+<p>When running on GPUs, PyCBC knows how to do CUDA FFTs through the same
+interface.</p>
+</section>
+<section id="using-the-function-based-api">
+<h2>Using the function based API<a class="headerlink" href="#using-the-function-based-api" title="Link to this heading"></a></h2>
+<p>The PyCBC function based API offers a simple way to Fourier transform an
+input array into an output array. This is done by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">output_array</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or for an inverse FFT:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">output_array</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To do this requires having the output_array, which would be the Fourier
+transform of the input, already existing as an array of 0s. This output array
+must be the correct <em>length</em>, the correct <em>type</em> (complex or real) and the
+correct <em>precision</em> (double or float precision). It’s also worth noting that
+fast Fourier transforms are more efficient if their lengths are 2**N where
+N is some integer. This becomes a little complicated if doing real-&gt;complex
+or complex-&gt;real transforms; in those cases the longer array should have a
+length of 2**N to be efficient.</p>
+<p>Here’s a few examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outarr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or (note here the length of the complex array is the length of the real array divided by 2 and then + 1):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">33</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outarr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or (this one is an inverse FFT):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">33</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outarr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will work the pycbc Timeseries and Frequencyseries as well. Except you
+must FFT a TimeSeries to a FrequencySeries or IFFT a FrequencySeries to a
+TimeSeries. In this case the time and frequency spacing must also be
+consistent. For this reason we provide convenience functions that use the
+function API, but figure out these details, and create the output array, for
+you. As an example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">TimeSeries</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.</span><span class="o">/</span><span class="mf">64.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">=</span> <span class="n">inarr</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">FrequencySeries</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">33</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">),</span> <span class="n">delta_f</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">=</span> <span class="n">inarr</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="using-the-class-based-api">
+<h2>Using the class-based API<a class="headerlink" href="#using-the-class-based-api" title="Link to this heading"></a></h2>
+<p>The PyCBC class-based API should be used if you care about performance. If you
+are performing FFTs many times, with inputs that are the same size each time,
+using this will offer significance perfommance improvement.</p>
+<p>Here’s how to use this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft_class</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">FFT</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft_class</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">*=</span> <span class="n">inarr</span><span class="o">.</span><span class="n">_delta_t</span> <span class="c1"># ONLY IF inarr is a TimeSeries</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">*=</span> <span class="n">inarr</span><span class="o">.</span><span class="n">_delta_f</span> <span class="c1"># ONLY IF inarr is a FrequencySeries</span>
+</pre></div>
+</div>
+<p>Or for an inverse FFT:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">fft</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ifft_class</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">IFFT</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ifft_class</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">*=</span> <span class="n">inarr</span><span class="o">.</span><span class="n">_delta_t</span> <span class="c1"># ONLY IF inarr is a TimeSeries</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">outarr</span> <span class="o">*=</span> <span class="n">inarr</span><span class="o">.</span><span class="n">_delta_f</span> <span class="c1"># ONLY IF inarr is a FrequencySeries</span>
+</pre></div>
+</div>
+<p>The idea would be that the <cite>fft_class</cite> or <cite>ifft_class</cite> would only be created
+<em>once</em> and the execute command called many times. You would change the contents
+of inarr before each call and outarr will update when execute is run. After
+creating the FFT class <em>do not</em> reassign inarr, but instead set values. So:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fft_class</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">FFT</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">TimeSeries</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.</span><span class="o">/</span><span class="mf">64.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft_class</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>would not work! Instead do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fft_class</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">FFT</span><span class="p">(</span><span class="n">inarr</span><span class="p">,</span> <span class="n">outarr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inarr</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">64</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)[:]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fft_class</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="choosing-a-specific-backend">
+<h2>Choosing a specific backend<a class="headerlink" href="#choosing-a-specific-backend" title="Link to this heading"></a></h2>
+<p>If you want to choose a specific backend, you can see what is available with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">backend_support</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">backend_support</span><span class="o">.</span><span class="n">get_backend_names</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>and then do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">backend_support</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">backend_support</span><span class="o">.</span><span class="n">set_backend</span><span class="p">([</span><span class="s1">&#39;mkl&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>to set a specific backend. Running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">backend_support</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">backend_support</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>will tell you what you are currently using. You can also use the
+MKL <cite>Scheme</cite> to default to using MKL FFTs, instead of FFTW.</p>
+</section>
+<section id="method-documentation">
+<h2>Method documentation<a class="headerlink" href="#method-documentation" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="frame.html" class="btn btn-neutral float-left" title="Reading Gravitational-wave Frames" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gw150914.html" class="btn btn-neutral float-right" title="Signal Processing with GW150914" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

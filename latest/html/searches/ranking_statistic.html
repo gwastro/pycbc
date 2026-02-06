@@ -1,0 +1,234 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The ranking statistic used in PyCBC searches &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyCBC inference documentation (pycbc.inference)" href="../inference.html" />
+    <link rel="prev" title="PyCBC searches" href="../searches.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../searches.html">PyCBC searches</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The ranking statistic used in PyCBC searches</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../searches.html">PyCBC searches</a></li>
+      <li class="breadcrumb-item active">The ranking statistic used in PyCBC searches</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/searches/ranking_statistic.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-ranking-statistic-used-in-pycbc-searches">
+<h1>The ranking statistic used in PyCBC searches<a class="headerlink" href="#the-ranking-statistic-used-in-pycbc-searches" title="Link to this heading"></a></h1>
+<p>How triggers are ranked is defined by the ranking-statistic, sngl-ranking, statistic-features and statistic-keywords options.
+- <code class="docutils literal notranslate"><span class="pre">sngl-ranking</span></code> = The ranking used for single-detector triggers, this is generally a re-weighting of the SNR.
+- <code class="docutils literal notranslate"><span class="pre">ranking-statistic</span></code> = How the triggers from a set of detectors are ranked in order to calculate significance. This will take the form of an snr-like combination (<code class="docutils literal notranslate"><span class="pre">quadsum</span></code>, <code class="docutils literal notranslate"><span class="pre">phasetd</span></code>, <code class="docutils literal notranslate"><span class="pre">exp_fit_csnr</span></code>), or a log-rates-like statistic, <code class="docutils literal notranslate"><span class="pre">exp_fit</span></code>. See Ranking Statistic table below for the options.
+- <code class="docutils literal notranslate"><span class="pre">statistic-features</span></code> = If using ranking-statistic <code class="docutils literal notranslate"><span class="pre">exp_fit</span></code>, then these are the features to add or subtract from the ranking statistic. These are described in the Statistic Features table below.
+- <code class="docutils literal notranslate"><span class="pre">statistic-keywords</span></code> = Some statistics require keywords to modify the behavior of the statistic in certain situations. Keywords affecting the sngl-ranking calculation are also given here, starting with <code class="docutils literal notranslate"><span class="pre">sngl_ranking_</span></code>. These are described in the Statistic Keywords table below.
+- <code class="docutils literal notranslate"><span class="pre">statistic-files</span></code> = Files to be used in the statistic calculation, of particular note here are the files needed for DQ and KDE reranking.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Ranking Statistic</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Statistic name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">quadsum</span></code></p></td>
+<td><p>The quadrature sum of triggers in each detector in the triggered network. <code class="docutils literal notranslate"><span class="pre">sngl_ranking_only</span></code> can also be given and is exactly equivalent.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">phasetd</span></code></p></td>
+<td><p>The same as <code class="docutils literal notranslate"><span class="pre">quadsum</span></code>, but reweighted by the coincident parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">exp_fit_csnr</span></code></p></td>
+<td><p>This is a reworking of the exponential fit designed to resemble network SNR. Uses a monotonic function of the negative log noise rate density which approximates combined sngl-ranking for coincs with similar newsnr in each ifo</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">exp_fit</span></code></p></td>
+<td><p>The ratio of signal-to-noise rates in the triggered network of detectors. The trigger density at a given sngl-ranking is approximated for each template, and this is combined for the triggered network.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Statistic Features</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Feature name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">phasetd</span></code></p></td>
+<td><p>Use a histogram of expected phase and time differences, and amplitude ratio, for signals to determine a factor to be added for the signal rate.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sensitive_volume</span></code></p></td>
+<td><p>Signal rate is expected to be proportional to the cube of the sensitive distance. This feature adds a factor of <span class="math notranslate nohighlight">\(log(\sigma^3)\)</span> minus a benchmark value, to make this zero in many cases.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">normalize_fit_rate</span></code></p></td>
+<td><p>Normalise the exponential fits to use a rate rather than an absolute count of triggers. This means that statistics should be comparable over differently-sized analyses.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dq</span></code></p></td>
+<td><p>Apply a reweighting factor according to the rates of triggers during data-quality flags vs the rate outside this. Must supply a reranking file using <code class="docutils literal notranslate"><span class="pre">statistic-files</span></code> for each detector, with stat attribute ‘{detector}-dq_stat_info’</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kde</span></code></p></td>
+<td><p>Use a file to re-rank according to the signal and density rates calculated using a KDE approach. Must supply two reranking files using <code class="docutils literal notranslate"><span class="pre">statistic-files</span></code> with stat attributes ‘signal-kde_file’ and ‘template-kde_file’ respectively.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">chirp_mass</span></code></p></td>
+<td><p>Apply a factor of <span class="math notranslate nohighlight">\(log((M_c / 20) ^{11 / 3})\)</span> to the statistic. This makes the signal rate uniform over chirp mass, as this factor cancels out the power of -11 / 3 caused by differences in the density of template placement.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Statistic Keywords</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Keyword</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">benchmark_lograte</span></code></p></td>
+<td><p>This is a numerical factor to be subtracted from the log rate ratio in order to alter the dynamic range. Default -14.6.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">minimum_statistic_cutoff</span></code></p></td>
+<td><p>Cutoff for the statistic in order to avoid underflowing and very small statistic values. Default -30.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alpha_below_thresh</span></code></p></td>
+<td><p>The fit coefficient (alpha) below the fit threshold (defined in the fit_by_template jobs) will be replaced by a standard value. This is as below this threshold, Gaussian noise can dominate over the glitch response that dominates above the threshold, and rates will be underestimated, boosting quiet things in noisy templates. For Gaussian noise, this will be approximately 6 (the default). To use whatever the fit value is, supply alpha_below_thresh:None.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">reference_ifos</span></code></p></td>
+<td><p>If using the <code class="docutils literal notranslate"><span class="pre">sensitive_volume</span></code> feature, these are the detectors used to determine the benchmark value by which the sensitive volume is compared. We use the median sensitive volume in the network of detectors supplied. Default H1,L1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_chirp_mass</span></code></p></td>
+<td><p>If using the <code class="docutils literal notranslate"><span class="pre">chirp_mass</span></code> feature, this chirp mass defines a maximum weighting which can be applied to the statistic.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sngl_ranking_*</span></code></p></td>
+<td><p>This is used to provide the keyword arguments to functions in <a class="reference external" href="https://pycbc.org/pycbc/latest/html/_modules/pycbc/events/ranking.html">the events.ranking module</a>. For example, to use a different psdvar threshold in the newsnr_sgveto_psdvar_threshold function, we would use <code class="docutils literal notranslate"><span class="pre">sngl_ranking_psd_var_val_threshold:10</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../searches.html" class="btn btn-neutral float-left" title="PyCBC searches" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../inference.html" class="btn btn-neutral float-right" title="PyCBC inference documentation (pycbc.inference)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

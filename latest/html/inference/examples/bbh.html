@@ -1,0 +1,548 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulated BBH example &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="GW150914 example with gaussian noise model" href="gw150914.html" />
+    <link rel="prev" title="Running on an analytic distribution" href="analytic.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Simulated BBH example</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#create-the-injection">1. Create the injection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#setup-the-configuration-files">2. Setup the configuration files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#run">3. Run</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_ldc_pe.html">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">Simulated BBH example</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/bbh.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <span class="target" id="inference-example-bbh"></span><section id="simulated-bbh-example">
+<h1>Simulated BBH example<a class="headerlink" href="#simulated-bbh-example" title="Link to this heading"></a></h1>
+<p>This example recovers the parameters of a simulated binary black-hole (BBH)
+that has similar parameters has GW150914.</p>
+<section id="create-the-injection">
+<h2>1. Create the injection<a class="headerlink" href="#create-the-injection" title="Link to this heading"></a></h2>
+<p>First, we need to create an <code class="docutils literal notranslate"><span class="pre">injection.hdf</span></code> file that specifies the
+parameters of the simulated signal. To do that we will use
+<code class="docutils literal notranslate"><span class="pre">pycbc_create_injection</span></code>. Like <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pycbc_create_injections</span></code> uses a configuration file to set the parameters of
+the injections it will create. To create a binary-black hole with parameters
+similar to GW150914, use the following configuration file:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+
+<span class="k">[static_params]</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.420</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">37</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">32</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2.2</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.25</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2.5</span>
+<span class="na">coa_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.75</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">100</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">18</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomPv2</span>
+<span class="na">taper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">start</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/bbff9a69bbf714aa6cd5d5e5e20aac0f/injection.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Note the similarity to the configuration file for <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>: you must
+have a <code class="docutils literal notranslate"><span class="pre">[variable_params]</span></code> section. If we wanted to randomize one or more
+of the parameters, we would list them there, then add <code class="docutils literal notranslate"><span class="pre">[prior]</span></code> sections to
+specify what distribution to draw the parameters from. In this case, however,
+we want to fix the parameters, so we just put all of the necessary parameters
+in the <code class="docutils literal notranslate"><span class="pre">[static_params]</span></code> section.</p>
+<p>To create the injection file, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+pycbc_create_injections<span class="w"> </span>--verbose<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--config-files<span class="w"> </span>injection.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--ninjections<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--seed<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-file<span class="w"> </span>injection.hdf<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--variable-params-section<span class="w"> </span>variable_params<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--static-params-section<span class="w"> </span>static_params<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--dist-section<span class="w"> </span>prior<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--force
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/4c1dc660f9df4f24f548d214caa1b3d1/make_injection.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will create the <code class="docutils literal notranslate"><span class="pre">injection.hdf</span></code> file, which we will give to
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>. For more information on generating injection files, run
+<code class="docutils literal notranslate"><span class="pre">pycbc_create_injections</span> <span class="pre">--help</span></code>.</p>
+</section>
+<section id="setup-the-configuration-files">
+<h2>2. Setup the configuration files<a class="headerlink" href="#setup-the-configuration-files" title="Link to this heading"></a></h2>
+<p>Now we need to set up the configuration for <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code>. Since we
+will be analyzing data, we will need to provide several additional options in a
+<code class="docutils literal notranslate"><span class="pre">[data]</span></code> section. To keep the configuration files easy to read, we will split
+the data, sampler, and prior settings into their own configuration files.</p>
+<p>Here are the model and prior settings we will use:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">gaussian_noise</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20.0</span>
+
+<span class="k">[variable_params]</span>
+<span class="c1">; waveform parameters that will vary in MCMC</span>
+<span class="na">delta_tc</span><span class="w"> </span><span class="o">=</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span>
+<span class="na">spin1_a</span><span class="w"> </span><span class="o">=</span>
+<span class="na">spin1_azimuthal</span><span class="w"> </span><span class="o">=</span>
+<span class="na">spin1_polar</span><span class="w"> </span><span class="o">=</span>
+<span class="na">spin2_a</span><span class="w"> </span><span class="o">=</span>
+<span class="na">spin2_azimuthal</span><span class="w"> </span><span class="o">=</span>
+<span class="na">spin2_polar</span><span class="w"> </span><span class="o">=</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span>
+<span class="na">coa_phase</span><span class="w"> </span><span class="o">=</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span>
+<span class="na">ra</span><span class="w"> </span><span class="o">=</span>
+<span class="na">dec</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; waveform parameters that will not change in MCMC</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">IMRPhenomPv2</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+<span class="c1">; we&#39;ll set the tc by using the trigger time in the data</span>
+<span class="c1">; section of the config file + delta_tc</span>
+<span class="na">trigger_time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${data|trigger-time}</span>
+
+<span class="k">[prior-delta_tc]</span>
+<span class="c1">; coalescence time prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-delta_tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-0.1</span>
+<span class="na">max-delta_tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+
+<span class="k">[waveform_transforms-tc]</span>
+<span class="c1">; we need to provide tc to the waveform generator</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">custom</span>
+<span class="na">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">delta_tc</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">${data|trigger-time} + delta_tc</span>
+
+<span class="k">[prior-mass1]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10.</span>
+<span class="na">max-mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">80.</span>
+
+<span class="k">[prior-mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10.</span>
+<span class="na">max-mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">80.</span>
+
+<span class="k">[prior-spin1_a]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-spin1_a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0</span>
+<span class="na">max-spin1_a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.99</span>
+
+<span class="k">[prior-spin1_polar+spin1_azimuthal]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_solidangle</span>
+<span class="na">polar-angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1_polar</span>
+<span class="na">azimuthal-angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1_azimuthal</span>
+
+<span class="k">[prior-spin2_a]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-spin2_a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0</span>
+<span class="na">max-spin2_a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.99</span>
+
+<span class="k">[prior-spin2_polar+spin2_azimuthal]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_solidangle</span>
+<span class="na">polar-angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2_polar</span>
+<span class="na">azimuthal-angle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2_azimuthal</span>
+
+<span class="c1">; The waveform generator expects spins to be in cartesian coordinates, with</span>
+<span class="c1">; names spin(1|2)(x|y|z). We therefore need to provide a waveform transform</span>
+<span class="c1">; that converts the spherical coordinates that we have defined the spin prior</span>
+<span class="c1">; in to cartesian coordinates.</span>
+<span class="k">[waveform_transforms-spin1x+spin1y+spin1z]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spherical_to_cartesian</span>
+<span class="na">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1x</span>
+<span class="na">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1y</span>
+<span class="na">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1z</span>
+<span class="na">radial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1_a</span>
+<span class="na">polar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1_polar</span>
+<span class="na">azimuthal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin1_azimuthal</span>
+
+<span class="k">[waveform_transforms-spin2x+spin2y+spin2z]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spherical_to_cartesian</span>
+<span class="na">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2x</span>
+<span class="na">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2y</span>
+<span class="na">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2z</span>
+<span class="na">radial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2_a</span>
+<span class="na">polar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2_polar</span>
+<span class="na">azimuthal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">spin2_azimuthal</span>
+
+<span class="k">[prior-distance]</span>
+<span class="c1">; following gives a uniform volume prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_radius</span>
+<span class="na">min-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">10</span>
+<span class="na">max-distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="k">[prior-coa_phase]</span>
+<span class="c1">; coalescence phase prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+
+<span class="k">[prior-inclination]</span>
+<span class="c1">; inclination prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">sin_angle</span>
+
+<span class="k">[prior-ra+dec]</span>
+<span class="c1">; sky position prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_sky</span>
+
+<span class="k">[prior-polarization]</span>
+<span class="c1">; polarization prior</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform_angle</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/a4a29c7b648dd581082f2d751006902f/gw150914_like.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">[model]</span></code> section we have set the model to be <code class="docutils literal notranslate"><span class="pre">gaussian_noise</span></code>.  As
+described above, this is the standard model to use for CBC signals. It assumes
+that the noise is wide-sense stationary Gaussian noise. Notice that we provide
+a low frequency argument which is the lower bound for the likelihood integral.
+(See the <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a> docs for details.)</p>
+<p>The <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a> model will need to generate model waveforms in order to
+evaluate the likelihood. This means that we need to provide it with a waveform
+approximant to use. Which model to use is set by the <code class="docutils literal notranslate"><span class="pre">approximant</span></code> argument
+in the <code class="docutils literal notranslate"><span class="pre">[static_params]</span></code> section. Here, we are using <code class="docutils literal notranslate"><span class="pre">IMRPhenomPv2</span></code>. This
+is a frequency-domain, precessing model that uses the dominant,
+<span class="math notranslate nohighlight">\(\ell=|m|=2\)</span> mode. For this reason, we are varying all three components
+of each object’s spin, along with the masses, location, orientation, and phase
+of the signal.  We need to provide a lower frequency cutoff (<code class="docutils literal notranslate"><span class="pre">f_lower</span></code>),
+which is the starting frequency of the waveform. This must be <span class="math notranslate nohighlight">\(\leq\)</span> the
+smallest low frequency cutoff set in the model section.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this example we have to sample over a reference phase for the waveform
+(<code class="docutils literal notranslate"><span class="pre">coa_phase</span></code>). This is because we are using the <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.gaussian_noise.GaussianNoise" title="pycbc.inference.models.gaussian_noise.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a> model. For
+dominant-mode only waveforms, it is possible to analytically marginalize
+over the phase using the <a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise" title="pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">MarginalizedPhaseGaussianNoise</span></code></a> model. This can
+speed up the convergence of the sampler by a factor of 3 or faster. To use
+the marginalized phase model, change the model name to
+<code class="docutils literal notranslate"><span class="pre">marginalized_phase</span></code>, and remove <code class="docutils literal notranslate"><span class="pre">coa_phase</span></code> from the
+<code class="docutils literal notranslate"><span class="pre">variable_params</span></code> and the prior. However, the marginalized phase model
+should not be used with fully precessing models or models that include
+higher modes. You can use it with <code class="docutils literal notranslate"><span class="pre">IMRPhenomPv2</span></code> due to some
+simplifications that the approximant makes.</p>
+</div>
+<p>We also need a prior for the coaslesence time <code class="docutils literal notranslate"><span class="pre">tc</span></code>. We have done this by
+setting a reference time in the <code class="docutils literal notranslate"><span class="pre">static_params</span></code> section, and varying a
++/-0.1s window around it with the <code class="docutils literal notranslate"><span class="pre">delta_tc</span></code> parameter. Notice that the
+trigger time is not set to a value; instead, we reference the <code class="docutils literal notranslate"><span class="pre">trigger-time</span></code>
+option that is set in the <code class="docutils literal notranslate"><span class="pre">[data]</span></code> section. This way, we only need to set the
+trigger time in one place; we can reuse this prior file for different BBH
+events by simply providing a different data configuration file.</p>
+<p>Here is the data configuration file we will use:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1 L1</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1126259462.42</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-6</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2</span>
+<span class="c1">; strain settings</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2048</span>
+<span class="na">fake-strain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:aLIGOaLIGODesignSensitivityT1800044 L1:aLIGOaLIGODesignSensitivityT1800044</span>
+<span class="na">fake-strain-seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:44 L1:45</span>
+<span class="c1">; psd settings</span>
+<span class="na">psd-estimation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">median-mean</span>
+<span class="na">psd-inverse-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+<span class="na">psd-segment-stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4</span>
+<span class="na">psd-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-256</span>
+<span class="na">psd-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">256</span>
+<span class="c1">; even though we&#39;re making fake strain, the strain</span>
+<span class="c1">; module requires a channel to be provided, so we&#39;ll</span>
+<span class="c1">; just make one up</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">H1:STRAIN L1:STRAIN</span>
+<span class="c1">; Providing an injection file will cause a simulated</span>
+<span class="c1">; signal to be added to the data</span>
+<span class="na">injection-file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">injection.hdf</span>
+<span class="c1">; We&#39;ll use a high-pass filter so as not to get numerical errors from the large</span>
+<span class="c1">; amplitude low frequency noise. Here we use 15 Hz, which is safely below the</span>
+<span class="c1">; low frequency cutoff of our likelihood integral (20 Hz)</span>
+<span class="na">strain-high-pass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">15</span>
+<span class="c1">; The pad-data argument is for the high-pass filter: 8s are added to the</span>
+<span class="c1">; beginning/end of the analysis/psd times when the data is loaded. After the</span>
+<span class="c1">; high pass filter is applied, the additional time is discarded. This pad is</span>
+<span class="c1">; *in addition to* the time added to the analysis start/end time for the PSD</span>
+<span class="c1">; inverse length. Since it is discarded before the data is transformed for the</span>
+<span class="c1">; likelihood integral, it has little affect on the run time.</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/c52aede3bdd122cab25845b644d071cc/data.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>In this case, we are generating fake Gaussian noise (via the <code class="docutils literal notranslate"><span class="pre">fake-strain</span></code>
+option) that is colored by the <a class="reference external" href="https://dcc.ligo.org/LIGO-T1800044/public">Advanced LIGO updated design sensitivity curve</a>. (Note that this is ~3 times more
+sensitive than what the LIGO detectors were when GW150914 was detected.) The
+duration of data that will be analyzed is set by the
+<code class="docutils literal notranslate"><span class="pre">analysis-(start|end)-time</span></code> arguments. These values are measured with respect
+to the <code class="docutils literal notranslate"><span class="pre">trigger-time</span></code>. The analyzed data should be long enough such that it
+encompasses the longest waveform admitted by our prior, plus our timing
+uncertainty (which is determined by the prior on <code class="docutils literal notranslate"><span class="pre">delta_tc</span></code>). Waveform
+duration is approximately determined by the total mass of a system. The lowest
+total mass (<code class="docutils literal notranslate"><span class="pre">=</span> <span class="pre">mass1</span> <span class="pre">+</span> <span class="pre">mass2</span></code>) admitted by our prior is 20 solar masses. This
+corresponds to a duration of ~6 seconds, so we start the analysis time 6
+seconds before the trigger time. (See the <a class="reference internal" href="../../pycbc.waveform.html#module-pycbc.waveform" title="pycbc.waveform"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.waveform</span></code></a> module for
+utilities to estimate waveform duration.) Since the trigger time is
+approximately where we expect the merger to happen, we only need a small amount
+of time afterward to account for the timing uncertainty and ringdown. Here, we
+choose 2 seconds, which is a good safety margin.</p>
+<p>We also have to provide arguments for estimating a PSD. Although we know the
+exact shape of the PSD in this case, we will still estimate it from the
+generated data, as this most closely resembles what you do with a real event.
+To do this, we have set <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>  to <code class="docutils literal notranslate"><span class="pre">median-mean</span></code> and we have set
+<code class="docutils literal notranslate"><span class="pre">psd-segment-length</span></code>, <code class="docutils literal notranslate"><span class="pre">psd-segment-stride</span></code>, and <code class="docutils literal notranslate"><span class="pre">psd-(start|end)-time</span></code>
+(which are with respect to the trigger time). This means that a Welch-like
+method will be used to estimate the PSD. Specifically, we will use 512s of data
+centered on the trigger time to estimate the PSD. This time will be divided up
+into 8s-long segments (the segment length) each overlapping by 4s (the segment
+stride). The data in each segment will be transformed to the frequency domain.
+Two median values will be determined in each frequency bin from across all
+even/odd segments, then averaged to obtain the PSD.</p>
+<p>The beginning and end of the analysis segment will be corrupted by the
+convolution of the inverse PSD with the data. To limit the amount of time that
+is corrupted, we set <code class="docutils literal notranslate"><span class="pre">psd-inverse-length</span></code> to <code class="docutils literal notranslate"><span class="pre">8</span></code>. This limits the
+corruption to at most the first and last four seconds of the data segment.  To
+account for the corruption, <code class="docutils literal notranslate"><span class="pre">psd-inverse-length/2</span></code> seconds are
+subtracted/added by the code from/to the analysis start/end times specified by
+the user before the data are transformed to the frequency domain.
+Consequently, our data will have a frequency resolution of <span class="math notranslate nohighlight">\(\Delta f =
+1/16\,\)</span> Hz. The 4s at the beginning/end of the segment are effectively ignored
+since the waveform is contained entirely in the -6/+2s we set with the analysis
+start/end time.</p>
+<p>Finally, we will use the <code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code> sampler with the following settings:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">emcee_pt</span>
+<span class="na">nwalkers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">200</span>
+<span class="na">ntemps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">20</span>
+<span class="na">effective-nsamples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+<span class="na">checkpoint-interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2000</span>
+<span class="na">max-samples-per-chain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1000</span>
+
+<span class="k">[sampler-burn_in]</span>
+<span class="na">burn-in-test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nacl &amp; max_posterior</span>
+
+<span class="c1">;</span>
+<span class="c1">;   Sampling transforms</span>
+<span class="c1">;</span>
+<span class="k">[sampling_params]</span>
+<span class="c1">; parameters on the left will be sampled in</span>
+<span class="c1">; parametes on the right</span>
+<span class="na">mass1, mass2</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">mchirp, q</span>
+
+<span class="k">[sampling_transforms-mchirp+q]</span>
+<span class="c1">; inputs mass1, mass2</span>
+<span class="c1">; outputs mchirp, q</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mass1_mass2_to_mchirp_q</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/6afeaabe42f3f7fbbbc9d4ae50027fa9/emcee_pt-gw150914_like.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Here, we will use 200 walkers and 20 temperatures. We will checkpoint (i.e.,
+dump results to file) every 2000 iterations. Since we have provided an
+<code class="docutils literal notranslate"><span class="pre">effective-nsamples</span></code> argument and a <code class="docutils literal notranslate"><span class="pre">[sampler-burn_in]</span></code> section,
+<code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> will run until it has acquired 1000 independent samples
+after burn-in, which is determined by a combination of the <a class="reference internal" href="../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.nacl" title="pycbc.inference.burn_in.MCMCBurnInTests.nacl"><code class="xref py py-meth docutils literal notranslate"><span class="pre">nacl</span></code></a> and
+<a class="reference internal" href="../../pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.max_posterior" title="pycbc.inference.burn_in.MCMCBurnInTests.max_posterior"><code class="xref py py-meth docutils literal notranslate"><span class="pre">max_posterior</span></code></a> tests;
+i.e., the sampler will be considered converged when both of these tests are
+satisfied.</p>
+<p>The number of independent samples is checked at each checkpoint: after dumping
+the results, the burn-in test is applied and an autocorrelation length is
+calculated. The number of independent samples is then
+<code class="docutils literal notranslate"><span class="pre">nwalkers</span> <span class="pre">x</span> <span class="pre">(the</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">iterations</span> <span class="pre">since</span> <span class="pre">burn</span> <span class="pre">in)/ACL</span></code>. If this number
+exceeds <code class="docutils literal notranslate"><span class="pre">effective-nsamples</span></code>, <code class="docutils literal notranslate"><span class="pre">pycbc_inference</span></code> will finalize the results
+and exit.</p>
+</section>
+<section id="run">
+<h2>3. Run<a class="headerlink" href="#run" title="Link to this heading"></a></h2>
+<p>To perform the analysis, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+
+<span class="c1"># sampler parameters</span>
+<span class="nv">PRIOR_CONFIG</span><span class="o">=</span>gw150914_like.ini
+<span class="nv">DATA_CONFIG</span><span class="o">=</span>data.ini
+<span class="nv">SAMPLER_CONFIG</span><span class="o">=</span>emcee_pt-gw150914_like.ini
+<span class="nv">OUTPUT_PATH</span><span class="o">=</span>inference.hdf
+
+<span class="c1"># the following sets the number of cores to use; adjust as needed to</span>
+<span class="c1"># your computer&#39;s capabilities</span>
+<span class="nv">NPROCS</span><span class="o">=</span><span class="m">10</span>
+
+<span class="c1"># run sampler</span>
+<span class="c1"># Running with OMP_NUM_THREADS=1 stops lalsimulation</span>
+<span class="c1"># from spawning multiple jobs that would otherwise be used</span>
+<span class="c1"># by pycbc_inference and cause a reduced runtime.</span>
+<span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+pycbc_inference<span class="w"> </span>--verbose<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">12</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-file<span class="w"> </span><span class="si">${</span><span class="nv">PRIOR_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">DATA_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="si">${</span><span class="nv">SAMPLER_CONFIG</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span><span class="si">${</span><span class="nv">OUTPUT_PATH</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--nprocesses<span class="w"> </span><span class="si">${</span><span class="nv">NPROCS</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--force
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/a1fefb41acc88e3dd2fd71a8673a6a73/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Since we are generating waveforms and analyzing a 15 dimensional parameter
+space, this run will be much more computationally expensive than the <a class="reference internal" href="analytic.html#inference-example-analytic"><span class="std std-ref">analytic
+example</span></a>. We recommend running this on a cluster or a computer with a
+large number of cores. In the example, we have set the parallelization to use
+10 cores. With these settings, it should checkpoint approximately every hour or
+two. The run should complete in a few hours. If you would like to acquire more
+samples, increase <code class="docutils literal notranslate"><span class="pre">effective-nsamples</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We have found that the <code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code> sampler struggles to accumulate more
+than ~2000 independent samples with 200 walkers and 20 temps. The basic
+issue is that the ACT starts to grow at the same rate as new iterations,
+so that the number of independent samples remains the same. Increasing
+the number of walkers and decreasing the number of temperatures can help,
+but this sometimes leads to the sampler not fully converging before passing
+the burn in tests. If you want more than 2000 samples, we currently
+recommend doing multiple independent runs with different seed values, then
+combining posterior samples after they have finished.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analytic.html" class="btn btn-neutral float-left" title="Running on an analytic distribution" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gw150914.html" class="btn btn-neutral float-right" title="GW150914 example with gaussian noise model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

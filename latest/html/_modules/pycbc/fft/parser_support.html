@@ -1,0 +1,263 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft.parser_support &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.fft.parser_support</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.fft.parser_support</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Josh Willis, Andrew Miller</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This package provides a front-end to various fast Fourier transform</span>
+<span class="sd">implementations within PyCBC.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.backend_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_backend_modules</span><span class="p">,</span> <span class="n">get_backend_names</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.backend_support</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_backend</span><span class="p">,</span> <span class="n">get_backend</span>
+
+<span class="c1"># Next we add all of the machinery to set backends and their options</span>
+<span class="c1"># from the command line.</span>
+
+<div class="viewcode-block" id="insert_fft_option_group">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.parser_support.insert_fft_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_fft_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to choose an FFT backend. This should be used</span>
+<span class="sd">    if your program supports the ability to select the FFT backend; otherwise</span>
+<span class="sd">    you may simply call the fft and ifft functions and rely on default</span>
+<span class="sd">    choices.  This function will also attempt to add any options exported</span>
+<span class="sd">    by available backends through a function called insert_fft_options.</span>
+<span class="sd">    These submodule functions should take the fft_group object as argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fft_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;Options for selecting the&quot;</span>
+                                          <span class="s2">&quot; FFT backend and controlling its performance&quot;</span>
+                                          <span class="s2">&quot; in this program.&quot;</span><span class="p">)</span>
+    <span class="c1"># We have one argument to specify the backends.  This becomes the default list used</span>
+    <span class="c1"># if none is specified for a particular call of fft() of ifft().  Note that this</span>
+    <span class="c1"># argument expects a *list* of inputs, as indicated by the nargs=&#39;*&#39;.</span>
+    <span class="n">fft_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fft-backends&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Preference list of the FFT backends. &quot;</span>
+                           <span class="s2">&quot;Choices are: </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">get_backend_names</span><span class="p">()),</span>
+                      <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">[])</span>
+
+    <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="n">get_backend_modules</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">backend</span><span class="o">.</span><span class="n">insert_fft_options</span><span class="p">(</span><span class="n">fft_group</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="verify_fft_options">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.parser_support.verify_fft_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_fft_options</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the FFT options and verifies that they are</span>
+<span class="sd">       reasonable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes.</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">fft_backends</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">_all_backends</span> <span class="o">=</span> <span class="n">get_backend_names</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="n">opt</span><span class="o">.</span><span class="n">fft_backends</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">backend</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_all_backends</span><span class="p">:</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Backend </span><span class="si">{0}</span><span class="s2"> is not available&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backend</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">backend</span> <span class="ow">in</span> <span class="n">get_backend_modules</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">backend</span><span class="o">.</span><span class="n">verify_fft_options</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<span class="c1"># The following function is the only one that is designed</span>
+<span class="c1"># only to work with the active scheme.  We&#39;d like to fix that,</span>
+<span class="c1"># eventually, but it&#39;s non-trivial because of how poorly MKL</span>
+<span class="c1"># and FFTW cooperate.</span>
+
+<div class="viewcode-block" id="from_cli">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.parser_support.from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the command line options and sets the FFT backend</span>
+<span class="sd">    for each (available) scheme. Aside from setting the default</span>
+<span class="sd">    backed for this context, this function will also call (if</span>
+<span class="sd">    it exists) the from_cli function of the specified backends in</span>
+<span class="sd">    the *current* scheme; typically one would only call this function</span>
+<span class="sd">    once inside of a scheme context manager, but if it is desired</span>
+<span class="sd">    to perform FFTs both inside and outside of a context, then</span>
+<span class="sd">    this function would need to be called again.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt: object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with</span>
+<span class="sd">        the required attributes.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">set_backend</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">fft_backends</span><span class="p">)</span>
+
+    <span class="c1"># Eventually, we need to be able to parse command lines</span>
+    <span class="c1"># from more than just the current scheme&#39;s preference. But</span>
+    <span class="c1"># the big problem is that calling from_cli for more than one</span>
+    <span class="c1"># backend could cause interference; apparently, FFTW and MKL</span>
+    <span class="c1"># don&#39;t play nice unless FFTW has been compiled and linked</span>
+    <span class="c1"># with icc (and possibly numpy, scipy, and/or Python as well?)</span>
+
+    <span class="n">backend</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">backend</span><span class="o">.</span><span class="n">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

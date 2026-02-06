@@ -1,0 +1,433 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.matched_filter &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.matched_filter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.matched_filter</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Ian Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for setting up the matched-filtering stage of</span>
+<span class="sd">workflows. For details about this module and its capabilities see here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileList</span><span class="p">,</span> <span class="n">make_analysis_dir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.jobsetup</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">select_matchedfilter_class</span><span class="p">,</span>
+                                     <span class="n">sngl_ifo_job_setup</span><span class="p">,</span>
+                                     <span class="n">multi_ifo_coherent_job_setup</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.matched_filter&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="setup_matchedfltr_workflow">
+<a class="viewcode-back" href="../../../workflow/matched_filter.html#pycbc.workflow.matched_filter.setup_matchedfltr_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_matchedfltr_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                               <span class="n">tmplt_banks</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">injection_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    This function aims to be the gateway for setting up a set of matched-filter</span>
+<span class="sd">    jobs in a workflow. This function is intended to support multiple</span>
+<span class="sd">    different ways/codes that could be used for doing this. For now the only</span>
+<span class="sd">    supported sub-module is one that runs the matched-filtering by setting up</span>
+<span class="sd">    a serious of matched-filtering jobs, from one executable, to create</span>
+<span class="sd">    matched-filter triggers covering the full range of science times for which</span>
+<span class="sd">    there is data and a template bank file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    Workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The workflow instance that the coincidence jobs will be added to.</span>
+<span class="sd">    science_segs : ifo-keyed dictionary of igwn_segments.segmentlist instances</span>
+<span class="sd">        The list of times that are being analysed in this workflow.</span>
+<span class="sd">    datafind_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        An FileList of the datafind files that are needed to obtain the</span>
+<span class="sd">        data used in the analysis.</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        An FileList of the template bank files that will serve as input</span>
+<span class="sd">        in this stage.</span>
+<span class="sd">    output_dir : path</span>
+<span class="sd">        The directory in which output will be stored.</span>
+<span class="sd">    injection_file : pycbc.workflow.core.File, optional (default=None)</span>
+<span class="sd">        If given the file containing the simulation file to be sent to these</span>
+<span class="sd">        jobs on the command line. If not given no file will be sent.</span>
+<span class="sd">    tags : list of strings (optional, default = [])</span>
+<span class="sd">        A list of the tagging strings that will be used for all jobs created</span>
+<span class="sd">        by this call to the workflow. An example might be [&#39;BNSINJECTIONS&#39;] or</span>
+<span class="sd">        [&#39;NOINJECTIONANALYSIS&#39;]. This will be used in output names.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    inspiral_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        A list of output files written by this stage. This *will not* contain</span>
+<span class="sd">        any intermediate products produced within this stage of the workflow.</span>
+<span class="sd">        If you require access to any intermediate products produced at this</span>
+<span class="sd">        stage you can call the various sub-functions directly.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Entering matched-filtering setup module.&quot;</span><span class="p">)</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+
+    <span class="c1"># Parse for options in .ini file</span>
+    <span class="n">mfltrMethod</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-matchedfilter&quot;</span><span class="p">,</span> <span class="s2">&quot;matchedfilter-method&quot;</span><span class="p">,</span>
+                                  <span class="n">tags</span><span class="p">)</span>
+
+    <span class="c1"># Could have a number of choices here</span>
+    <span class="k">if</span> <span class="n">mfltrMethod</span> <span class="o">==</span> <span class="s2">&quot;WORKFLOW_INDEPENDENT_IFOS&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding matched-filter jobs to workflow.&quot;</span><span class="p">)</span>
+        <span class="n">inspiral_outs</span> <span class="o">=</span> <span class="n">setup_matchedfltr_dax_generated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span>
+                                      <span class="n">datafind_outs</span><span class="p">,</span> <span class="n">tmplt_banks</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                      <span class="n">injection_file</span><span class="o">=</span><span class="n">injection_file</span><span class="p">,</span>
+                                      <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">mfltrMethod</span> <span class="o">==</span> <span class="s2">&quot;WORKFLOW_MULTIPLE_IFOS&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding matched-filter jobs to workflow.&quot;</span><span class="p">)</span>
+        <span class="n">inspiral_outs</span> <span class="o">=</span> <span class="n">setup_matchedfltr_dax_generated_multi</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span>
+                                      <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span> <span class="n">tmplt_banks</span><span class="p">,</span>
+                                      <span class="n">output_dir</span><span class="p">,</span> <span class="n">injection_file</span><span class="o">=</span><span class="n">injection_file</span><span class="p">,</span>
+                                      <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Matched filter method not recognized. Must be one of &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leaving matched-filtering setup module.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inspiral_outs</span></div>
+
+
+<div class="viewcode-block" id="setup_matchedfltr_dax_generated">
+<a class="viewcode-back" href="../../../workflow/matched_filter.html#pycbc.workflow.matched_filter.setup_matchedfltr_dax_generated">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_matchedfltr_dax_generated</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                                    <span class="n">tmplt_banks</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                    <span class="n">injection_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                    <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup matched-filter jobs that are generated as part of the workflow.</span>
+<span class="sd">    This</span>
+<span class="sd">    module can support any matched-filter code that is similar in principle to</span>
+<span class="sd">    lalapps_inspiral, but for new codes some additions are needed to define</span>
+<span class="sd">    Executable and Job sub-classes (see jobutils.py).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The Workflow instance that the coincidence jobs will be added to.</span>
+<span class="sd">    science_segs : ifo-keyed dictionary of igwn_segments.segmentlist instances</span>
+<span class="sd">        The list of times that are being analysed in this workflow.</span>
+<span class="sd">    datafind_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        An FileList of the datafind files that are needed to obtain the</span>
+<span class="sd">        data used in the analysis.</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        An FileList of the template bank files that will serve as input</span>
+<span class="sd">        in this stage.</span>
+<span class="sd">    output_dir : path</span>
+<span class="sd">        The directory in which output will be stored.</span>
+<span class="sd">    injection_file : pycbc.workflow.core.File, optional (default=None)</span>
+<span class="sd">        If given the file containing the simulation file to be sent to these</span>
+<span class="sd">        jobs on the command line. If not given no file will be sent.</span>
+<span class="sd">    tags : list of strings (optional, default = [])</span>
+<span class="sd">        A list of the tagging strings that will be used for all jobs created</span>
+<span class="sd">        by this call to the workflow. An example might be [&#39;BNSINJECTIONS&#39;] or</span>
+<span class="sd">        [&#39;NOINJECTIONANALYSIS&#39;]. This will be used in output names.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    inspiral_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        A list of output files written by this stage. This *will not* contain</span>
+<span class="sd">        any intermediate products produced within this stage of the workflow.</span>
+<span class="sd">        If you require access to any intermediate products produced at this</span>
+<span class="sd">        stage you can call the various sub-functions directly.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Need to get the exe to figure out what sections are analysed, what is</span>
+    <span class="c1"># discarded etc. This should *not* be hardcoded, so using a new executable</span>
+    <span class="c1"># will require a bit of effort here ....</span>
+
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="n">science_segs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">match_fltr_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;executables&#39;</span><span class="p">,</span><span class="s1">&#39;inspiral&#39;</span><span class="p">))</span>
+    <span class="c1"># Select the appropriate class</span>
+    <span class="n">exe_class</span> <span class="o">=</span> <span class="n">select_matchedfilter_class</span><span class="p">(</span><span class="n">match_fltr_exe</span><span class="p">)</span>
+
+    <span class="c1"># Set up class for holding the banks</span>
+    <span class="n">inspiral_outs</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="c1"># Matched-filtering is done independently for different ifos, but might not be!</span>
+    <span class="c1"># If we want to use multi-detector matched-filtering or something similar to this</span>
+    <span class="c1"># it would probably require a new module</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up matched-filtering for </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+        <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;inspiral&#39;</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="n">ifo</span><span class="p">,</span>
+                                               <span class="n">out_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                               <span class="n">injection_file</span><span class="o">=</span><span class="n">injection_file</span><span class="p">,</span>
+                                               <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+        <span class="n">sngl_ifo_job_setup</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">inspiral_outs</span><span class="p">,</span> <span class="n">job_instance</span><span class="p">,</span>
+                           <span class="n">science_segs</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                           <span class="n">parents</span><span class="o">=</span><span class="n">tmplt_banks</span><span class="p">,</span> <span class="n">allow_overlap</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inspiral_outs</span></div>
+
+
+<div class="viewcode-block" id="setup_matchedfltr_dax_generated_multi">
+<a class="viewcode-back" href="../../../workflow/matched_filter.html#pycbc.workflow.matched_filter.setup_matchedfltr_dax_generated_multi">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_matchedfltr_dax_generated_multi</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                                          <span class="n">tmplt_banks</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span>
+                                          <span class="n">injection_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                          <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Setup matched-filter jobs that are generated as part of the workflow in</span>
+<span class="sd">    which a single job reads in and generates triggers over multiple ifos.</span>
+<span class="sd">    This module can support any matched-filter code that is similar in</span>
+<span class="sd">    principle to pycbc_multi_inspiral, but for new codes some additions are</span>
+<span class="sd">    needed to define Executable and Job sub-classes (see jobutils.py).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    workflow : pycbc.workflow.core.Workflow</span>
+<span class="sd">        The Workflow instance that the coincidence jobs will be added to.</span>
+<span class="sd">    science_segs : ifo-keyed dictionary of igwn_segments.segmentlist instances</span>
+<span class="sd">        The list of times that are being analysed in this workflow.</span>
+<span class="sd">    datafind_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        A FileList of the datafind files that are needed to obtain the</span>
+<span class="sd">        data used in the analysis, and (if requested by the user) the vetoes</span>
+<span class="sd">        File and (if requested by the user) the search sky-grid File.</span>
+<span class="sd">    tmplt_banks : pycbc.workflow.core.FileList</span>
+<span class="sd">        An FileList of the template bank files that will serve as input</span>
+<span class="sd">        in this stage.</span>
+<span class="sd">    output_dir : path</span>
+<span class="sd">        The directory in which output will be stored.</span>
+<span class="sd">    injection_file : pycbc.workflow.core.File, optional (default=None)</span>
+<span class="sd">        If given the file containing the simulation file to be sent to these</span>
+<span class="sd">        jobs on the command line. If not given no file will be sent.</span>
+<span class="sd">    tags : list of strings (optional, default = [])</span>
+<span class="sd">        A list of the tagging strings that will be used for all jobs created</span>
+<span class="sd">        by this call to the workflow. An example might be [&#39;BNSINJECTIONS&#39;] or</span>
+<span class="sd">        [&#39;NOINJECTIONANALYSIS&#39;]. This will be used in output names.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    inspiral_outs : pycbc.workflow.core.FileList</span>
+<span class="sd">        A list of output files written by this stage. This *will not* contain</span>
+<span class="sd">        any intermediate products produced within this stage of the workflow.</span>
+<span class="sd">        If you require access to any intermediate products produced at this</span>
+<span class="sd">        stage you can call the various sub-functions directly.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Need to get the exe to figure out what sections are analysed, what is</span>
+    <span class="c1"># discarded etc. This should *not* be hardcoded, so using a new executable</span>
+    <span class="c1"># will require a bit of effort here ....</span>
+
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">science_segs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">match_fltr_exe</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;executables&#39;</span><span class="p">,</span><span class="s1">&#39;inspiral&#39;</span><span class="p">))</span>
+
+    <span class="c1"># List for holding the output</span>
+    <span class="n">inspiral_outs</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setting up matched-filtering for </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ifos</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">match_fltr_exe</span> <span class="o">==</span> <span class="s1">&#39;pycbc_multi_inspiral&#39;</span><span class="p">:</span>
+        <span class="n">exe_class</span> <span class="o">=</span> <span class="n">select_matchedfilter_class</span><span class="p">(</span><span class="n">match_fltr_exe</span><span class="p">)</span>
+        <span class="n">bool_sg</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;make_sky_grid&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">description</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">datafind_outs</span><span class="p">]</span>
+        <span class="n">n_sg</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">bool_sg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_sg</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;inspiral&#39;</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">,</span>
+                   <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">))</span>
+            <span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;inspiral&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">,</span>
+                   <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">n_sg</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">datafind_outs</span><span class="si">}</span><span class="s1"> has </span><span class="si">{</span><span class="n">n_sg</span><span class="si">}</span><span class="s1"> sky-grid files, &#39;</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;instead of only one.&#39;</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="c1"># Code lines for Fermi GBM are commented out for the time being</span>
+        <span class="c1"># from pycbc.workflow.grb_utils import get_sky_grid_scale</span>
+        <span class="c1"># if cp.has_option(&quot;jitter_skyloc&quot;, &quot;apply-fermi-error&quot;):</span>
+        <span class="c1">#     cp.set(&#39;inspiral&#39;, &#39;sky-error&#39;,</span>
+        <span class="c1">#            str(get_sky_grid_scale(float(cp.get(&#39;workflow&#39;,</span>
+        <span class="c1">#                                                &#39;sky-error&#39;)))))</span>
+        <span class="c1"># else:</span>
+        <span class="c1">#     cp.set(&#39;inspiral&#39;, &#39;sky-error&#39;,</span>
+        <span class="c1">#            str(get_sky_grid_scale(float(cp.get(&#39;workflow&#39;,</span>
+        <span class="c1">#                                                &#39;sky-error&#39;)),</span>
+        <span class="c1">#                                   sigma_sys=0.0)))</span>
+        <span class="c1"># cp.set(&#39;inspiral&#39;, &#39;trigger-time&#39;,\</span>
+        <span class="c1">#        cp.get(&#39;workflow&#39;, &#39;trigger-time&#39;))</span>
+        <span class="c1"># cp.set(&#39;inspiral&#39;, &#39;block-duration&#39;,</span>
+        <span class="c1">#        str(abs(science_segs[ifos[0]][0]) - \</span>
+        <span class="c1">#                2 * int(cp.get(&#39;inspiral&#39;, &#39;pad-data&#39;))))</span>
+
+        <span class="n">job_instance</span> <span class="o">=</span> <span class="n">exe_class</span><span class="p">(</span><span class="n">workflow</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;inspiral&#39;</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="n">ifos</span><span class="p">,</span>
+                                 <span class="n">out_dir</span><span class="o">=</span><span class="n">output_dir</span><span class="p">,</span>
+                                 <span class="n">injection_file</span><span class="o">=</span><span class="n">injection_file</span><span class="p">,</span>
+                                 <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="s2">&quot;workflow&quot;</span><span class="p">,</span> <span class="s2">&quot;do-long-slides&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;slide&quot;</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">slide_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tags</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;slide&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Setting up matched-filtering for slide </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">slide_num</span>
+            <span class="p">)</span>
+            <span class="n">slide_shift</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inspiral&quot;</span><span class="p">,</span> <span class="s2">&quot;segment-length&quot;</span><span class="p">))</span>
+            <span class="n">time_slide_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="p">(</span><span class="n">slide_num</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ix</span> <span class="o">*</span> <span class="n">slide_shift</span>
+                               <span class="k">for</span> <span class="n">ix</span><span class="p">,</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ifos</span><span class="p">)}</span>
+            <span class="n">multi_ifo_coherent_job_setup</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inspiral_outs</span><span class="p">,</span> <span class="n">job_instance</span><span class="p">,</span>
+                                         <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                                         <span class="n">output_dir</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">tmplt_banks</span><span class="p">,</span>
+                                         <span class="n">slide_dict</span><span class="o">=</span><span class="n">time_slide_dict</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">multi_ifo_coherent_job_setup</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">inspiral_outs</span><span class="p">,</span> <span class="n">job_instance</span><span class="p">,</span>
+                                         <span class="n">science_segs</span><span class="p">,</span> <span class="n">datafind_outs</span><span class="p">,</span>
+                                         <span class="n">output_dir</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">tmplt_banks</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Select the appropriate class</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not currently supported.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inspiral_outs</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

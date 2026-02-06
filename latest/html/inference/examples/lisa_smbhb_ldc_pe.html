@@ -1,0 +1,390 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LISA parameter estimation for simulated SMBHB from LDC &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="LISA SMBHB injection and parameter estimation" href="lisa_smbhb_inj_pe.html" />
+    <link rel="prev" title="Using the hierarchical model" href="hierarchical.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#configuring-the-model-sampler-priors-and-data">Configuring the model, sampler, priors, and data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#advanced-configuration-settings">Advanced configuration settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#checkpointing-and-output-files">Checkpointing and output files</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../inference.html#examples">Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analytic.html">Running on an analytic distribution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bbh.html">Simulated BBH example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gw150914.html">GW150914 example with gaussian noise model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="margtime.html">Marginalized time model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="single.html">Using the single template model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="relative.html">Using the relative model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hierarchical.html">Using the hierarchical model</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">LISA parameter estimation for simulated SMBHB from LDC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lisa_smbhb_inj_pe.html">LISA SMBHB injection and parameter estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sampler_platter.html">Trying out different samplers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models.html">Details of common Models in PyCBC Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generate_calibration_config.html">Example: Generating calibration configuration file for GW150914 and GW170817</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#visualizing-the-posteriors">Visualizing the Posteriors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#workflows">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../inference.html#for-developers">For Developers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+      <li class="breadcrumb-item active">LISA parameter estimation for simulated SMBHB from LDC</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/inference/examples/lisa_smbhb_ldc_pe.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lisa-parameter-estimation-for-simulated-smbhb-from-ldc">
+<span id="inference-example-lisa-smbhb-ldc"></span><h1>LISA parameter estimation for simulated SMBHB from LDC<a class="headerlink" href="#lisa-parameter-estimation-for-simulated-smbhb-from-ldc" title="Link to this heading"></a></h1>
+<p>This example shows how to use PyCBC for parameter estimation of supermassive black hole binaries (SMBHB)
+in LISA mock data. The <a class="reference external" href="https://zenodo.org/record/7497853">data</a> are generated from
+<a class="reference external" href="https://lisa-ldc.lal.in2p3.fr/challenge2a">LISA Data Challenge 2a: Sangria</a>,
+and <a class="reference external" href="https://github.com/mikekatz04/BBHx">BBHx</a> package is used to generate the <code class="docutils literal notranslate"><span class="pre">IMRPhenomD</span></code> template and calculate
+the corresponding TDI response for LISA. Relative binning (heterodyned likelihood)
+is used during sampling to speed up the computation of likelihood functions. Before doing parameter estimation,
+you need to install <a class="reference external" href="https://github.com/mikekatz04/BBHx">BBHx</a> and <a class="reference external" href="https://github.com/gwastro/BBHX-waveform-model">the corresponding PyCBC waveform plugin</a>,
+please click the corresponding link to see the detailed description of the installation.</p>
+<p>First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters,
+<cite>tc</cite>, <cite>eclipticlongitude</cite>, <cite>eclipticlatitude</cite> and <cite>polarization</cite> are defined in the LISA frame:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[data]</span>
+<span class="na">instruments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A LISA_E LISA_T</span>
+<span class="na">trigger-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4800021.15572853</span>
+<span class="na">analysis-start-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-4800021</span>
+<span class="na">analysis-end-time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">26735978</span>
+<span class="na">pad-data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0</span>
+<span class="na">sample-rate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.2</span>
+<span class="na">psd-file</span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A:A_psd.txt LISA_E:E_psd.txt LISA_T:T_psd.txt</span>
+<span class="na">frame-files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A:A_TDI_v2.gwf LISA_E:E_TDI_v2.gwf LISA_T:T_TDI_v2.gwf</span>
+<span class="na">channel-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA_A:LA:LA LISA_E:LE:LE LISA_T:LT:LT</span>
+
+<span class="k">[model]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">relative</span>
+<span class="na">low-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0001</span>
+<span class="na">high-frequency-cutoff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-2</span>
+<span class="na">epsilon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.01</span>
+<span class="na">mass1_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1015522.4376</span>
+<span class="na">mass2_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">796849.1091</span>
+<span class="na">mchirp_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">781969.693924104</span>
+<span class="na">q_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.2744225048415756</span>
+<span class="na">tc_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4799624.274911478</span>
+<span class="na">distance_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">17758.367941273442</span>
+<span class="na">spin1z_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.597755394865021</span>
+<span class="na">spin2z_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.36905807298613247</span>
+<span class="na">inclination_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5970175301911231</span>
+
+<span class="k">[variable_params]</span>
+<span class="na">mchirp</span><span class="w"> </span><span class="o">=</span>
+<span class="na">q</span><span class="w"> </span><span class="o">=</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; LDC-Sangria uses TDI-1.5</span>
+<span class="na">tdi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5</span>
+<span class="na">ref_frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">BBHX_PhenomD</span>
+<span class="na">coa_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.275929308696054</span>
+<span class="na">eclipticlongitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5.4431083771985165</span>
+<span class="na">eclipticlatitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.2734504596198182</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.22558110042980073</span>
+<span class="na">spin1z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.597755394865021</span>
+<span class="na">spin2z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.36905807298613247</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">17758.367941273442</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5970175301911231</span>
+<span class="na">t_obs_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">31536000</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-4</span>
+<span class="c1">; Put LISA behind the Earth by ~20 degrees.</span>
+<span class="na">t_offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7365189.431698299</span>
+
+<span class="k">[prior-mchirp]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-mchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">703772.7245316936</span>
+<span class="na">max-mchirp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">860166.6633165143</span>
+
+<span class="k">[prior-q]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.1469802543574181</span>
+<span class="na">max-q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.401864755325733</span>
+
+<span class="k">[prior-tc]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">uniform</span>
+<span class="na">min-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4798221.15572853</span>
+<span class="na">max-tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4801821.15572853</span>
+
+<span class="k">[waveform_transforms-mass1+mass2]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">mchirp_q_to_mass1_mass2</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">dynesty</span>
+<span class="na">dlogz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+<span class="na">nlive</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">150</span>
+
+<span class="c1">; NOTE: While this example doesn&#39;t sample in polarization, if doing this we</span>
+<span class="c1">; recommend the following transformation, and then sampling in this coordinate</span>
+<span class="c1">;</span>
+<span class="c1">; [waveform_transforms-polarization]</span>
+<span class="c1">; name = custom</span>
+<span class="c1">; inputs = better_pol, eclipticlongitude</span>
+<span class="c1">; polarization = better_pol + eclipticlongitude</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/579bb478d5b214a0f304469206a3e8cb/lisa_smbhb_relbin.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>By setting the model name to <code class="docutils literal notranslate"><span class="pre">relative</span></code> we are using
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.relbin.Relative" title="pycbc.inference.models.relbin.Relative"><code class="xref py py-class docutils literal notranslate"><span class="pre">Relative</span></code></a> model.</p>
+<p>In this simple example, we do the parameter estimation for the first SMBHB signal in the LDC Sangria dataset
+(you can also run parameter estimation for other SMBHB signals by choosing appropriate prior range),
+we need download the data first (<cite>MBHB_params_v2_LISA_frame.pkl</cite> contains all the true parameters):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="w"> </span>-e
+
+download_if_absent<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<span class="w">    </span><span class="nb">local</span><span class="w"> </span><span class="nv">URL</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="nb">local</span><span class="w"> </span><span class="nv">FILENAME</span><span class="o">=</span><span class="k">$(</span>basename<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$URL</span><span class="s2">&quot;</span><span class="k">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>!<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$FILENAME</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Downloading </span><span class="nv">$FILENAME</span><span class="s2">&quot;</span>
+<span class="w">        </span>curl<span class="w"> </span>-O<span class="w"> </span>-L<span class="w"> </span>--show-error<span class="w"> </span>--silent<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$URL</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;File </span><span class="nv">$FILENAME</span><span class="s2"> already exists, download skipped&quot;</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="o">}</span>
+
+<span class="k">for</span><span class="w"> </span>channel<span class="w"> </span><span class="k">in</span><span class="w"> </span>A<span class="w"> </span>E<span class="w"> </span>T
+<span class="k">do</span>
+<span class="w">    </span><span class="nv">strain_file</span><span class="o">=</span><span class="si">${</span><span class="nv">channel</span><span class="si">}</span>_TDI_v2.gwf
+<span class="w">    </span>download_if_absent<span class="w"> </span>https://zenodo.org/record/7497853/files/<span class="si">${</span><span class="nv">strain_file</span><span class="si">}</span>
+
+<span class="w">    </span><span class="nv">psd_file</span><span class="o">=</span><span class="si">${</span><span class="nv">channel</span><span class="si">}</span>_psd.txt
+<span class="w">    </span>download_if_absent<span class="w"> </span>https://zenodo.org/record/7497853/files/<span class="si">${</span><span class="nv">psd_file</span><span class="si">}</span>
+<span class="k">done</span>
+
+<span class="nv">params_file</span><span class="o">=</span>MBHB_params_v2_LISA_frame.pkl<span class="w"> </span>
+download_if_absent<span class="w"> </span>https://zenodo.org/record/7497853/files/<span class="si">${</span><span class="nv">params_file</span><span class="si">}</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/b2cf9d55af524aa250078baa06b28957/get.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span>
+pycbc_inference<span class="w"> </span><span class="se">\</span>
+--config-files<span class="w"> </span><span class="sb">`</span>dirname<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$0</span><span class="s2">&quot;</span><span class="sb">`</span>/lisa_smbhb_relbin.ini<span class="w"> </span><span class="se">\</span>
+--output-file<span class="w"> </span>lisa_smbhb_ldc_pe.hdf<span class="w"> </span><span class="se">\</span>
+--nprocesses<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+--force<span class="w"> </span><span class="se">\</span>
+--verbose
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/bc7f2dc504b78724f4c2ec690f470d0c/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will run the <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> sampler. When it is done, you will have a file called
+<code class="docutils literal notranslate"><span class="pre">lisa_smbhb.hdf</span></code> which contains the results. It should take about three minutes to
+run.</p>
+<p>To plot the posterior distribution after the last iteration, you can run the following simplified script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_inference_plot_posterior<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--input-file<span class="w"> </span>lisa_smbhb_ldc_pe.hdf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>lisa_smbhb_mass_tc_0.png<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--z-arg<span class="w"> </span>snr<span class="w"> </span>--plot-scatter<span class="w"> </span>--plot-marginal<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot-contours<span class="w"> </span>--contour-color<span class="w"> </span>black<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--parameters<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass1_from_mchirp_q(mchirp,q)&#39;</span>:mass1<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass2_from_mchirp_q(mchirp,q)&#39;</span>:mass2<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tc<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--expected-parameters<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass1_from_mchirp_q(mchirp,q)&#39;</span>:1015522.4376<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span><span class="s1">&#39;mass2_from_mchirp_q(mchirp,q)&#39;</span>:796849.1091<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tc:4799624.274911478<span class="w"> </span><span class="se">\</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/267e8aab61a1d267928dca4f8588fe03/plot.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>Or you can run the advanced one:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">q_from_mass1_mass2</span><span class="p">,</span> <span class="n">mchirp_from_mass1_mass2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">spin_ldc2pycbc</span><span class="p">(</span><span class="n">mag</span><span class="p">,</span> <span class="n">pol</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">mag</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">pol</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">plt</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;./MBHB_params_v2_LISA_frame.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">params_true_all</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="n">p_index</span> <span class="o">=</span> <span class="n">index</span>
+    <span class="n">params_true</span> <span class="o">=</span> <span class="n">params_true_all</span><span class="p">[</span><span class="n">p_index</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">params_true</span><span class="p">)</span>
+
+    <span class="n">modes</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)]</span>
+
+    <span class="n">q</span> <span class="o">=</span> <span class="n">q_from_mass1_mass2</span><span class="p">(</span><span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Mass1&#39;</span><span class="p">],</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Mass2&#39;</span><span class="p">])</span>
+    <span class="n">mchirp</span> <span class="o">=</span> <span class="n">mchirp_from_mass1_mass2</span><span class="p">(</span><span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Mass1&#39;</span><span class="p">],</span><span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Mass2&#39;</span><span class="p">])</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;approximant&#39;</span><span class="p">:</span> <span class="s1">&#39;BBHX_PhenomD&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;mass1&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Mass1&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;mass2&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Mass2&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;inclination&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Inclination&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;tc_lisa&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;CoalescenceTime_LISA&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;polarization_lisa&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Polarization_LISA&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;spin1z&#39;</span><span class="p">:</span> <span class="n">spin_ldc2pycbc</span><span class="p">(</span><span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Spin1&#39;</span><span class="p">],</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;PolarAngleOfSpin1&#39;</span><span class="p">]),</span>
+              <span class="s1">&#39;spin2z&#39;</span><span class="p">:</span> <span class="n">spin_ldc2pycbc</span><span class="p">(</span><span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Spin2&#39;</span><span class="p">],</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;PolarAngleOfSpin2&#39;</span><span class="p">]),</span>
+              <span class="s1">&#39;coa_phase&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;PhaseAtCoalescence&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;distance&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;Distance&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;eclipticlatitude_lisa&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;EclipticLatitude_LISA&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;eclipticlongitude_lisa&#39;</span><span class="p">:</span> <span class="n">params_true</span><span class="p">[</span><span class="s1">&#39;EclipticLongitude_LISA&#39;</span><span class="p">],</span>
+              <span class="s1">&#39;mchirp&#39;</span><span class="p">:</span> <span class="n">mchirp</span><span class="p">,</span>
+              <span class="s1">&#39;q&#39;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span>
+              <span class="s1">&#39;mode_array&#39;</span><span class="p">:</span> <span class="n">modes</span>
+            <span class="p">}</span>
+
+    <span class="n">plot_code</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                pycbc_inference_plot_posterior </span><span class="se">\</span>
+<span class="s2">                --input-file lisa_smbhb_ldc_pe.hdf </span><span class="se">\</span>
+<span class="s2">                --output-file lisa_smbhb_mass_tc_</span><span class="si">{</span><span class="n">p_index</span><span class="si">}</span><span class="s2">.png </span><span class="se">\</span>
+<span class="s2">                --z-arg snr --plot-scatter --plot-marginal </span><span class="se">\</span>
+<span class="s2">                --plot-contours --contour-color black </span><span class="se">\</span>
+<span class="s2">                --parameters </span><span class="se">\</span>
+<span class="s2">                    mass1_from_mchirp_q(mchirp,q):mass1 </span><span class="se">\</span>
+<span class="s2">                    mass2_from_mchirp_q(mchirp,q):mass2 </span><span class="se">\</span>
+<span class="s2">                    tc </span><span class="se">\</span>
+<span class="s2">                --expected-parameters </span><span class="se">\</span>
+<span class="s2">                    mass1_from_mchirp_q(mchirp,q):</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                    mass2_from_mchirp_q(mchirp,q):</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                    tc:</span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;tc_lisa&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\</span>
+<span class="s2">                &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">plot_code</span>
+
+<span class="c1"># The index of first SMBHB in LDC Sangria (0-14) is 0.</span>
+<span class="n">p</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+    <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">plt</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(),</span> <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">output</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;rel</span><span class="si">{}</span><span class="s1"> image created&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/a032293bba876fad3d899b68ce4891b2/advanced_plot.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>You can modify this advanced plot script to generate the posterior of any SMBHB signals in the LDC Sangria dataset.
+In this example it will create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/lisa_smbhb_mass_tc_0.png"><img alt="../../_images/lisa_smbhb_mass_tc_0.png" class="align-center" src="../../_images/lisa_smbhb_mass_tc_0.png" style="width: 526.8px; height: 386.4px;" />
+</a>
+<p>The scatter points show each walker’s position after the last iteration. The
+points are colored by the SNR at that point, with the 50th and 90th
+percentile contours drawn. The red lines represent the true parameters of injected signal.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hierarchical.html" class="btn btn-neutral float-left" title="Using the hierarchical model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lisa_smbhb_inj_pe.html" class="btn btn-neutral float-right" title="LISA SMBHB injection and parameter estimation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

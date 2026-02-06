@@ -1,0 +1,406 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.qnm &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.qnm</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.qnm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018 Miriam Cabero, Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span><span class="p">,</span> <span class="n">boundaries</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">bounded</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.qnm&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UniformF0Tau">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.qnm.UniformF0Tau">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UniformF0Tau</span><span class="p">(</span><span class="n">uniform</span><span class="o">.</span><span class="n">Uniform</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distribution uniform in QNM frequency and damping time.</span>
+
+<span class="sd">    Constraints may be placed to exclude frequencies and damping times</span>
+<span class="sd">    corresponding to specific masses and spins.</span>
+
+<span class="sd">    To ensure a properly normalized pdf that accounts for the constraints</span>
+<span class="sd">    on final mass and spin, a renormalization factor is calculated upon</span>
+<span class="sd">    initialization. This is calculated numerically: f0 and tau are drawn</span>
+<span class="sd">    randomly, then the norm is scaled by the fraction of points that yield</span>
+<span class="sd">    final masses and spins within the constraints. The `norm_tolerance` keyword</span>
+<span class="sd">    arguments sets the error on the estimate of the norm from this numerical</span>
+<span class="sd">    method. If this value is too large, such that no points are found in</span>
+<span class="sd">    the allowed region, a ValueError is raised.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f0 : tuple or boundaries.Bounds</span>
+<span class="sd">        The range of QNM frequencies (in Hz).</span>
+<span class="sd">    tau : tuple or boundaries.Bounds</span>
+<span class="sd">        The range of QNM damping times (in s).</span>
+<span class="sd">    final_mass : tuple or boundaries.Bounds, optional</span>
+<span class="sd">        The range of final masses to allow. Default is [0,inf).</span>
+<span class="sd">    final_spin : tuple or boundaries.Bounds, optional</span>
+<span class="sd">        The range final spins to allow. Must be in [-0.996, 0.996], which is</span>
+<span class="sd">        the default.</span>
+<span class="sd">    rdfreq : str, optional</span>
+<span class="sd">        Use the given string as the name for the f0 parameter. Default is &#39;f0&#39;.</span>
+<span class="sd">    damping_time : str, optional</span>
+<span class="sd">        Use the given string as the name for the tau parameter. Default is</span>
+<span class="sd">        &#39;tau&#39;.</span>
+<span class="sd">    norm_tolerance : float, optional</span>
+<span class="sd">        The tolerance on the estimate of the normalization. Default is 1e-3.</span>
+<span class="sd">    norm_seed : int, optional</span>
+<span class="sd">        Seed to use for the random number generator when estimating the norm.</span>
+<span class="sd">        Default is 0. After the norm is estimated, the random number generator</span>
+<span class="sd">        is set back to the state it was in upon initialization.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    Create a distribution:</span>
+
+<span class="sd">    &gt;&gt;&gt; dist = UniformF0Tau(f0=(10., 2048.), tau=(1e-4,1e-2))</span>
+
+<span class="sd">    Check that all random samples drawn from the distribution yield final</span>
+<span class="sd">    masses &gt; 1:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc import conversions</span>
+<span class="sd">    &gt;&gt;&gt; samples = dist.rvs(size=1000)</span>
+<span class="sd">    &gt;&gt;&gt; (conversions.final_mass_from_f0_tau(samples[&#39;f0&#39;],</span>
+<span class="sd">            samples[&#39;tau&#39;]) &gt; 1.).all()</span>
+<span class="sd">    True</span>
+
+<span class="sd">    Create a distribution with tighter bounds on final mass and spin:</span>
+
+<span class="sd">    &gt;&gt;&gt; dist = UniformF0Tau(f0=(10., 2048.), tau=(1e-4,1e-2),</span>
+<span class="sd">            final_mass=(20., 200.), final_spin=(0,0.996))</span>
+
+<span class="sd">    Check that all random samples drawn from the distribution are in the</span>
+<span class="sd">    final mass and spin constraints:</span>
+
+<span class="sd">    &gt;&gt;&gt; samples = dist.rvs(size=1000)</span>
+<span class="sd">    &gt;&gt;&gt; (conversions.final_mass_from_f0_tau(samples[&#39;f0&#39;],</span>
+<span class="sd">            samples[&#39;tau&#39;]) &gt;= 20.).all()</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; (conversions.final_mass_from_f0_tau(samples[&#39;f0&#39;],</span>
+<span class="sd">            samples[&#39;tau&#39;]) &lt; 200.).all()</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; (conversions.final_spin_from_f0_tau(samples[&#39;f0&#39;],</span>
+<span class="sd">            samples[&#39;tau&#39;]) &gt;= 0.).all()</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; (conversions.final_spin_from_f0_tau(samples[&#39;f0&#39;],</span>
+<span class="sd">            samples[&#39;tau&#39;]) &lt; 0.996).all()</span>
+<span class="sd">    True</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;uniform_f0_tau&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">final_mass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">final_spin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">rdfreq</span><span class="o">=</span><span class="s1">&#39;f0&#39;</span><span class="p">,</span> <span class="n">damping_time</span><span class="o">=</span><span class="s1">&#39;tau&#39;</span><span class="p">,</span> <span class="n">norm_tolerance</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                 <span class="n">norm_seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">f0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must provide a range for f0&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tau</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must provide a range for tau&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rdfreq</span> <span class="o">=</span> <span class="n">rdfreq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">damping_time</span> <span class="o">=</span> <span class="n">damping_time</span>
+        <span class="n">parent_args</span> <span class="o">=</span> <span class="p">{</span><span class="n">rdfreq</span><span class="p">:</span> <span class="n">f0</span><span class="p">,</span> <span class="n">damping_time</span><span class="p">:</span> <span class="n">tau</span><span class="p">}</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">UniformF0Tau</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">parent_args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">final_mass</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">final_mass</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">final_spin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">final_spin</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.996</span><span class="p">,</span> <span class="mf">0.996</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_mass_bounds</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span>
+            <span class="n">min_bound</span><span class="o">=</span><span class="n">final_mass</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_bound</span><span class="o">=</span><span class="n">final_mass</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_spin_bounds</span> <span class="o">=</span> <span class="n">boundaries</span><span class="o">.</span><span class="n">Bounds</span><span class="p">(</span>
+            <span class="n">min_bound</span><span class="o">=</span><span class="n">final_spin</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_bound</span><span class="o">=</span><span class="n">final_spin</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="c1"># Re-normalize to account for cuts: we&#39;ll do this by just sampling</span>
+        <span class="c1"># a large number of spaces f0 taus, and seeing how many are in the</span>
+        <span class="c1"># desired range.</span>
+        <span class="c1"># perseve the current random state</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">norm_seed</span><span class="p">)</span>
+        <span class="n">nsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">norm_tolerance</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">draws</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">UniformF0Tau</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">nsamples</span><span class="p">)</span>
+        <span class="c1"># reset the random state</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_state</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">num_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">draws</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="c1"># if num_in is 0, than the requested tolerance is too large</span>
+        <span class="k">if</span> <span class="n">num_in</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;the normalization is &lt; then the norm_tolerance; &quot;</span>
+                             <span class="s2">&quot;try again with a smaller nrom_tolerance&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span> <span class="o">+=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">num_in</span><span class="p">)</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">nsamples</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lognorm</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="n">isin</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">UniformF0Tau</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">isin</span><span class="p">:</span>
+            <span class="n">isin</span> <span class="o">&amp;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">isin</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="n">f0</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rdfreq</span><span class="p">]</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">damping_time</span><span class="p">]</span>
+        <span class="c1"># check if we need to specify a particular mode (l,m) != (2,2)</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;f_\d</span><span class="si">{3}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rdfreq</span><span class="p">):</span>
+            <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rdfreq</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;f_&#39;</span><span class="p">)</span>
+            <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">mode</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span>
+        <span class="c1"># temporarily silence invalid warnings... these will just be ruled out</span>
+        <span class="c1"># automatically</span>
+        <span class="k">with</span> <span class="n">numpy</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">mf</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">final_mass_from_f0_tau</span><span class="p">(</span><span class="n">f0</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">sf</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">final_spin_from_f0_tau</span><span class="p">(</span><span class="n">f0</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">)</span>
+            <span class="n">isin</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">final_mass_bounds</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">mf</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">final_spin_bounds</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">sf</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">isin</span>
+
+<div class="viewcode-block" id="UniformF0Tau.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.qnm.UniformF0Tau.rvs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Draw random samples from this distribution.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        size : int, optional</span>
+<span class="sd">            The number of draws to do. Default is 1.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array</span>
+<span class="sd">            A structured array of the random draws.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="p">[(</span><span class="n">p</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">]</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">remaining</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="n">keepidx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">remaining</span><span class="p">:</span>
+            <span class="n">draws</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">UniformF0Tau</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">remaining</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="p">(</span><span class="n">draws</span><span class="p">)</span>
+            <span class="n">addpts</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">keepidx</span><span class="p">:</span><span class="n">keepidx</span><span class="o">+</span><span class="n">addpts</span><span class="p">]</span> <span class="o">=</span> <span class="n">draws</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+            <span class="n">keepidx</span> <span class="o">+=</span> <span class="n">addpts</span>
+            <span class="n">remaining</span> <span class="o">=</span> <span class="n">size</span> <span class="o">-</span> <span class="n">keepidx</span>
+        <span class="k">return</span> <span class="n">arr</span></div>
+
+
+<div class="viewcode-block" id="UniformF0Tau.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.qnm.UniformF0Tau.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize this class from a config file.</span>
+
+<span class="sd">        Bounds on ``f0``, ``tau``, ``final_mass`` and ``final_spin`` should</span>
+<span class="sd">        be specified by providing ``min-{param}`` and ``max-{param}``. If</span>
+<span class="sd">        the ``f0`` or ``tau`` param should be renamed, ``rdfreq`` and</span>
+<span class="sd">        ``damping_time`` should be provided; these must match</span>
+<span class="sd">        ``variable_args``. If ``rdfreq`` and ``damping_time`` are not</span>
+<span class="sd">        provided, ``variable_args`` are expected to be ``f0`` and ``tau``.</span>
+
+<span class="sd">        Only ``min/max-f0`` and ``min/max-tau`` need to be provided.</span>
+
+<span class="sd">        Example:</span>
+
+<span class="sd">        .. code-block:: ini</span>
+
+<span class="sd">            [{section}-f0+tau]</span>
+<span class="sd">            name = uniform_f0_tau</span>
+<span class="sd">            min-f0 = 10</span>
+<span class="sd">            max-f0 = 2048</span>
+<span class="sd">            min-tau = 0.0001</span>
+<span class="sd">            max-tau = 0.010</span>
+<span class="sd">            min-final_mass = 10</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : pycbc.workflow.WorkflowConfigParser</span>
+<span class="sd">            WorkflowConfigParser instance to read.</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to read.</span>
+<span class="sd">        variable_args : str</span>
+<span class="sd">            The name of the variable args. These should be separated by</span>
+<span class="sd">            ``pycbc.VARARGS_DELIM``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        UniformF0Tau :</span>
+<span class="sd">            This class initialized with the parameters provided in the config</span>
+<span class="sd">            file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+        <span class="n">variable_args</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pycbc</span><span class="o">.</span><span class="n">VARARGS_DELIM</span><span class="p">))</span>
+        <span class="c1"># get f0 and tau</span>
+        <span class="n">f0</span> <span class="o">=</span> <span class="n">bounded</span><span class="o">.</span><span class="n">get_param_bounds_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;f0&#39;</span><span class="p">)</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">bounded</span><span class="o">.</span><span class="n">get_param_bounds_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;tau&#39;</span><span class="p">)</span>
+        <span class="c1"># see if f0 and tau should be renamed</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;rdfreq&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">rdfreq</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;rdfreq&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rdfreq</span> <span class="o">=</span> <span class="s1">&#39;f0&#39;</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;damping_time&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">damping_time</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;damping_time&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">damping_time</span> <span class="o">=</span> <span class="s1">&#39;tau&#39;</span>
+        <span class="c1"># check that they match whats in the variable args</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">variable_args</span> <span class="o">==</span> <span class="nb">set</span><span class="p">([</span><span class="n">rdfreq</span><span class="p">,</span> <span class="n">damping_time</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;variable args do not match rdfreq and &quot;</span>
+                             <span class="s2">&quot;damping_time names&quot;</span><span class="p">)</span>
+        <span class="c1"># get the final mass and spin values, if provided</span>
+        <span class="n">final_mass</span> <span class="o">=</span> <span class="n">bounded</span><span class="o">.</span><span class="n">get_param_bounds_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;final_mass&#39;</span><span class="p">)</span>
+        <span class="n">final_spin</span> <span class="o">=</span> <span class="n">bounded</span><span class="o">.</span><span class="n">get_param_bounds_from_config</span><span class="p">(</span>
+            <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;final_spin&#39;</span><span class="p">)</span>
+        <span class="n">extra_opts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;norm_tolerance&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">extra_opts</span><span class="p">[</span><span class="s1">&#39;norm_tolerance&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;norm_tolerance&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;norm_seed&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+            <span class="n">extra_opts</span><span class="p">[</span><span class="s1">&#39;norm_seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;norm_seed&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">f0</span><span class="o">=</span><span class="n">f0</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="n">tau</span><span class="p">,</span>
+                   <span class="n">final_mass</span><span class="o">=</span><span class="n">final_mass</span><span class="p">,</span> <span class="n">final_spin</span><span class="o">=</span><span class="n">final_spin</span><span class="p">,</span>
+                   <span class="n">rdfreq</span><span class="o">=</span><span class="n">rdfreq</span><span class="p">,</span> <span class="n">damping_time</span><span class="o">=</span><span class="n">damping_time</span><span class="p">,</span>
+                   <span class="o">**</span><span class="n">extra_opts</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

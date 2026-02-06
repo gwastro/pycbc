@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.metadata &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.metadata</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.metadata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This Module contains generic utility functions for creating plots within</span>
+<span class="sd">PyCBC.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span><span class="o">,</span><span class="w"> </span><span class="nn">pycbc.version</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">configparser</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ConfigParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">html.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTMLParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">xml.sax.saxutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">escape</span><span class="p">,</span> <span class="n">unescape</span>
+
+<span class="n">escape_table</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;&quot;&#39;</span><span class="p">:</span> <span class="s2">&quot;&amp;quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;&#39;&quot;</span><span class="p">:</span> <span class="s2">&quot;&amp;apos;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;@&quot;</span><span class="p">:</span> <span class="s2">&quot;&amp;#64;&quot;</span><span class="p">,</span>
+                <span class="p">}</span>
+<span class="n">unescape_table</span> <span class="o">=</span> <span class="p">{</span>
+                  <span class="s2">&quot;&amp;#64;&quot;</span> <span class="p">:</span> <span class="s2">&quot;@&quot;</span><span class="p">,</span>
+                 <span class="p">}</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">escape_table</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">unescape_table</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span>
+
+<div class="viewcode-block" id="html_escape">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.html_escape">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">html_escape</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Sanitize text for html parsing &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">escape</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">escape_table</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MetaParser">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.MetaParser">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetaParser</span><span class="p">(</span><span class="n">HTMLParser</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">HTMLParser</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MetaParser.handle_data">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.MetaParser.handle_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MetaParser.handle_starttag">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.MetaParser.handle_starttag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_starttag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+        <span class="n">attr</span><span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">attr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="s1">&#39;div&#39;</span> <span class="ow">and</span> <span class="s1">&#39;class&#39;</span> <span class="ow">in</span> <span class="n">attr</span> <span class="ow">and</span> <span class="n">attr</span><span class="p">[</span><span class="s1">&#39;class&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;pycbc-meta&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="n">attr</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unescape</span><span class="p">(</span><span class="n">attr</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">unescape_table</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="save_html_with_metadata">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.save_html_with_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_html_with_metadata</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig_kwds</span><span class="p">,</span> <span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Save a html output to file with metadata &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">fig</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">mpld3</span><span class="w"> </span><span class="kn">import</span> <span class="n">fig_to_html</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">fig_to_html</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kwds</span><span class="p">)</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">escape_table</span><span class="p">)</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="s2">&quot;&lt;div class=pycbc-meta key=</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2"> value=</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s2">&gt;&lt;/div&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_html_metadata">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.load_html_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_html_metadata</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Get metadata from html file &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">MetaParser</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="s1">&#39;pycbc-meta&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;LOADING HTML FILE </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">cp</span></div>
+
+
+<div class="viewcode-block" id="save_png_with_metadata">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.save_png_with_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_png_with_metadata</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig_kwds</span><span class="p">,</span> <span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Save a matplotlib figure to a png with metadata</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">PngImagePlugin</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kwds</span><span class="p">)</span>
+
+    <span class="n">im</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">PngImagePlugin</span><span class="o">.</span><span class="n">PngInfo</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">:</span>
+        <span class="n">meta</span><span class="o">.</span><span class="n">add_text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
+
+    <span class="n">im</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;png&quot;</span><span class="p">,</span> <span class="n">pnginfo</span><span class="o">=</span><span class="n">meta</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="save_pdf_with_metadata">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.save_pdf_with_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_pdf_with_metadata</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig_kwds</span><span class="p">,</span> <span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save a matplotlib figure to a PDF file with metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># https://stackoverflow.com/a/17462125</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.backends.backend_pdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PdfPages</span>
+
+    <span class="k">with</span> <span class="n">PdfPages</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">pdfp</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pdfp</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">fig_kwds</span><span class="p">)</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">pdfp</span><span class="o">.</span><span class="n">infodict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;title&#39;</span><span class="p">:</span>
+                <span class="c1"># map the title to the official PDF keyword (capitalized)</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;Title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwds</span><span class="p">[</span><span class="n">key</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="load_png_metadata">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.load_png_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_png_metadata</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">info</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">cp</span></div>
+
+
+<span class="n">_metadata_saver</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;.png&#39;</span><span class="p">:</span> <span class="n">save_png_with_metadata</span><span class="p">,</span>
+                   <span class="s1">&#39;.html&#39;</span><span class="p">:</span> <span class="n">save_html_with_metadata</span><span class="p">,</span>
+                   <span class="s1">&#39;.pdf&#39;</span><span class="p">:</span> <span class="n">save_pdf_with_metadata</span><span class="p">,</span>
+                  <span class="p">}</span>
+<span class="n">_metadata_loader</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;.png&#39;</span><span class="p">:</span> <span class="n">load_png_metadata</span><span class="p">,</span>
+                    <span class="s1">&#39;.html&#39;</span><span class="p">:</span> <span class="n">load_html_metadata</span><span class="p">,</span>
+                   <span class="p">}</span>
+
+<div class="viewcode-block" id="save_fig_with_metadata">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.save_fig_with_metadata">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig_with_metadata</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig_kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Save plot to file with metadata included. Kewords translate to metadata</span>
+<span class="sd">    that is stored directly in the plot file. Limited format types available.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fig: matplotlib figure</span>
+<span class="sd">        The matplotlib figure to save to the file</span>
+<span class="sd">    filename: str</span>
+<span class="sd">        Name of file to store the plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fig_kwds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig_kwds</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">kwds</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">git_verbose_msg</span>
+        <span class="n">_metadata_saver</span><span class="p">[</span><span class="n">extension</span><span class="p">](</span><span class="n">fig</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">fig_kwds</span><span class="p">,</span> <span class="n">kwds</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Cannot save file </span><span class="si">%s</span><span class="s1"> with metadata, extension </span><span class="si">%s</span><span class="s1"> not &#39;</span>
+                        <span class="s1">&#39;supported at this time&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">extension</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="load_metadata_from_file">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.metadata.load_metadata_from_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_metadata_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Load the plot related metadata saved in a file</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename: str</span>
+<span class="sd">        Name of file load metadata from.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cp: ConfigParser</span>
+<span class="sd">        A configparser object containing the metadata</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">_metadata_loader</span><span class="p">[</span><span class="n">extension</span><span class="p">](</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Cannot read metadata from file </span><span class="si">%s</span><span class="s1">, extension </span><span class="si">%s</span><span class="s1"> not &#39;</span>
+                        <span class="s1">&#39;supported at this time&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">extension</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,786 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.types.frequencyseries &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.types.frequencyseries</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.types.frequencyseries</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Tito Dal Canton, Josh Willis</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides a class representing a frequency series.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types.array</span><span class="w"> </span><span class="kn">import</span> <span class="n">Array</span><span class="p">,</span> <span class="n">_convert</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">_noreal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">determine_epoch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">float64</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_optional</span>
+
+<span class="n">_lal</span> <span class="o">=</span> <span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lal&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FrequencySeries">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FrequencySeries</span><span class="p">(</span><span class="n">Array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Models a frequency series consisting of uniformly sampled scalar values.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    initial_array : array-like</span>
+<span class="sd">        Array containing sampled data.</span>
+<span class="sd">    delta_f : float</span>
+<span class="sd">        Frequency between consecutive samples in Hertz.</span>
+<span class="sd">    epoch : {None, lal.LIGOTimeGPS, float64}, optional</span>
+<span class="sd">        Start time of the associated time domain data in seconds.</span>
+<span class="sd">    dtype : {None, data-type}, optional</span>
+<span class="sd">        Sample data type.</span>
+<span class="sd">    copy : boolean, optional</span>
+<span class="sd">        If True, samples are copied to a new array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_array</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">initial_array</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;initial_array must contain at least one sample.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">delta_f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">delta_f</span> <span class="o">=</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">delta_f</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;must provide either an initial_array with a delta_f attribute, or a value for delta_f&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">delta_f</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;delta_f must be a positive number&#39;</span><span class="p">)</span>
+
+        <span class="n">Array</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_array</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span> <span class="o">=</span> <span class="n">delta_f</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">determine_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">initial_array</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_return</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ary</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">ary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_typecheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">FrequencySeries</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_numpy</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_almost_equal</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">,</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;different delta_f&#39;</span><span class="p">)</span>
+            <span class="c1"># consistency of _epoch is not required because we may want</span>
+            <span class="c1"># to combine frequency series estimated at different times</span>
+            <span class="c1"># (e.g. PSD estimation)</span>
+
+<div class="viewcode-block" id="FrequencySeries.get_delta_f">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.get_delta_f">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_delta_f</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return frequency between consecutive samples in Hertz.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span></div>
+
+    <span class="n">delta_f</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_delta_f</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s2">&quot;Frequency between consecutive samples in Hertz.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FrequencySeries.get_epoch">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.get_epoch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return frequency series epoch</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span></div>
+
+    
+    <span class="n">epoch</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_epoch</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s2">&quot;Frequency series epoch.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FrequencySeries.get_sample_frequencies">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.get_sample_frequencies">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_sample_frequencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an Array containing the sample frequencies.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span></div>
+
+    <span class="n">sample_frequencies</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">get_sample_frequencies</span><span class="p">,</span>
+                                  <span class="n">doc</span><span class="o">=</span><span class="s2">&quot;Array of the sample frequencies.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getslice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_delta_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span> <span class="o">*</span> <span class="n">index</span><span class="o">.</span><span class="n">step</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_delta_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span>
+        <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">Array</span><span class="o">.</span><span class="n">_getslice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">),</span>
+                               <span class="n">delta_f</span><span class="o">=</span><span class="n">new_delta_f</span><span class="p">,</span>
+                               <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span><span class="p">,</span>
+                               <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FrequencySeries.at_frequency">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.at_frequency">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">at_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the value at the specified frequency</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">freq</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)]</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the start time of this vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span>
+
+    <span class="nd">@start_time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Set the start time</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">float64</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the end time of this vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the time duration of this vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delta_t</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the time between samples if this were a time series.</span>
+<span class="sd">        This assume the time series is even in length!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the sample rate this would have in the time domain. This</span>
+<span class="sd">        assumes even length time series!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">*</span> <span class="mf">2.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the Python special method invoked whenever the &#39;==&#39;</span>
+<span class="sd">        comparison is used.  It will return true if the data of two</span>
+<span class="sd">        frequency series are identical, and all of the numeric meta-data</span>
+<span class="sd">        are identical, irrespective of whether or not the two</span>
+<span class="sd">        instances live in the same memory (for that comparison, the</span>
+<span class="sd">        Python statement &#39;a is b&#39; should be used instead).</span>
+
+<span class="sd">        Thus, this method returns &#39;True&#39; if the types of both &#39;self&#39;</span>
+<span class="sd">        and &#39;other&#39; are identical, as well as their lengths, dtypes,</span>
+<span class="sd">        epochs, delta_fs and the data in the arrays, element by element.</span>
+<span class="sd">        It will always do the comparison on the CPU, but will *not* move</span>
+<span class="sd">        either object to the CPU if it is not already there, nor change</span>
+<span class="sd">        the scheme of either object. It is possible to compare a CPU</span>
+<span class="sd">        object to a GPU object, and the comparison should be true if the</span>
+<span class="sd">        data and meta-data of the two objects are the same.</span>
+
+<span class="sd">        Note in particular that this function returns a single boolean,</span>
+<span class="sd">        and not an array of booleans as Numpy does.  If the numpy</span>
+<span class="sd">        behavior is instead desired it can be obtained using the numpy()</span>
+<span class="sd">        method of the PyCBC type to get a numpy instance from each</span>
+<span class="sd">        object, and invoking &#39;==&#39; on those two instances.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other: another Python object, that should be tested for equality</span>
+<span class="sd">            with &#39;self&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boolean: &#39;True&#39; if the types, dtypes, lengths, epochs, delta_fs</span>
+<span class="sd">            and data of the two objects are each identical.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">super</span><span class="p">(</span><span class="n">FrequencySeries</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_epoch</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="FrequencySeries.almost_equal_elem">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.almost_equal_elem">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">almost_equal_elem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">tol</span><span class="p">,</span><span class="n">relative</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">dtol</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare whether two frequency series are almost equal, element</span>
+<span class="sd">        by element.</span>
+
+<span class="sd">        If the &#39;relative&#39; parameter is &#39;True&#39; (the default) then the</span>
+<span class="sd">        &#39;tol&#39; parameter (which must be positive) is interpreted as a</span>
+<span class="sd">        relative tolerance, and the comparison returns &#39;True&#39; only if</span>
+<span class="sd">        abs(self[i]-other[i]) &lt;= tol*abs(self[i])</span>
+<span class="sd">        for all elements of the series.</span>
+
+<span class="sd">        If &#39;relative&#39; is &#39;False&#39;, then &#39;tol&#39; is an absolute tolerance,</span>
+<span class="sd">        and the comparison is true only if</span>
+<span class="sd">        abs(self[i]-other[i]) &lt;= tol</span>
+<span class="sd">        for all elements of the series.</span>
+
+<span class="sd">        The method also checks that self.delta_f is within &#39;dtol&#39; of</span>
+<span class="sd">        other.delta_f; if &#39;dtol&#39; has its default value of 0 then exact</span>
+<span class="sd">        equality between the two is required.</span>
+
+<span class="sd">        Other meta-data (type, dtype, length, and epoch) must be exactly</span>
+<span class="sd">        equal.  If either object&#39;s memory lives on the GPU it will be</span>
+<span class="sd">        copied to the CPU for the comparison, which may be slow. But the</span>
+<span class="sd">        original object itself will not have its memory relocated nor</span>
+<span class="sd">        scheme changed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other: another Python object, that should be tested for</span>
+<span class="sd">            almost-equality with &#39;self&#39;, element-by-element.</span>
+<span class="sd">        tol: a non-negative number, the tolerance, which is interpreted</span>
+<span class="sd">            as either a relative tolerance (the default) or an absolute</span>
+<span class="sd">            tolerance.</span>
+<span class="sd">        relative: A boolean, indicating whether &#39;tol&#39; should be interpreted</span>
+<span class="sd">            as a relative tolerance (if True, the default if this argument</span>
+<span class="sd">            is omitted) or as an absolute tolerance (if tol is False).</span>
+<span class="sd">        dtol: a non-negative number, the tolerance for delta_f. Like &#39;tol&#39;,</span>
+<span class="sd">            it is interpreted as relative or absolute based on the value of</span>
+<span class="sd">            &#39;relative&#39;.  This parameter defaults to zero, enforcing exact</span>
+<span class="sd">            equality between the delta_f values of the two FrequencySeries.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boolean: &#39;True&#39; if the data and delta_fs agree within the tolerance,</span>
+<span class="sd">            as interpreted by the &#39;relative&#39; keyword, and if the types,</span>
+<span class="sd">            lengths, dtypes, and epochs are exactly the same.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check that the delta_f tolerance is non-negative; raise an exception</span>
+        <span class="c1"># if needed.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dtol</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tolerance in delta_f cannot be negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">super</span><span class="p">(</span><span class="n">FrequencySeries</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">almost_equal_elem</span><span class="p">(</span><span class="n">other</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span><span class="n">relative</span><span class="o">=</span><span class="n">relative</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">relative</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_epoch</span> <span class="ow">and</span>
+                        <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dtol</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_epoch</span> <span class="ow">and</span>
+                        <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dtol</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.almost_equal_norm">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.almost_equal_norm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">almost_equal_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">tol</span><span class="p">,</span><span class="n">relative</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">dtol</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare whether two frequency series are almost equal, normwise.</span>
+
+<span class="sd">        If the &#39;relative&#39; parameter is &#39;True&#39; (the default) then the</span>
+<span class="sd">        &#39;tol&#39; parameter (which must be positive) is interpreted as a</span>
+<span class="sd">        relative tolerance, and the comparison returns &#39;True&#39; only if</span>
+<span class="sd">        abs(norm(self-other)) &lt;= tol*abs(norm(self)).</span>
+
+<span class="sd">        If &#39;relative&#39; is &#39;False&#39;, then &#39;tol&#39; is an absolute tolerance,</span>
+<span class="sd">        and the comparison is true only if</span>
+<span class="sd">        abs(norm(self-other)) &lt;= tol</span>
+
+<span class="sd">        The method also checks that self.delta_f is within &#39;dtol&#39; of</span>
+<span class="sd">        other.delta_f; if &#39;dtol&#39; has its default value of 0 then exact</span>
+<span class="sd">        equality between the two is required.</span>
+
+<span class="sd">        Other meta-data (type, dtype, length, and epoch) must be exactly</span>
+<span class="sd">        equal.  If either object&#39;s memory lives on the GPU it will be</span>
+<span class="sd">        copied to the CPU for the comparison, which may be slow. But the</span>
+<span class="sd">        original object itself will not have its memory relocated nor</span>
+<span class="sd">        scheme changed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other: another Python object, that should be tested for</span>
+<span class="sd">            almost-equality with &#39;self&#39;, based on their norms.</span>
+<span class="sd">        tol: a non-negative number, the tolerance, which is interpreted</span>
+<span class="sd">            as either a relative tolerance (the default) or an absolute</span>
+<span class="sd">            tolerance.</span>
+<span class="sd">        relative: A boolean, indicating whether &#39;tol&#39; should be interpreted</span>
+<span class="sd">            as a relative tolerance (if True, the default if this argument</span>
+<span class="sd">            is omitted) or as an absolute tolerance (if tol is False).</span>
+<span class="sd">        dtol: a non-negative number, the tolerance for delta_f. Like &#39;tol&#39;,</span>
+<span class="sd">            it is interpreted as relative or absolute based on the value of</span>
+<span class="sd">            &#39;relative&#39;.  This parameter defaults to zero, enforcing exact</span>
+<span class="sd">            equality between the delta_f values of the two FrequencySeries.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boolean: &#39;True&#39; if the data and delta_fs agree within the tolerance,</span>
+<span class="sd">            as interpreted by the &#39;relative&#39; keyword, and if the types,</span>
+<span class="sd">            lengths, dtypes, and epochs are exactly the same.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check that the delta_f tolerance is non-negative; raise an exception</span>
+        <span class="c1"># if needed.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dtol</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tolerance in delta_f cannot be negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">super</span><span class="p">(</span><span class="n">FrequencySeries</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">almost_equal_norm</span><span class="p">(</span><span class="n">other</span><span class="p">,</span><span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span><span class="n">relative</span><span class="o">=</span><span class="n">relative</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">relative</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_epoch</span> <span class="ow">and</span>
+                        <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dtol</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_epoch</span> <span class="ow">and</span>
+                        <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_delta_f</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">_delta_f</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dtol</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.lal">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.lal">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Produces a LAL frequency series object equivalent to self.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lal_data : {lal.*FrequencySeries}</span>
+<span class="sd">            LAL frequency series object containing the same data as self.</span>
+<span class="sd">            The actual type depends on the sample&#39;s dtype. If the epoch of</span>
+<span class="sd">            self was &#39;None&#39;, the epoch of the returned LAL object will be</span>
+<span class="sd">            LIGOTimeGPS(0,0); otherwise, convert it to LIGOTimeGPS</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            If frequency series is stored in GPU memory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">lal_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ep</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ep</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epoch</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateREAL4FrequencySeries</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">ep</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span><span class="n">_lal</span><span class="o">.</span><span class="n">SecondUnit</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateREAL8FrequencySeries</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">ep</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span><span class="n">_lal</span><span class="o">.</span><span class="n">SecondUnit</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateCOMPLEX8FrequencySeries</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">ep</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span><span class="n">_lal</span><span class="o">.</span><span class="n">SecondUnit</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateCOMPLEX16FrequencySeries</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">ep</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span><span class="n">_lal</span><span class="o">.</span><span class="n">SecondUnit</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+        <span class="n">lal_data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">lal_data</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.save">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ifo</span><span class="o">=</span><span class="s1">&#39;P1&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save frequency series to a Numpy .npy, hdf, or text file. The first column</span>
+<span class="sd">        contains the sample frequencies, the second contains the values.</span>
+<span class="sd">        In the case of a complex frequency series saved as text, the imaginary</span>
+<span class="sd">        part is written as a third column.  When using hdf format, the data is stored</span>
+<span class="sd">        as a single vector, along with relevant attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            Destination file path. Must end with either .hdf, .npy or .txt.</span>
+
+<span class="sd">        group: string</span>
+<span class="sd">            Additional name for internal storage use. Ex. hdf storage uses</span>
+<span class="sd">            this as the key value.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If path does not end in .npy or .txt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.npy&#39;</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">_numpy</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.txt&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">real</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">imag</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">_numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.xml&#39;</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.xml.gz&#39;</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_psd_xmldoc</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;XML only supports real frequency series&#39;</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;psd&#39;</span>
+            <span class="c1"># When writing in this format we must *not* have the 0 values at</span>
+            <span class="c1"># frequencies less than flow. To resolve this we set the first</span>
+            <span class="c1"># non-zero value &lt; flow.</span>
+            <span class="n">data_lal</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span>
+            <span class="n">first_idx</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">data_lal</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">first_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">data_lal</span><span class="p">[:</span><span class="n">first_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_lal</span><span class="p">[</span><span class="n">first_idx</span><span class="p">]</span>
+            <span class="n">psddict</span> <span class="o">=</span> <span class="p">{</span><span class="n">ifo</span><span class="p">:</span> <span class="n">output</span><span class="p">}</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">write_filename</span><span class="p">(</span>
+                <span class="n">make_psd_xmldoc</span><span class="p">(</span><span class="n">psddict</span><span class="p">),</span>
+                <span class="n">path</span><span class="p">,</span>
+                <span class="n">compress</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">group</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">ds</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+                                      <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span>
+                                      <span class="n">compression_opts</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;epoch&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+                <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Path must end with .npy, .txt, .xml, .xml.gz &#39;</span>
+                             <span class="s1">&#39;or .hdf&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.to_frequencyseries">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.to_frequencyseries">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_frequencyseries</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return frequency series &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.to_timeseries">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.to_timeseries">[docs]</a>
+    <span class="nd">@_noreal</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_timeseries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the Fourier transform of this time series.</span>
+
+<span class="sd">        Note that this assumes even length time series!</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        delta_t : {None, float}, optional</span>
+<span class="sd">            The time resolution of the returned series. By default the</span>
+<span class="sd">        resolution is determined by length and delta_f of this frequency</span>
+<span class="sd">        series.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        TimeSeries:</span>
+<span class="sd">            The inverse fourier transform of this frequency series.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.fft</span><span class="w"> </span><span class="kn">import</span> <span class="n">ifft</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">real_same_precision_as</span>
+        <span class="n">nat_delta_t</span> <span class="o">=</span>  <span class="mf">1.0</span> <span class="o">/</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">delta_t</span><span class="p">:</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="n">nat_delta_t</span>
+
+        <span class="c1"># add 0.5 to round integer</span>
+        <span class="n">tlen</span>  <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span> <span class="o">/</span> <span class="n">delta_t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="n">flen</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tlen</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flen</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The value of delta_t (</span><span class="si">%s</span><span class="s2">) would be &quot;</span>
+                             <span class="s2">&quot;undersampled. Maximum delta_t &quot;</span>
+                             <span class="s2">&quot;is </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">nat_delta_t</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">delta_t</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">flen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+                             <span class="n">delta_f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
+                             <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[:]</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">tlen</span><span class="p">,</span>
+                           <span class="n">dtype</span><span class="o">=</span><span class="n">real_same_precision_as</span><span class="p">(</span><span class="bp">self</span><span class="p">)),</span>
+                           <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ifft</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">_delta_t</span> <span class="o">=</span> <span class="n">delta_t</span>
+        <span class="k">return</span> <span class="n">f</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.cyclic_time_shift">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.cyclic_time_shift">[docs]</a>
+    <span class="nd">@_noreal</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cyclic_time_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shift the data and timestamps by a given number of seconds</span>
+
+<span class="sd">        Shift the data and timestamps in the time domain a given number of</span>
+<span class="sd">        seconds. To just change the time stamps, do ts.start_time += dt.</span>
+<span class="sd">        The time shift may be smaller than the intrinsic sample rate of the data.</span>
+<span class="sd">        Note that data will be cycliclly rotated, so if you shift by 2</span>
+<span class="sd">        seconds, the final 2 seconds of your data will now be at the</span>
+<span class="sd">        beginning of the data set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dt : float</span>
+<span class="sd">            Amount of time to shift the vector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data : pycbc.types.FrequencySeries</span>
+<span class="sd">            The time shifted frequency series.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_fseries_time_shift</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">apply_fseries_time_shift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">dt</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.match">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.match">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the match between the two TimeSeries or FrequencySeries.</span>
+
+<span class="sd">        Return the match between two waveforms. This is equivalent to the overlap</span>
+<span class="sd">        maximized over time and phase. By default, the other vector will be</span>
+<span class="sd">        resized to match self. Beware, this may remove high frequency content or the</span>
+<span class="sd">        end of the vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other : TimeSeries or FrequencySeries</span>
+<span class="sd">            The input vector containing a waveform.</span>
+<span class="sd">        psd : Frequency Series</span>
+<span class="sd">            A power spectral density to weight the overlap.</span>
+<span class="sd">        low_frequency_cutoff : {None, float}, optional</span>
+<span class="sd">            The frequency to begin the match.</span>
+<span class="sd">        high_frequency_cutoff : {None, float}, optional</span>
+<span class="sd">            The frequency to stop the match.</span>
+<span class="sd">        index: int</span>
+<span class="sd">            The number of samples to shift to get the match.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        match: float</span>
+<span class="sd">        index: int</span>
+<span class="sd">            The number of samples to shift to get the match.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">match</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">duration</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">:</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">other</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">))</span>
+
+            <span class="n">other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">other</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">psd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">psd</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">psd</span> <span class="o">=</span> <span class="n">psd</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">psd</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">psd</span><span class="o">=</span><span class="n">psd</span><span class="p">,</span>
+                     <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                     <span class="n">high_frequency_cutoff</span><span class="o">=</span><span class="n">high_frequency_cutoff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FrequencySeries.plot">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.plot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Basic plot of this frequency series</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+            <span class="n">plot</span> <span class="o">=</span> <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">plot</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+            <span class="n">plot1</span> <span class="o">=</span> <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">real</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+            <span class="n">plot2</span> <span class="o">=</span> <span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">imag</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">plot1</span><span class="p">,</span> <span class="n">plot2</span></div>
+</div>
+
+
+<div class="viewcode-block" id="load_frequencyseries">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.frequencyseries.load_frequencyseries">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_frequencyseries</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a FrequencySeries from an HDF5, ASCII or Numpy file. The file type</span>
+<span class="sd">    is inferred from the file extension, which must be `.hdf`, `.txt` or</span>
+<span class="sd">    `.npy`.</span>
+
+<span class="sd">    For ASCII and Numpy files, the first column of the array is assumed to</span>
+<span class="sd">    contain the frequency. If the array has two columns, a real frequency</span>
+<span class="sd">    series is returned. If the array has three columns, the second and third</span>
+<span class="sd">    ones are assumed to contain the real and imaginary parts of a complex</span>
+<span class="sd">    frequency series.</span>
+
+<span class="sd">    For HDF files, the dataset is assumed to contain the attribute `delta_f`</span>
+<span class="sd">    giving the frequency resolution in Hz. The attribute `epoch`, if present,</span>
+<span class="sd">    is taken as the start GPS time (epoch) of the data in the series.</span>
+
+<span class="sd">    The default data types will be double precision floating point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: string</span>
+<span class="sd">        Input file path. Must end with either `.npy`, `.txt` or `.hdf`.</span>
+
+<span class="sd">    group: string</span>
+<span class="sd">        Additional name for internal storage use. When reading HDF files, this</span>
+<span class="sd">        is the path to the HDF dataset to read.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the path does not end in a supported extension.</span>
+<span class="sd">        For Numpy and ASCII input files, this is also raised if the array</span>
+<span class="sd">        does not have 2 or 3 dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.npy&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.txt&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">group</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">][:]</span>
+            <span class="n">delta_f</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">]</span>
+            <span class="n">epoch</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;epoch&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;epoch&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">series</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Path must end with .npy, .hdf, or .txt&#39;</span><span class="p">)</span>
+
+    <span class="n">delta_f</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">data</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">,</span>
+                               <span class="n">epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;File has </span><span class="si">%s</span><span class="s1"> dimensions, cannot convert to FrequencySeries, </span><span class="se">\</span>
+<span class="s1">                      must be 2 (real) or 3 (complex)&#39;</span> <span class="o">%</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

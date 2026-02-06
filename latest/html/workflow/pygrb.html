@@ -1,0 +1,592 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc_make_offline_grb_workflow: A GRB triggered CBC analysis workflow generator &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyCBC template bank generation documentation (pycbc.tmpltbank)" href="../tmpltbank.html" />
+    <link rel="prev" title="pycbc_make_offline_search_workflow: A workflow to search for gravitational waves" href="pycbc_make_offline_search_workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_make_offline_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-file">Configuration File</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#workflow-sections">Workflow Sections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#executable-sections">Executable Sections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pegasus-profile-sections">Pegasus Profile Sections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#accounting-tags">Accounting Tags</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-run">How to run</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#set-up-a-run-directory">Set up a run directory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-files-are-you-running-from-production-configuration-ini-files">Configuration files - Are you running from production configuration (.ini) files?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-the-workflow">Generate the workflow</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#monitor-and-debug-the-workflow-detailed-pegasus-documentation">Monitor and Debug the Workflow (Detailed Pegasus Documentation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pegasus-dashboard">Pegasus Dashboard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pegasus-plots">Pegasus Plots</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#reuse-of-data-from-a-previous-workflow">Reuse of data from a previous workflow</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#select-the-files-you-want-to-reuse-from-the-prior-run">Select the files you want to reuse from the prior run</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mock_data_generation.html"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/pygrb.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-make-offline-grb-workflow-a-grb-triggered-cbc-analysis-workflow-generator">
+<span id="pygrb"></span><h1><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator<a class="headerlink" href="#pycbc-make-offline-grb-workflow-a-grb-triggered-cbc-analysis-workflow-generator" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>PyGRB is a tool used to generate a data analysis workflow for a targeted,
+coherent gravitational wave search triggered by short duration gamma-ray
+bursts.</p>
+<p>When submitted, this workflow will run a pipeline to analyse data from multiple
+gravitational wave detectors coherently. It will then perform various
+signal-based veto cuts and data quality cuts to determine whether or not a
+compact binary coalescence signal is present in the given data coming from the
+same point in the sky and at the same time as an observed short duration
+gamma-ray burst.</p>
+<p>The output will be a webpage containing plots and other data files that can be
+used to understand the results of the analysis.</p>
+</section>
+<section id="configuration-file">
+<h2>Configuration File<a class="headerlink" href="#configuration-file" title="Link to this heading"></a></h2>
+<p>The workflow is controlled by a configuration file, which is comprised of three
+types of section: workflow, the pegasus profile and executable options. The
+workflow sections control the general form of the workflow and how it is
+generated. The pegasus profile sections are equivalent to lines you would have
+in a condor_submit file (e.g. requirements, storage size, etc.). The executable
+option sections contain those options to be fed directly to the executables
+that will be used for the data analysis.</p>
+<p>The following examples would all feature in an offline search on combined
+Hanford-Livingston data from the 8th Advanced LIGO engineering run (ER8). To
+find out more details about the possible options for any stage of the workflow,
+follow the links at <a class="reference internal" href="../workflow.html#workflowhomepage"><span class="std std-ref">Workflow: the inspiral analysis workflow generator (pycbc.workflow)</span></a>.</p>
+<section id="workflow-sections">
+<h3>Workflow Sections<a class="headerlink" href="#workflow-sections" title="Link to this heading"></a></h3>
+<p>The main section usually contains overall properties for your workflow, many of
+which will be used elsewhere:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="p">]</span>
+<span class="n">file</span><span class="o">-</span><span class="n">retention</span><span class="o">-</span><span class="n">level</span> <span class="o">=</span> <span class="n">all_files</span>
+<span class="n">h1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+<span class="n">l1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+</pre></div>
+</div>
+<p>We may define all the detectors (IFOs) that we are considering in our analysis:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">ifos</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">This</span> <span class="ow">is</span> <span class="n">the</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">ifos</span> <span class="n">to</span> <span class="n">analyse</span>
+<span class="n">h1</span> <span class="o">=</span>
+<span class="n">l1</span> <span class="o">=</span>
+</pre></div>
+</div>
+<p>The data frame types and other related options are given in:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">datafind</span><span class="p">]</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">AT_RUNTIME_SINGLE_CACHES</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">gaps</span> <span class="o">=</span> <span class="n">raise_error</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">frames</span><span class="o">-</span><span class="n">exist</span> <span class="o">=</span> <span class="n">raise_error</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">summary</span> <span class="o">=</span> <span class="n">no_test</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">H1_HOFT_C00</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">L1_HOFT_C00</span>
+</pre></div>
+</div>
+<p>Data segment information is given in the section:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">segments</span><span class="p">]</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">AT_RUNTIME</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">database</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">segments</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">org</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">categories</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">minimum</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">definer</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">detchar</span><span class="o">/</span><span class="n">veto</span><span class="o">-</span><span class="n">definitions</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">cbc</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">H1L1</span><span class="o">-</span><span class="n">HOFT_C00_ER8B_CBC</span><span class="o">.</span><span class="n">xml</span>
+</pre></div>
+</div>
+<p>The GRB search requires an additional set of segment-related options,
+which we give in the following section:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">exttrig_segments</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">options</span> <span class="k">for</span> <span class="n">the</span> <span class="n">coherent</span> <span class="n">search</span> <span class="p">(</span><span class="n">development</span><span class="p">)</span>
+<span class="n">on</span><span class="o">-</span><span class="n">before</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">on</span><span class="o">-</span><span class="n">after</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">before</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">after</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">duration</span> <span class="o">=</span> <span class="mi">5264</span>
+<span class="n">quanta</span> <span class="o">=</span> <span class="mi">128</span>
+<span class="n">num</span><span class="o">-</span><span class="n">buffer</span><span class="o">-</span><span class="n">before</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">num</span><span class="o">-</span><span class="n">buffer</span><span class="o">-</span><span class="n">after</span> <span class="o">=</span> <span class="mi">8</span>
+</pre></div>
+</div>
+</section>
+<section id="executable-sections">
+<h3>Executable Sections<a class="headerlink" href="#executable-sections" title="Link to this heading"></a></h3>
+<p>We set the executables to be used for the analysis in the following way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[executables]
+inspiral                = ${which:lalapps_coh_PTF_inspiral}
+splitbank               = ${which:pycbc_splitbank}
+segment_query           = ${which:ligolw_segment_query_dqsegdb}
+segments_from_cats      = ${which:ligolw_segments_from_cats_dqsegdb}
+llwadd                  = ${which:ligolw_add}
+ligolw_combine_segments = ${which:ligolw_combine_segments}
+injections              = ${which:lalapps_inspinj}
+jitter_skyloc           = ${which:ligolw_cbc_jitter_skyloc}
+align_total_spin        = ${which:ligolw_cbc_align_total_spin}
+split_inspinj           = ${which:pycbc_split_inspinj}
+em_bright_filter        = ${which:pycbc_dark_vs_bright_injections}
+trig_combiner           = ${which:pylal_cbc_cohptf_trig_combiner}
+trig_cluster            = ${which:pylal_cbc_cohptf_trig_cluster}
+injfinder               = ${which:pylal_cbc_cohptf_injfinder}
+injcombiner             = ${Which:pylal_cbc_cohptf_injcombiner}
+sbv_plotter             = ${which:pylal_cbc_cohptf_sbv_plotter}
+efficiency              = ${which:pylal_cbc_cohptf_efficiency}
+inj_efficiency          = ${which:pylal_cbc_cohptf_efficiency}
+horizon_dist            = ${which:pylal_cbc_cohptf_inspiral_horizon}
+</pre></div>
+</div>
+<p>Here we are getting the executable paths from our environment for flexibility,
+rather than supplying them as fixed paths.</p>
+<p>The options to be given to every job run by an executable are then given
+within a secion with the relevant name, for example our <code class="docutils literal notranslate"><span class="pre">inspiral</span></code> jobs (in
+this case, lalapps_coh_PTF_inspiral) use the options in the following section:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">inspiral</span><span class="p">]</span>
+<span class="n">ligo</span><span class="o">-</span><span class="n">calibrated</span><span class="o">-</span><span class="n">data</span> <span class="o">=</span> <span class="n">real_8</span>
+<span class="n">approximant</span> <span class="o">=</span> <span class="n">SpinTaylorT4</span>
+<span class="n">order</span> <span class="o">=</span> <span class="n">threePointFivePN</span>
+<span class="o">.</span>
+<span class="o">.</span>
+<span class="o">.</span>
+</pre></div>
+</div>
+<p>If the workflow were to contain multiple subclasses of <code class="docutils literal notranslate"><span class="pre">inspiral</span></code> jobs –
+for example one for standard signal hunting and some for finding injected
+signals – options could be provided separately to these subclasses in tagged
+sections. If the injection jobs are tagged in the workflow by the string
+<code class="docutils literal notranslate"><span class="pre">coherent_injections</span></code>, then options specific to these jobs may be given in
+the section:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">inspiral</span><span class="o">-</span><span class="n">coherent_injections</span><span class="p">]</span>
+<span class="n">inj</span><span class="o">-</span><span class="n">search</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">inj</span><span class="o">-</span><span class="n">mchirp</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">analyze</span><span class="o">-</span><span class="n">inj</span><span class="o">-</span><span class="n">segs</span><span class="o">-</span><span class="n">only</span> <span class="o">=</span>
+</pre></div>
+</div>
+<p>Sections which share a common set of options may be given together:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">inspiral</span><span class="o">&amp;</span><span class="n">workflow</span><span class="o">-</span><span class="n">exttrig_segments</span><span class="p">]</span>
+<span class="n">pad</span><span class="o">-</span><span class="n">data</span> <span class="o">=</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<p>Here the <code class="docutils literal notranslate"><span class="pre">workflow-exttrig_segments</span></code> section and the <code class="docutils literal notranslate"><span class="pre">inspiral</span></code> executable
+section are sharing a common option.</p>
+</section>
+<section id="pegasus-profile-sections">
+<h3>Pegasus Profile Sections<a class="headerlink" href="#pegasus-profile-sections" title="Link to this heading"></a></h3>
+<p>If, for example, we wished to ask condor to request nodes with 2000M of memory
+for the <code class="docutils literal notranslate"><span class="pre">trig_combiner</span></code> executable jobs, we may do this via:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="o">-</span><span class="n">trig_combiner</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_memory</span><span class="o">=</span><span class="mi">2000</span><span class="n">M</span>
+</pre></div>
+</div>
+<p>This can be generalised to any executable or tagged jobs.</p>
+</section>
+<section id="accounting-tags">
+<h3>Accounting Tags<a class="headerlink" href="#accounting-tags" title="Link to this heading"></a></h3>
+<p>If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, add it
+to your config files. <code class="docutils literal notranslate"><span class="pre">request_disk</span></code> and <code class="docutils literal notranslate"><span class="pre">request_memory</span></code> may also be required.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">accounting_group</span> <span class="o">=</span> <span class="n">accounting</span><span class="o">.</span><span class="n">tag</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_disk</span> <span class="o">=</span> <span class="mi">1024</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="how-to-run">
+<span id="howtorunpygrb"></span><h2>How to run<a class="headerlink" href="#how-to-run" title="Link to this heading"></a></h2>
+<p>Here we document the stages needed to run the triggered coherent GRB search.</p>
+<p>Once PyCBC is installed, you should be able to run the following help command for the workflow generation
+script:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_grb_workflow</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>This should produce a help message like the following</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ pycbc_make_offline_grb_workflow --help
+No CuPy
+No CuPy or GPU PhenomHM module.
+No CuPy or GPU response available.
+No CuPy or GPU interpolation available.
+usage: pycbc_make_offline_grb_workflow [-h] [-v] [--version [VERSION]]
+                                       [--config-files CONFIGFILE [CONFIGFILE ...]]
+                                       [--config-overrides [SECTION:OPTION:VALUE ...]]
+                                       [--config-delete [SECTION:OPTION ...]]
+                                       --workflow-name WORKFLOW_NAME
+                                       [--tags TAGS [TAGS ...]]
+                                       [--output-dir OUTPUT_DIR]
+                                       [--cache-file CACHE_FILE]
+                                       [--submit-now] [--dax-file DAX_FILE]
+
+options:
+  -h, --help            show this help message and exit
+
+PyCBC common options:
+  Common options for PyCBC executables.
+
+  -v, --verbose         Add verbosity to logging. Adding the option multiple
+                        times makes logging progressively more verbose, e.g.
+                        --verbose or -v provides logging at the info level,
+                        but -vv or --verbose --verbose provides debug logging.
+  --version [VERSION]   Display PyCBC version information and exit. Can
+                        optionally supply a modifier integer to control the
+                        verbosity of the version information. 0 and 1 are the
+                        same as --version; 2 provides more detailed PyCBC
+                        library information; 3 provides information about
+                        PyCBC, LAL and LALSimulation packages (if installed)
+
+Configuration:
+  Options needed for parsing config file(s).
+
+  --config-files CONFIGFILE [CONFIGFILE ...]
+                        List of config files to be used in analysis.
+  --config-overrides [SECTION:OPTION:VALUE ...]
+                        List of section,option,value combinations to add into
+                        the configuration file. Normally the gps start and end
+                        times might be provided this way, and user specific
+                        locations (ie. output directories). This can also be
+                        provided as SECTION:OPTION or SECTION:OPTION: both of
+                        which indicate that the corresponding value is left
+                        blank.
+  --config-delete [SECTION:OPTION ...]
+                        List of section,option combinations to delete from the
+                        configuration file. This can also be provided as
+                        SECTION which deletes the enture section from the
+                        configuration file or SECTION:OPTION which deletes a
+                        specific option from a given section.
+
+Options for setting workflow files:
+  --workflow-name WORKFLOW_NAME
+                        Name of the workflow.
+  --tags TAGS [TAGS ...]
+                        Append the given tags to file names.
+  --output-dir OUTPUT_DIR
+                        Path to directory where the workflow will be written.
+                        Default is to use {workflow-name}_output.
+  --cache-file CACHE_FILE
+                        Path to input file containing list of files to be
+                        reused (the &#39;input_map&#39; file)
+  --submit-now          If given, workflow will immediately be submitted on
+                        completion of workflow generation
+  --dax-file DAX_FILE   Path to DAX file. Default is to write to the output
+                        directory with name {workflow-name}.dax.
+</pre></div>
+</div>
+<p>This outlines the command line arguments that may be passed to the executable.
+The majority of options passed to the workflow will come from configuration
+files, and these are known to the executable via the option
+<code class="docutils literal notranslate"><span class="pre">--config-files</span></code>.</p>
+<section id="set-up-a-run-directory">
+<h3>Set up a run directory<a class="headerlink" href="#set-up-a-run-directory" title="Link to this heading"></a></h3>
+<p>Navigate to the directory you wish to run in:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>RUN_DIR=/path/to/run/directory
+mkdir -p $RUN_DIR
+cd $RUN_DIR
+</pre></div>
+</div>
+<p>Next gather together configuration files for your run.</p>
+</section>
+<section id="configuration-files-are-you-running-from-production-configuration-ini-files">
+<h3>Configuration files - Are you running from production configuration (.ini) files?<a class="headerlink" href="#configuration-files-are-you-running-from-production-configuration-ini-files" title="Link to this heading"></a></h3>
+<section id="yes-i-want-to-run-in-a-standard-production-configuration">
+<h4>Yes, I want to run in a standard production configuration<a class="headerlink" href="#yes-i-want-to-run-in-a-standard-production-configuration" title="Link to this heading"></a></h4>
+<p>The option <code class="docutils literal notranslate"><span class="pre">--config-files</span></code> takes a space separated list of files locations.
+These can be URLs to remote file locations. Production configuration files may
+be found <a class="reference external" href="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config">here</a> (LIGO.ORG protected).</p>
+<p>Therefore, an example run on a GRB from the 8th Advance LIGO engineering run
+might use the following config files:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_grb_workflow</span> \
+<span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> \
+<span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">pygrb</span><span class="o">/</span><span class="n">analysis_er8</span><span class="o">.</span><span class="n">ini</span> \
+<span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">pygrb</span><span class="o">/</span><span class="n">injections_er8</span><span class="o">.</span><span class="n">ini</span> \
+<span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">pygrb</span><span class="o">/</span><span class="n">postprocessing_er8</span><span class="o">.</span><span class="n">ini</span> \
+<span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">pygrb</span><span class="o">/</span><span class="n">data_er8b</span><span class="o">.</span><span class="n">ini</span> \
+<span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">ER8</span><span class="o">/</span><span class="n">pygrb</span><span class="o">/</span><span class="n">offline_er8</span><span class="o">.</span><span class="n">ini</span> \
+</pre></div>
+</div>
+</section>
+<section id="no-i-have-my-own-configuration-files">
+<h4>No, I have my own configuration files<a class="headerlink" href="#no-i-have-my-own-configuration-files" title="Link to this heading"></a></h4>
+<p>The option <code class="docutils literal notranslate"><span class="pre">--config-files</span></code> takes a space separated list of files locations.
+For example, you could provide a pair of local files:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_grb_workflow</span> \
+<span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> \
+<span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">config_file_1</span><span class="o">.</span><span class="n">ini</span> \
+<span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">config_file_2</span><span class="o">.</span><span class="n">ini</span>
+</pre></div>
+</div>
+<p>Now go down to <a class="reference internal" href="#pygrbgenerate"><span class="std std-ref">Generate the workflow</span></a>.</p>
+</section>
+</section>
+</section>
+<section id="generate-the-workflow">
+<span id="pygrbgenerate"></span><h2>Generate the workflow<a class="headerlink" href="#generate-the-workflow" title="Link to this heading"></a></h2>
+<p>When you are ready, you can generate the workflow. As this is a triggered
+gravitational wave search, a number of key pieces of information will change
+between one GRB and the next, such as the time of the GRB, or its position on
+the sky. This may perhaps be most easily done by setting a number of variables
+in your environment before launching the generation script.</p>
+<p>First we need to set the trigger time, ie. the GPS Earth-crossing time of the
+GRB signal. You should also set the GRB name. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">GRB_TIME</span><span class="o">=</span><span class="mi">1125614344</span>
+<span class="n">GRB_NAME</span><span class="o">=</span><span class="mi">150906</span><span class="n">B</span>
+</pre></div>
+</div>
+<p>We should next set the sky coordinates of the GRB in RA and Dec, in this
+example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RA</span><span class="o">=</span><span class="mf">159.239</span>
+<span class="n">DEC</span><span class="o">=-</span><span class="mf">25.603</span>
+<span class="n">SKY_ERROR</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>If you are using a pregenerated template bank and do not have a path to the
+bank set in your config file, set it here:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BANK_FILE</span><span class="o">=</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">templatebank</span>
+</pre></div>
+</div>
+<p>You also need to specify the git directory of your lalsuite install:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">LAL_SRC</span><span class="o">=/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">folder</span><span class="o">/</span><span class="n">containing</span><span class="o">/</span><span class="n">lalsuite</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>If you want the results page to be moved to a location outside of your run,
+provide this too:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">HTML_DIR</span><span class="o">=/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">html</span><span class="o">/</span><span class="n">folder</span>
+</pre></div>
+</div>
+<p>If you are using locally editted or custom configuration files then you can
+create the workflow from within the run directory using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pycbc_make_offline_grb_workflow \
+--config-files \
+https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/ER8/pygrb/analysis_er8.ini \
+https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/ER8/pygrb/injections_er8.ini \
+https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/ER8/pygrb/postprocessing_er8.ini \
+https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/ER8/pygrb/data_er8a.ini \
+https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-config/download/master/ER8/pygrb/offline_er8.ini \
+--config-overrides \
+workflow:ra:${RA} \
+workflow:dec:${DEC} \
+workflow:sky-error:${SKY_ERROR} \
+workflow:trigger-name:${GRB_NAME} \
+workflow:trigger-time:${GRB_TIME} \
+workflow:start-time:$(( GRB_TIME - 4096 )) \
+workflow:end-time:$(( GRB_TIME + 4096 )) \
+workflow:html-dir:${HTML_DIR}
+</pre></div>
+</div>
+<p>You can submit to the job pool immediately by adding the option:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">submit</span><span class="o">-</span><span class="n">now</span>
+</pre></div>
+</div>
+<p>or after generating, change to the working directory and run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">start</span>
+</pre></div>
+</div>
+<section id="monitor-and-debug-the-workflow-detailed-pegasus-documentation">
+<h3>Monitor and Debug the Workflow (<a class="reference external" href="https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400">Detailed Pegasus Documentation</a>)<a class="headerlink" href="#monitor-and-debug-the-workflow-detailed-pegasus-documentation" title="Link to this heading"></a></h3>
+<p>To monitor the above workflow, one can run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pegasus</span><span class="o">-</span><span class="n">status</span> <span class="o">-</span><span class="n">cl</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">analysis</span><span class="o">/</span><span class="n">run</span>
+</pre></div>
+</div>
+<p>To get debugging information in the case of failures.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pegasus</span><span class="o">-</span><span class="n">analyzer</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">analysis</span><span class="o">/</span><span class="n">run</span>
+</pre></div>
+</div>
+</section>
+<section id="pegasus-dashboard">
+<h3>Pegasus Dashboard<a class="headerlink" href="#pegasus-dashboard" title="Link to this heading"></a></h3>
+<p>The <a class="reference external" href="http://pegasus.isi.edu/wms/docs/latest/ch02s11.php">pegeasus dashboard</a>
+is a visual and interactive way to get information about the progress, status,
+etc of your workflows.</p>
+<p>The software can be obtained from a seprate pegasus package here
+&lt;<a class="reference external" href="https://github.com/pegasus-isi/pegasus-service">https://github.com/pegasus-isi/pegasus-service</a>&gt;.</p>
+</section>
+<section id="pegasus-plots">
+<h3>Pegasus Plots<a class="headerlink" href="#pegasus-plots" title="Link to this heading"></a></h3>
+<p>Pegasus has a tool called pegasus-plan to visualize workflows. To generate
+these charts and create an summary html page with this information, one would
+run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PPLOTSDIR=${HTMLDIR}/pegasus_plots
+pegasus-plots --plotting-level all --output ${PPLOTSDIR} /path/to/analysis/run
+</pre></div>
+</div>
+<p>The Invocation Breakdown Chart section gives a snapshot of the workflow. You
+can click on the slices of the pie chart and it will report the number of
+failures, average runtime, and max/min runtime for that type of jobs in the
+workflow. The radio button labeled runtime will organize the pie chart by total
+runtime rather than the total number of jobs for each job type.</p>
+<p>The Workflow Execution Gantt Chart section breaks down the workflow how long it
+took to run each job. You can click on a job in the gantt chart and it will
+report the job name and runtime.</p>
+<p>The Host Over Time Chart section displays a gantt chart where you can see what
+jobs in the workflow ran on a given machine.</p>
+</section>
+</section>
+<section id="reuse-of-data-from-a-previous-workflow">
+<span id="pygrbreuse"></span><h2>Reuse of data from a previous workflow<a class="headerlink" href="#reuse-of-data-from-a-previous-workflow" title="Link to this heading"></a></h2>
+<p>One of the features of  Pegasus is to reuse the data products of prior runs.
+This can be used to expand an analysis or recover a run with mistaken settings
+without duplicating work.</p>
+<section id="select-the-files-you-want-to-reuse-from-the-prior-run">
+<h3>Select the files you want to reuse from the prior run<a class="headerlink" href="#select-the-files-you-want-to-reuse-from-the-prior-run" title="Link to this heading"></a></h3>
+<p>Locate the directory of the run that you would like to reuse. There is a file
+called GRB${GRB_NAME}/output.map, that contains a listing of all of the data
+products of the prior workflow.</p>
+<p>Select the entries for files that you would like to skip generating again and
+place that into a new file. The example below selects all the inspiral and
+tmpltbank jobs and places their entries into a new listing called
+prior_data.map.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Lets get the tmpltbank entries
+cat /path/to/old/run/GRB${GRB_NAME}/output.map | grep &#39;TMPLTBANK&#39; &gt; prior_data.map
+
+# Add in the inspiral  files
+cat /path/to/old/run/GRB${GRB_NAME}/output.map | grep &#39;INSPIRAL&#39; &gt;&gt; prior_data.map
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can include files in the prior data listing that wouldn’t be generated
+anyway by your new run. These are simply ignored.</p>
+</div>
+<p>Add prior_data.map to your workflow generation, by adding the option
+<code class="docutils literal notranslate"><span class="pre">--cache-file</span> <span class="pre">prior_data.map</span></code> to <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code></p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc_make_offline_search_workflow.html" class="btn btn-neutral float-left" title="pycbc_make_offline_search_workflow: A workflow to search for gravitational waves" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tmpltbank.html" class="btn btn-neutral float-right" title="PyCBC template bank generation documentation (pycbc.tmpltbank)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

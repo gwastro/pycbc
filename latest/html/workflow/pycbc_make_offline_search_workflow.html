@@ -1,0 +1,1139 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc_make_offline_search_workflow: A workflow to search for gravitational waves &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pycbc_make_offline_grb_workflow: A GRB triggered CBC analysis workflow generator" href="pygrb.html" />
+    <link rel="prev" title="pycbc_make_psd_estimation_workflow: A workflow generator for noise estimation" href="pycbc_make_psd_estimation_workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-file">Configuration file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generating-the-workflow">Generating the workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#planning-and-submitting-the-workflow">Planning and Submitting the Workflow</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#monitor-and-debug-the-workflow-detailed-pegasus-documentation">Monitor and Debug the Workflow (Detailed Pegasus Documentation)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pegasus-dashboard">Pegasus Dashboard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pegasus-analyzer">Pegasus Analyzer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#reuse-of-data-from-a-previous-workflow">Reuse of data from a previous workflow</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#setting-up-a-workflow-for-data-reuse">Setting up a workflow for data reuse</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#extending-the-gps-end-time-of-a-previous-workflow">Extending the GPS end time of a previous workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#re-running-a-workflow-using-a-new-veto-definer-file">Re-running a workflow using a new veto definer file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#re-running-a-failed-workflow">Re-running a failed workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#using-partial-products-from-a-previous-workflow">Using partial products from a previous workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#running-on-the-open-science-grid">Running on the Open Science Grid</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuring-the-workflow">Configuring the workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#running-the-workflow">Running the workflow</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../mock_data_generation.html"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/workflow/pycbc_make_offline_search_workflow.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-make-offline-search-workflow-a-workflow-to-search-for-gravitational-waves">
+<span id="search-workflow"></span><h1><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves<a class="headerlink" href="#pycbc-make-offline-search-workflow-a-workflow-to-search-for-gravitational-waves" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The executable <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> is a tool used to search
+for gravitational waves using data from a network of gravitational-wave
+detectors.  It performs all of the necessary steps in the workflow, including
+data management, template bank construction (if required), matched filtering
+and signal-based vetoes, multi-detector coincidence, data-quality cuts,
+background estimation, and software injections to test the search. Its
+ultimate task is to determine whether or not a compact binary coalescence is
+present in the given data.  The output is a webpage containing the plots that
+can be used to understand the results of the analysis</p>
+</section>
+<section id="configuration-file">
+<span id="configurationfiles"></span><h2>Configuration file<a class="headerlink" href="#configuration-file" title="Link to this heading"></a></h2>
+<p>The behavior of the workflow is controlled by a configuration file (also known
+as an <code class="docutils literal notranslate"><span class="pre">ini</span></code> file) that is made up of three types of sections: workflow, the
+pegasus profile and the executable options. The workflow sections control how
+different parts of the the workflow hang together. The pegasus profile sections
+are equivalent to lines you would have in a condor_submit file (e.g. requirements,
+storage size etc). Anything you would do in condor you would do here.
+The third section type maps the options to an executable.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">accounting_group</span><span class="o">=</span><span class="n">ligo</span><span class="o">.</span><span class="n">dev</span><span class="o">.</span><span class="n">o1</span><span class="o">.</span><span class="n">cbc</span><span class="o">.</span><span class="n">bns_spin</span><span class="o">.</span><span class="n">pycbcoffline</span>
+</pre></div>
+</div>
+<p>In this example, we are running on a resource that mandates accounting, so we
+will also need to add a valid tag with the <code class="docutils literal notranslate"><span class="pre">condor|accounting_group</span></code> option. Please see, e.g.,
+<a class="reference external" href="https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user">the LDG accounting page</a>. to
+determine the correct tags. Once you know what <cite>accounting_group`</cite> tag to use, add it
+to your config files. <code class="docutils literal notranslate"><span class="pre">request_disk</span></code> and <code class="docutils literal notranslate"><span class="pre">request_memory</span></code> may also be required.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ldas</span><span class="o">-</span><span class="n">jobs</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">cbc</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">workflow</span><span class="o">/</span><span class="n">initialization</span><span class="o">.</span><span class="n">html</span>
+<span class="n">h1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">FAKE_STRAIN</span>
+<span class="n">l1</span><span class="o">-</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">GDS</span><span class="o">-</span><span class="n">CALIB_STRAIN</span>
+<span class="n">file</span><span class="o">-</span><span class="n">retention</span><span class="o">-</span><span class="n">level</span> <span class="o">=</span> <span class="n">all_triggers</span>
+</pre></div>
+</div>
+<p>You tend to put things in here which will be referred to later (but you can leave it empty). This is a nice way to keep options the same without the need to repeatedly define them. Here the L1/H1 data channel name are given. We also add an option to keep all the triggers/plots the analysis produces</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">ifos</span><span class="p">]</span>
+<span class="n">l1</span> <span class="o">=</span>
+<span class="n">h1</span> <span class="o">=</span>
+</pre></div>
+</div>
+<p>Set up which detectors you are going to run over. A blank space after an equals sign denotes True.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">datafind</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">See</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ldas</span><span class="o">-</span><span class="n">jobs</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">cbc</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">workflow</span><span class="o">/</span><span class="n">datafind</span><span class="o">.</span><span class="n">html</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">AT_RUNTIME_SINGLE_FRAMES</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">H1_ER_C00_AGG</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">frame</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">L1_ER_C01_L1</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">gaps</span> <span class="o">=</span> <span class="n">update_times</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">frames</span><span class="o">-</span><span class="n">exist</span> <span class="o">=</span> <span class="n">raise_error</span>
+<span class="n">datafind</span><span class="o">-</span><span class="n">check</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">summary</span> <span class="o">=</span> <span class="n">no_test</span>
+</pre></div>
+</div>
+<p>This section defines which frames we are going to use and employs different levels of checks to see whether the data exists, there are gaps etc.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">‘datafind-method’</span></code> states how we are going to find the frames. The ‘AT_RUNTIME_SINGLE_FRAMES’ means the executable returns a list of single frame files. You can however provide a cache file, but then the options need to be changed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘datafind-h1-frame-type’</span></code> refers to the frame type the H1 channel name will be found in for the time specified. Same for L1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘datafind-check-segment-gaps’</span></code> option checks to see if there are gaps in the segments from the segment database and the option ‘update_times’ will change the analysis times to skip over these gaps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘datafind-check-frames-exist’</span></code> checks to see if the frames you are looking at actually exists, and if they don’t the ‘raise_error’ option will stop the workflow.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘datafind-check-segment-summary’</span></code> Checks the segment summary table and makes sure that the frames exist for all times that the segments are known</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">segments</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">See</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ldas</span><span class="o">-</span><span class="n">jobs</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">cbc</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">workflow</span><span class="o">/</span><span class="n">segments</span><span class="o">.</span><span class="n">html</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">AT_RUNTIME</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">h1</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">H1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">SCIENCE</span><span class="p">:</span><span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">l1</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">name</span> <span class="o">=</span> <span class="n">L1</span><span class="p">:</span><span class="n">DMT</span><span class="o">-</span><span class="n">ANALYSIS_READY</span><span class="p">:</span><span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">database</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">dqsegdb5</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">definer</span><span class="o">-</span><span class="n">url</span> <span class="o">=</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">lsc</span><span class="o">-</span><span class="n">group</span><span class="o">.</span><span class="n">phys</span><span class="o">.</span><span class="n">uwm</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligovirgo</span><span class="o">/</span><span class="n">cbc</span><span class="o">/</span><span class="n">public</span><span class="o">/</span><span class="n">segments</span><span class="o">/</span><span class="n">ER6</span><span class="o">/</span><span class="n">H1L1V1</span><span class="o">-</span><span class="n">ER6_GDS_CALIB_STRAIN</span><span class="o">.</span><span class="n">xml</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">science</span><span class="o">-</span><span class="n">veto</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">groups</span> <span class="o">=</span>
+<span class="n">segments</span><span class="o">-</span><span class="n">final</span><span class="o">-</span><span class="n">veto</span><span class="o">-</span><span class="n">group</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>This section does a series of checks to the segment database for the segments you need for your analysis.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-method’</span></code> option should not change.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-h1-science-name’</span></code> option specifies the segment name at LHO we consider to flag science time. The same is given for L1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-data-url’</span></code> specifies the url for the segment database we want to query.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-veto-definer-url’</span></code> is the url for the veto definer file we want to use for the search.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-science-veto’</span></code> species which category of veto you want to eliminate from your search before it is performed to consider the data science. In this instance, 1 denotes that all the times of Cat 1 vetoes. Time vetoed here is not used in any part of the analysis, and is treated as if it were not collected.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-veto-groups’</span></code> is an option you can populate with different veto categories and diagnostic plots will be made after each veto is employed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘segments-final-veto-group’</span></code> is an important option as the vetoes defined here will be used to remove triggers from the search before coincidence is performed. An option of 1 will remove all Cat 1 veto times from the analysis before it is performed. If you want to add cat 2 then the option is 12.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">tmpltbank</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">See</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ldas</span><span class="o">-</span><span class="n">jobs</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">cbc</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">ahope</span><span class="o">/</span><span class="n">template_bank</span><span class="o">.</span><span class="n">html</span>
+<span class="n">tmpltbank</span><span class="o">-</span><span class="n">method</span><span class="o">=</span><span class="n">PREGENERATED_BANK</span>
+<span class="n">tmpltbank</span><span class="o">-</span><span class="n">pregenerated</span><span class="o">-</span><span class="n">bank</span><span class="o">=/</span><span class="n">home</span><span class="o">/</span><span class="n">jveitch</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">mdc</span><span class="o">/</span><span class="n">spin</span><span class="o">/</span><span class="n">tmpltbanks</span><span class="o">/</span><span class="n">nonspin</span><span class="o">/</span><span class="n">BNS_NonSpin_30Hz_earlyaLIGO</span><span class="o">.</span><span class="n">xml</span>
+</pre></div>
+</div>
+<p>This section specifies which template bank to use</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">’tmpltbank-method’</span></code> option specifies whether you want to use a regenerated bank or to make it on the fly. In O1 we will be us a pregenerated bank.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘tmpltbank-pregnerated-bank’</span></code> specifies the location of the xml with the pregenerated bank. Note that this exact location is only valid for SUGAR, and that in general one must provide their own template bank.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">splittable</span><span class="p">]</span>
+<span class="n">splittable</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">IN_WORKFLOW</span>
+<span class="n">splittable</span><span class="o">-</span><span class="n">num</span><span class="o">-</span><span class="n">banks</span> <span class="o">=</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>This section sets the options for splitting the bank to help with computational costs.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">‘splittable-method’</span></code> tells you the method by which to split the bank, in this instance it is IN_WORKFLOW. If you do not want to split the bank, change this option to NOOP</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘splittable-num-banks’</span></code> specifies how many banks to split the original bank into.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">matchedfilter</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">See</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ldas</span><span class="o">-</span><span class="n">jobs</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">cbc</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">ahope</span><span class="o">/</span><span class="n">matched_filter</span><span class="o">.</span><span class="n">html</span>
+<span class="n">matchedfilter</span><span class="o">-</span><span class="n">method</span><span class="o">=</span><span class="n">WORKFLOW_INDEPENDENT_IFOS</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="n">segments</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="n">segments</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">output</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">hdf</span>
+</pre></div>
+</div>
+<p>This section defines how the matched filter is going to be performed. Whether it is going to be independent for each detector, and also how the analysis is actually going to be separated in to chunks given the data available.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">‘matched-filter-method’</span></code> defines where the data is going to be separated and searched over, in this instance the data for each IFO will be considered independently and in the workflow</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘min-analysis-segments’</span></code> defines the minimum number of overlapping chunks you separate the data in to to analyze. This is a proxy for segment length. In this instance 5 has been stated. Therefore if the data cannot be split in to 5 overlapping chunks the code skips over the data. To understand how much time this is you need to look in the [inspiral] options and consider the segment-length and padding options specified. ‘max-analysis-segments’ is the same but for the maximum number of overlapping chunks. Be aware if you lower/raise either of these numbers you will affect the psd estimation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">‘output-type’</span></code> is the format of the output trigger files from the matched filter search</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">coincidence</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">See</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ldas</span><span class="o">-</span><span class="n">jobs</span><span class="o">.</span><span class="n">ligo</span><span class="o">.</span><span class="n">caltech</span><span class="o">.</span><span class="n">edu</span><span class="o">/~</span><span class="n">cbc</span><span class="o">/</span><span class="n">docs</span><span class="o">/</span><span class="n">pycbc</span><span class="o">/</span><span class="n">ahope</span><span class="o">/</span><span class="n">coincidence</span><span class="o">.</span><span class="n">html</span>
+<span class="n">parallelization</span><span class="o">-</span><span class="n">factor</span> <span class="o">=</span> <span class="mi">10</span>
+</pre></div>
+</div>
+<p>This part of the workflow looks for coincidence between templates between detectors. All coincidences are kept. If you have a large template bank you probably want make the <code class="docutils literal notranslate"><span class="pre">‘parallelization-factor’</span></code> large</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">workflow</span><span class="o">-</span><span class="n">injections</span><span class="p">]</span>
+<span class="n">injections</span><span class="o">-</span><span class="n">method</span><span class="o">=</span><span class="n">IN_WORKFLOW</span>
+</pre></div>
+</div>
+<p>This section deals with software injections. Here you are specifying whether to use either pregenerated injections sets or ones made within the workflow itself. In this case, we will use one that is created within the workflow.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[executables]
+; setup of condor universe and location of executables
+inspiral          = ${which:pycbc_inspiral}
+injections = ${which:lalapps_inspinj}
+splittable = ${which:pycbc_splitbank}
+segment_query = ${which:ligolw_segment_query_dqsegdb}
+segments_from_cats = ${which:ligolw_segments_from_cats_dqsegdb}
+llwadd = ${which:ligolw_add}
+ligolw_combine_segments = ${which:ligolw_combine_segments}
+bank2hdf = ${which:pycbc_coinc_bank2hdf}
+hdfinjfind = ${which:pycbc_coinc_hdfinjfind}
+coinc = ${which:pycbc_coinc_findtrigs}
+statmap = ${which:pycbc_coinc_statmap}
+statmap_inj = ${which:pycbc_coinc_statmap_inj}
+plot_sensitivity = ${which:pycbc_page_sensitivity}
+plot_foundmissed = ${which:pycbc_page_foundmissed}
+plot_snrifar = ${which:pycbc_page_snrifar}
+page_foreground = ${which:pycbc_page_foreground}
+page_injections = ${which:pycbc_page_injtable}
+hdf_trigger_merge = ${which:pycbc_coinc_mergetrigs}
+plot_snrchi = ${which:pycbc_page_snrchi}
+plot_coinc_snrchi = ${which:pycbc_page_coinc_snrchi}
+plot_segments = ${which:pycbc_page_segments}
+results_page = ${which:pycbc_make_html_page}
+</pre></div>
+</div>
+<p>This section defines where each of the executables live; it tells the workflow which files to process. It might be worth checking you can find all of these paths before you set the code running.</p>
+<p>The following options are those associated to a given executable.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">llwadd</span><span class="p">]</span>
+<span class="p">[</span><span class="n">datafind</span><span class="p">]</span>
+<span class="n">urltype</span><span class="o">=</span><span class="n">file</span>
+</pre></div>
+</div>
+<p>This is the format for the return of the data find executable - you want a file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">segments_from_cats</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Some sections are left empty. That is fine, but you have to define each option otherwise the code will complain</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">ligolw_combine_segments</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">splittable</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">options</span> <span class="k">for</span> <span class="n">splittable</span> <span class="n">job</span>
+<span class="n">random</span><span class="o">-</span><span class="n">sort</span> <span class="o">=</span>
+</pre></div>
+</div>
+<p>This option randomly sorts the bank to be split up before processing</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">injections</span><span class="p">]</span>
+<span class="n">waveform</span> <span class="o">=</span> <span class="n">SpinTaylorT4threePointFivePN</span>
+</pre></div>
+</div>
+<p>Define the waveforms you want to use for injections</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">injections</span><span class="o">-</span><span class="n">bnslininj</span><span class="p">]</span>
+<span class="n">f</span><span class="o">-</span><span class="n">lower</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">distance</span> <span class="o">=</span> <span class="mi">150000</span>
+<span class="n">d</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">uniform</span>
+<span class="n">l</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">random</span>
+<span class="n">i</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">uniform</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mass1</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mass1</span> <span class="o">=</span> <span class="mf">3.1</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mass2</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mass2</span> <span class="o">=</span> <span class="mf">3.1</span>
+<span class="n">m</span><span class="o">-</span><span class="n">distr</span> <span class="o">=</span> <span class="n">componentMass</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">mtotal</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">mtotal</span> <span class="o">=</span> <span class="mf">6.2</span>
+<span class="n">disable</span><span class="o">-</span><span class="n">spin</span> <span class="o">=</span>
+<span class="n">time</span><span class="o">-</span><span class="n">step</span> <span class="o">=</span> <span class="mf">89.155</span>
+<span class="n">time</span><span class="o">-</span><span class="n">interval</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">1234</span>
+</pre></div>
+</div>
+<p>These are the injections parameters you want to define. Only defining ones which aren’t so obvious</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">f-lower</span></code> = low frequency cut off</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min-distance</span></code> =  (kpc)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max-distance</span></code> = (kpc)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">d-distr</span></code> = the distance distribution of the injections</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">l-distr</span></code> = the distribution of injections in the sky</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i-distr</span></code> = inclination of the injection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">time-step</span></code> = time between injections. This can be whatever time you want, but remember if the injections are too close together you can screw up your psd estimation. ~90s seems ok.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">time-interval</span></code> = time interval to inject the signal. It will not always be exactly at time-step, but at a time of time-step +/- random_number(0,time-interval)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seed</span></code> = random seed, choose different numbers to get different realizations of the same background distribution</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">inspiral</span><span class="p">]</span>
+<span class="p">;</span> <span class="n">inspiral</span> <span class="n">analysis</span> <span class="n">parameters</span> <span class="o">--</span> <span class="n">added</span> <span class="n">to</span> <span class="nb">all</span> <span class="n">inspiral</span> <span class="n">jobs</span>
+<span class="n">chisq</span><span class="o">-</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">256</span>
+<span class="n">snr</span><span class="o">-</span><span class="n">threshold</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">approximant</span> <span class="o">=</span> <span class="n">SPAtmplt</span>
+<span class="n">order</span> <span class="o">=</span> <span class="mi">7</span>
+<span class="n">cluster</span><span class="o">-</span><span class="n">method</span> <span class="o">=</span> <span class="n">window</span>
+<span class="n">cluster</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">segment</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">segment</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">pad</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">segment</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">pad</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">estimation</span> <span class="o">=</span> <span class="n">median</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">segment</span><span class="o">-</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">psd</span><span class="o">-</span><span class="n">inverse</span><span class="o">-</span><span class="n">length</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">strain</span><span class="o">-</span><span class="n">high</span><span class="o">-</span><span class="k">pass</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">pad</span><span class="o">-</span><span class="n">data</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">processing</span><span class="o">-</span><span class="n">scheme</span> <span class="o">=</span> <span class="n">mkl</span>
+<span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="o">=</span> <span class="mi">4096</span>
+<span class="nb">filter</span><span class="o">-</span><span class="n">inj</span><span class="o">-</span><span class="n">only</span> <span class="o">=</span>
+<span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="o">=</span> <span class="mi">40</span>
+</pre></div>
+</div>
+<p>These are the parameters you want to define for the inspiral search</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">chisq-bins</span></code> = number of chisq bins for the standard Bruce Allen chisq</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">snr-threshold</span></code> = SNR threshold</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">approximant</span></code> = approximation you want to use. SPAtmplt is stationary phase approximation template which is a fast implementation of Taylor F2.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">order</span></code> = PN order, the numbers are double the order. So 7=3.5PN</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cluster-method</span></code> = method over which to identify the loudest trigger - in this case a window</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cluster-window</span></code> = take a 1 second window around the loudest trigger</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">segment-length</span></code> = the length of a segment you want to analyze. Remember previously we mention we want 5 overlapping segments</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">segment-start-pad</span></code> = the amount of time we want to pad the start of the data by. In this instance we want to not use the first 64 seconds of data, as it will contain errors from filtering. This takes in to account the length of time we lose due to PSD corruption (16s) and the wrap around effect we have due to the template (48s)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">segment-end-pad</span></code> = the amount of time we want to pad the end of the data by. See above.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code> = the method by which we want to estimate the psd</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">psd-segment-length</span></code> = length of time used in each psd calculation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">psd-segment-stride</span></code> = time spacing between each psd calculation. 16s length with 8s stride implies a 50% overlap</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">psd-inverse-length</span></code> = time length used to truncate the inverse FFT (that is, the time domain realization) of the psd</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">strain-high-pass</span></code> = high pass filter applied to strain data before psd estimation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pad-data</span></code> = 8 second padding added to beginning of data to account for filter corruption for resampling and high-pass before data is broken up into chunks</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">processing-scheme</span></code> = indicates which software to use for processing (MKL = math kernel library made by Intel)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sample-rate</span></code> = sample rate of data (will be down sampled in workflow)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">filter-inj-only</span></code> = Use only segments with injections in them for matched filter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">low-frequency-cutoff</span></code> = low frequency limit for the matched filter search</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[inspiral-h1]
+; h1 specific inspiral parameters
+channel-name = ${workflow|h1-channel-name}
+</pre></div>
+</div>
+<p>Specify the name of the channel you want to run the inspiral analysis over for H1. Here we are referring back to the name in the workflow module</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[inspiral-l1]
+; l1 specific inspiral parameters
+channel-name = ${workflow|l1-channel-name}
+
+[bank2hdf]
+[trig2hdf]
+
+[coinc]
+coinc-threshold = 0.000
+ranking-statistic = exp_fit
+sngl-ranking = newsnr_sgveto_psdvar
+statistic-features = sensitive_volume normalize_fit_rate phasetd
+statistic-keywords = alpha_below_thresh:6 sngl_ranking_min_expected_psdvar:0.7
+</pre></div>
+</div>
+<p>Here we are doing exact match coincidence. So we take the light travel time between detectors and look for triggers which are coincident within this time window. The threshold defines if you want to extend the window.</p>
+<p>How triggers are ranked is defined by the ranking-statistic, sngl-ranking, statistic-features and statistic-keywords options used in the <cite>coinc</cite> and <cite>sngls</cite> sections.</p>
+<p>For a full description of the ranking statistic and associated options, and their values, see <a class="reference external" href="https://pycbc.org/pycbc/latest/html/search/ranking_statistic.html">https://pycbc.org/pycbc/latest/html/search/ranking_statistic.html</a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">coinc</span><span class="o">-</span><span class="n">full</span><span class="p">]</span>
+<span class="n">decimation</span><span class="o">-</span><span class="n">factor</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">loudest</span><span class="o">-</span><span class="n">keep</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">timeslide</span><span class="o">-</span><span class="n">interval</span><span class="o">=</span><span class="mf">1.1</span>
+</pre></div>
+</div>
+<p>This section concerns time slides without injections, and its purpose is to keep a small number of timesmlide triggers for background estimation. Time slides are done at all relative offsets that are multiple of the ‘timeslide-interval’, which is defined here to be 1.1 seconds. We don’t store all the coincident triggers due from time slides. We keep 200 of the loudest triggers from each template time slide, given by the second option, which gives a good estimation of the background at low FAR. The top option specifies for which timeslides we will keep all triggers, to get an overall estimation of background (not just the loudest). In this instance we would keep the triggers from 1000th, 2000th, 3000th timeslide.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">coinc</span><span class="o">-</span><span class="n">injfull</span><span class="o">&amp;</span><span class="n">coinc</span><span class="o">-</span><span class="n">fullinj</span><span class="p">]</span>
+<span class="n">timeslide</span><span class="o">-</span><span class="n">interval</span><span class="o">=</span><span class="p">{</span><span class="n">coinc</span><span class="o">-</span><span class="n">full</span><span class="p">:</span><span class="n">timeslide</span><span class="o">-</span><span class="n">interval</span><span class="p">}</span>
+<span class="n">loudest</span><span class="o">-</span><span class="n">keep</span><span class="o">-</span><span class="n">value</span> <span class="o">=</span> <span class="mf">8.5</span>
+<span class="n">cluster</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="p">{</span><span class="n">statmap</span><span class="o">|</span><span class="n">cluster</span><span class="o">-</span><span class="n">window</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This section concerns time slides with injections in the data. We assume only one injection will be coincident with a timeslide (done every 1.1 seconds - see first option) trigger and we keep its coincidence if its ranking statistic (newSNR) &gt; 8.5 as specified in the second option. This is to limit storage of unimpactful triggers only.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">coinc</span><span class="o">-</span><span class="n">injinj</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">pegasus_profile</span><span class="o">-</span><span class="n">statmap</span><span class="o">&amp;</span><span class="n">pegasus_profile</span><span class="o">-</span><span class="n">statmap_inj</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_memory</span> <span class="o">=</span> <span class="mi">20</span><span class="n">GB</span>
+</pre></div>
+</div>
+<p>This is the amount of memory the jobs might take</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">statmap</span><span class="o">&amp;</span><span class="n">statmap_inj</span><span class="p">]</span>
+<span class="n">veto</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">0.050</span>
+<span class="n">cluster</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">10.0</span>
+</pre></div>
+</div>
+<p>This controls the final clustering after all coincidence testing. The <code class="docutils literal notranslate"><span class="pre">cluster-window</span></code> indicates the time window used for clustering.
+The <code class="docutils literal notranslate"><span class="pre">veto-window</span></code> is used to remove all coincident zero-lag triggers so that they aren’t included in background estimation</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">hdfinjfind</span><span class="p">]</span>
+<span class="n">injection</span><span class="o">-</span><span class="n">window</span> <span class="o">=</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+<p>The rest of the config file concerns plotting formats</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">page_foreground</span><span class="p">]</span>
+<span class="p">[</span><span class="n">plot_snrifar</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">plot_snrchi</span><span class="p">]</span>
+<span class="p">[</span><span class="n">plot_coinc_snrchi</span><span class="p">]</span>
+<span class="p">[</span><span class="n">plot_coinc_snrchi</span><span class="o">-</span><span class="n">inj</span><span class="p">]</span>
+<span class="p">[</span><span class="n">plot_coinc_snrchi</span><span class="o">-</span><span class="n">bkg</span><span class="p">]</span>
+<span class="n">background</span><span class="o">-</span><span class="n">front</span><span class="o">=</span>
+<span class="p">[</span><span class="n">plot_coinc_snrchi</span><span class="o">-</span><span class="n">inj</span><span class="o">&amp;</span><span class="n">plot_coinc_snrchi</span><span class="o">-</span><span class="n">bkg</span><span class="o">&amp;</span><span class="n">plot_snrchi</span><span class="p">]</span>
+<span class="n">newsnr</span><span class="o">-</span><span class="n">contours</span> <span class="o">=</span>  <span class="mi">6</span> <span class="mi">8</span> <span class="mi">10</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="p">]</span>
+<span class="n">sig</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span> <span class="n">ifar</span>
+<span class="n">sig</span><span class="o">-</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">1</span> <span class="mi">3</span> <span class="mi">10</span> <span class="mi">30</span> <span class="mi">100</span> <span class="mi">300</span> <span class="mi">1000</span> <span class="mi">3000</span> <span class="mi">10000</span> <span class="mi">30000</span> <span class="mi">100000</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="o">-</span><span class="n">mchirp</span><span class="p">]</span>
+<span class="nb">bin</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span>  <span class="n">mchirp</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="mf">0.89</span> <span class="mf">1.31</span> <span class="mf">1.74</span> <span class="mf">2.17</span> <span class="mf">2.60</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">120</span>
+<span class="n">dist</span><span class="o">-</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="o">-</span><span class="n">mtotal</span><span class="p">]</span>
+<span class="nb">bin</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span>  <span class="n">total_mass</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="mi">2</span> <span class="mf">2.4</span> <span class="mf">3.2</span> <span class="mi">4</span> <span class="mi">6</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">120</span>
+<span class="n">dist</span><span class="o">-</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="o">-</span><span class="n">spin</span><span class="p">]</span>
+<span class="nb">bin</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span>  <span class="n">spin</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.4</span> <span class="o">-</span><span class="mf">0.2</span> <span class="mf">0.2</span> <span class="mf">0.4</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">120</span>
+<span class="n">dist</span><span class="o">-</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="o">-</span><span class="n">mchirp_binless</span><span class="p">]</span>
+<span class="nb">bin</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span>  <span class="n">mchirp</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="mf">0.89</span> <span class="mf">1.31</span> <span class="mf">1.74</span> <span class="mf">2.17</span> <span class="mf">2.60</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="o">-</span><span class="n">mtotal_binless</span><span class="p">]</span>
+<span class="nb">bin</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span>  <span class="n">total_mass</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="mi">2</span> <span class="mf">2.4</span> <span class="mf">3.2</span> <span class="mi">4</span> <span class="mi">6</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="p">[</span><span class="n">plot_sensitivity</span><span class="o">-</span><span class="n">spin_binless</span><span class="p">]</span>
+<span class="nb">bin</span><span class="o">-</span><span class="nb">type</span> <span class="o">=</span>  <span class="n">spin</span>
+<span class="n">bins</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.4</span> <span class="o">-</span><span class="mf">0.2</span> <span class="mf">0.2</span> <span class="mf">0.4</span>
+<span class="nb">min</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">40</span>
+<span class="nb">max</span><span class="o">-</span><span class="n">dist</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="p">]</span>
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="o">-</span><span class="n">mchirp</span><span class="p">]</span>
+<span class="n">axis</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">mchirp</span>
+<span class="n">dynamic</span><span class="o">=</span>
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="o">-</span><span class="n">chirpdistmchirp</span><span class="p">]</span>
+<span class="n">axis</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">mchirp</span>
+<span class="n">dynamic</span><span class="o">=</span>
+<span class="n">distance</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">chirp_distance</span>
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="o">-</span><span class="n">time</span><span class="p">]</span>
+<span class="n">axis</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">time</span>
+<span class="n">dynamic</span><span class="o">=</span>
+
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="o">-</span><span class="n">mchirp_static</span><span class="p">]</span>
+<span class="n">axis</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">mchirp</span>
+<span class="n">log</span><span class="o">-</span><span class="n">distance</span><span class="o">=</span>
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="o">-</span><span class="n">chirpdistmchirp_static</span><span class="p">]</span>
+<span class="n">axis</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">mchirp</span>
+<span class="n">distance</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">chirp_distance</span>
+<span class="n">log</span><span class="o">-</span><span class="n">distance</span><span class="o">=</span>
+<span class="p">[</span><span class="n">plot_foundmissed</span><span class="o">-</span><span class="n">time_static</span><span class="p">]</span>
+<span class="n">axis</span><span class="o">-</span><span class="nb">type</span><span class="o">=</span><span class="n">time</span>
+<span class="n">log</span><span class="o">-</span><span class="n">distance</span><span class="o">=</span>
+
+<span class="p">[</span><span class="n">hdf_trigger_merge</span><span class="p">]</span>
+<span class="p">[</span><span class="n">pegasus_profile</span><span class="o">-</span><span class="n">hdf_trigger_merge</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_memory</span> <span class="o">=</span> <span class="mi">10</span><span class="n">GB</span>
+
+<span class="p">[</span><span class="n">page_injections</span><span class="p">]</span>
+<span class="p">[</span><span class="n">plot_segments</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">results_page</span><span class="p">]</span>
+<span class="n">analysis</span><span class="o">-</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;PyCBC Coincident Analysis&quot;</span>
+<span class="n">analysis</span><span class="o">-</span><span class="n">subtitle</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="generating-the-workflow">
+<span id="coincworkflowgenerate"></span><h2>Generating the workflow<a class="headerlink" href="#generating-the-workflow" title="Link to this heading"></a></h2>
+<p>The workflow is generated by running the script <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>. This program takes the command line arguments</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ pycbc_make_offline_search_workflow --help
+No CuPy
+No CuPy or GPU PhenomHM module.
+No CuPy or GPU response available.
+No CuPy or GPU interpolation available.
+usage: pycbc_make_offline_search_workflow [-h] [-v] [--version [VERSION]]
+                                          [--config-files CONFIGFILE [CONFIGFILE ...]]
+                                          [--config-overrides [SECTION:OPTION:VALUE ...]]
+                                          [--config-delete [SECTION:OPTION ...]]
+                                          --workflow-name WORKFLOW_NAME
+                                          [--tags TAGS [TAGS ...]]
+                                          [--output-dir OUTPUT_DIR]
+                                          [--cache-file CACHE_FILE]
+                                          [--submit-now] [--dax-file DAX_FILE]
+
+Program for running offline analysis through event finding and ranking then
+generate post-processing and plots.
+
+options:
+  -h, --help            show this help message and exit
+
+PyCBC common options:
+  Common options for PyCBC executables.
+
+  -v, --verbose         Add verbosity to logging. Adding the option multiple
+                        times makes logging progressively more verbose, e.g.
+                        --verbose or -v provides logging at the info level,
+                        but -vv or --verbose --verbose provides debug logging.
+  --version [VERSION]   Display PyCBC version information and exit. Can
+                        optionally supply a modifier integer to control the
+                        verbosity of the version information. 0 and 1 are the
+                        same as --version; 2 provides more detailed PyCBC
+                        library information; 3 provides information about
+                        PyCBC, LAL and LALSimulation packages (if installed)
+
+Configuration:
+  Options needed for parsing config file(s).
+
+  --config-files CONFIGFILE [CONFIGFILE ...]
+                        List of config files to be used in analysis.
+  --config-overrides [SECTION:OPTION:VALUE ...]
+                        List of section,option,value combinations to add into
+                        the configuration file. Normally the gps start and end
+                        times might be provided this way, and user specific
+                        locations (ie. output directories). This can also be
+                        provided as SECTION:OPTION or SECTION:OPTION: both of
+                        which indicate that the corresponding value is left
+                        blank.
+  --config-delete [SECTION:OPTION ...]
+                        List of section,option combinations to delete from the
+                        configuration file. This can also be provided as
+                        SECTION which deletes the enture section from the
+                        configuration file or SECTION:OPTION which deletes a
+                        specific option from a given section.
+
+Options for setting workflow files:
+  --workflow-name WORKFLOW_NAME
+                        Name of the workflow.
+  --tags TAGS [TAGS ...]
+                        Append the given tags to file names.
+  --output-dir OUTPUT_DIR
+                        Path to directory where the workflow will be written.
+                        Default is to use {workflow-name}_output.
+  --cache-file CACHE_FILE
+                        Path to input file containing list of files to be
+                        reused (the &#39;input_map&#39; file)
+  --submit-now          If given, workflow will immediately be submitted on
+                        completion of workflow generation
+  --dax-file DAX_FILE   Path to DAX file. Default is to write to the output
+                        directory with name {workflow-name}.dax.
+</pre></div>
+</div>
+<p>The configuration files can either be passes as local files, or given as URLs
+to specific configuration files managed for an analysis. For example, to
+generate a workflow to search two weeks of S6D data and place the results in
+your <code class="docutils literal notranslate"><span class="pre">public_html</span></code> directory, run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_search_workflow</span> <span class="o">--</span><span class="n">workflow</span><span class="o">-</span><span class="n">name</span> <span class="n">s6d_chunk3</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">output</span> \
+  <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">S6</span><span class="o">/</span><span class="n">pipeline</span><span class="o">/</span><span class="n">s6_run_pycbc_er8_pre_release</span><span class="o">.</span><span class="n">ini</span> \
+  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">S6</span><span class="o">/</span><span class="n">pipeline</span><span class="o">/</span><span class="n">executables</span><span class="o">.</span><span class="n">ini</span> \
+  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">S6</span><span class="o">/</span><span class="n">pipeline</span><span class="o">/</span><span class="n">injections</span><span class="o">.</span><span class="n">ini</span> \
+  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">S6</span><span class="o">/</span><span class="n">pipeline</span><span class="o">/</span><span class="n">data_S6</span><span class="o">.</span><span class="n">ini</span> \
+  <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">pycbc</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">ligo</span><span class="o">-</span><span class="n">cbc</span><span class="o">/</span><span class="n">pycbc</span><span class="o">-</span><span class="n">config</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">S6</span><span class="o">/</span><span class="n">pipeline</span><span class="o">/</span><span class="n">gps_times_s6d_big_dog_two_weeks</span><span class="o">.</span><span class="n">ini</span> \
+  <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">overrides</span> <span class="s2">&quot;results_page:output-path:$</span><span class="si">{HOME}</span><span class="s2">/public_html/s6/s6d-big-dog-weeks&quot;</span>
+</pre></div>
+</div>
+<p>The configuration <code class="docutils literal notranslate"><span class="pre">results_page:output-path</span></code> can be changed appropriately to
+set the output web page location.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To use released executables for production analysis, you should specify
+the URL to an <code class="docutils literal notranslate"><span class="pre">executables.ini</span></code> file from the
+<a class="reference external" href="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software">PyCBC Software repository</a>.</p>
+</div>
+</section>
+<section id="planning-and-submitting-the-workflow">
+<span id="coincworkflowplan"></span><h2>Planning and Submitting the Workflow<a class="headerlink" href="#planning-and-submitting-the-workflow" title="Link to this heading"></a></h2>
+<p>Pegasus is used to plan and submit the workflow. To invoke Pegasus to submit a
+PyCBC workflow, you can use the argument <code class="docutils literal notranslate"><span class="pre">--submit-now</span></code>. To generate the workflow
+without submitting, omit this option, and then run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">start</span>
+</pre></div>
+</div>
+<p>executable which is made in the <code class="docutils literal notranslate"><span class="pre">--output-dir</span></code> directory you defined earlier.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">accounting_group</span> <span class="o">=</span> <span class="n">accounting</span><span class="o">.</span><span class="n">tag</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">request_disk</span> <span class="o">=</span> <span class="mi">1024</span>
+</pre></div>
+</div>
+<p>You can monitor the status of the workflow with Pegasus Dashboard, or the
+other Pegasus tools described below.</p>
+<p>If the workflow runs successfully, the output will be place under the
+directory specified by <code class="docutils literal notranslate"><span class="pre">results_page:output-path</span></code> when the workflow is
+complete.</p>
+<section id="monitor-and-debug-the-workflow-detailed-pegasus-documentation">
+<h3>Monitor and Debug the Workflow (<a class="reference external" href="https://pegasus.isi.edu/wms/docs/latest/tutorial.php#idm78622034400">Detailed Pegasus Documentation</a>)<a class="headerlink" href="#monitor-and-debug-the-workflow-detailed-pegasus-documentation" title="Link to this heading"></a></h3>
+<p>To monitor the above workflow, one would run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pegasus</span><span class="o">-</span><span class="n">status</span> <span class="o">/</span><span class="n">usr1</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">pegasus</span><span class="o">/</span><span class="n">weekly_ahope</span><span class="o">/</span><span class="n">run0011</span>
+</pre></div>
+</div>
+<p>To get debugging information in the case of failures.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pegasus</span><span class="o">-</span><span class="n">analyzer</span> <span class="o">/</span><span class="n">usr1</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">pegasus</span><span class="o">/</span><span class="n">weekly_ahope</span><span class="o">/</span><span class="n">run0011</span>
+</pre></div>
+</div>
+</section>
+<section id="pegasus-dashboard">
+<h3>Pegasus Dashboard<a class="headerlink" href="#pegasus-dashboard" title="Link to this heading"></a></h3>
+<p>The <a class="reference external" href="http://pegasus.isi.edu/wms/docs/latest/ch02s11.php">pegasus dashboard</a> is a visual and interactive way to get information about the progress, status, etc of your workflows.</p>
+<p>The software can be obtained from a separate pegasus package here &lt;<a class="reference external" href="https://github.com/pegasus-isi/pegasus-service">https://github.com/pegasus-isi/pegasus-service</a>&gt;.</p>
+<p>Pegasus Dashboard is currently installed on sugar. To view your Pegasus Dashboard, in a browser go to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">sugar</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span><span class="o">/</span><span class="n">pegasus</span><span class="o">/</span><span class="n">u</span><span class="o">/</span><span class="n">albert</span><span class="o">.</span><span class="n">einstein</span>
+</pre></div>
+</div>
+<p>This shows a page that has a table of all your workflows that were submitted from sugar. You can view the details of a workflow by clicking on the link in the Workflow Details column of the table.</p>
+<p>Clicking on the Workflow Details link will take you to a webpage that gives a high-level overview of the workflow, telling you how many many jobs succeeded, fail, the submit directory, etc. There is a table with tabs at the bottom of the page. If you click the tabs Failed, Running, and Successful the page will generate a table that lists all the failed, running, and successful jobs in the workflow respectively. You also have the ability to search the table for a particular kind of job using the Search bar.</p>
+<p>You can view the details of a job by clicking the link in the Job Name column. This will take you to a Job Details page. This page will tell you where to find stdout files, stderr files, how much wall clock time the job took to run, etc. There is a table at the bottom of the page with a Failed and Successful tab. If you click on the respective tab, it will list all invocations of that job. You can click on the link in the Invocations column for more information.</p>
+<p>On the Invocation Details page there is information about the command line arguments, executable path, CPU time, wall clock time, etc.</p>
+<p>In certain cases, the pegasus monitor daemon may crash and this could result in
+invalid or nonsensical information on the dashboard (e.g. a cumulative
+computing time of None). This problem can be solved by running
+<code class="docutils literal notranslate"><span class="pre">pegasus-plots</span></code> on the workflow directory: the command should tell you what
+to do. Typically this will be running <code class="docutils literal notranslate"><span class="pre">pegasus-monitord</span></code> in replay mode (see
+its man page).</p>
+</section>
+<section id="pegasus-analyzer">
+<h3>Pegasus Analyzer<a class="headerlink" href="#pegasus-analyzer" title="Link to this heading"></a></h3>
+<p>The <a class="reference external" href="http://pegasus.isi.edu/wms/docs/trunk/cli-pegasus-analyzer.php">pegasus analyzer</a> is a command-line tool for reporting sucessful and failed jobs.</p>
+<p>To run <code class="docutils literal notranslate"><span class="pre">pegasus_analyzer</span></code> on your workflow, type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pegasus</span><span class="o">-</span><span class="n">analyzer</span> <span class="o">/</span><span class="n">usr1</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">ahnitz</span><span class="o">/</span><span class="n">pegasus</span><span class="o">/</span><span class="n">weekly_ahope</span><span class="o">/</span><span class="n">run0011</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">pegasus_analyzer</span></code> will display a summary of suceeded, failed, and unsubmitted jobs in the workflow. After the summary information, <code class="docutils literal notranslate"><span class="pre">pegasus_analyzer</span></code> will display information about each failed job. An example would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">************************************</span><span class="n">Summary</span><span class="o">*************************************</span>
+
+<span class="n">Submit</span> <span class="n">Directory</span>   <span class="p">:</span> <span class="o">/</span><span class="n">usr1</span><span class="o">/</span><span class="n">cbiwer</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">H1L1V1</span><span class="o">-</span><span class="n">s6d_test</span><span class="o">-</span><span class="mi">970012743</span><span class="o">-</span><span class="mf">258000.9</span><span class="n">apn7X</span>
+<span class="n">Total</span> <span class="n">jobs</span>         <span class="p">:</span>     <span class="mi">24</span> <span class="p">(</span><span class="mf">100.00</span><span class="o">%</span><span class="p">)</span>
+<span class="c1"># jobs succeeded   :     19 (79.17%)</span>
+<span class="c1"># jobs failed      :      5 (20.83%)</span>
+<span class="c1"># jobs unsubmitted :      0 (0.00%)</span>
+
+<span class="o">******************************</span><span class="n">Failed</span> <span class="n">jobs</span><span class="s1">&#39; details******************************</span>
+
+<span class="o">=====================</span><span class="n">ligolw_cbc_hardware_inj_page_ID000020</span><span class="o">======================</span>
+
+<span class="n">last</span> <span class="n">state</span><span class="p">:</span> <span class="n">POST_SCRIPT_FAILED</span>
+     <span class="n">site</span><span class="p">:</span> <span class="n">local</span>
+<span class="n">submit</span> <span class="n">file</span><span class="p">:</span> <span class="n">ligolw_cbc_hardware_inj_page_ID000020</span><span class="o">.</span><span class="n">sub</span>
+<span class="n">output</span> <span class="n">file</span><span class="p">:</span> <span class="n">ligolw_cbc_hardware_inj_page_ID000020</span><span class="o">.</span><span class="n">out</span><span class="mf">.001</span>
+<span class="n">error</span> <span class="n">file</span><span class="p">:</span> <span class="n">ligolw_cbc_hardware_inj_page_ID000020</span><span class="o">.</span><span class="n">err</span><span class="mf">.001</span>
+
+<span class="o">-------------------------------</span><span class="n">Task</span> <span class="c1">#1 - Summary--------------------------------</span>
+
+<span class="n">site</span>        <span class="p">:</span> <span class="n">local</span>
+<span class="n">hostname</span>    <span class="p">:</span> <span class="n">avhe2010</span><span class="o">.</span><span class="n">sugar</span><span class="o">.</span><span class="n">phy</span><span class="o">.</span><span class="n">syr</span><span class="o">.</span><span class="n">edu</span>
+<span class="n">executable</span>  <span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">cbiwer</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">test_workflow</span><span class="o">/</span><span class="mi">970012743</span><span class="o">-</span><span class="mi">970270743</span><span class="o">/</span><span class="n">executables</span><span class="o">/</span><span class="n">ligolw_cbc_hardware_inj_page</span>
+<span class="n">arguments</span>   <span class="p">:</span> <span class="o">--</span><span class="n">source</span><span class="o">-</span><span class="n">xml</span> <span class="n">hardware_injection_summary</span><span class="o">/</span><span class="n">H1L1V1</span><span class="o">-</span><span class="n">S6_CBC_HW_INJECTIONS</span><span class="o">-</span><span class="mi">930493015</span><span class="o">-</span><span class="mf">42111800.</span><span class="n">xml</span> <span class="o">--</span><span class="n">outfile</span> <span class="n">hardware_injection_summary</span><span class="o">/</span><span class="n">H1L1V1</span><span class="o">-</span><span class="n">HWINJ_SUMMARY_CAT_2</span><span class="o">-</span><span class="mi">9</span>
+<span class="mi">70012743</span><span class="o">-</span><span class="mf">258000.</span><span class="n">html</span> <span class="o">----</span><span class="n">segments</span><span class="o">-</span><span class="n">xml</span><span class="o">-</span><span class="n">glob</span> <span class="o">../</span><span class="n">segments</span><span class="o">/*-</span><span class="n">SCIENCE_SEGMENTS</span><span class="o">-*-*.</span><span class="n">xml</span> <span class="o">--</span><span class="n">v1</span><span class="o">-</span><span class="n">injections</span> <span class="o">----</span><span class="n">vetos</span><span class="o">-</span><span class="n">xml</span><span class="o">-</span><span class="n">glob</span> <span class="o">../</span><span class="n">segments</span><span class="o">/*-</span><span class="n">COMBINED_CAT_2_VETO_SEGS</span><span class="o">-*-*.</span><span class="n">xml</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span>
+<span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">970012743</span> <span class="o">--</span><span class="n">segment</span><span class="o">-</span><span class="nb">dir</span> <span class="n">hardware_injection_summary</span> <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">970270743</span> <span class="o">--</span><span class="n">l1</span><span class="o">-</span><span class="n">injections</span> <span class="o">--</span><span class="n">analyze</span><span class="o">-</span><span class="n">injections</span> <span class="o">--</span><span class="n">cache</span><span class="o">-</span><span class="n">file</span> <span class="n">full_data</span><span class="o">/</span><span class="n">H1L1V1</span><span class="o">-</span><span class="n">INSPIRAL_HIPE_FU</span>
+<span class="n">LL_DATA_CAT_2_VETO</span><span class="o">-</span><span class="mi">970012743</span><span class="o">-</span><span class="mf">258000.</span><span class="n">cache</span> <span class="o">--</span><span class="n">h1</span><span class="o">-</span><span class="n">injections</span> <span class="o">--</span><span class="n">cache</span><span class="o">-</span><span class="n">pattern</span> <span class="o">*</span><span class="n">SIRE_FIRST</span><span class="o">*</span>
+<span class="n">exitcode</span>    <span class="p">:</span> <span class="mi">2</span>
+<span class="n">working</span> <span class="nb">dir</span> <span class="p">:</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">cbiwer</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">test_workflow</span><span class="o">/</span><span class="mi">970012743</span><span class="o">-</span><span class="mi">970270743</span>
+
+<span class="n">Task</span> <span class="c1">#1 - ligo-hwinjpagejob::ligolw_cbc_hardware_inj_page:1.0 - ID000020 - Kickstart stderr</span>
+
+<span class="n">Usage</span><span class="p">:</span>  <span class="n">ligolw_cbc_hardware_inj_page</span> <span class="p">[</span><span class="n">options</span><span class="p">]</span>
+<span class="n">Program</span> <span class="n">to</span> <span class="n">parse</span> <span class="n">the</span> <span class="n">inspiral</span> <span class="n">injection</span> <span class="n">log</span>
+<span class="n">ligolw_cbc_hardware_inj_page</span><span class="p">:</span> <span class="n">error</span><span class="p">:</span> <span class="n">no</span> <span class="n">such</span> <span class="n">option</span><span class="p">:</span> <span class="o">----</span><span class="n">segments</span><span class="o">-</span><span class="n">xml</span><span class="o">-</span><span class="n">glob</span>
+</pre></div>
+</div>
+<p>The output provides you with the <code class="docutils literal notranslate"><span class="pre">stderr</span></code>, the command line, and where the job was run.</p>
+<p>If you have a subdax that failed, <code class="docutils literal notranslate"><span class="pre">pegasus_analyzer</span></code> will provide you with a command to recieve more information about the failed jobs in the subdax.</p>
+</section>
+</section>
+<section id="reuse-of-data-from-a-previous-workflow">
+<span id="weeklyahopereuse"></span><h2>Reuse of data from a previous workflow<a class="headerlink" href="#reuse-of-data-from-a-previous-workflow" title="Link to this heading"></a></h2>
+<p>One of the features of Pegasus is reuse the data products of prior runs.
+This can be used to e.g. expand an analysis or recover a run with mistaken settings without
+duplicating work. The steps below explain how to do this.</p>
+<section id="setting-up-a-workflow-for-data-reuse">
+<h3>Setting up a workflow for data reuse<a class="headerlink" href="#setting-up-a-workflow-for-data-reuse" title="Link to this heading"></a></h3>
+<p>The first step is to generate a new workflow that performs the analysis that
+you would like to do. This workflow should be generated in a new directory so
+that it does not overwrite data from your previous workflows.</p>
+<p><strong>Stop</strong> before you generate the workflow.
+You will pass an additional file to the generator using the
+<code class="docutils literal notranslate"><span class="pre">--cache-file</span></code> option with a list of files that Pegasus can re-use from a
+previous run.  The Pegasus Workflow Planner will reduce the workflow
+using this cache file. Reduction works by deleting jobs from the workflow
+whose output files have been found in some location in this cache file.</p>
+<p>The key to data reuse is building the cache file. This file maps a file created
+in the workflow to a URL and a site where that URL can be found. The syntax of the cache
+file is plain ASCII with each line in the file giving the location of a file in the format:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LOGICAL_FILE_NAME</span> <span class="n">PHYSICAL_FILE_URL</span> <span class="n">pool</span><span class="o">=</span><span class="s2">&quot;SITE&quot;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">LOGICAL_FILE_NAME</span></code> is the name of the file as it appears in the
+workflow. This should include any subdirectory path used by the workflow to organize files in the case of, e.g.,
+<code class="docutils literal notranslate"><span class="pre">INSPIRAL</span></code> files but it should not be the absolute path to the file. <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> is a
+full URL where the file can be found, and <code class="docutils literal notranslate"><span class="pre">SITE</span></code> is the site on which that URL
+resides.</p>
+<p>The URI in the <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> can be any of the URIs that Pegasus
+recognizes. The URIs <code class="docutils literal notranslate"><span class="pre">file://</span></code>,  <code class="docutils literal notranslate"><span class="pre">https://</span></code> are likely
+the most useful. Pegasus will take care of adding transfer jobs for
+<code class="docutils literal notranslate"><span class="pre">https://</span></code> URIs, if the data is not available locally.</p>
+<p>The string <code class="docutils literal notranslate"><span class="pre">SITE</span></code> is a hint that tells Pegasus on which site the
+<code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> can be found. The <code class="docutils literal notranslate"><span class="pre">SITE</span></code> string should be one of the
+names used to identify the cluster where jobs are run.
+In practice there are only two execution sites used by PyCBC workflows:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">local</span></code> which is the regular Condor pool on the local cluster where the workflow is being run from. This is typically used when re-using data that exists on the filesystem of the local cluster.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">osg</span></code> which is the Open Science Grid pool, as described in <a class="reference internal" href="#weeklyahopeosg"><span class="std std-ref">Running on the Open Science Grid</span></a> below. This is only used if the data to be re-used is accessible via the <code class="docutils literal notranslate"><span class="pre">/cvmfs</span></code> filesystem.</p></li>
+</ol>
+<p>If the <code class="docutils literal notranslate"><span class="pre">SITE</span></code> string for a file matches the site where a job will be run,
+then Pegasus assumes that the file can be accessed locally via the regular
+file open commands. If the <code class="docutils literal notranslate"><span class="pre">SITE</span></code> string does not match the site where a job
+will be run, then Pegasus adds transfer jobs to the workflow to move the file
+to the site where it will be needed by a job.</p>
+<p>To tell Pegasus that the file is neither accessible via file open on the
+<code class="docutils literal notranslate"><span class="pre">local</span></code> submit host nor on the <code class="docutils literal notranslate"><span class="pre">osg</span></code> pool, then the <code class="docutils literal notranslate"><span class="pre">SITE</span></code> string can be
+set to <code class="docutils literal notranslate"><span class="pre">remote</span></code>. This tells Pegasus that the file is neither on the
+<code class="docutils literal notranslate"><span class="pre">local</span></code> or the <code class="docutils literal notranslate"><span class="pre">osg</span></code> site and so Pegasus must add file transfer jobs to
+fetch the file from some other site.  This <code class="docutils literal notranslate"><span class="pre">SITE</span></code> attribute is needed
+beacuse a map between the job execution site and the location of the file
+might not be obvious from the hostname in the <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code>.</p>
+<p>The following rule should be helpful when chosing the <code class="docutils literal notranslate"><span class="pre">SITE</span></code> string:</p>
+<ul class="simple">
+<li><p>If you are re-using a file that is available locally with a <code class="docutils literal notranslate"><span class="pre">file://</span></code> URI in its <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> (or has an implicit <code class="docutils literal notranslate"><span class="pre">file://</span></code> URI since the <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> starts with a <code class="docutils literal notranslate"><span class="pre">/</span></code>) then the string <code class="docutils literal notranslate"><span class="pre">SITE</span></code> should be set to <code class="docutils literal notranslate"><span class="pre">local</span></code>.</p></li>
+<li><p>If you are re-using a file from another cluster, e.g. you are on the Syracuse cluster and want to re-use data from AEI Atlas cluster, then the string <code class="docutils literal notranslate"><span class="pre">SITE</span></code> should be set to <code class="docutils literal notranslate"><span class="pre">remote</span></code> for that file. In this case, the URI in <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> will begin with the scheme (e.g. <code class="docutils literal notranslate"><span class="pre">https://</span></code>) depending on how the file can be accessed.</p></li>
+</ul>
+<p>To illustrate this, an example of a simple cache file containing four files for re-use from the <code class="docutils literal notranslate"><span class="pre">local</span></code> site is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">H1</span><span class="o">-</span><span class="n">VETOTIME_CAT3</span><span class="o">-</span><span class="mi">1169107218</span><span class="o">-</span><span class="mf">1066800.</span><span class="n">xml</span> <span class="n">file</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">dbrown</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">aligo</span><span class="o">/</span><span class="n">o2</span><span class="o">/</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">o2</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">output</span><span class="o">/</span><span class="n">results</span><span class="o">/</span><span class="mf">1.</span><span class="n">_analysis_time</span><span class="o">/</span><span class="mf">1.01</span><span class="n">_segment_data</span><span class="o">/</span><span class="n">H1</span><span class="o">-</span><span class="n">VETOTIME_CAT3</span><span class="o">-</span><span class="mi">1169107218</span><span class="o">-</span><span class="mf">1066800.</span><span class="n">xml</span> <span class="n">pool</span><span class="o">=</span><span class="s2">&quot;local&quot;</span>
+<span class="n">L1</span><span class="o">-</span><span class="n">VETOTIME_CAT3</span><span class="o">-</span><span class="mi">1169107218</span><span class="o">-</span><span class="mf">1066800.</span><span class="n">xml</span> <span class="n">file</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">dbrown</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">aligo</span><span class="o">/</span><span class="n">o2</span><span class="o">/</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">o2</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">output</span><span class="o">/</span><span class="n">results</span><span class="o">/</span><span class="mf">1.</span><span class="n">_analysis_time</span><span class="o">/</span><span class="mf">1.01</span><span class="n">_segment_data</span><span class="o">/</span><span class="n">L1</span><span class="o">-</span><span class="n">VETOTIME_CAT3</span><span class="o">-</span><span class="mi">1169107218</span><span class="o">-</span><span class="mf">1066800.</span><span class="n">xml</span> <span class="n">pool</span><span class="o">=</span><span class="s2">&quot;local&quot;</span>
+<span class="mi">116912</span><span class="o">/</span><span class="n">H1</span><span class="o">-</span><span class="n">INSPIRAL_FULL_DATA_JOB0</span><span class="o">-</span><span class="mi">1169120586</span><span class="o">-</span><span class="mf">1662.</span><span class="n">hdf</span> <span class="n">file</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">dbrown</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">aligo</span><span class="o">/</span><span class="n">o2</span><span class="o">/</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">o2</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">output</span><span class="o">/</span><span class="n">full_data</span><span class="o">/</span><span class="n">H1</span><span class="o">-</span><span class="n">INSPIRAL_FULL_DATA_JOB0</span><span class="o">-</span><span class="mi">1169120586</span><span class="o">-</span><span class="mf">1662.</span><span class="n">hdf</span> <span class="n">pool</span><span class="o">=</span><span class="s2">&quot;local&quot;</span>
+<span class="mi">116912</span><span class="o">/</span><span class="n">H1</span><span class="o">-</span><span class="n">INSPIRAL_FULL_DATA_JOB1</span><span class="o">-</span><span class="mi">1169120586</span><span class="o">-</span><span class="mf">1662.</span><span class="n">hdf</span> <span class="n">file</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">dbrown</span><span class="o">/</span><span class="n">projects</span><span class="o">/</span><span class="n">aligo</span><span class="o">/</span><span class="n">o2</span><span class="o">/</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">o2</span><span class="o">-</span><span class="n">analysis</span><span class="o">-</span><span class="mi">4</span><span class="o">/</span><span class="n">output</span><span class="o">/</span><span class="n">full_data</span><span class="o">/</span><span class="n">H1</span><span class="o">-</span><span class="n">INSPIRAL_FULL_DATA_JOB1</span><span class="o">-</span><span class="mi">1169120586</span><span class="o">-</span><span class="mf">1662.</span><span class="n">hdf</span> <span class="n">pool</span><span class="o">=</span><span class="s2">&quot;local&quot;</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">LOGICAL_FILE_NAME</span></code> for the veto files is just the name of the
+file, but for the two inspiral files it contains the subdirectory that the
+workflow uses to organize the files by GPS time. In the case of this file Pegasus will delete from the workflow the jobs that create the files <code class="docutils literal notranslate"><span class="pre">H1-VETOTIME_CAT3-1169107218-1066800.xml</span></code>, <code class="docutils literal notranslate"><span class="pre">L1-VETOTIME_CAT3-1169107218-1066800.xml</span></code>, <code class="docutils literal notranslate"><span class="pre">116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf</span></code>, and <code class="docutils literal notranslate"><span class="pre">116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf</span></code> when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since <code class="docutils literal notranslate"><span class="pre">site=&quot;local&quot;</span></code> for these files, Pegasus expects that the files all exist on the host where the workflow is run from.</p>
+<p>Once a cache file has been constructed, to enable data re-use, you follow the
+standard instructions for generating the workflow in the section
+<a class="reference internal" href="#coincworkflowplan"><span class="std std-ref">Planning and Submitting the Workflow</span></a>, but add the <code class="docutils literal notranslate"><span class="pre">--cache-file</span></code> argument that points to
+the cache file that you have created. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_search_workflow</span> <span class="o">--</span><span class="n">workflow</span><span class="o">-</span><span class="n">name</span> <span class="n">s6d_chunk3</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">output</span> \
+  <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> <span class="o">...</span> \
+  <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">overrides</span> <span class="s2">&quot;results_page:output-path:$</span><span class="si">{HOME}</span><span class="s2">/public_html/s6/s6d-big-dog-weeks&quot;</span> \
+  <span class="o">--</span><span class="n">cache</span><span class="o">-</span><span class="n">file</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">prior_data</span><span class="o">.</span><span class="n">map</span>
+</pre></div>
+</div>
+<p>will use the URLs from the file <code class="docutils literal notranslate"><span class="pre">/path/to/prior_data.map</span></code> to implement
+data re-use and subsequent workflow reduction. If more than once cache file is
+provided, pass the paths as a comma separated list:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_search_workflow</span> <span class="o">--</span><span class="n">workflow</span><span class="o">-</span><span class="n">name</span> <span class="n">s6d_chunk3</span> <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="n">output</span> \
+  <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> <span class="o">...</span> \
+  <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">overrides</span> <span class="s2">&quot;results_page:output-path:$</span><span class="si">{HOME}</span><span class="s2">/public_html/s6/s6d-big-dog-weeks&quot;</span> \
+  <span class="o">--</span><span class="n">cache</span><span class="o">-</span><span class="n">file</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">prior_data</span><span class="o">.</span><span class="n">map</span><span class="p">,</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">other</span><span class="o">.</span><span class="n">map</span>
+</pre></div>
+</div>
+<p>Which file URLs should be included in the reuse cache? There is no single
+correct way of deciding this, as it depends on exactly what you are trying to do. The sections
+below explain how to do this for a few common situations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">[workflow]</span></code> section of the ini configuration file contains an
+option <code class="docutils literal notranslate"><span class="pre">file-retention-level</span></code>. This is commonly set to <code class="docutils literal notranslate"><span class="pre">all_files</span></code> or
+<code class="docutils literal notranslate"><span class="pre">all_triggers</span></code>, in which case the data products re-used will be copied
+from the input locations and stored into the output location of the new
+workflow when the new workflow is run with data re-use. This can be
+wasteful of disk space, so you may want to set this option to either
+<code class="docutils literal notranslate"><span class="pre">merged_triggers</span></code> or <code class="docutils literal notranslate"><span class="pre">results</span></code> to store a smaller sub-set of the
+workflow’s data products. These setting will allow the use of data from
+a previous run, but not make duplicate copies of intermediate data files.
+See the documentation under <a class="reference internal" href="initialization.html#workflowconfigparsermod"><span class="std std-ref">Pycbc’s workflow module configuration file(s) and command line interface</span></a> for more
+details of the <code class="docutils literal notranslate"><span class="pre">file-retention-level</span></code> configuration option.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At present you <em>cannot</em> re-use <code class="docutils literal notranslate"><span class="pre">.dax</span></code> and <code class="docutils literal notranslate"><span class="pre">.map</span></code> files from a previous
+run. A workflow using data reuse must regenerate and re-run any sub-daxes
+from scratch. If you re-use a <code class="docutils literal notranslate"><span class="pre">.map</span></code> file rather than re-generating it,
+then the new workflow will write results files in the location of the old
+workflow. All of the examples below use an <code class="docutils literal notranslate"><span class="pre">egrep</span> <span class="pre">-v</span> <span class="pre">'(dax|map)'</span></code> to
+filter out these files.</p>
+</div>
+</section>
+<section id="extending-the-gps-end-time-of-a-previous-workflow">
+<span id="workflow-rerun-extend"></span><h3>Extending the GPS end time of a previous workflow<a class="headerlink" href="#extending-the-gps-end-time-of-a-previous-workflow" title="Link to this heading"></a></h3>
+<p>A common mode of data re-use is to extend the GPS end time of a previous
+workflow to generate a new result page that e.g. extends the analysis by a few
+days. This assumes that:</p>
+<ul class="simple">
+<li><p>The previous workflow completed successfully.</p></li>
+<li><p>There are no changes to the workflow configuration file, other than incrementing the end time of the workflow.</p></li>
+</ul>
+<p>In this case, first re-run <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> to build the
+new workflow. The normal file retention level will copy a lot of reused data
+from the previous workflow directory into the new workflow directory. If you
+do not want to do this, use a <code class="docutils literal notranslate"><span class="pre">--config-override</span></code> to change the value of
+<code class="docutils literal notranslate"><span class="pre">workflow:file-retention-level</span></code> as described on the page
+<a class="reference internal" href="initialization.html#workflowconfigparsermod"><span class="std std-ref">Pycbc’s workflow module configuration file(s) and command line interface</span></a>.</p>
+<p>Then create a cache file in the following way:</p>
+<ol class="arabic simple">
+<li><p>Locate the PyCBC result page for the workflow that you wish to extend.</p></li>
+<li><p>In the menu under <strong>Section 8: Workflow</strong>, locate the <strong>Output map</strong> section (usually Section 8.06) and open that page.</p></li>
+<li><p>This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends <code class="docutils literal notranslate"><span class="pre">main.map</span></code> and download it by clicking on the <strong>Link to file</strong>. This file contains the main intermediate and output data products of the workflow.</p></li>
+</ol>
+<p>4. Edit this file so that it only contains the output of the <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> jobs, i.e. delete all of the lines that do not match the pattern <code class="docutils literal notranslate"><span class="pre">*INSPIRAL*hdf</span></code>. You can do this in a text editor, or with your favorite combination of UNIX <code class="docutils literal notranslate"><span class="pre">grep</span></code>, <code class="docutils literal notranslate"><span class="pre">sed</span></code>, <code class="docutils literal notranslate"><span class="pre">awk</span></code>, or <code class="docutils literal notranslate"><span class="pre">perl</span></code> commands.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">egrep</span> <span class="s1">&#39;INSPIRAL.*hdf&#39;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">downloaded</span><span class="o">/</span><span class="n">workflow</span><span class="o">-</span><span class="n">main</span><span class="o">.</span><span class="n">map</span> <span class="o">&gt;</span> <span class="n">inspiral_files</span><span class="o">.</span><span class="n">map</span>
+</pre></div>
+</div>
+<p>will pull out all cache file lines for the outputs of <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> files and write them to a new cache file called <code class="docutils literal notranslate"><span class="pre">inspiral_files.map</span></code>.</p>
+<ol class="arabic" start="5">
+<li><p>If the files in the new cache file exist locally on the cluster where you are submitting the workflow, then the cache file is complete. If they do not, you will need to modify the file to change the <code class="docutils literal notranslate"><span class="pre">PHYSICAL_FILE_URL</span></code> to a valid <code class="docutils literal notranslate"><span class="pre">gsiftp://</span></code> or <code class="docutils literal notranslate"><span class="pre">http://</span></code> URL on the remote cluster, and change <code class="docutils literal notranslate"><span class="pre">pool=&quot;local&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">pool=&quot;remote&quot;</span></code>. Again, these changes can be made with a text editor or UNIX shell tools. For example, if the file URLs begin with <code class="docutils literal notranslate"><span class="pre">/home/dbrown</span></code> and they are on the Syracuse cluster, to run on Atlas you would use the following <code class="docutils literal notranslate"><span class="pre">sed</span></code> commands to change the <code class="docutils literal notranslate"><span class="pre">SITE</span></code> and the URI in the cache file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sed</span> <span class="s1">&#39;s/pool=&quot;local&quot;/pool=&quot;remote&quot;/g&#39;</span> <span class="n">inspiral_files</span><span class="o">.</span><span class="n">map</span> <span class="o">&gt;</span> <span class="n">inspiral_files</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">tmp</span>
+<span class="n">sed</span> <span class="s1">&#39;s+/home/dbrown+gsiftp://sugwg-condor.phy.syr.edu/home/dbrown+g&#39;</span> <span class="n">inspiral_files</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">tmp</span> <span class="o">&gt;</span> <span class="n">inspiral_files</span><span class="o">.</span><span class="n">map</span>
+<span class="n">rm</span> <span class="n">inspiral_files</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">tmp</span>
+</pre></div>
+</div>
+</li>
+<li><p>Finally, copy the file <code class="docutils literal notranslate"><span class="pre">inspiral_files.map</span></code> to your new workflow directory and then run <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> as usual, giving the path to <code class="docutils literal notranslate"><span class="pre">inspiral_files.map</span></code> as the <code class="docutils literal notranslate"><span class="pre">--cache-file</span></code> argument.</p></li>
+</ol>
+</section>
+<section id="re-running-a-workflow-using-a-new-veto-definer-file">
+<h3>Re-running a workflow using a new veto definer file<a class="headerlink" href="#re-running-a-workflow-using-a-new-veto-definer-file" title="Link to this heading"></a></h3>
+<p>Data reuse can be used to re-running a workflow with a new veto definer file, assuming that:</p>
+<ul class="simple">
+<li><p>The previous workflow completed successfully.</p></li>
+<li><p>No changes to the configuration file are made, other than changing the <code class="docutils literal notranslate"><span class="pre">segments-veto-definer-url</span></code> in the <code class="docutils literal notranslate"><span class="pre">[workflow-segments]</span></code> section of the workflow configration file (although the GPS end time can also be extended at the same time, if necessary).</p></li>
+</ul>
+<p>In this case, first re-run <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> to build the
+new workflow. The normal file retention level will copy a lot of reused data
+from the previous workflow directory into the new workflow directory. If you
+do not want to do this, use a <code class="docutils literal notranslate"><span class="pre">--config-override</span></code> to change the value of
+<code class="docutils literal notranslate"><span class="pre">workflow:file-retention-level</span></code> as described on the page
+<a class="reference internal" href="initialization.html#workflowconfigparsermod"><span class="std std-ref">Pycbc’s workflow module configuration file(s) and command line interface</span></a>.</p>
+<p>Then create the cache file as follows:</p>
+<ol class="arabic simple">
+<li><p>Locate the PyCBC result page for the workflow that you wish to extend.</p></li>
+<li><p>In the menu under <strong>Section 8: Workflow</strong>, locate the <strong>Output map</strong> section (usually Section 8.06) and open that page.</p></li>
+<li><p>This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends <code class="docutils literal notranslate"><span class="pre">main.map</span></code> and download it by clicking on the <strong>Link to file</strong>. This file contains the main intermediate and output data products of the workflow.</p></li>
+<li><p>If only category 2 and higher vetoes have change, remove the output files that match the following strings from the output map file:</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">VETOTIME</span></code> to remove the files containing the old veto segments.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LIGOLW_COMBINE_SEGMENTS</span></code> to remove the files that combine the veto segments into categories.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CUMULATIVE_CAT_12H_VETO_SEGMENTS</span></code> to remove the files that contain times to veto.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">COINC</span></code> to remove the output of the coincidence code.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FIT</span></code> to remove the background bin statistic results.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STATMAP</span></code> to remove the detection statistic ranking output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INJFIND</span></code> to remove the results of software-injection tests.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PAGE</span></code> to remove the results make with the loudest events.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FOREGROUND_CENSOR</span></code> to remove the veto files used to remove events from the closed box plots.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">html</span></code> to remove any output web pages genereated.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">png</span></code> to remove any output plots generated.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dax</span></code> to remove any follow-up workflows generated.</p></li>
+</ul>
+</div></blockquote>
+<p>This can be accomplished with the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">egrep</span> <span class="o">-</span><span class="n">v</span> <span class="s1">&#39;(VETOTIME|LIGOLW_COMBINE_SEGMENTS|CUMULATIVE_CAT_12H_VETO_SEGMENTS|COINC|FIT|STATMAP|INJFIND|PAGE|FOREGROUND_CENSOR|html|png|dax)&#39;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">map</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">reuse_cache</span><span class="o">.</span><span class="n">map</span>
+</pre></div>
+</div>
+<p>If category 1 vetoes have changed, you must also remove files matching <code class="docutils literal notranslate"><span class="pre">PSD</span></code>, <code class="docutils literal notranslate"><span class="pre">OPTIMAL</span></code>, and <code class="docutils literal notranslate"><span class="pre">MERGE</span></code> to remove the PSD estimation jobs, the jobs that compute the optimal SNR of injections, and the merged single-detector inspiral trigger files which may also change if the category 1 vetoes change.</p>
+<ol class="arabic simple" start="6">
+<li><p>Copy the file <code class="docutils literal notranslate"><span class="pre">reuse_cache.map</span></code> to your new workflow directory and then run <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> as usual, giving the path to <code class="docutils literal notranslate"><span class="pre">reuse_cache.map</span></code> as the <code class="docutils literal notranslate"><span class="pre">--cache-file</span></code> argument.</p></li>
+</ol>
+</section>
+<section id="re-running-a-failed-workflow">
+<h3>Re-running a failed workflow<a class="headerlink" href="#re-running-a-failed-workflow" title="Link to this heading"></a></h3>
+<p>Occasionally it may be necessary to use data from a partially completed
+workflow, e.g. if there a bug in an executable and you wish to re-run the
+workflow with a new version of the executable. If the workflow failed, no
+results web page will have been generated and the output data may not have
+been copied to the locations in <code class="docutils literal notranslate"><span class="pre">main.map</span></code>. To re-use data from a previous
+failed workflow, you need to create a cache file containing the completed jobs
+from the previous workflow.</p>
+<p>To do this, <code class="docutils literal notranslate"><span class="pre">cd</span></code> into the <code class="docutils literal notranslate"><span class="pre">local-site-scratch/work</span></code> directory of your
+failed workflow. For example, if you used <code class="docutils literal notranslate"><span class="pre">--output-dir</span> <span class="pre">output</span></code> when
+planning the workflow, and then run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">workflow</span><span class="o">/</span><span class="n">output</span><span class="o">/</span><span class="n">local</span><span class="o">-</span><span class="n">site</span><span class="o">-</span><span class="n">scratch</span><span class="o">/</span><span class="n">work</span>
+</pre></div>
+</div>
+<p>Once in this directory there should be a directory that ends with
+<code class="docutils literal notranslate"><span class="pre">main_ID0000001</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">my-workflow-main_ID0000001</span></code>) Change into that
+directory.</p>
+<p>Once in the <code class="docutils literal notranslate"><span class="pre">main_ID0000001</span></code> directory, run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>for pfn in `find . -type f | sed &#39;s+^./++g&#39;` ; do echo $pfn file://`pwd`/$pfn pool=\&quot;local\&quot; ; done | egrep -v &#39;(dax|map)&#39; &gt; /path/to/partial_workflow.map
+</pre></div>
+</div>
+<p>changing <code class="docutils literal notranslate"><span class="pre">/path/to</span></code> to a location where you want to save the cache.</p>
+<p>Now you can than use the <code class="docutils literal notranslate"><span class="pre">partial_workflow.map</span></code> cache file as the <code class="docutils literal notranslate"><span class="pre">--cache-file</span></code> argument to <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>.</p>
+</section>
+<section id="using-partial-products-from-a-previous-workflow">
+<h3>Using partial products from a previous workflow<a class="headerlink" href="#using-partial-products-from-a-previous-workflow" title="Link to this heading"></a></h3>
+<p>If you are changing the configuration parameters of a workflow, then you can
+build a cache file from a previous <code class="docutils literal notranslate"><span class="pre">main.map</span></code> file or the files under
+<code class="docutils literal notranslate"><span class="pre">local-site-scratch</span></code>, but you will need to filter the cache file to remove
+the files for jobs that have a changed configuration.  Here are a few
+examples:</p>
+<ul>
+<li><p>If you are changing the configuration of <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> you must regenerate almost all the files in the workflow so it easier to start from scratch.</p></li>
+<li><p>If you are changing the injections, but want to re-use the <code class="docutils literal notranslate"><span class="pre">FULL_DATA</span></code> previous analysis, you can filter the <code class="docutils literal notranslate"><span class="pre">main.map</span></code> to keep the veto files, template bank files, full data inspiral files, and PSD files but filtering out any plots and result pages. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">egrep</span> <span class="s1">&#39;(VETO|BANK|INSPIRAL_FULL_DATA|MERGE_FULL_DATA|PSD)&#39;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">map</span> <span class="o">|</span> <span class="n">egrep</span> <span class="o">-</span><span class="n">v</span> <span class="s1">&#39;(png|html|dax)&#39;</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">reuse</span><span class="o">.</span><span class="n">map</span>
+</pre></div>
+</div>
+</li>
+<li><p>If you are changing the configuration of the coincident code, you can reuse all the injection files and inspiral files. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">egrep</span> <span class="s1">&#39;(VETO|BANK|FULL_DATA|PSD)&#39;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">map</span> <span class="o">|</span> <span class="n">egrep</span> <span class="o">-</span><span class="n">v</span> <span class="s1">&#39;(COINC|FIT|STATMAP|INJFIND|html|png|dax)&#39;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">map</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">reuse</span><span class="o">.</span><span class="n">map</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There is no rule for exactly which products can be reused as it depends on what you are changing in the workflow configuration. For partial reuse, it is best to consult an expert on how to build the cache file.</p>
+</div>
+</section>
+</section>
+<section id="running-on-the-open-science-grid">
+<span id="weeklyahopeosg"></span><h2>Running on the Open Science Grid<a class="headerlink" href="#running-on-the-open-science-grid" title="Link to this heading"></a></h2>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h3>
+<p>There are a number of requirements on the machine on which the workflow will be started:</p>
+<ul>
+<li><p>Pegasus version 4.7.1 or later (at least 4.9.2 recommended).</p></li>
+<li><p>A gridftp server running on the submit machine</p></li>
+<li><p>Condor configured on the head node to connect to OSG as documented at:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>https://its-condor-blog.syr.edu/dokuwiki/doku.php?id=researchgroups:physics:sl7_cluster_setup
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="configuring-the-workflow">
+<h3>Configuring the workflow<a class="headerlink" href="#configuring-the-workflow" title="Link to this heading"></a></h3>
+<p>These instructions are for the case where you plan to run all <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> jobs
+on the Open Science Grid, but the rest of the workflow will run on the local HTCondor pool
+attached to the submit machine.  For many clusters, including LDG clusters,
+running in this fashion may not be available from every submit machine. First,
+check with local sysadmins or other experts if there is a particular node from which
+you must plan and submit your workflow if you desire to run on the OSG.</p>
+<p>The first step in such running is to ensure that your workflow knows where to find
+all of the data it needs. While some of the files generated during the workflow will need
+to be served via gridftp from your submission head node (as detailed below), the gravitational
+wave frame data files are too large for this. They are available from CVMFS and other
+fall-back locations, but you need to make sure that your datafind server returns these
+locations (it may not do so on an LDG head node, for example, if you use the default datafind
+server). If you have LIGO.org credentials, you should execute:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">LIGO_DATAFIND_SERVER</span><span class="o">=</span><span class="s2">&quot;datafind.ligo.org&quot;</span>
+</pre></div>
+</div>
+<p>before you run <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>. Otherwise, contact your local system
+administrator for a valid datafind server that points to publicly available frame files.</p>
+<p>In order to run <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> on OSG worker nodes, it must be available
+in a Singularity container served from CVMFS. Releases of PyCBC build such containers
+and publish them to CVMFS, but the workflow needs to be told to only run on nodes that
+have Singularity available, and it needs the location of the <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> executable
+inside of the Singularity image. To do this, add the following to the <code class="docutils literal notranslate"><span class="pre">--config-overrides</span></code>
+given to <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;pegasus_profile-inspiral:pycbc|site:osg&quot;</span> \
+<span class="s2">&quot;pegasus_profile-inspiral:hints|execution.site:osg&quot;</span> \
+<span class="s2">&quot;pegasus_profile-inspiral:condor|Requirements:(HAS_SINGULARITY =?= TRUE) &amp;&amp; (IS_GLIDEIN =?= True)&quot;</span> \
+<span class="s2">&quot;executables:inspiral:/bin/pycbc_inspiral&quot;</span> \
+</pre></div>
+</div>
+<p>These lines tell <code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> that the inspiral jobs will
+run on the Open Science Grid, and that such jobs need to run at sites where Singularity
+is installed. They also tell them that the path to <code class="docutils literal notranslate"><span class="pre">pycbc_inspiral</span></code> inside the container
+is <code class="docutils literal notranslate"><span class="pre">/bin/pycbc_inspiral</span></code>. If you are an LVK user, and you will be accessing non-public
+LVK data, then you additionally must specify that you need to run at nodes where this
+authenticated frame data is available.  To do that, change the <code class="docutils literal notranslate"><span class="pre">Requirements</span></code> line above
+to read instead:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;pegasus_profile-inspiral:condor|Requirements:(HAS_SINGULARITY =?= TRUE) &amp;&amp; (HAS_LIGO_FRAMES =?= True) &amp;&amp; (IS_GLIDEIN =?= True)&quot;</span> \
+</pre></div>
+</div>
+<p>Because the data that the inspiral jobs will need in addition to the frame files must
+come from the submit machine, you also need a <code class="docutils literal notranslate"><span class="pre">--config-overrides</span></code> argument to
+<code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code> that sets the staging site for the main workflow to be
+the local site. To do this, add the following argument, replacing <code class="docutils literal notranslate"><span class="pre">${WORKFLOW_NAME}</span></code> with
+the string that is given as the argument to the option <code class="docutils literal notranslate"><span class="pre">--workflow-name</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;workflow-$</span><span class="si">{WORKFLOW_NAME}</span><span class="s2">-main:staging-site:osg=local&quot;</span>
+</pre></div>
+</div>
+<p>Optionally, you can add a configuration that will check that your grid proxy
+is valid locally before submitting the job. This means that if your grid proxy
+expires before the workflow is complete, the failure will be on the local site
+before the job is actually submitted, and not on the remote site once the job
+has been scheduled and matched:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info&quot;</span>
+</pre></div>
+</div>
+<p>Another useful enhancement for OSG running is to add profiles to your inspiral
+job that will tell Condor to put it on hold if it has been running for more
+that 48 hours and terminate it after 5 failed attempts. To do this, add the
+follwing lines to your <code class="docutils literal notranslate"><span class="pre">executables.ini</span></code> file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">pegasus_profile</span><span class="o">-</span><span class="n">inspiral</span><span class="p">]</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">periodic_hold</span> <span class="o">=</span> <span class="p">(</span><span class="n">JobStatus</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">CurrentTime</span> <span class="o">-</span> <span class="n">EnteredCurrentStatus</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="mi">86400</span><span class="p">))</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">periodic_release</span> <span class="o">=</span> <span class="p">(</span><span class="n">JobStatus</span> <span class="o">==</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">HoldReasonCode</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">NumJobStarts</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">CurrentTime</span> <span class="o">-</span> <span class="n">EnteredCurrentStatus</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mi">300</span><span class="p">))</span>
+<span class="n">condor</span><span class="o">|</span><span class="n">periodic_remove</span> <span class="o">=</span> <span class="p">(</span><span class="n">NumJobStarts</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="running-the-workflow">
+<h3>Running the workflow<a class="headerlink" href="#running-the-workflow" title="Link to this heading"></a></h3>
+<p>There are two main ways to run your workflow on the OSG:</p>
+<ol class="arabic">
+<li><p><strong>Immediate Submission with `–submit-now`</strong></p>
+<p>You can use the <cite>–submit-now</cite> flag with <cite>pycbc_make_offline_search_workflow</cite>
+to generate and immediately submit your workflow to the OSG. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_search_workflow</span> \
+    <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> <span class="o">&lt;</span><span class="n">your_config_files</span><span class="o">&gt;</span> \
+    <span class="o">--</span><span class="n">workflow</span><span class="o">-</span><span class="n">name</span> <span class="o">&lt;</span><span class="n">name</span><span class="o">&gt;</span> \
+    <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="o">&lt;</span><span class="n">output_dir</span><span class="o">&gt;</span> \
+    <span class="o">--</span><span class="n">submit</span><span class="o">-</span><span class="n">now</span>
+</pre></div>
+</div>
+<p>This will create the workflow directory, and
+automatically submit the workflow to the grid using Pegasus.</p>
+</li>
+<li><p><strong>Manual Submission Using the `./start` Script</strong>
+If you prefer to generate the workflow first and submit it later,
+simply omit the <cite>–submit-now</cite> flag:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_make_offline_search_workflow</span> \
+    <span class="o">--</span><span class="n">config</span><span class="o">-</span><span class="n">files</span> <span class="o">&lt;</span><span class="n">your_config_files</span><span class="o">&gt;</span> \
+    <span class="o">--</span><span class="n">workflow</span><span class="o">-</span><span class="n">name</span> <span class="o">&lt;</span><span class="n">name</span><span class="o">&gt;</span> \
+    <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="nb">dir</span> <span class="o">&lt;</span><span class="n">output_dir</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>This will set up the workflow in the specified output directory.
+To submit the workflow at a later time, navigate to the workflow
+directory and run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">start</span>
+</pre></div>
+</div>
+<p>This script will submit the workflow to the OSG using Pegasus.</p>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc_make_psd_estimation_workflow.html" class="btn btn-neutral float-left" title="pycbc_make_psd_estimation_workflow: A workflow generator for noise estimation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pygrb.html" class="btn btn-neutral float-right" title="pycbc_make_offline_grb_workflow: A GRB triggered CBC analysis workflow generator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

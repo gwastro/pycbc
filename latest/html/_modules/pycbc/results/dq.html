@@ -1,0 +1,219 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.dq &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.results.dq</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.dq</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;This module contains utilities for following up search triggers&#39;&#39;&#39;</span>
+
+<span class="c1"># JavaScript for searching the aLOG</span>
+<span class="n">redirect_javascript</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&lt;script type=&quot;text/javascript&quot;&gt;</span>
+<span class="s2">function redirect(form,way)</span>
+<span class="s2">{</span>
+<span class="s2">        // Set location to form and submit.</span>
+<span class="s2">        if(form != &#39;&#39;)</span>
+<span class="s2">        {</span>
+<span class="s2">                document.forms[form].action=way;</span>
+<span class="s2">                document.forms[form].submit();</span>
+<span class="s2">        }</span>
+<span class="s2">        else</span>
+<span class="s2">        {</span>
+<span class="s2">                window.top.location = way;</span>
+<span class="s2">        }</span>
+<span class="s2">}</span>
+<span class="s2">&lt;/script&gt;&quot;&quot;&quot;</span>
+
+<span class="n">search_form_string</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;&lt;form name=&quot;</span><span class="si">%s</span><span class="s2">_alog_search&quot; id=&quot;</span><span class="si">%s</span><span class="s2">_alog_search&quot; method=&quot;post&quot;&gt;</span>
+<span class="s2">&lt;input type=&quot;hidden&quot; name=&quot;srcDateFrom&quot; id=&quot;srcDateFrom&quot; value=&quot;</span><span class="si">%s</span><span class="s2">&quot; size=&quot;20&quot;/&gt;</span>
+<span class="s2">&lt;input type=&quot;hidden&quot; name=&quot;srcDateTo&quot; id=&quot;srcDateTo&quot; value=&quot;</span><span class="si">%s</span><span class="s2">&quot; size=&quot;20&quot;/&gt;</span>
+<span class="s2">&lt;/form&gt;&quot;&quot;&quot;</span>
+
+<span class="n">data_h1_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;a href=https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/</span><span class="si">%s</span><span class="s2">&gt;</span>
+<span class="s2">Summary&lt;/a&gt;</span>
+<span class="s2">&amp;nbsp;</span>
+<span class="s2">&lt;a onclick=&quot;redirect(&#39;h1_alog_search&#39;,</span>
+<span class="s2">&#39;https://alog.ligo-wa.caltech.edu/aLOG/includes/search.php?adminType=search&#39;);</span>
+<span class="s2">return true;&quot;&gt;aLOG&lt;/a&gt;&quot;&quot;&quot;</span>
+
+<span class="n">data_l1_string</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;a href=https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/</span><span class="si">%s</span><span class="s2">&gt;</span>
+<span class="s2">Summary&lt;/a&gt;</span>
+<span class="s2">&amp;nbsp;</span>
+<span class="s2">&lt;a onclick=&quot;redirect(&#39;l1_alog_search&#39;,</span>
+<span class="s2">&#39;https://alog.ligo-la.caltech.edu/aLOG/includes/search.php?adminType=search&#39;);</span>
+<span class="s2">return true;&quot;&gt;aLOG&lt;/a&gt;&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="get_summary_page_link">
+<a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.dq.get_summary_page_link">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_summary_page_link</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="n">utc_time</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a string that links to the summary page and aLOG for this ifo</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ifo : string</span>
+<span class="sd">        The detector name</span>
+<span class="sd">    utc_time : datetime.date or datetime.datetime or sequence</span>
+<span class="sd">        Either a datetime.date/datetime.datetime object, or a sequence whose</span>
+<span class="sd">        first three elements are year, month, day (in that order).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    return_string : string</span>
+<span class="sd">        String containing HTML for links to summary page and aLOG search</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">search_form</span> <span class="o">=</span> <span class="n">search_form_string</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H1&#39;</span><span class="p">:</span> <span class="n">data_h1_string</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">:</span> <span class="n">data_l1_string</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ifo</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># support datetime/date objects or sequences (year, month, day)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">utc_time</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">utc_time</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">utc_time</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">):</span>
+                <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">utc_time</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+                <span class="n">month</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">utc_time</span><span class="o">.</span><span class="n">month</span><span class="p">)</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">utc_time</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">utc_time</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">month</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">utc_time</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">utc_time</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Give a more informative error including the received value/type and</span>
+            <span class="c1"># the original exception to help debugging (for example when utc_time</span>
+            <span class="c1"># is a float and indexing utc_time[0] raises a TypeError).</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;utc_time must be a datetime/date or a sequence (year, month, day); &quot;</span>
+                <span class="s2">&quot;got </span><span class="si">{}</span><span class="s2"> (type </span><span class="si">{}</span><span class="s2">) - original error: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">utc_time</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">utc_time</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">e</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="c1"># alog format is day-month-year</span>
+        <span class="n">alog_utc</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%02d</span><span class="s1">-</span><span class="si">%02d</span><span class="s1">-</span><span class="si">%4d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">day</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+        <span class="c1"># summary page is exactly the reverse</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%4d%02d%02d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span>
+        <span class="n">return_string</span> <span class="o">=</span> <span class="n">search_form</span> <span class="o">%</span> <span class="p">(</span><span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">alog_utc</span><span class="p">,</span> <span class="n">alog_utc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">return_string</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">%</span> <span class="n">ext</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

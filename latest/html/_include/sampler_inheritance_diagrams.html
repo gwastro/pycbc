@@ -1,0 +1,265 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../_static/terminal.css?v=d691274a"></script>
+      <script src="../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/_include/sampler_inheritance_diagrams.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <ul class="simple" id="inheritance-cpnest">
+<li><p><code class="docutils literal notranslate"><span class="pre">cpnest</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-285ecc445818d1aeeece3abc3c5c4547e88fac62.png" alt="Inheritance diagram of pycbc.inference.sampler.cpnest.CPNestSampler" usemap="#inheritance8bc1911235" class="inheritance graphviz" /></div>
+<map id="inheritance8bc1911235" name="inheritance8bc1911235">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="19,5,218,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-dummy">
+<li><p><code class="docutils literal notranslate"><span class="pre">dummy</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-194142140183ce5ecc64f61a3dac99da83710ea4.png" alt="Inheritance diagram of pycbc.inference.sampler.dummy.DummySampler" usemap="#inheritanceba7a4aff7f" class="inheritance graphviz" /></div>
+<map id="inheritanceba7a4aff7f" name="inheritanceba7a4aff7f">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-dynesty">
+<li><p><code class="docutils literal notranslate"><span class="pre">dynesty</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-78570aa48e06cb52d7ec24aed7bb46a73945c110.png" alt="Inheritance diagram of pycbc.inference.sampler.dynesty.DynestySampler" usemap="#inheritance7ba9377ebe" class="inheritance graphviz" /></div>
+<map id="inheritance7ba9377ebe" name="inheritance7ba9377ebe">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="26,5,225,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler" target="_top" title="This class is used to construct an Dynesty sampler from the dynesty" alt="" coords="5,79,245,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-emcee">
+<li><p><code class="docutils literal notranslate"><span class="pre">emcee</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-0c4a0e40ac775ec4ce1f562374ca8503d2a3d8bc.png" alt="Inheritance diagram of pycbc.inference.sampler.emcee.EmceeEnsembleSampler" usemap="#inheritanceb6bcb2abed" class="inheritance graphviz" /></div>
+<map id="inheritanceb6bcb2abed" name="inheritanceb6bcb2abed">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,204,31"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler" target="_top" title="This class is used to construct an MCMC sampler from the emcee" alt="" coords="201,79,489,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="227,5,462,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="486,5,761,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-emcee-pt">
+<li><p><code class="docutils literal notranslate"><span class="pre">emcee_pt</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-743b05add17dd9b5254278a435367b6e5139d519.png" alt="Inheritance diagram of pycbc.inference.sampler.emcee_pt.EmceePTSampler" usemap="#inheritance113e3834eb" class="inheritance graphviz" /></div>
+<map id="inheritance113e3834eb" name="inheritance113e3834eb">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="4,4,138,21"/>
+<area shape="rect" id="node5" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.emcee_pt.EmceePTSampler" target="_top" title="This class is used to construct a parallel&#45;tempered MCMC sampler from" alt="" coords="239,53,414,70"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="154,4,312,21"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="328,4,514,21"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport" target="_top" title="Provides methods for supporting multi&#45;tempered samplers." alt="" coords="530,4,764,21"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-epsie">
+<li><p><code class="docutils literal notranslate"><span class="pre">epsie</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-135f539250b007c7cd68a043f4c6a5a395286031.png" alt="Inheritance diagram of pycbc.inference.sampler.epsie.EpsieSampler" usemap="#inheritance244eb49acc" class="inheritance graphviz" /></div>
+<map id="inheritance244eb49acc" name="inheritance244eb49acc">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,187,28"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler" target="_top" title="Constructs an MCMC sampler using epsie&#39;s parallel&#45;tempered sampler." alt="" coords="221,72,411,95"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="208,5,423,28"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport" target="_top" title="Provides methods for supporting multi&#45;tempered samplers." alt="" coords="445,5,763,28"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-games">
+<li><p><code class="docutils literal notranslate"><span class="pre">games</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-e4c293e8a4b89171e731287aab213f1496e34837.png" alt="Inheritance diagram of pycbc.inference.sampler.games.GameSampler" usemap="#inheritancec67a74d38d" class="inheritance graphviz" /></div>
+<map id="inheritancec67a74d38d" name="inheritancec67a74d38d">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler" target="_top" title="Direct importance sampling using a preconstructed parameter space" alt="" coords="14,152,233,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-multinest">
+<li><p><code class="docutils literal notranslate"><span class="pre">multinest</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-6638e2798cac2aaf6f9b72b697ad1d63a472305d.png" alt="Inheritance diagram of pycbc.inference.sampler.multinest.MultinestSampler" usemap="#inheritance23035469da" class="inheritance graphviz" /></div>
+<map id="inheritance23035469da" name="inheritance23035469da">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="35,5,234,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.multinest.MultinestSampler" target="_top" title="This class is used to construct a nested sampler from" alt="" coords="5,79,264,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-nessai">
+<li><p><code class="docutils literal notranslate"><span class="pre">nessai</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-7016cbadcaca2216268e651bc22c6cc468e2c081.png" alt="Inheritance diagram of pycbc.inference.sampler.nessai.NessaiSampler" usemap="#inheritance0bf2b603d9" class="inheritance graphviz" /></div>
+<map id="inheritance0bf2b603d9" name="inheritance0bf2b603d9">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="17,5,216,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.nessai.NessaiSampler" target="_top" title="Class to construct a FlowSampler from the nessai package." alt="" coords="5,79,228,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-ptemcee">
+<li><p><code class="docutils literal notranslate"><span class="pre">ptemcee</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-17f55d9c515cd42679023ba476ed6c5fdfd14c8e.png" alt="Inheritance diagram of pycbc.inference.sampler.ptemcee.PTEmceeSampler" usemap="#inheritance8008110505" class="inheritance graphviz" /></div>
+<map id="inheritance8008110505" name="inheritance8008110505">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="5,5,204,31"/>
+<area shape="rect" id="node4" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler" target="_top" title="This class is used to construct the parallel&#45;tempered ptemcee sampler." alt="" coords="218,79,471,104"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC" target="_top" title="Abstract base class that provides methods common to MCMCs." alt="" coords="227,5,462,31"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport" target="_top" title="Adds support for ensemble MCMC samplers." alt="" coords="486,5,761,31"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-refine">
+<li><p><code class="docutils literal notranslate"><span class="pre">refine</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-f2176d6359b35b4d27d2748ff99a69262668ba62.png" alt="Inheritance diagram of pycbc.inference.sampler.refine.RefineSampler" usemap="#inheritance8a275fe97a" class="inheritance graphviz" /></div>
+<map id="inheritance8a275fe97a" name="inheritance8a275fe97a">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.refine.RefineSampler" target="_top" title="Sampler for kde drawn refinement of existing posterior estimate" alt="" coords="16,152,231,177"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-snowline">
+<li><p><code class="docutils literal notranslate"><span class="pre">snowline</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-2dbbdf7af028f87f4d54856f8f0b14e55238af8e.png" alt="Inheritance diagram of pycbc.inference.sampler.snowline.SnowlineSampler" usemap="#inheritance4b476135fb" class="inheritance graphviz" /></div>
+<map id="inheritance4b476135fb" name="inheritance4b476135fb">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="33,5,231,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.snowline.SnowlineSampler" target="_top" title="This class is used to construct an Snowline sampler from the snowline" alt="" coords="5,79,259,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple" id="inheritance-ultranest">
+<li><p><code class="docutils literal notranslate"><span class="pre">ultranest</span></code>:</p></li>
+</ul>
+<div class="graphviz"><img src="../_images/inheritance-b45a2a7b4e9089b0aca33e3a71666b42d5efc66b.png" alt="Inheritance diagram of pycbc.inference.sampler.ultranest.UltranestSampler" usemap="#inheritanceea34918a69" class="inheritance graphviz" /></div>
+<map id="inheritanceea34918a69" name="inheritanceea34918a69">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="33,5,232,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler" target="_top" title="This class is used to construct an Ultranest sampler from the ultranest" alt="" coords="5,79,260,104"/>
+</map><div class="line-block">
+<div class="line"><br /></div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

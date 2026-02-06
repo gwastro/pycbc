@@ -1,0 +1,1021 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.tmpltbank.coord_utils &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.tmpltbank.coord_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.tmpltbank.coord_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013 Ian W. Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.tmpltbank.lambda_mapping</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_chirp_params</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">conversions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">pnutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.neutron_stars</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ns_sequence</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.tmpltbank.coord_utils&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="estimate_mass_range">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.estimate_mass_range">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_mass_range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>\
+                        <span class="n">covary</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will generate a large set of points with random masses and</span>
+<span class="sd">    spins (using pycbc.tmpltbank.get_random_mass) and translate these points</span>
+<span class="sd">    into the xi_i coordinate system for the given upper frequency cutoff.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    numPoints : int</span>
+<span class="sd">        Number of systems to simulate</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper to use when getting the mu coordinates from the</span>
+<span class="sd">        lambda coordinates. This must be a key in metricParams.evals and</span>
+<span class="sd">        metricParams.evecs (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper). It also must be a key in</span>
+<span class="sd">        metricParams.evecsCV if covary=True.</span>
+<span class="sd">    covary : boolean, optional (default = True)</span>
+<span class="sd">        If this is given then evecsCV will be used to rotate from the Cartesian</span>
+<span class="sd">        coordinate system into the principal coordinate direction (xi_i). If</span>
+<span class="sd">        not given then points in the original Cartesian coordinates are</span>
+<span class="sd">        returned.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xis : numpy.array</span>
+<span class="sd">        A list of the positions of each point in the xi_i coordinate system.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vals_set</span> <span class="o">=</span> <span class="n">get_random_mass</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">)</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="n">vals_set</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="n">vals_set</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">spin1z</span> <span class="o">=</span> <span class="n">vals_set</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">spin2z</span> <span class="o">=</span> <span class="n">vals_set</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">covary</span><span class="p">:</span>
+        <span class="n">lambdas</span> <span class="o">=</span> <span class="n">get_cov_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span>
+                                 <span class="n">fUpper</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lambdas</span> <span class="o">=</span> <span class="n">get_conv_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span>
+                                  <span class="n">fUpper</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_random_mass_point_particles">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_random_mass_point_particles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_random_mass_point_particles</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will generate a large set of points within the chosen mass</span>
+<span class="sd">    and spin space. It will also return the corresponding PN spin coefficients</span>
+<span class="sd">    for ease of use later (though these may be removed at some future point).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    numPoints : int</span>
+<span class="sd">        Number of systems to simulate</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        Mass of heavier body.</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        Mass of lighter body.</span>
+<span class="sd">    spin1z : float</span>
+<span class="sd">        Spin of body 1.</span>
+<span class="sd">    spin2z : float</span>
+<span class="sd">        Spin of body 2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># WARNING: We expect mass1 &gt; mass2 ALWAYS</span>
+
+    <span class="c1"># First we choose the total masses from a unifrom distribution in mass</span>
+    <span class="c1"># to the -5/3. power.</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numPoints</span><span class="p">)</span> <span class="o">*</span> \
+           <span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">minTotMass</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span> \
+            <span class="o">-</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxTotMass</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="o">/</span><span class="mf">3.</span><span class="p">))</span> \
+           <span class="o">+</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxTotMass</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">5.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="n">mass</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">3.</span><span class="o">/</span><span class="mf">5.</span><span class="p">)</span>
+
+    <span class="c1"># Next we choose the mass ratios, this will take different limits based on</span>
+    <span class="c1"># the value of total mass</span>
+    <span class="n">maxmass2</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mass</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxMass2</span><span class="p">)</span>
+    <span class="n">minmass1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">minMass1</span><span class="p">,</span> <span class="n">mass</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">mineta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">minCompMass</span> \
+                            <span class="o">*</span> <span class="p">(</span><span class="n">mass</span><span class="o">-</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">minCompMass</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">mass</span><span class="o">*</span><span class="n">mass</span><span class="p">),</span> \
+                           <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxCompMass</span> \
+                            <span class="o">*</span> <span class="p">(</span><span class="n">mass</span><span class="o">-</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxCompMass</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">mass</span><span class="o">*</span><span class="n">mass</span><span class="p">))</span>
+    <span class="c1"># Note that mineta is a numpy.array because mineta depends on the total</span>
+    <span class="c1"># mass. Therefore this is not precomputed in the massRangeParams instance</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minEta</span><span class="p">:</span>
+        <span class="n">mineta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">minEta</span><span class="p">,</span> <span class="n">mineta</span><span class="p">)</span>
+    <span class="c1"># Eta also restricted by chirp mass restrictions</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">min_chirp_mass</span><span class="p">:</span>
+        <span class="n">eta_val_at_min_chirp</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">min_chirp_mass</span> <span class="o">/</span> <span class="n">mass</span>
+        <span class="n">eta_val_at_min_chirp</span> <span class="o">=</span> <span class="n">eta_val_at_min_chirp</span><span class="o">**</span><span class="p">(</span><span class="mf">5.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">mineta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mineta</span><span class="p">,</span> <span class="n">eta_val_at_min_chirp</span><span class="p">)</span>
+
+    <span class="n">maxeta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxEta</span><span class="p">,</span> <span class="n">maxmass2</span> \
+                             <span class="o">*</span> <span class="p">(</span><span class="n">mass</span> <span class="o">-</span> <span class="n">maxmass2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mass</span><span class="o">*</span><span class="n">mass</span><span class="p">))</span>
+    <span class="n">maxeta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">maxeta</span><span class="p">,</span> <span class="n">minmass1</span> \
+                             <span class="o">*</span> <span class="p">(</span><span class="n">mass</span> <span class="o">-</span> <span class="n">minmass1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mass</span><span class="o">*</span><span class="n">mass</span><span class="p">))</span>
+    <span class="c1"># max eta also affected by chirp mass restrictions</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">max_chirp_mass</span><span class="p">:</span>
+        <span class="n">eta_val_at_max_chirp</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">max_chirp_mass</span> <span class="o">/</span> <span class="n">mass</span>
+        <span class="n">eta_val_at_max_chirp</span> <span class="o">=</span> <span class="n">eta_val_at_max_chirp</span><span class="o">**</span><span class="p">(</span><span class="mf">5.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+        <span class="n">maxeta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">maxeta</span><span class="p">,</span> <span class="n">eta_val_at_max_chirp</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">maxeta</span> <span class="o">&lt;</span> <span class="n">mineta</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;ERROR: Maximum eta is smaller than minimum eta!!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numPoints</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">maxeta</span> <span class="o">-</span> <span class="n">mineta</span><span class="p">)</span> <span class="o">+</span> <span class="n">mineta</span>
+
+    <span class="c1"># Also calculate the component masses; mass1 &gt; mass2</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">mass</span><span class="o">*</span><span class="n">mass</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="mi">4</span><span class="o">*</span><span class="n">eta</span><span class="p">))</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">mass1</span> <span class="o">=</span> <span class="p">(</span><span class="n">mass</span> <span class="o">+</span> <span class="n">diff</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">mass2</span> <span class="o">=</span> <span class="p">(</span><span class="n">mass</span> <span class="o">-</span> <span class="n">diff</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="c1"># Check the masses are where we want them to be (allowing some floating</span>
+    <span class="c1"># point rounding error).</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxMass1</span><span class="o">*</span><span class="mf">1.001</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> \
+          <span class="ow">or</span> <span class="p">(</span><span class="n">mass1</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minMass1</span><span class="o">*</span><span class="mf">0.999</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Mass1 is not within the specified mass range.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">mass2</span> <span class="o">&gt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxMass2</span><span class="o">*</span><span class="mf">1.001</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> \
+          <span class="ow">or</span> <span class="p">(</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">minMass2</span><span class="o">*</span><span class="mf">0.999</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Mass2 is not within the specified mass range.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="c1"># Next up is the spins. First check if we have non-zero spins</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">nsbhFlag</span><span class="p">:</span>
+        <span class="c1"># Spin 1 first</span>
+        <span class="n">mspin</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+        <span class="n">mspin</span> <span class="o">+=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mspin</span>
+        <span class="c1"># Then spin2</span>
+        <span class="n">mspin</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass2</span><span class="p">))</span>
+        <span class="n">mspin</span> <span class="o">+=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mspin</span>
+    <span class="k">else</span><span class="p">:</span>        
+        <span class="n">boundary_mass</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span>
+        <span class="c1"># Spin 1 first</span>
+        <span class="n">mspin</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">))</span>
+        <span class="n">mspin</span> <span class="o">+=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span>
+        <span class="n">mspin</span><span class="p">[</span><span class="n">mass1</span> <span class="o">&gt;</span> <span class="n">boundary_mass</span><span class="p">]</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mspin</span>
+        <span class="c1"># Then spin 2</span>
+        <span class="n">mspin</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass2</span><span class="p">))</span>
+        <span class="n">mspin</span> <span class="o">+=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxNSSpinMag</span>
+        <span class="n">mspin</span><span class="p">[</span><span class="n">mass2</span> <span class="o">&gt;</span> <span class="n">boundary_mass</span><span class="p">]</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">maxBHSpinMag</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">numPoints</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">mspin</span>
+
+    <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span></div>
+
+
+<div class="viewcode-block" id="get_random_mass">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_random_mass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_random_mass</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">,</span> <span class="n">eos</span><span class="o">=</span><span class="s1">&#39;2H&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will generate a large set of points within the chosen mass</span>
+<span class="sd">    and spin space, and with the desired minimum remnant disk mass (this applies</span>
+<span class="sd">    to NS-BH systems only). It will also return the corresponding PN spin</span>
+<span class="sd">    coefficients for ease of use later (though these may be removed at some</span>
+<span class="sd">    future point).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    numPoints : int</span>
+<span class="sd">        Number of systems to simulate</span>
+<span class="sd">    massRangeParams : massRangeParameters instance</span>
+<span class="sd">        Instance holding all the details of mass ranges and spin ranges.</span>
+<span class="sd">    eos : string</span>
+<span class="sd">        Name of equation of state of neutron star.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        Mass of heavier body.</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        Mass of lighter body.</span>
+<span class="sd">    spin1z : float</span>
+<span class="sd">        Spin of body 1.</span>
+<span class="sd">    spin2z : float</span>
+<span class="sd">        Spin of body 2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># WARNING: We expect mass1 &gt; mass2 ALWAYS</span>
+
+    <span class="c1"># Check if EM contraints are required, i.e. if the systems must produce</span>
+    <span class="c1"># a minimum remnant disk mass.  If this is not the case, proceed treating</span>
+    <span class="c1"># the systems as point particle binaries</span>
+    <span class="k">if</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">remnant_mass_threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span> <span class="o">=</span> \
+            <span class="n">get_random_mass_point_particles</span><span class="p">(</span><span class="n">numPoints</span><span class="p">,</span> <span class="n">massRangeParams</span><span class="p">)</span>
+    <span class="c1"># otherwise, load EOS dependent data, generate the EM constraint</span>
+    <span class="c1"># (i.e. compute the minimum symmetric mass ratio needed to</span>
+    <span class="c1"># generate a given remnant disk mass as a function of the NS</span>
+    <span class="c1"># mass and the BH spin along z) and then proceed by accepting</span>
+    <span class="c1"># only systems that can yield (at least) the desired remnant</span>
+    <span class="c1"># disk mass and that pass the mass and spin range cuts.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_ns_g_mass</span> <span class="o">=</span> <span class="n">load_ns_sequence</span><span class="p">(</span><span class="n">massRangeParams</span><span class="o">.</span><span class="n">ns_eos</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">boundary_mass</span> <span class="o">=</span> <span class="n">massRangeParams</span><span class="o">.</span><span class="n">ns_bh_boundary_mass</span>
+        <span class="k">if</span> <span class="n">max_ns_g_mass</span> <span class="o">&lt;</span> <span class="n">boundary_mass</span><span class="p">:</span>
+            <span class="n">warn_msg</span> <span class="o">=</span> <span class="s2">&quot;WARNING: &quot;</span>
+            <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;Option of ns-bh-boundary-mass is  </span><span class="si">%s</span><span class="s2"> &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">boundary_mass</span><span class="p">)</span>
+            <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;which is higher than the maximum NS gravitational &quot;</span>
+            <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;mass admitted by the EOS that was prescribed &quot;</span>
+            <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;(</span><span class="si">%s</span><span class="s2">). &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">max_ns_g_mass</span><span class="p">)</span>
+            <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;The code will proceed using the latter value &quot;</span>
+            <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;as the boundary mass.&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+            <span class="n">boundary_mass</span> <span class="o">=</span> <span class="n">max_ns_g_mass</span>
+
+        <span class="c1"># Empty arrays to store points that pass all cuts</span>
+        <span class="n">mass1_out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mass2_out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">spin1z_out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">spin2z_out</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># As the EM cut can remove several randomly generated</span>
+        <span class="c1"># binaries, track the number of accepted points that pass</span>
+        <span class="c1"># all cuts and stop only once enough of them are generated</span>
+        <span class="n">numPointsFound</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">numPointsFound</span> <span class="o">&lt;</span> <span class="n">numPoints</span><span class="p">:</span>
+            <span class="c1"># Generate the random points within the required mass</span>
+            <span class="c1"># and spin cuts</span>
+            <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span> <span class="o">=</span> \
+                <span class="n">get_random_mass_point_particles</span><span class="p">(</span><span class="n">numPoints</span><span class="o">-</span><span class="n">numPointsFound</span><span class="p">,</span>
+                                                <span class="n">massRangeParams</span><span class="p">)</span>
+
+            <span class="c1"># Now proceed with cutting out EM dim systems</span>
+            <span class="c1"># Use a logical mask to track points that do not correspond to</span>
+            <span class="c1"># BBHs. The remaining points will be BNSs and NSBHs.</span>
+            <span class="c1"># Further down, EM-dim NSBHs will also be removed.</span>
+            <span class="n">mask_not_bbh</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+            <span class="c1"># Keep a point if:</span>
+            <span class="c1"># 1) the secondary object is a not a BH (mass2 &lt; boundary mass)</span>
+            <span class="c1">#    [Store masses and spins of non BBH]</span>
+            <span class="n">mask_not_bbh</span><span class="p">[</span><span class="n">mass2</span> <span class="o">&lt;</span> <span class="n">boundary_mass</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">mass1_not_bbh</span> <span class="o">=</span> <span class="n">mass1</span><span class="p">[</span><span class="n">mask_not_bbh</span><span class="p">]</span>
+            <span class="n">mass2_not_bbh</span> <span class="o">=</span> <span class="n">mass2</span><span class="p">[</span><span class="n">mask_not_bbh</span><span class="p">]</span>
+            <span class="n">spin1z_not_bbh</span> <span class="o">=</span> <span class="n">spin1z</span><span class="p">[</span><span class="n">mask_not_bbh</span><span class="p">]</span>
+            <span class="n">spin2z_not_bbh</span> <span class="o">=</span> <span class="n">spin2z</span><span class="p">[</span><span class="n">mask_not_bbh</span><span class="p">]</span>
+            <span class="c1"># 2) and if the primary mass is a NS (i.e., it is a BNS), or...</span>
+            <span class="n">mask_nsbh</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1_not_bbh</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="c1">#    [mask_nsbh identifies NSBH systems]</span>
+            <span class="n">mask_nsbh</span><span class="p">[</span><span class="n">mass1_not_bbh</span> <span class="o">&gt;</span> <span class="n">boundary_mass</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1">#    [mask_bns identifies BNS systems]</span>
+            <span class="n">mask_bns</span> <span class="o">=</span> <span class="o">~</span><span class="n">mask_nsbh</span>
+            <span class="c1">#    [Store masses and spins of BNSs]</span>
+            <span class="n">mass1_bns</span> <span class="o">=</span> <span class="n">mass1_not_bbh</span><span class="p">[</span><span class="n">mask_bns</span><span class="p">]</span>
+            <span class="n">mass2_bns</span> <span class="o">=</span> <span class="n">mass2_not_bbh</span><span class="p">[</span><span class="n">mask_bns</span><span class="p">]</span>
+            <span class="n">spin1z_bns</span> <span class="o">=</span> <span class="n">spin1z_not_bbh</span><span class="p">[</span><span class="n">mask_bns</span><span class="p">]</span>
+            <span class="n">spin2z_bns</span> <span class="o">=</span> <span class="n">spin2z_not_bbh</span><span class="p">[</span><span class="n">mask_bns</span><span class="p">]</span>
+            <span class="c1"># 3) ...it is an NS-BH with remnant mass greater than the threshold</span>
+            <span class="c1">#    required to have a counterpart</span>
+            <span class="c1">#    [Store masses and spins of all NSBHs]</span>
+            <span class="n">mass1_nsbh</span> <span class="o">=</span> <span class="n">mass1_not_bbh</span><span class="p">[</span><span class="n">mask_nsbh</span><span class="p">]</span>
+            <span class="n">mass2_nsbh</span> <span class="o">=</span> <span class="n">mass2_not_bbh</span><span class="p">[</span><span class="n">mask_nsbh</span><span class="p">]</span>
+            <span class="n">spin1z_nsbh</span> <span class="o">=</span> <span class="n">spin1z_not_bbh</span><span class="p">[</span><span class="n">mask_nsbh</span><span class="p">]</span>
+            <span class="n">spin2z_nsbh</span> <span class="o">=</span> <span class="n">spin2z_not_bbh</span><span class="p">[</span><span class="n">mask_nsbh</span><span class="p">]</span>
+            <span class="c1">#    [Store etas of all NSBHs]</span>
+            <span class="n">eta_nsbh</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">eta_from_mass1_mass2</span><span class="p">(</span><span class="n">mass1_nsbh</span><span class="p">,</span> <span class="n">mass2_nsbh</span><span class="p">)</span>
+            <span class="c1">#    [mask_bright_nsbh will identify NSBH systems with high enough</span>
+            <span class="c1">#     threshold mass]</span>
+            <span class="n">mask_bright_nsbh</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass1_nsbh</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">eta_nsbh</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">remnant</span> <span class="o">=</span> <span class="n">conversions</span><span class="o">.</span><span class="n">remnant_mass_from_mass1_mass2_cartesian_spin_eos</span><span class="p">(</span>
+                    <span class="n">mass1_nsbh</span><span class="p">,</span>
+                    <span class="n">mass2_nsbh</span><span class="p">,</span>
+                    <span class="n">spin1x</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                    <span class="n">spin1y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                    <span class="n">spin1z</span><span class="o">=</span><span class="n">spin1z_nsbh</span><span class="p">,</span>
+                    <span class="n">eos</span><span class="o">=</span><span class="n">eos</span>
+                <span class="p">)</span>
+                <span class="n">mask_bright_nsbh</span><span class="p">[</span><span class="n">remnant</span>
+                                 <span class="o">&gt;</span>
+                                 <span class="n">massRangeParams</span><span class="o">.</span><span class="n">remnant_mass_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># Keep only points that correspond to binaries that can produce an</span>
+            <span class="c1"># EM counterpart (i.e., BNSs and EM-bright NSBHs) and add their</span>
+            <span class="c1"># properties to the pile of accpeted points to output</span>
+            <span class="n">mass1_out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mass1_out</span><span class="p">,</span> <span class="n">mass1_bns</span><span class="p">,</span>
+                                           <span class="n">mass1_nsbh</span><span class="p">[</span><span class="n">mask_bright_nsbh</span><span class="p">]))</span>
+            <span class="n">mass2_out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mass2_out</span><span class="p">,</span> <span class="n">mass2_bns</span><span class="p">,</span>
+                                           <span class="n">mass2_nsbh</span><span class="p">[</span><span class="n">mask_bright_nsbh</span><span class="p">]))</span>
+            <span class="n">spin1z_out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">spin1z_out</span><span class="p">,</span> <span class="n">spin1z_bns</span><span class="p">,</span>
+                                            <span class="n">spin1z_nsbh</span><span class="p">[</span><span class="n">mask_bright_nsbh</span><span class="p">]))</span>
+            <span class="n">spin2z_out</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">spin2z_out</span><span class="p">,</span> <span class="n">spin2z_bns</span><span class="p">,</span>
+                                            <span class="n">spin2z_nsbh</span><span class="p">[</span><span class="n">mask_bright_nsbh</span><span class="p">]))</span>
+
+            <span class="c1"># Number of points that survived all cuts</span>
+            <span class="n">numPointsFound</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mass1_out</span><span class="p">)</span>
+
+        <span class="c1"># Ready to go</span>
+        <span class="n">mass1</span> <span class="o">=</span> <span class="n">mass1_out</span>
+        <span class="n">mass2</span> <span class="o">=</span> <span class="n">mass2_out</span>
+        <span class="n">spin1z</span> <span class="o">=</span> <span class="n">spin1z_out</span>
+        <span class="n">spin2z</span> <span class="o">=</span> <span class="n">spin2z_out</span>
+
+    <span class="k">return</span> <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span></div>
+
+
+<div class="viewcode-block" id="get_cov_params">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_cov_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_cov_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>
+                   <span class="n">lambda1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambda2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quadparam1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">quadparam2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to convert between masses and spins and locations in the xi</span>
+<span class="sd">    parameter space. Xi = Cartesian metric and rotated to principal components.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        Mass of heavier body.</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        Mass of lighter body.</span>
+<span class="sd">    spin1z : float</span>
+<span class="sd">        Spin of body 1.</span>
+<span class="sd">    spin2z : float</span>
+<span class="sd">        Spin of body 2.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper to use when getting the mu coordinates from the</span>
+<span class="sd">        lambda coordinates. This must be a key in metricParams.evals,</span>
+<span class="sd">        metricParams.evecs and metricParams.evecsCV</span>
+<span class="sd">        (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    xis : list of floats or numpy.arrays</span>
+<span class="sd">        Position of the system(s) in the xi coordinate system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Do this by doing masses - &gt; lambdas -&gt; mus</span>
+    <span class="n">mus</span> <span class="o">=</span> <span class="n">get_conv_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>
+                          <span class="n">lambda1</span><span class="o">=</span><span class="n">lambda1</span><span class="p">,</span> <span class="n">lambda2</span><span class="o">=</span><span class="n">lambda2</span><span class="p">,</span>
+                          <span class="n">quadparam1</span><span class="o">=</span><span class="n">quadparam1</span><span class="p">,</span> <span class="n">quadparam2</span><span class="o">=</span><span class="n">quadparam2</span><span class="p">)</span>
+    <span class="c1"># and then mus -&gt; xis</span>
+    <span class="n">xis</span> <span class="o">=</span> <span class="n">get_covaried_params</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">evecsCV</span><span class="p">[</span><span class="n">fUpper</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">xis</span></div>
+
+
+<div class="viewcode-block" id="get_conv_params">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_conv_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_conv_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">,</span>
+                    <span class="n">lambda1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambda2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quadparam1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">quadparam2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to convert between masses and spins and locations in the mu</span>
+<span class="sd">    parameter space. Mu = Cartesian metric, but not principal components.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    mass1 : float</span>
+<span class="sd">        Mass of heavier body.</span>
+<span class="sd">    mass2 : float</span>
+<span class="sd">        Mass of lighter body.</span>
+<span class="sd">    spin1z : float</span>
+<span class="sd">        Spin of body 1.</span>
+<span class="sd">    spin2z : float</span>
+<span class="sd">        Spin of body 2.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper to use when getting the mu coordinates from the</span>
+<span class="sd">        lambda coordinates. This must be a key in metricParams.evals and</span>
+<span class="sd">        metricParams.evecs (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mus : list of floats or numpy.arrays</span>
+<span class="sd">        Position of the system(s) in the mu coordinate system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Do this by masses -&gt; lambdas</span>
+    <span class="n">lambdas</span> <span class="o">=</span> <span class="n">get_chirp_params</span><span class="p">(</span><span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span><span class="p">,</span>
+                               <span class="n">metricParams</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">pnOrder</span><span class="p">,</span>
+                               <span class="n">lambda1</span><span class="o">=</span><span class="n">lambda1</span><span class="p">,</span> <span class="n">lambda2</span><span class="o">=</span><span class="n">lambda2</span><span class="p">,</span>
+                               <span class="n">quadparam1</span><span class="o">=</span><span class="n">quadparam1</span><span class="p">,</span> <span class="n">quadparam2</span><span class="o">=</span><span class="n">quadparam2</span><span class="p">)</span>
+    <span class="c1"># and lambdas -&gt; mus</span>
+    <span class="n">mus</span> <span class="o">=</span> <span class="n">get_mu_params</span><span class="p">(</span><span class="n">lambdas</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mus</span></div>
+
+
+<div class="viewcode-block" id="get_mu_params">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_mu_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_mu_params</span><span class="p">(</span><span class="n">lambdas</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to rotate from the lambda coefficients into position in the mu</span>
+<span class="sd">    coordinate system. Mu = Cartesian metric, but not principal components.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    lambdas : list of floats or numpy.arrays</span>
+<span class="sd">        Position of the system(s) in the lambda coefficients</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper to use when getting the mu coordinates from the</span>
+<span class="sd">        lambda coordinates. This must be a key in metricParams.evals and</span>
+<span class="sd">        metricParams.evecs (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    mus : list of floats or numpy.arrays</span>
+<span class="sd">        Position of the system(s) in the mu coordinate system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lambdas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)</span>
+    <span class="c1"># If original inputs were floats we need to make this a 2D array</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lambdas</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">resize_needed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">lambdas</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[:,</span><span class="kc">None</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">resize_needed</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">evecs</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">evecs</span><span class="p">[</span><span class="n">fUpper</span><span class="p">]</span>
+    <span class="n">evals</span> <span class="o">=</span> <span class="n">metricParams</span><span class="o">.</span><span class="n">evals</span><span class="p">[</span><span class="n">fUpper</span><span class="p">]</span>
+
+    <span class="n">evecs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">evecs</span><span class="p">)</span>
+
+    <span class="n">mus</span> <span class="o">=</span> <span class="p">((</span><span class="n">lambdas</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">evecs</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">mus</span> <span class="o">=</span> <span class="n">mus</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">evals</span><span class="p">)[:,</span><span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">resize_needed</span><span class="p">:</span>
+        <span class="n">mus</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">mus</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mus</span></div>
+
+
+<div class="viewcode-block" id="get_covaried_params">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_covaried_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_covaried_params</span><span class="p">(</span><span class="n">mus</span><span class="p">,</span> <span class="n">evecsCV</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to rotate from position(s) in the mu_i coordinate system into the</span>
+<span class="sd">    position(s) in the xi_i coordinate system</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    mus : list of floats or numpy.arrays</span>
+<span class="sd">        Position of the system(s) in the mu coordinate system</span>
+<span class="sd">    evecsCV : numpy.matrix</span>
+<span class="sd">        This matrix is used to perform the rotation to the xi_i</span>
+<span class="sd">        coordinate system.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    xis : list of floats or numpy.arrays</span>
+<span class="sd">        Position of the system(s) in the xi coordinate system</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mus</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mus</span><span class="p">)</span>
+    <span class="c1"># If original inputs were floats we need to make this a 2D array</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mus</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">resize_needed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">mus</span> <span class="o">=</span> <span class="n">mus</span><span class="p">[:,</span><span class="kc">None</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">resize_needed</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">xis</span> <span class="o">=</span> <span class="p">((</span><span class="n">mus</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">evecsCV</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="n">resize_needed</span><span class="p">:</span>
+        <span class="n">xis</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">xis</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">xis</span></div>
+
+
+<div class="viewcode-block" id="rotate_vector">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.rotate_vector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_vector</span><span class="p">(</span><span class="n">evecs</span><span class="p">,</span> <span class="n">old_vector</span><span class="p">,</span> <span class="n">rescale_factor</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to find the position of the system(s) in one of the xi_i or mu_i</span>
+<span class="sd">    directions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    evecs : numpy.matrix</span>
+<span class="sd">        Matrix of the eigenvectors of the metric in lambda_i coordinates. Used</span>
+<span class="sd">        to rotate to a Cartesian coordinate system.</span>
+<span class="sd">    old_vector : list of floats or numpy.arrays</span>
+<span class="sd">        The position of the system(s) in the original coordinates</span>
+<span class="sd">    rescale_factor : float</span>
+<span class="sd">        Scaling factor to apply to resulting position(s)</span>
+<span class="sd">    index : int</span>
+<span class="sd">        The index of the final coordinate system that is being computed. Ie.</span>
+<span class="sd">        if we are going from mu_i -&gt; xi_j, this will give j.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    positions : float or numpy.array</span>
+<span class="sd">        Position of the point(s) in the resulting coordinate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evecs</span><span class="p">)):</span>
+        <span class="n">temp</span> <span class="o">+=</span> <span class="p">(</span><span class="n">evecs</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">index</span><span class="p">]</span> <span class="o">*</span> <span class="n">rescale_factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">old_vector</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">temp</span></div>
+
+
+<div class="viewcode-block" id="get_point_distance">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.get_point_distance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_point_distance</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to calculate the mismatch between two points, supplied in terms</span>
+<span class="sd">    of the masses and spins, using the xi_i parameter space metric to</span>
+<span class="sd">    approximate the mismatch of the two points. Can also take one of the points</span>
+<span class="sd">    as an array of points and return an array of mismatches (but only one can</span>
+<span class="sd">    be an array!)</span>
+
+<span class="sd">    point1 : List of floats or numpy.arrays</span>
+<span class="sd">        point1[0] contains the mass(es) of the heaviest body(ies).</span>
+<span class="sd">        point1[1] contains the mass(es) of the smallest body(ies).</span>
+<span class="sd">        point1[2] contains the spin(es) of the heaviest body(ies).</span>
+<span class="sd">        point1[3] contains the spin(es) of the smallest body(ies).</span>
+<span class="sd">    point2 : List of floats</span>
+<span class="sd">        point2[0] contains the mass of the heaviest body.</span>
+<span class="sd">        point2[1] contains the mass of the smallest body.</span>
+<span class="sd">        point2[2] contains the spin of the heaviest body.</span>
+<span class="sd">        point2[3] contains the spin of the smallest body.</span>
+<span class="sd">    metricParams : metricParameters instance</span>
+<span class="sd">        Structure holding all the options for construction of the metric</span>
+<span class="sd">        and the eigenvalues, eigenvectors and covariance matrix</span>
+<span class="sd">        needed to manipulate the space.</span>
+<span class="sd">    fUpper : float</span>
+<span class="sd">        The value of fUpper to use when getting the mu coordinates from the</span>
+<span class="sd">        lambda coordinates. This must be a key in metricParams.evals,</span>
+<span class="sd">        metricParams.evecs and metricParams.evecsCV</span>
+<span class="sd">        (ie. we must know how to do the transformation for</span>
+<span class="sd">        the given value of fUpper)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    dist : float or numpy.array</span>
+<span class="sd">        Distance between the point2 and all points in point1</span>
+<span class="sd">    xis1 : List of floats or numpy.arrays</span>
+<span class="sd">        Position of the input point1(s) in the xi_i parameter space</span>
+<span class="sd">    xis2 : List of floats</span>
+<span class="sd">        Position of the input point2 in the xi_i parameter space</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">aMass1</span> <span class="o">=</span> <span class="n">point1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">aMass2</span> <span class="o">=</span> <span class="n">point1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">aSpin1</span> <span class="o">=</span> <span class="n">point1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">aSpin2</span> <span class="o">=</span> <span class="n">point1</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="n">bMass1</span> <span class="o">=</span> <span class="n">point2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">bMass2</span> <span class="o">=</span> <span class="n">point2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">bSpin1</span> <span class="o">=</span> <span class="n">point2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">bSpin2</span> <span class="o">=</span> <span class="n">point2</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="n">aXis</span> <span class="o">=</span> <span class="n">get_cov_params</span><span class="p">(</span><span class="n">aMass1</span><span class="p">,</span> <span class="n">aMass2</span><span class="p">,</span> <span class="n">aSpin1</span><span class="p">,</span> <span class="n">aSpin2</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">)</span>
+
+    <span class="n">bXis</span> <span class="o">=</span> <span class="n">get_cov_params</span><span class="p">(</span><span class="n">bMass1</span><span class="p">,</span> <span class="n">bMass2</span><span class="p">,</span> <span class="n">bSpin1</span><span class="p">,</span> <span class="n">bSpin2</span><span class="p">,</span> <span class="n">metricParams</span><span class="p">,</span> <span class="n">fUpper</span><span class="p">)</span>
+
+    <span class="n">dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">aXis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">bXis</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">aXis</span><span class="p">)):</span>
+        <span class="n">dist</span> <span class="o">+=</span> <span class="p">(</span><span class="n">aXis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">bXis</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">return</span> <span class="n">dist</span><span class="p">,</span> <span class="n">aXis</span><span class="p">,</span> <span class="n">bXis</span></div>
+
+
+<div class="viewcode-block" id="calc_point_dist">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.calc_point_dist">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_point_dist</span><span class="p">(</span><span class="n">vsA</span><span class="p">,</span> <span class="n">entryA</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to determine the distance between two points.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    vsA : list or numpy.array or similar</span>
+<span class="sd">        An array of point 1&#39;s position in the \chi_i coordinate system</span>
+<span class="sd">    entryA : list or numpy.array or similar</span>
+<span class="sd">        An array of point 2&#39;s position in the \chi_i coordinate system</span>
+<span class="sd">    MMdistA : float</span>
+<span class="sd">        The minimal mismatch allowed between the points</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    val : float</span>
+<span class="sd">        The metric distance between the two points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chi_diffs</span> <span class="o">=</span> <span class="n">vsA</span> <span class="o">-</span> <span class="n">entryA</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="p">((</span><span class="n">chi_diffs</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">chi_diffs</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">val</span> </div>
+
+
+<div class="viewcode-block" id="test_point_dist">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.test_point_dist">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_point_dist</span><span class="p">(</span><span class="n">point_1_chis</span><span class="p">,</span> <span class="n">point_2_chis</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function tests if the difference between two points in the chi</span>
+<span class="sd">    parameter space is less than a distance threshold. Returns True if it is</span>
+<span class="sd">    and False if it is not.   </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point_1_chis : numpy.array</span>
+<span class="sd">        An array of point 1&#39;s position in the \chi_i coordinate system</span>
+<span class="sd">    point_2_chis : numpy.array</span>
+<span class="sd">        An array of point 2&#39;s position in the \chi_i coordinate system</span>
+<span class="sd">    distance_threshold : float</span>
+<span class="sd">        The distance threshold to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">calc_point_dist</span><span class="p">(</span><span class="n">point_1_chis</span><span class="p">,</span> <span class="n">point_2_chis</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">distance_threshold</span></div>
+
+
+
+<div class="viewcode-block" id="calc_point_dist_vary">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.calc_point_dist_vary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_point_dist_vary</span><span class="p">(</span><span class="n">mus1</span><span class="p">,</span> <span class="n">fUpper1</span><span class="p">,</span> <span class="n">mus2</span><span class="p">,</span> <span class="n">fUpper2</span><span class="p">,</span> <span class="n">fMap</span><span class="p">,</span> <span class="n">norm_map</span><span class="p">,</span> <span class="n">MMdistA</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to determine if two points, with differing upper frequency cutoffs</span>
+<span class="sd">    have a mismatch &lt; MMdistA for *both* upper frequency cutoffs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mus1 : List of numpy arrays</span>
+<span class="sd">        mus1[i] will give the array of point 1&#39;s position in the \chi_j</span>
+<span class="sd">        coordinate system. The i element corresponds to varying values of the</span>
+<span class="sd">        upper frequency cutoff. fMap is used to map between i and actual</span>
+<span class="sd">        frequencies</span>
+<span class="sd">    fUpper1 : float</span>
+<span class="sd">        The upper frequency cutoff of point 1.</span>
+<span class="sd">    mus2 : List of numpy arrays</span>
+<span class="sd">        mus2[i] will give the array of point 2&#39;s position in the \chi_j</span>
+<span class="sd">        coordinate system. The i element corresponds to varying values of the</span>
+<span class="sd">        upper frequency cutoff. fMap is used to map between i and actual</span>
+<span class="sd">        frequencies</span>
+<span class="sd">    fUpper2 : float</span>
+<span class="sd">        The upper frequency cutoff of point 2.</span>
+<span class="sd">    fMap : dictionary</span>
+<span class="sd">        fMap[fUpper] will give the index needed to get the \chi_j coordinates</span>
+<span class="sd">        in the two sets of mus</span>
+<span class="sd">    norm_map : dictionary</span>
+<span class="sd">        norm_map[fUpper] will give the relative frequency domain template</span>
+<span class="sd">        amplitude (sigma) at the given value of fUpper.</span>
+<span class="sd">    MMdistA</span>
+<span class="sd">        The minimal mismatch allowed between the points</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    Boolean</span>
+<span class="sd">        True if the points have a mismatch &lt; MMdistA</span>
+<span class="sd">        False if the points have a mismatch &gt; MMdistA</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f_upper</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">fUpper1</span><span class="p">,</span> <span class="n">fUpper2</span><span class="p">)</span>
+    <span class="n">f_other</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">fUpper1</span><span class="p">,</span> <span class="n">fUpper2</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">fMap</span><span class="p">[</span><span class="n">f_upper</span><span class="p">]</span>
+    <span class="n">vecs1</span> <span class="o">=</span> <span class="n">mus1</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">vecs2</span> <span class="o">=</span> <span class="n">mus2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="p">((</span><span class="n">vecs1</span> <span class="o">-</span> <span class="n">vecs2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">vecs1</span> <span class="o">-</span> <span class="n">vecs2</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="o">&gt;</span> <span class="n">MMdistA</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># Reduce match to account for normalization.</span>
+    <span class="n">norm_fac</span> <span class="o">=</span> <span class="n">norm_map</span><span class="p">[</span><span class="n">f_upper</span><span class="p">]</span> <span class="o">/</span> <span class="n">norm_map</span><span class="p">[</span><span class="n">f_other</span><span class="p">]</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">val</span><span class="p">)</span><span class="o">*</span><span class="n">norm_fac</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">val</span> <span class="o">&lt;</span> <span class="n">MMdistA</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_max_and_min_frequencies">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.find_max_and_min_frequencies">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_max_and_min_frequencies</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mass_range_params</span><span class="p">,</span> <span class="n">freqs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ADD DOCS</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cutoff_fns</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cutoff_fns</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> not recognized as a valid cutoff frequency choice.&quot;</span> <span class="o">%</span><span class="n">name</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Recognized choices: &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cutoff_fns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="c1"># Can I do this quickly?</span>
+    <span class="n">total_mass_approxs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;SchwarzISCO&quot;</span><span class="p">:</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">f_SchwarzISCO</span><span class="p">,</span>
+        <span class="s2">&quot;LightRing&quot;</span>  <span class="p">:</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">f_LightRing</span><span class="p">,</span>
+        <span class="s2">&quot;ERD&quot;</span>        <span class="p">:</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">f_ERD</span>
+    <span class="p">}</span>
+    
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">total_mass_approxs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># This can be done quickly if the cutoff only depends on total mass</span>
+        <span class="c1"># Assumes that lower total mass = higher cutoff frequency</span>
+        <span class="n">upper_f_cutoff</span> <span class="o">=</span> <span class="n">total_mass_approxs</span><span class="p">[</span><span class="n">name</span><span class="p">](</span><span class="n">mass_range_params</span><span class="o">.</span><span class="n">minTotMass</span><span class="p">)</span>
+        <span class="n">lower_f_cutoff</span> <span class="o">=</span> <span class="n">total_mass_approxs</span><span class="p">[</span><span class="n">name</span><span class="p">](</span><span class="n">mass_range_params</span><span class="o">.</span><span class="n">maxTotMass</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Do this numerically</span>
+        <span class="c1"># FIXME: Is 1000000 the right choice? I think so, but just highlighting</span>
+        <span class="n">mass1</span><span class="p">,</span> <span class="n">mass2</span><span class="p">,</span> <span class="n">spin1z</span><span class="p">,</span> <span class="n">spin2z</span> <span class="o">=</span> \
+                <span class="n">get_random_mass</span><span class="p">(</span><span class="mi">1000000</span><span class="p">,</span> <span class="n">mass_range_params</span><span class="p">)</span>
+        <span class="n">mass_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass1</span>
+        <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mass2</span>
+        <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin1z</span>
+        <span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spin2z</span>
+        <span class="n">tmp_freqs</span> <span class="o">=</span> <span class="n">cutoff_fns</span><span class="p">[</span><span class="n">name</span><span class="p">](</span><span class="n">mass_dict</span><span class="p">)</span>
+        <span class="n">upper_f_cutoff</span> <span class="o">=</span> <span class="n">tmp_freqs</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">lower_f_cutoff</span> <span class="o">=</span> <span class="n">tmp_freqs</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+
+    <span class="n">cutoffs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lower_f_cutoff</span><span class="p">,</span><span class="n">upper_f_cutoff</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">lower_f_cutoff</span> <span class="o">&lt;</span> <span class="n">freqs</span><span class="o">.</span><span class="n">min</span><span class="p">():</span>
+        <span class="n">warn_msg</span> <span class="o">=</span> <span class="s2">&quot;WARNING: &quot;</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;Lowest frequency cutoff is </span><span class="si">%s</span><span class="s2"> Hz &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">lower_f_cutoff</span><span class="p">,)</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;which is lower than the lowest frequency calculated &quot;</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;for the metric: </span><span class="si">%s</span><span class="s2"> Hz. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">freqs</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;Distances for these waveforms will be calculated at &quot;</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;the lowest available metric frequency.&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">upper_f_cutoff</span> <span class="o">&gt;</span> <span class="n">freqs</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="n">warn_msg</span> <span class="o">=</span> <span class="s2">&quot;WARNING: &quot;</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;Highest frequency cutoff is </span><span class="si">%s</span><span class="s2"> Hz &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">upper_f_cutoff</span><span class="p">,)</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;which is larger than the highest frequency calculated &quot;</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;for the metric: </span><span class="si">%s</span><span class="s2"> Hz. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">freqs</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;Distances for these waveforms will be calculated at &quot;</span>
+        <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;the largest available metric frequency.&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">find_closest_calculated_frequencies</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">,</span> <span class="n">freqs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="return_nearest_cutoff">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.return_nearest_cutoff">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">return_nearest_cutoff</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mass_dict</span><span class="p">,</span> <span class="n">freqs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an array of total mass values and an (ascending) list of</span>
+<span class="sd">    frequencies, this will calculate the specified cutoff formula for each</span>
+<span class="sd">    mtotal and return the nearest frequency to each cutoff from the input</span>
+<span class="sd">    list.</span>
+<span class="sd">    Currently only supports cutoffs that are functions of the total mass</span>
+<span class="sd">    and no other parameters (SchwarzISCO, LightRing, ERD)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : string</span>
+<span class="sd">        Name of the cutoff formula to be approximated</span>
+<span class="sd">    mass_dict : Dictionary where the keys are used to call the functions</span>
+<span class="sd">        returned by tmpltbank.named_frequency_cutoffs. The values can be</span>
+<span class="sd">        numpy arrays or single values.</span>
+<span class="sd">    freqs : list of floats</span>
+<span class="sd">        A list of frequencies (must be sorted ascending)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.array</span>
+<span class="sd">        The frequencies closest to the cutoff for each value of totmass.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># A bypass for the redundant case</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mass_dict</span><span class="p">[</span><span class="s1">&#39;m1&#39;</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">+</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">cutoff_fns</span> <span class="o">=</span> <span class="n">pnutils</span><span class="o">.</span><span class="n">named_frequency_cutoffs</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cutoff_fns</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> not recognized as a valid cutoff frequency choice.&quot;</span> <span class="o">%</span><span class="n">name</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Recognized choices: &quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cutoff_fns</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="n">f_cutoff</span> <span class="o">=</span> <span class="n">cutoff_fns</span><span class="p">[</span><span class="n">name</span><span class="p">](</span><span class="n">mass_dict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">find_closest_calculated_frequencies</span><span class="p">(</span><span class="n">f_cutoff</span><span class="p">,</span> <span class="n">freqs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="find_closest_calculated_frequencies">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.find_closest_calculated_frequencies">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_closest_calculated_frequencies</span><span class="p">(</span><span class="n">input_freqs</span><span class="p">,</span> <span class="n">metric_freqs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a value (or array) of input frequencies find the closest values in</span>
+<span class="sd">    the list of frequencies calculated in the metric.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    input_freqs : numpy.array or float</span>
+<span class="sd">        The frequency(ies) that you want to find the closest value in</span>
+<span class="sd">        metric_freqs</span>
+<span class="sd">    metric_freqs : numpy.array</span>
+<span class="sd">        The list of frequencies calculated by the metric</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    output_freqs : numpy.array or float</span>
+<span class="sd">        The list of closest values to input_freqs for which the metric was</span>
+<span class="sd">        computed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">refEv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">input_freqs</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">refEv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">input_freqs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">input_freqs</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric_freqs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">refEv</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">metric_freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">refEv</span>
+
+    <span class="c1"># FIXME: This seems complicated for what is a simple operation. Is there</span>
+    <span class="c1">#        a simpler *and* faster way of doing this?</span>
+    <span class="c1"># NOTE: This function assumes a sorted list of frequencies</span>
+    <span class="c1"># NOTE: totmass and f_cutoff are both numpy arrays as this function is</span>
+    <span class="c1">#       designed so that the cutoff can be calculated for many systems</span>
+    <span class="c1">#       simulataneously</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_freqs</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># If frequency is lower than halfway between the first two entries</span>
+            <span class="c1"># use the first (lowest) value</span>
+            <span class="n">logicArr</span> <span class="o">=</span> <span class="n">input_freqs</span> <span class="o">&lt;</span> <span class="p">((</span><span class="n">metric_freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">metric_freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_freqs</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># If frequency is larger than halfway between the last two entries</span>
+            <span class="c1"># use the last (highest) value</span>
+            <span class="n">logicArr</span> <span class="o">=</span> <span class="n">input_freqs</span> <span class="o">&gt;</span> <span class="p">((</span><span class="n">metric_freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">metric_freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># For frequencies within the range in freqs, check which points</span>
+            <span class="c1"># should use the frequency corresponding to index i.</span>
+            <span class="n">logicArrA</span> <span class="o">=</span> <span class="n">input_freqs</span> <span class="o">&gt;</span> <span class="p">((</span><span class="n">metric_freqs</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">metric_freqs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+            <span class="n">logicArrB</span> <span class="o">=</span> <span class="n">input_freqs</span> <span class="o">&lt;</span> <span class="p">((</span><span class="n">metric_freqs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">metric_freqs</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+            <span class="n">logicArr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">logicArrA</span><span class="p">,</span><span class="n">logicArrB</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">logicArr</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">refEv</span><span class="p">[</span><span class="n">logicArr</span><span class="p">]</span> <span class="o">=</span> <span class="n">metric_freqs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">refEv</span></div>
+
+
+
+<div class="viewcode-block" id="outspiral_loop">
+<a class="viewcode-back" href="../../../pycbc.tmpltbank.html#pycbc.tmpltbank.coord_utils.outspiral_loop">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">outspiral_loop</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a list of points that will loop outwards in a 2D lattice in terms</span>
+<span class="sd">    of distance from a central point. So if N=2 this will be [0,0], [0,1],</span>
+<span class="sd">    [0,-1],[1,0],[-1,0],[1,1] .... This is useful when you want to loop over</span>
+<span class="sd">    a number of bins, but want to start in the center and work outwards.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create a 2D lattice of all points</span>
+    <span class="n">X</span><span class="p">,</span><span class="n">Y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">N</span><span class="p">,</span><span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">N</span><span class="p">,</span><span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="c1"># Flatten it</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ndarray</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+
+    <span class="c1"># Force to an integer</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+   
+    <span class="c1"># Calculate distances</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">X</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Combine back into an array</span>
+    <span class="n">out_arr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">G</span><span class="p">])</span>
+   
+    <span class="c1"># And order correctly</span>
+    <span class="n">sorted_out_arr</span> <span class="o">=</span> <span class="n">out_arr</span><span class="p">[:,</span><span class="n">out_arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span>
+
+    <span class="k">return</span> <span class="n">sorted_out_arr</span><span class="p">[:</span><span class="mi">2</span><span class="p">,:]</span><span class="o">.</span><span class="n">T</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,233 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Query times of valid data, hardware injections, and more. &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reading Gravitational-wave Frames" href="frame.html" />
+    <link rel="prev" title="Catalog of Observed Gravitational-wave Mergers" href="catalog.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Query times of valid data, hardware injections, and more.</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#determine-the-times-an-instrument-has-valid-data">Determine the times an instrument has valid data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#finding-times-of-hardware-injections">Finding times of hardware injections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-flags-can-i-query">What flags can I query?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+      <li class="breadcrumb-item active">Query times of valid data, hardware injections, and more.</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/dataquality.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="query-times-of-valid-data-hardware-injections-and-more">
+<h1>Query times of valid data, hardware injections, and more.<a class="headerlink" href="#query-times-of-valid-data-hardware-injections-and-more" title="Link to this heading"></a></h1>
+<p>Information about the state of the LIGO/Virgo data can be queried from
+resources at the GWOSC and from LVC-proprietary DQSEGDB through the
+functions of the <a class="reference internal" href="pycbc.html#module-pycbc.dq" title="pycbc.dq"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.dq</span></code></a> module. We will outline a few of common
+tasks below.</p>
+<section id="determine-the-times-an-instrument-has-valid-data">
+<span id="example-valid-data"></span><h2>Determine the times an instrument has valid data<a class="headerlink" href="#determine-the-times-an-instrument-has-valid-data" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;This example shows how to determine when a detector is active.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">dq</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.results</span><span class="w"> </span><span class="kn">import</span> <span class="n">ifo_color</span>
+
+
+<span class="n">start_time</span> <span class="o">=</span> <span class="mi">1126051217</span>
+<span class="n">end_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="mi">100000</span>
+
+<span class="c1"># Get times that the Hanford detector has data</span>
+<span class="n">hsegs</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">query_flag</span><span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;DATA&#39;</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+
+<span class="c1"># Get times that the Livingston detector has data</span>
+<span class="n">lsegs</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">query_flag</span><span class="p">(</span><span class="s1">&#39;L1&#39;</span><span class="p">,</span> <span class="s1">&#39;DATA&#39;</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">lsegs</span><span class="p">:</span>
+    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">seg</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ifo_color</span><span class="p">(</span><span class="s1">&#39;L1&#39;</span><span class="p">),</span> <span class="n">ymin</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">hsegs</span><span class="p">:</span>
+    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">seg</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ifo_color</span><span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">),</span> <span class="n">ymin</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/0790a055dbce70298e91733425a6514e/on.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/25805a47a94e7ee8924a3b12278dc62e/on.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/8a7ade99cc07f34f40c79d2fdebcd9b8/on.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/aa5e3bb7d69ddd7d7edcfd42a19348ba/on.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/on.png" class="plot-directive" src="_images/on.png" />
+</figure>
+</section>
+<section id="finding-times-of-hardware-injections">
+<h2>Finding times of hardware injections<a class="headerlink" href="#finding-times-of-hardware-injections" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;This example shows how to determine when a CBC hardware injection is present</span>
+<span class="sd">in the data from a detector.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">dq</span>
+
+
+<span class="n">start_time</span> <span class="o">=</span> <span class="mi">1126051217</span>
+<span class="n">end_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="mi">10000000</span>
+
+<span class="c1"># Get times that the Livingston detector has CBC injections into the data</span>
+<span class="n">segs</span> <span class="o">=</span> <span class="n">dq</span><span class="o">.</span><span class="n">query_flag</span><span class="p">(</span><span class="s1">&#39;L1&#39;</span><span class="p">,</span> <span class="s1">&#39;CBC_HW_INJ&#39;</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">segs</span><span class="p">:</span>
+    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">seg</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+
+<span class="n">pp</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">pp</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>(<a class="reference download internal" download="" href="_downloads/b57d20df612b39fc74ac65832572dcf0/hwinj.py"><code class="xref download docutils literal notranslate"><span class="pre">Source</span> <span class="pre">code</span></code></a>, <a class="reference download internal" download="" href="_downloads/c44b46be252aa7dde9cade6d77bd2006/hwinj.png"><code class="xref download docutils literal notranslate"><span class="pre">png</span></code></a>, <a class="reference download internal" download="" href="_downloads/31cb13748e932f47734db0fb008fdb2b/hwinj.hires.png"><code class="xref download docutils literal notranslate"><span class="pre">hires.png</span></code></a>, <a class="reference download internal" download="" href="_downloads/2958ccfdeabca74c596999997d897130/hwinj.pdf"><code class="xref download docutils literal notranslate"><span class="pre">pdf</span></code></a>)</p>
+<figure class="align-default">
+<img alt="_images/hwinj.png" class="plot-directive" src="_images/hwinj.png" />
+</figure>
+</section>
+<section id="what-flags-can-i-query">
+<h2>What flags can I query?<a class="headerlink" href="#what-flags-can-i-query" title="Link to this heading"></a></h2>
+<p>A list of many of the flags which can be quiered is <a class="reference external" href="https://www.gwosc.org/archive/dataset/O1/">available here</a>.
+Instead, just give the raw name such as “DATA” instead of “H1_DATA”.</p>
+<p>There are two additional types of flags which can be queried. These are
+the negation of the flags like “NO_CBC_HW_INJ”. The flag “CBC_HW_INJ” would
+give times where there <em>is</em> a hardware injection instead of times when
+there isn’t. Similarly if you use “CBC_CAT2_VETO” instead of “CBC_CAT2” you
+will get the times that are adversely affected instead of the times that
+are not.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="catalog.html" class="btn btn-neutral float-left" title="Catalog of Observed Gravitational-wave Mergers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="frame.html" class="btn btn-neutral float-right" title="Reading Gravitational-wave Frames" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

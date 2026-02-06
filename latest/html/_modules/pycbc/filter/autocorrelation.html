@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.filter.autocorrelation &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.filter.autocorrelation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.filter.autocorrelation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Christopher M. Biwer</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides functions for calculating the autocorrelation function</span>
+<span class="sd">and length of a data series.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter.matchedfilter</span><span class="w"> </span><span class="kn">import</span> <span class="n">correlate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">zeros</span>
+
+<div class="viewcode-block" id="calculate_acf">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.autocorrelation.calculate_acf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_acf</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">unbiased</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculates the one-sided autocorrelation function.</span>
+
+<span class="sd">    Calculates the autocorrelation function (ACF) and returns the one-sided</span>
+<span class="sd">    ACF. The ACF is defined as the autocovariance divided by the variance. The</span>
+<span class="sd">    ACF can be estimated using</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right)</span>
+
+<span class="sd">    Where :math:`\hat{R}(k)` is the ACF, :math:`X_{t}` is the data series at</span>
+<span class="sd">    time t, :math:`\mu` is the mean of :math:`X_{t}`, and :math:`\sigma^{2}` is</span>
+<span class="sd">    the variance of :math:`X_{t}`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    data : TimeSeries or numpy.array</span>
+<span class="sd">        A TimeSeries or numpy.array of data.</span>
+<span class="sd">    delta_t : float</span>
+<span class="sd">        The time step of the data series if it is not a TimeSeries instance.</span>
+<span class="sd">    unbiased : bool</span>
+<span class="sd">        If True the normalization of the autocovariance function is n-k</span>
+<span class="sd">        instead of n. This is called the unbiased estimation of the</span>
+<span class="sd">        autocovariance. Note that this does not mean the ACF is unbiased.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    acf : numpy.array</span>
+<span class="sd">        If data is a TimeSeries then acf will be a TimeSeries of the</span>
+<span class="sd">        one-sided ACF. Else acf is a numpy.array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># if given a TimeSeries instance then get numpy.array</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">delta_t</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="c1"># Zero mean</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">y</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">ny_orig</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="n">npad</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">npad</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">ny_orig</span><span class="p">:</span>
+        <span class="n">npad</span> <span class="o">=</span> <span class="n">npad</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="n">ypad</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">npad</span><span class="p">)</span>
+    <span class="n">ypad</span><span class="p">[:</span><span class="n">ny_orig</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+
+    <span class="c1"># FFT data minus the mean</span>
+    <span class="n">fdata</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">ypad</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">)</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+
+    <span class="c1"># correlate</span>
+    <span class="c1"># do not need to give the congjugate since correlate function does it</span>
+    <span class="n">cdata</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fdata</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">fdata</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+                           <span class="n">delta_f</span><span class="o">=</span><span class="n">fdata</span><span class="o">.</span><span class="n">delta_f</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">correlate</span><span class="p">(</span><span class="n">fdata</span><span class="p">,</span> <span class="n">fdata</span><span class="p">,</span> <span class="n">cdata</span><span class="p">)</span>
+
+    <span class="c1"># IFFT correlated data to get unnormalized autocovariance time series</span>
+    <span class="n">acf</span> <span class="o">=</span> <span class="n">cdata</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+    <span class="n">acf</span> <span class="o">=</span> <span class="n">acf</span><span class="p">[:</span><span class="n">ny_orig</span><span class="p">]</span>
+
+    <span class="c1"># normalize the autocovariance</span>
+    <span class="c1"># note that dividing by acf[0] is the same as ( y.var() * len(acf) )</span>
+    <span class="k">if</span> <span class="n">unbiased</span><span class="p">:</span>
+        <span class="n">acf</span> <span class="o">/=</span> <span class="p">(</span> <span class="n">y</span><span class="o">.</span><span class="n">var</span><span class="p">()</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">acf</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">acf</span> <span class="o">/=</span> <span class="n">acf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># return input datatype</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">acf</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">acf</span></div>
+
+
+
+<div class="viewcode-block" id="calculate_acl">
+<a class="viewcode-back" href="../../../pycbc.filter.html#pycbc.filter.autocorrelation.calculate_acl">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_acl</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculates the autocorrelation length (ACL).</span>
+
+<span class="sd">    Given a normalized autocorrelation function :math:`\rho[i]` (by normalized,</span>
+<span class="sd">    we mean that :math:`\rho[0] = 1`), the ACL :math:`\tau` is:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \tau = 1 + 2 \sum_{i=1}^{K} \rho[i].</span>
+
+<span class="sd">    The number of samples used :math:`K` is found by using the first point</span>
+<span class="sd">    such that:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        m \tau[K] \leq K,</span>
+
+<span class="sd">    where :math:`m` is a tuneable parameter (default = 5). If no such point</span>
+<span class="sd">    exists, then the given data set it too short to estimate the ACL; in this</span>
+<span class="sd">    case ``inf`` is returned.</span>
+
+<span class="sd">    This algorithm for computing the ACL is taken from:</span>
+
+<span class="sd">    N. Madras and A.D. Sokal, J. Stat. Phys. 50, 109 (1988).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    data : TimeSeries or array</span>
+<span class="sd">        A TimeSeries of data.</span>
+<span class="sd">    m : int</span>
+<span class="sd">        The number of autocorrelation lengths to use for determining the window</span>
+<span class="sd">        size :math:`K` (see above).</span>
+<span class="sd">    dtype : int or float</span>
+<span class="sd">        The datatype of the output. If the dtype was set to int, then the</span>
+<span class="sd">        ceiling is returned.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    acl : int or float</span>
+<span class="sd">        The autocorrelation length. If the ACL cannot be estimated, returns</span>
+<span class="sd">        ``numpy.inf``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># sanity check output data type</span>
+    <span class="k">if</span> <span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The dtype must be either int or float.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># if we have only a single point, just return 1</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="c1"># calculate ACF that is normalized by the zero-lag value</span>
+    <span class="n">acf</span> <span class="o">=</span> <span class="n">calculate_acf</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">cacf</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">acf</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">win</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">cacf</span> <span class="o">&lt;=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cacf</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">win</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">acl</span> <span class="o">=</span> <span class="n">cacf</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">win</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">acl</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">acl</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">acl</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+    <span class="k">return</span> <span class="n">acl</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

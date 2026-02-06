@@ -1,0 +1,5 @@
+<map id="inheritancefd3d78355c" name="inheritancefd3d78355c">
+<area shape="rect" id="node1" href="../pycbc.inference.io.html#pycbc.inference.io.base_hdf.BaseInferenceFile" target="_top" title="Base class for all inference hdf files." alt="" coords="18,5,234,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.io.html#pycbc.inference.io.base_sampler.BaseSamplerFile" target="_top" title="Base HDF class for all samplers." alt="" coords="5,79,247,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.io.html#pycbc.inference.io.multinest.MultinestFile" target="_top" title="Class to handle file IO for the ``multinest`` sampler." alt="" coords="32,152,220,177"/>
+</map>

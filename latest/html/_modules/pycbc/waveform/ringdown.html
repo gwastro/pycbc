@@ -1,0 +1,1435 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.ringdown &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.ringdown</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.ringdown</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016 Miriam Cabero Mueller</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;Generate ringdown templates in the time and frequency domain.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_optional</span>
+<span class="n">pykerr</span> <span class="o">=</span> <span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;pykerr&#39;</span><span class="p">)</span>
+<span class="n">lal</span> <span class="o">=</span> <span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lal&#39;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">TimeSeries</span><span class="p">,</span> <span class="n">FrequencySeries</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">complex128</span><span class="p">,</span>
+                         <span class="n">zeros</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_obj_attrs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_lm_f0tau_allmodes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">G_SI</span><span class="p">,</span> <span class="n">C_SI</span><span class="p">,</span> <span class="n">PC_SI</span>
+
+<span class="n">qnm_required_args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;f_0&#39;</span><span class="p">,</span> <span class="s1">&#39;tau&#39;</span><span class="p">,</span> <span class="s1">&#39;amp&#39;</span><span class="p">,</span> <span class="s1">&#39;phi&#39;</span><span class="p">]</span>
+<span class="n">mass_spin_required_args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;final_mass&#39;</span><span class="p">,</span><span class="s1">&#39;final_spin&#39;</span><span class="p">,</span> <span class="s1">&#39;lmns&#39;</span><span class="p">,</span> <span class="s1">&#39;inclination&#39;</span><span class="p">]</span>
+<span class="n">freqtau_required_args</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">]</span>
+<span class="n">td_args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;delta_t&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;t_final&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;taper&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">fd_args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;t_0&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;delta_f&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;f_lower&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;f_final&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+<span class="n">max_freq</span> <span class="o">=</span> <span class="mi">16384</span><span class="o">/</span><span class="mf">2.</span>
+<span class="n">min_dt</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">max_freq</span><span class="p">)</span>
+<span class="n">pi</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">two_pi</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+<span class="n">pi_sq</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+
+
+<span class="c1"># Input parameters ############################################################</span>
+
+<div class="viewcode-block" id="props">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.props">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">props</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">required</span><span class="p">,</span> <span class="n">domain_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return a dictionary built from the combination of defaults, kwargs,</span>
+<span class="sd">    and the attributes of the given object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get the attributes of the template object</span>
+    <span class="n">pr</span> <span class="o">=</span> <span class="n">get_obj_attrs</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="c1"># Get the parameters to generate the waveform</span>
+    <span class="c1"># Note that keyword arguments override values in the template object</span>
+    <span class="n">input_params</span> <span class="o">=</span> <span class="n">domain_args</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">input_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span>
+    <span class="n">input_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="c1"># Check if the required arguments are given</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">required</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_params</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Please provide &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">input_params</span></div>
+
+
+<div class="viewcode-block" id="format_lmns">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.format_lmns">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_lmns</span><span class="p">(</span><span class="n">lmns</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checks if the format of the parameter lmns is correct, returning the</span>
+<span class="sd">    appropriate format if not, and raise an error if nmodes=0.</span>
+
+<span class="sd">    The required format for the ringdown approximants is a list of lmn modes</span>
+<span class="sd">    as a single whitespace-separated string, with n the number</span>
+<span class="sd">    of overtones desired. Alternatively, a list object may be used,</span>
+<span class="sd">    containing individual strings as elements for the lmn modes.</span>
+<span class="sd">    For instance, lmns = &#39;223 331&#39; are the modes 220, 221, 222, and 330.</span>
+<span class="sd">    Giving lmns = [&#39;223&#39;, &#39;331&#39;] is equivalent.</span>
+<span class="sd">    The ConfigParser of a workflow might convert that to a single string</span>
+<span class="sd">    (case 1 below) or a list with a single string (case 2), and this function</span>
+<span class="sd">    will return the appropriate list of strings. If a different format is</span>
+<span class="sd">    given, raise an error.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Catch case of lmns given as float (as int injection values are cast</span>
+    <span class="c1"># to float by pycbc_create_injections), cast to int, then string</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lmns</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">lmns</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lmns</span><span class="p">))</span>
+    <span class="c1"># Case 1: the lmns are given as a string, e.g. &#39;221 331&#39;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lmns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">lmns</span> <span class="o">=</span> <span class="n">lmns</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="c1"># Case 2: the lmns are given as strings in a list, e.g. [&#39;221&#39;, &#39;331&#39;]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lmns</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Format of parameter lmns not recognized. See &#39;</span>
+                         <span class="s1">&#39;approximant documentation for more info.&#39;</span><span class="p">)</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Cycle over the lmns to ensure that we get back a list of strings that</span>
+    <span class="c1"># are three digits long, and that nmodes!=0</span>
+    <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">lmns</span><span class="p">:</span>
+        <span class="c1"># The following line is to be used with Python3 if the lmns are stored</span>
+        <span class="c1"># as a list of strings in the HDF files and the workflow converts that</span>
+        <span class="c1"># to a string</span>
+        <span class="c1"># lmn = lmn.strip(&quot; b&#39;&quot;)</span>
+        <span class="c1"># Try to convert to int and then str, to ensure the right format</span>
+        <span class="n">lmn</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lmn</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Format of parameter lmns not recognized. See &#39;</span>
+                             <span class="s1">&#39;approximant documentation for more info.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Number of overtones (nmodes) must be greater &#39;</span>
+                             <span class="s1">&#39;than zero in lmn=</span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lmn</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lmn</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="parse_mode">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.parse_mode">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_mode</span><span class="p">(</span><span class="n">lmn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts overtones from an lmn.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lm</span><span class="p">,</span> <span class="n">nmodes</span> <span class="o">=</span> <span class="n">lmn</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">overtones</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmodes</span><span class="p">):</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">lm</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">overtones</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">overtones</span></div>
+
+
+
+<div class="viewcode-block" id="lm_amps_phases">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_amps_phases">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_amps_phases</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Takes input_params and return dictionaries with amplitudes and phases</span>
+<span class="sd">    of each overtone of a specific lm mode, checking that all of them are</span>
+<span class="sd">    given. Will also look for dbetas and dphis. If ``(dphi|dbeta)`` (i.e.,</span>
+<span class="sd">    without a mode suffix) are provided, they will be used for all modes that</span>
+<span class="sd">    don&#39;t explicitly set a ``(dphi|dbeta){lmn}``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lmns</span> <span class="o">=</span> <span class="n">format_lmns</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">])</span>
+    <span class="n">amps</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">phis</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">dbetas</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">dphis</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># reference mode</span>
+    <span class="n">ref_amp</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;ref_amp&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ref_amp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># default to the 220 mode</span>
+        <span class="n">ref_amp</span> <span class="o">=</span> <span class="s1">&#39;amp220&#39;</span>
+    <span class="c1"># check for reference dphi and dbeta</span>
+    <span class="n">ref_dbeta</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dbeta&#39;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+    <span class="n">ref_dphi</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dphi&#39;</span><span class="p">,</span> <span class="mf">0.</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_amp</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ref_amp</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;amp&#39;</span><span class="p">):</span>
+        <span class="c1"># assume a mode was provided; check if the mode exists</span>
+        <span class="n">ref_mode</span> <span class="o">=</span> <span class="n">ref_amp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;amp&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ref_amp</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">ref_amp</span><span class="p">)</span>
+            <span class="n">amps</span><span class="p">[</span><span class="n">ref_mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref_amp</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide an amplitude for the reference &quot;</span>
+                             <span class="s2">&quot;mode </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ref_amp</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ref_mode</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Get amplitudes and phases of the modes</span>
+    <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">lmns</span><span class="p">:</span>
+        <span class="n">overtones</span> <span class="o">=</span> <span class="n">parse_mode</span><span class="p">(</span><span class="n">lmn</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">overtones</span><span class="p">:</span>
+            <span class="c1"># skip the reference mode</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">!=</span> <span class="n">ref_mode</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">amps</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">]</span> <span class="o">*</span> <span class="n">ref_amp</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;amp</span><span class="si">{}</span><span class="s1"> is required&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">phis</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;phi&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;phi</span><span class="si">{}</span><span class="s1"> is required&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+            <span class="n">dphis</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dphi&#39;</span><span class="o">+</span><span class="n">mode</span><span class="p">,</span> <span class="n">ref_dphi</span><span class="p">)</span>
+            <span class="n">dbetas</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;dbeta&#39;</span><span class="o">+</span><span class="n">mode</span><span class="p">,</span> <span class="n">ref_dbeta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">amps</span><span class="p">,</span> <span class="n">phis</span><span class="p">,</span> <span class="n">dbetas</span><span class="p">,</span> <span class="n">dphis</span></div>
+
+
+
+<div class="viewcode-block" id="lm_freqs_taus">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_freqs_taus">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_freqs_taus</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Take input_params and return dictionaries with frequencies and damping</span>
+<span class="sd">    times of each overtone of a specific lm mode, checking that all of them</span>
+<span class="sd">    are given.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lmns</span> <span class="o">=</span> <span class="n">format_lmns</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">])</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="n">taus</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">lmns</span><span class="p">:</span>
+        <span class="n">overtones</span> <span class="o">=</span> <span class="n">parse_mode</span><span class="p">(</span><span class="n">lmn</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">overtones</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">freqs</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;f_&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;f_</span><span class="si">{}</span><span class="s1"> is required&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">taus</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tau_&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;tau_</span><span class="si">{}</span><span class="s1"> is required&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">taus</span></div>
+
+
+
+<div class="viewcode-block" id="lm_arbitrary_harmonics">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_arbitrary_harmonics">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_arbitrary_harmonics</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Take input_params and return dictionaries with arbitrary harmonics</span>
+<span class="sd">    for each mode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lmns</span> <span class="o">=</span> <span class="n">format_lmns</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">])</span>
+    <span class="n">pols</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">polnms</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">lmns</span><span class="p">:</span>
+        <span class="n">overtones</span> <span class="o">=</span> <span class="n">parse_mode</span><span class="p">(</span><span class="n">lmn</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">overtones</span><span class="p">:</span>
+            <span class="n">pols</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;pol</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">polnms</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;polnm</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pols</span><span class="p">,</span> <span class="n">polnms</span></div>
+
+
+
+<span class="c1"># Functions to obtain t_final, f_final and output vector ######################</span>
+
+<div class="viewcode-block" id="qnm_time_decay">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.qnm_time_decay">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qnm_time_decay</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span> <span class="n">decay</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the time at which the amplitude of the</span>
+<span class="sd">    ringdown falls to decay of the peak amplitude.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tau : float</span>
+<span class="sd">        The damping time of the sinusoid.</span>
+<span class="sd">    decay : float</span>
+<span class="sd">        The fraction of the peak amplitude.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t_decay : float</span>
+<span class="sd">        The time at which the amplitude of the time-domain</span>
+<span class="sd">        ringdown falls to decay of the peak amplitude.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">tau</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">decay</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="qnm_freq_decay">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.qnm_freq_decay">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qnm_freq_decay</span><span class="p">(</span><span class="n">f_0</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">decay</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the frequency at which the amplitude of the</span>
+<span class="sd">    ringdown falls to decay of the peak amplitude.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f_0 : float</span>
+<span class="sd">        The ringdown-frequency, which gives the peak amplitude.</span>
+<span class="sd">    tau : float</span>
+<span class="sd">        The damping time of the sinusoid.</span>
+<span class="sd">    decay : float</span>
+<span class="sd">        The fraction of the peak amplitude.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f_decay : float</span>
+<span class="sd">        The frequency at which the amplitude of the frequency-domain</span>
+<span class="sd">        ringdown falls to decay of the peak amplitude.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q_0</span> <span class="o">=</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">f_0</span> <span class="o">*</span> <span class="n">tau</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">decay</span>
+    <span class="n">alpha_sq</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">decay</span> <span class="o">/</span> <span class="n">decay</span>
+    <span class="c1"># Expression obtained analytically under the assumption</span>
+    <span class="c1"># that 1./alpha_sq, q_0^2 &gt;&gt; 1</span>
+    <span class="n">q_sq</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha_sq</span> <span class="o">+</span> <span class="mi">4</span><span class="o">*</span><span class="n">q_0</span><span class="o">*</span><span class="n">q_0</span> <span class="o">+</span> <span class="n">alpha</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">alpha_sq</span> <span class="o">+</span> <span class="mi">16</span><span class="o">*</span><span class="n">q_0</span><span class="o">*</span><span class="n">q_0</span><span class="p">))</span><span class="o">/</span><span class="mf">4.</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">q_sq</span><span class="p">)</span> <span class="o">/</span> <span class="n">pi</span> <span class="o">/</span> <span class="n">tau</span></div>
+
+
+
+<div class="viewcode-block" id="lm_tfinal">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_tfinal">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_tfinal</span><span class="p">(</span><span class="n">damping_times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the maximum t_final of the modes given, with t_final the time</span>
+<span class="sd">    at which the amplitude falls to 1/1000 of the peak amplitude</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">t_max</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">damping_times</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">t_max</span><span class="p">[</span><span class="n">lmn</span><span class="p">]</span> <span class="o">=</span> <span class="n">qnm_time_decay</span><span class="p">(</span><span class="n">damping_times</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="n">t_final</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t_max</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">t_final</span> <span class="o">=</span> <span class="n">qnm_time_decay</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t_final</span></div>
+
+
+
+<div class="viewcode-block" id="lm_deltat">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_deltat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_deltat</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the minimum delta_t of all the modes given, with delta_t given by</span>
+<span class="sd">    the inverse of the frequency at which the amplitude of the ringdown falls</span>
+<span class="sd">    to 1/1000 of the peak amplitude.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">freqs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dt</span><span class="p">[</span><span class="n">lmn</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">qnm_freq_decay</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span>
+                               <span class="n">damping_times</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Missing damping times.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Missing frequencies.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">qnm_freq_decay</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">delta_t</span> <span class="o">&lt;</span> <span class="n">min_dt</span><span class="p">:</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">min_dt</span>
+
+    <span class="k">return</span> <span class="n">delta_t</span></div>
+
+
+
+<div class="viewcode-block" id="lm_ffinal">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_ffinal">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_ffinal</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the maximum f_final of the modes given, with f_final the</span>
+<span class="sd">    frequency at which the amplitude falls to 1/1000 of the peak amplitude</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">f_max</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">freqs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">f_max</span><span class="p">[</span><span class="n">lmn</span><span class="p">]</span> <span class="o">=</span> <span class="n">qnm_freq_decay</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span>
+                              <span class="n">damping_times</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="n">f_final</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">f_max</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Missing damping times.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Missing frequencies.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">f_final</span> <span class="o">=</span> <span class="n">qnm_freq_decay</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">f_final</span> <span class="o">&gt;</span> <span class="n">max_freq</span><span class="p">:</span>
+        <span class="n">f_final</span> <span class="o">=</span> <span class="n">max_freq</span>
+    <span class="k">return</span> <span class="n">f_final</span></div>
+
+
+
+<div class="viewcode-block" id="lm_deltaf">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.lm_deltaf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lm_deltaf</span><span class="p">(</span><span class="n">damping_times</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the minimum delta_f of all the modes given, with delta_f given by</span>
+<span class="sd">    the inverse of the time at which the amplitude of the ringdown falls to</span>
+<span class="sd">    1/1000 of the peak amplitude.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">damping_times</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">lmn</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">qnm_time_decay</span><span class="p">(</span><span class="n">damping_times</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="n">delta_f</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">delta_f</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="n">qnm_time_decay</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">delta_f</span></div>
+
+
+
+<div class="viewcode-block" id="td_output_vector">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.td_output_vector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">td_output_vector</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">,</span> <span class="n">taper</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">delta_t</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">t_final</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an empty TimeSeries with the appropriate size to fit all</span>
+<span class="sd">    the quasi-normal modes present in freqs, damping_times</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">delta_t</span><span class="p">:</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">lm_deltat</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">t_final</span><span class="p">:</span>
+        <span class="n">t_final</span> <span class="o">=</span> <span class="n">lm_tfinal</span><span class="p">(</span><span class="n">damping_times</span><span class="p">)</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">t_final</span> <span class="o">/</span> <span class="n">delta_t</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1"># Different modes will have different tapering window-size</span>
+    <span class="c1"># Find maximum window size to create long enough output vector</span>
+    <span class="k">if</span> <span class="n">taper</span><span class="p">:</span>
+        <span class="n">max_tau</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">damping_times</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">if</span> \
+                  <span class="nb">isinstance</span><span class="p">(</span><span class="n">damping_times</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">damping_times</span>
+        <span class="n">kmax</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_tau</span><span class="o">/</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="n">outplus</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float64</span><span class="p">),</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="n">outcross</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float64</span><span class="p">),</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">taper</span><span class="p">:</span>
+        <span class="c1"># Change epoch of output vector if tapering will be applied</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="o">-</span> <span class="n">max_tau</span>
+        <span class="c1"># To ensure that t=0 is still in output vector</span>
+        <span class="n">start</span> <span class="o">-=</span> <span class="n">start</span> <span class="o">%</span> <span class="n">delta_t</span>
+        <span class="n">outplus</span><span class="o">.</span><span class="n">_epoch</span><span class="p">,</span> <span class="n">outcross</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">start</span><span class="p">,</span> <span class="n">start</span>
+    <span class="k">return</span> <span class="n">outplus</span><span class="p">,</span> <span class="n">outcross</span></div>
+
+
+
+<div class="viewcode-block" id="fd_output_vector">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.fd_output_vector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_output_vector</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f_final</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an empty FrequencySeries with the appropriate size to fit all</span>
+<span class="sd">    the quasi-normal modes present in freqs, damping_times</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">delta_f</span><span class="p">:</span>
+        <span class="n">delta_f</span> <span class="o">=</span> <span class="n">lm_deltaf</span><span class="p">(</span><span class="n">damping_times</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">f_final</span><span class="p">:</span>
+        <span class="n">f_final</span> <span class="o">=</span> <span class="n">lm_ffinal</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">damping_times</span><span class="p">)</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_final</span> <span class="o">/</span> <span class="n">delta_f</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">outplus</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex128</span><span class="p">),</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="n">outcross</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">kmax</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">complex128</span><span class="p">),</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">delta_f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outplus</span><span class="p">,</span> <span class="n">outcross</span></div>
+
+
+
+<span class="c1"># Spherical harmonics and Kerr factor #########################################</span>
+
+<div class="viewcode-block" id="spher_harms">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.spher_harms">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spher_harms</span><span class="p">(</span><span class="n">harmonics</span><span class="o">=</span><span class="s1">&#39;spherical&#39;</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">inclination</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">azimuthal</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                <span class="n">spin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">polnm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the +/-m harmonic polarizations.</span>
+
+<span class="sd">    This will return either spherical, spheroidal, or an arbitrary complex</span>
+<span class="sd">    number depending on what ``harmonics`` is set to. If harmonics is set to</span>
+<span class="sd">    arbitrary, then the &quot;(+/-)m&quot; harmonic will be :math:`e^{i \psi_(+/-)}`,</span>
+<span class="sd">    where :math:`\psi_{+/-}` are arbitrary angles provided by the user (using</span>
+<span class="sd">    the ``pol(nm)`` arguments).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        The type of harmonic to generate. Default is spherical.</span>
+<span class="sd">    l : int, optional</span>
+<span class="sd">        The l index. Must be provided if harmonics is &#39;spherical&#39; or</span>
+<span class="sd">        &#39;spheroidal&#39;.</span>
+<span class="sd">    m : int, optional</span>
+<span class="sd">        The m index. Must be provided if harmonics is &#39;spherical&#39; or</span>
+<span class="sd">        &#39;spheroidal&#39;.</span>
+<span class="sd">    n : int, optional</span>
+<span class="sd">        The overtone number. Only used if harmonics is &#39;spheroidal&#39;. Default</span>
+<span class="sd">        is 0.</span>
+<span class="sd">    inclination : float, optional</span>
+<span class="sd">        The inclination angle. Only used if harmonics is &#39;spherical&#39; or</span>
+<span class="sd">        &#39;spheroidal&#39;. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle. Only used if harmonics is &#39;spherical&#39; or</span>
+<span class="sd">        &#39;spheroidal&#39;. Default is 0.</span>
+<span class="sd">    spin : float, optional</span>
+<span class="sd">        The dimensionless spin of the black hole. Must be provided if</span>
+<span class="sd">        harmonics is &#39;spheroidal&#39;. Ignored otherwise.</span>
+<span class="sd">    pol : float, optional</span>
+<span class="sd">        Angle (in radians) to use for arbitrary &quot;+m&quot; harmonic. Must be provided</span>
+<span class="sd">        if harmonics is &#39;arbitrary&#39;. Ignored otherwise.</span>
+<span class="sd">    polnm : float, optional</span>
+<span class="sd">        Angle (in radians) to use for arbitrary &quot;-m&quot; harmonic. Must be provided</span>
+<span class="sd">        if harmonics is &#39;arbitrary&#39;. Ignored otherwise.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xlm : complex</span>
+<span class="sd">        The harmonic of the +m mode.</span>
+<span class="sd">    xlnm : complex</span>
+<span class="sd">        The harmonic of the -m mode.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">harmonics</span> <span class="o">==</span> <span class="s1">&#39;spherical&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">lal</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;lal must be installed for spherical &quot;</span>
+                <span class="s2">&quot;harmonics&quot;</span>
+            <span class="p">)</span>
+        <span class="n">xlm</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">SpinWeightedSphericalHarmonic</span><span class="p">(</span><span class="n">inclination</span><span class="p">,</span> <span class="n">azimuthal</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span>
+                                                <span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+        <span class="n">xlnm</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">SpinWeightedSphericalHarmonic</span><span class="p">(</span><span class="n">inclination</span><span class="p">,</span> <span class="n">azimuthal</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span>
+                                                 <span class="n">l</span><span class="p">,</span> <span class="o">-</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">harmonics</span> <span class="o">==</span> <span class="s1">&#39;spheroidal&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">spin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;must provide a spin for spheroidal harmonics&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pykerr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;pykerr must be installed for spheroidal &quot;</span>
+                              <span class="s2">&quot;harmonics&quot;</span><span class="p">)</span>
+        <span class="n">xlm</span> <span class="o">=</span> <span class="n">pykerr</span><span class="o">.</span><span class="n">spheroidal</span><span class="p">(</span><span class="n">inclination</span><span class="p">,</span> <span class="n">spin</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">phi</span><span class="o">=</span><span class="n">azimuthal</span><span class="p">)</span>
+        <span class="n">xlnm</span> <span class="o">=</span> <span class="n">pykerr</span><span class="o">.</span><span class="n">spheroidal</span><span class="p">(</span><span class="n">inclination</span><span class="p">,</span> <span class="n">spin</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="o">-</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">phi</span><span class="o">=</span><span class="n">azimuthal</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">harmonics</span> <span class="o">==</span> <span class="s1">&#39;arbitrary&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pol</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">polnm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must provide a pol and a polnm for arbitrary &#39;</span>
+                             <span class="s1">&#39;harmonics&#39;</span><span class="p">)</span>
+        <span class="n">xlm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">pol</span><span class="p">)</span>
+        <span class="n">xlnm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">polnm</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;harmonics must be either spherical, spheroidal, &quot;</span>
+                         <span class="s2">&quot;or arbitrary&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">xlm</span><span class="p">,</span> <span class="n">xlnm</span></div>
+
+
+
+<div class="viewcode-block" id="Kerr_factor">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.Kerr_factor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">Kerr_factor</span><span class="p">(</span><span class="n">final_mass</span><span class="p">,</span> <span class="n">distance</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the factor final_mass/distance (in dimensionless units) for Kerr</span>
+<span class="sd">    ringdowns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Convert solar masses to meters</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="n">final_mass</span> <span class="o">*</span> <span class="n">MSUN_SI</span> <span class="o">*</span> <span class="n">G_SI</span> <span class="o">/</span> <span class="n">C_SI</span><span class="o">**</span><span class="mi">2</span>
+    <span class="c1"># Convert Mpc to meters</span>
+    <span class="n">dist</span> <span class="o">=</span> <span class="n">distance</span> <span class="o">*</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">PC_SI</span>
+    <span class="k">return</span> <span class="n">mass</span> <span class="o">/</span> <span class="n">dist</span></div>
+
+
+
+<span class="c1">######################################################</span>
+<span class="c1">#### Basic functions to generate damped sinusoid</span>
+<span class="c1">######################################################</span>
+
+<div class="viewcode-block" id="td_damped_sinusoid">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.td_damped_sinusoid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">td_damped_sinusoid</span><span class="p">(</span><span class="n">f_0</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span>
+                       <span class="n">l</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">inclination</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">azimuthal</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                       <span class="n">dphi</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">dbeta</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                       <span class="n">harmonics</span><span class="o">=</span><span class="s1">&#39;spherical&#39;</span><span class="p">,</span> <span class="n">final_spin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">pol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">polnm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return a time domain damped sinusoid (plus and cross polarizations)</span>
+<span class="sd">    with central frequency f_0, damping time tau, amplitude amp and phase phi.</span>
+
+<span class="sd">    This returns the plus and cross polarization of the QNM, defined as</span>
+<span class="sd">    :math:`h^{+,\times}_{l|m|n} = (\Re, \Im) \{ h_{l|m|n}(t)\right}`, where</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        h_{l|m|n}(t) &amp;:= A_{lmn} X_{lmn}(\theta, \varphi)</span>
+<span class="sd">            e^{-t/\tau_{lmn} + i(2\pi f_{lmn}t + \phi_{lmn})} \\</span>
+<span class="sd">            &amp; + A_{l-mn} X_{l-mn}(\theta, \varphi)</span>
+<span class="sd">            e^{-t/\tau_{lmn} - i(2\pi f_{lmn}t + \phi_{l-mn})}</span>
+
+<span class="sd">    Here, the :math:`X_{lmn}(\theta, \varphi)` are either the spherical or</span>
+<span class="sd">    spheroidal harmonics, or an arbitrary complex number, depending on the</span>
+<span class="sd">    input arguments. This uses the convention that the +/-m modes are</span>
+<span class="sd">    related to each other via  :math:`f_{l-mn} = -f_{lmn}` and</span>
+<span class="sd">    :math:`\tau_{l-mn} = \tau_{lmn}`. The amplitudes :math:`A_{l(-)mn}` and</span>
+<span class="sd">    phases :math:`\phi_{l(-)mn}` of the +/-m modes are related to each other</span>
+<span class="sd">    by:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \phi_{l-mn} = l\pi + \Delta \phi_{lmn} - \phi_{lmn}</span>
+
+<span class="sd">    and</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        A_{lmn} &amp;= A^0_{lmn} \sqrt{2} \cos(\pi/4 + \Delta \beta_{lmn})\\</span>
+<span class="sd">        A_{lmn} &amp;= A^0_{lmn} \sqrt{2} \sin(\pi/4 +  \Delta \beta_{lmn}).</span>
+
+<span class="sd">    Here, :math:`A^0_{lmn}` is an overall fiducial amplitude (set by the</span>
+<span class="sd">    ``amp``) parameter, and</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \Delta \beta_{lmn} &amp;\in [-pi/4, pi/4], \\</span>
+<span class="sd">        \Delta \phi_{lmn}  &amp;\in (-pi, pi)</span>
+
+<span class="sd">    are parameters that define the deviation from circular polarization.</span>
+<span class="sd">    Circular polarization occurs when both :math:`\Delta \beta_{lmn}` and</span>
+<span class="sd">    :math:`\Delta \phi_{lmn}` are zero (this is equivalent to assuming that</span>
+<span class="sd">    :math:`h_{l-mn} = (-1)^l h_{lmn}^*`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f_0 : float</span>
+<span class="sd">        The central frequency of the damped sinusoid, in Hz.</span>
+<span class="sd">    tau : float</span>
+<span class="sd">        The damping time, in seconds.</span>
+<span class="sd">    amp : float</span>
+<span class="sd">        The intrinsic amplitude of the QNM (:math:`A^0_{lmn}` in the above).</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        The reference phase of the QNM (:math:`\phi_{lmn}`) in the above.</span>
+<span class="sd">    times : array</span>
+<span class="sd">        Array of times to use, where t=0 is considered the start of the</span>
+<span class="sd">        ringdown. Times are assumed to be monotonically increasing. A taper of</span>
+<span class="sd">        10x the damping time will be used for any negative times.</span>
+<span class="sd">    l : int, optional</span>
+<span class="sd">        The l index; default is 2.</span>
+<span class="sd">    m : int, optional</span>
+<span class="sd">        The m index; default is 2.</span>
+<span class="sd">    n : int, optional</span>
+<span class="sd">        The overtone index; default is 0.</span>
+<span class="sd">    inclination : float, optional</span>
+<span class="sd">        The inclination angle (:math:`\theta` in the above). Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle (:math:`\varphi` in the above). Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    dphi : float, optional</span>
+<span class="sd">        The difference in phase between the +m and -m mode</span>
+<span class="sd">        (:math:`\Delta \phi_{lmn}` in the above). Default is 0.</span>
+<span class="sd">    dbeta : float, optional</span>
+<span class="sd">        The angular difference in the amplitudes of the +m and -m mode</span>
+<span class="sd">        (:math:`\Delta \beta_{lmn}` in the above). Default is 0. If this and</span>
+<span class="sd">        dphi are both 0, will have circularly polarized waves.</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        Which harmonics to use. See :py:func:`spher_harms` for details.</span>
+<span class="sd">        Default is spherical.</span>
+<span class="sd">    final_spin : float, optional</span>
+<span class="sd">        The dimensionless spin of the black hole. Only needed if</span>
+<span class="sd">        ``harmonics=&#39;spheroidal&#39;``.</span>
+<span class="sd">    pol : float, optional</span>
+<span class="sd">        Angle to use for +m arbitrary harmonics. Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. See :py:func:`spher_harms` for details.</span>
+<span class="sd">    polnm : float, optional</span>
+<span class="sd">        Angle to use for -m arbitrary harmonics. Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. See :py:func:`spher_harms` for details.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hplus : numpy.ndarray</span>
+<span class="sd">        The plus polarization.</span>
+<span class="sd">    hcross : numpy.ndarray</span>
+<span class="sd">        The cross polarization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># evaluate the harmonics</span>
+    <span class="n">xlm</span><span class="p">,</span> <span class="n">xlnm</span> <span class="o">=</span> <span class="n">spher_harms</span><span class="p">(</span><span class="n">harmonics</span><span class="o">=</span><span class="n">harmonics</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                            <span class="n">inclination</span><span class="o">=</span><span class="n">inclination</span><span class="p">,</span> <span class="n">azimuthal</span><span class="o">=</span><span class="n">azimuthal</span><span class="p">,</span>
+                            <span class="n">spin</span><span class="o">=</span><span class="n">final_spin</span><span class="p">,</span> <span class="n">pol</span><span class="o">=</span><span class="n">pol</span><span class="p">,</span> <span class="n">polnm</span><span class="o">=</span><span class="n">polnm</span><span class="p">)</span>
+    <span class="c1"># generate the +/-m modes</span>
+    <span class="c1"># we measure things as deviations from circular polarization, which occurs</span>
+    <span class="c1"># when h_{l-m} = (-1)^l h_{lm}^*; that implies that</span>
+    <span class="c1"># phi_{l-m} = - phi_{lm} and A_{l-m} = (-1)^l A_{lm}</span>
+    <span class="n">omegalm</span> <span class="o">=</span> <span class="n">two_pi</span> <span class="o">*</span> <span class="n">f_0</span> <span class="o">*</span> <span class="n">times</span>
+    <span class="n">damping</span> <span class="o">=</span> <span class="o">-</span><span class="n">times</span><span class="o">/</span><span class="n">tau</span>
+    <span class="c1"># check for negative times</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">times</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">damping</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span><span class="o">*</span><span class="n">times</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">/</span><span class="n">tau</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># no -m, just calculate</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">xlm</span> <span class="o">*</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">damping</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">omegalm</span> <span class="o">+</span> <span class="n">phi</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># amplitude</span>
+        <span class="k">if</span> <span class="n">dbeta</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">alm</span> <span class="o">=</span> <span class="n">alnm</span> <span class="o">=</span> <span class="n">amp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="n">pi</span><span class="o">/</span><span class="mi">4</span> <span class="o">+</span> <span class="n">dbeta</span>
+            <span class="n">alm</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+            <span class="n">alnm</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        <span class="c1"># phase</span>
+        <span class="n">phinm</span> <span class="o">=</span> <span class="n">l</span><span class="o">*</span><span class="n">pi</span> <span class="o">+</span> <span class="n">dphi</span> <span class="o">-</span> <span class="n">phi</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">xlm</span> <span class="o">*</span> <span class="n">alm</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">damping</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">omegalm</span> <span class="o">+</span> <span class="n">phi</span><span class="p">))</span> \
+            <span class="o">+</span> <span class="n">xlnm</span> <span class="o">*</span> <span class="n">alnm</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">damping</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">omegalm</span> <span class="o">-</span> <span class="n">phinm</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">hlm</span><span class="o">.</span><span class="n">real</span><span class="p">,</span> <span class="n">hlm</span><span class="o">.</span><span class="n">imag</span></div>
+
+
+
+<div class="viewcode-block" id="fd_damped_sinusoid">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.fd_damped_sinusoid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_damped_sinusoid</span><span class="p">(</span><span class="n">f_0</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">t_0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                       <span class="n">l</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">inclination</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">azimuthal</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                       <span class="n">harmonics</span><span class="o">=</span><span class="s1">&#39;spherical&#39;</span><span class="p">,</span> <span class="n">final_spin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">pol</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">polnm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Return the frequency domain version of a damped sinusoid.</span>
+
+<span class="sd">    This is the frequency domain version :py:func:`td_damped_sinusoid` without</span>
+<span class="sd">    a taper if an infinite sample rate were used to resolve the step function</span>
+<span class="sd">    that turns on the damped sinusoid. See :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">    details.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        This function currently does not support using a different amplitude</span>
+<span class="sd">        and phase for the -m modes (equivalent to setting ``dphi = dbeta = 0``</span>
+<span class="sd">        in :py:func:`td_damped_sinusoid`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f_0 : float</span>
+<span class="sd">        The central frequency of the damped sinusoid, in Hz.</span>
+<span class="sd">    tau : float</span>
+<span class="sd">        The damping time, in seconds.</span>
+<span class="sd">    amp : float</span>
+<span class="sd">        The intrinsic amplitude of the QNM (:math:`A^0_{lmn}` in the above).</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        The reference phase of the QNM (:math:`\phi_{lmn}`) in the above.</span>
+<span class="sd">    freqs : array</span>
+<span class="sd">        Array of frequencies to evaluate the damped sinusoid over.</span>
+<span class="sd">    t_0 : float, optional</span>
+<span class="sd">        The start time of ringdown. Default (0.) corresponds to the ringdown</span>
+<span class="sd">        starting at the beginning of the equivalent segment in the time</span>
+<span class="sd">        domain. A non-zero value for ``t_0`` will shift the ringdown in time</span>
+<span class="sd">        to the corresponding number of seconds from the start of the segment.</span>
+<span class="sd">    l : int, optional</span>
+<span class="sd">        The l index; default is 2.</span>
+<span class="sd">    m : int, optional</span>
+<span class="sd">        The m index; default is 2.</span>
+<span class="sd">    n : int, optional</span>
+<span class="sd">        The overtone index; default is 0.</span>
+<span class="sd">    inclination : float, optional</span>
+<span class="sd">        The inclination angle (:math:`\theta` in the above). Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle (:math:`\varphi` in the above). Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        Which harmonics to use. See :py:func:`spher_harms` for details.</span>
+<span class="sd">        Default is spherical.</span>
+<span class="sd">    final_spin : float, optional</span>
+<span class="sd">        The dimensionless spin of the black hole. Only needed if</span>
+<span class="sd">        ``harmonics=&#39;spheroidal&#39;``.</span>
+<span class="sd">    pol : float, optional</span>
+<span class="sd">        Angle to use for +m arbitrary harmonics. Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. See :py:func:`spher_harms` for details.</span>
+<span class="sd">    polnm : float, optional</span>
+<span class="sd">        Angle to use for -m arbitrary harmonics. Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. See :py:func:`spher_harms` for details.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hptilde : numpy.ndarray</span>
+<span class="sd">        The plus polarization.</span>
+<span class="sd">    hctilde : numpy.ndarray</span>
+<span class="sd">        The cross polarization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># evaluate the harmonics</span>
+    <span class="k">if</span> <span class="n">inclination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">inclination</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="k">if</span> <span class="n">azimuthal</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">azimuthal</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">xlm</span><span class="p">,</span> <span class="n">xlnm</span> <span class="o">=</span> <span class="n">spher_harms</span><span class="p">(</span><span class="n">harmonics</span><span class="o">=</span><span class="n">harmonics</span><span class="p">,</span> <span class="n">l</span><span class="o">=</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                            <span class="n">inclination</span><span class="o">=</span><span class="n">inclination</span><span class="p">,</span> <span class="n">azimuthal</span><span class="o">=</span><span class="n">azimuthal</span><span class="p">,</span>
+                            <span class="n">spin</span><span class="o">=</span><span class="n">final_spin</span><span class="p">,</span> <span class="n">pol</span><span class="o">=</span><span class="n">pol</span><span class="p">,</span> <span class="n">polnm</span><span class="o">=</span><span class="n">polnm</span><span class="p">)</span>
+    <span class="c1"># we&#39;ll assume circular polarization</span>
+    <span class="n">xp</span> <span class="o">=</span> <span class="n">xlm</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="n">l</span> <span class="o">*</span> <span class="n">xlnm</span>
+    <span class="n">xc</span> <span class="o">=</span> <span class="n">xlm</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="n">l</span> <span class="o">*</span> <span class="n">xlnm</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mi">4</span><span class="n">j</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">freqs</span> <span class="o">*</span> <span class="n">tau</span><span class="p">)</span> <span class="o">-</span> \
+        <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">pi_sq</span> <span class="o">*</span> <span class="p">(</span><span class="n">freqs</span><span class="o">*</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">f_0</span><span class="o">*</span><span class="n">f_0</span><span class="p">)</span> <span class="o">*</span> <span class="n">tau</span><span class="o">*</span><span class="n">tau</span><span class="p">)</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">amp</span> <span class="o">*</span> <span class="n">tau</span> <span class="o">/</span> <span class="n">denominator</span>
+    <span class="k">if</span> <span class="n">t_0</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">time_shift</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">two_pi</span> <span class="o">*</span> <span class="n">freqs</span> <span class="o">*</span> <span class="n">t_0</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">*=</span> <span class="n">time_shift</span>
+    <span class="n">A1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">*</span> <span class="n">freqs</span> <span class="o">*</span> <span class="n">tau</span><span class="p">)</span>
+    <span class="n">A2</span> <span class="o">=</span> <span class="n">two_pi</span> <span class="o">*</span> <span class="n">f_0</span> <span class="o">*</span> <span class="n">tau</span>
+    <span class="c1"># Analytical expression for the Fourier transform of the ringdown</span>
+    <span class="n">hptilde</span> <span class="o">=</span> <span class="n">norm</span> <span class="o">*</span> <span class="n">xp</span> <span class="o">*</span> <span class="p">(</span><span class="n">A1</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">-</span> <span class="n">A2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
+    <span class="n">hctilde</span> <span class="o">=</span> <span class="n">norm</span> <span class="o">*</span> <span class="n">xc</span> <span class="o">*</span> <span class="p">(</span><span class="n">A1</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">A2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">hptilde</span><span class="p">,</span> <span class="n">hctilde</span></div>
+
+
+
+<span class="c1">######################################################</span>
+<span class="c1">#### Base multi-mode for all approximants</span>
+<span class="c1">######################################################</span>
+
+<div class="viewcode-block" id="multimode_base">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.multimode_base">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">multimode_base</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">freq_tau_approximant</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a superposition of damped sinusoids in either time or frequency</span>
+<span class="sd">    domains with parameters set by input_params.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_params : dict</span>
+<span class="sd">        Dictionary of parameters to generate the ringdowns with. See</span>
+<span class="sd">        :py:func:`td_damped_sinusoid` and :py:func:`fd_damped_sinusoid` for</span>
+<span class="sd">        supported parameters.</span>
+<span class="sd">    domain : string</span>
+<span class="sd">        Choose domain of the waveform, either &#39;td&#39; for time domain</span>
+<span class="sd">        or &#39;fd&#39; for frequency domain. If &#39;td&#39; (&#39;fd&#39;), the damped sinusoids will</span>
+<span class="sd">        be generated with :py:func:`td_damped_sinusoid`</span>
+<span class="sd">        (:py:func:`fd_damped_sinusoid`).</span>
+<span class="sd">    freq_tau_approximant : {False, bool}, optional</span>
+<span class="sd">        Choose choose the waveform approximant to use. Either based on</span>
+<span class="sd">        mass/spin (set to False, default), or on frequencies/damping times</span>
+<span class="sd">        of the modes (set to True).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hplus : TimeSeries</span>
+<span class="sd">        The plus phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in the chosen domain (time or frequency).</span>
+<span class="sd">    hcross : TimeSeries</span>
+<span class="sd">        The cross phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in the chosen domain (time or frequency).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">format_lmns</span><span class="p">(</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">])</span>
+    <span class="n">amps</span><span class="p">,</span> <span class="n">phis</span><span class="p">,</span> <span class="n">dbetas</span><span class="p">,</span> <span class="n">dphis</span> <span class="o">=</span> <span class="n">lm_amps_phases</span><span class="p">(</span><span class="o">**</span><span class="n">input_params</span><span class="p">)</span>
+    <span class="n">pols</span><span class="p">,</span> <span class="n">polnms</span> <span class="o">=</span> <span class="n">lm_arbitrary_harmonics</span><span class="p">(</span><span class="o">**</span><span class="n">input_params</span><span class="p">)</span>
+    <span class="c1"># get harmonics argument</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">harmonics</span> <span class="o">=</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;harmonics&#39;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">harmonics</span> <span class="o">=</span> <span class="s1">&#39;spherical&#39;</span>
+    <span class="c1"># we&#39;ll need the final spin for spheroidal harmonics</span>
+    <span class="k">if</span> <span class="n">harmonics</span> <span class="o">==</span> <span class="s1">&#39;spheroidal&#39;</span><span class="p">:</span>
+        <span class="n">final_spin</span> <span class="o">=</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;final_spin&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">final_spin</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># add inclination and azimuthal if they aren&#39;t provided</span>
+    <span class="k">if</span> <span class="s1">&#39;inclination&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_params</span><span class="p">:</span>
+        <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="k">if</span> <span class="s1">&#39;azimuthal&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">input_params</span><span class="p">:</span>
+        <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;azimuthal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="c1"># figure out the frequencies and damping times</span>
+    <span class="k">if</span> <span class="n">freq_tau_approximant</span><span class="p">:</span>
+        <span class="n">freqs</span><span class="p">,</span> <span class="n">taus</span> <span class="o">=</span> <span class="n">lm_freqs_taus</span><span class="p">(</span><span class="o">**</span><span class="n">input_params</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">freqs</span><span class="p">,</span> <span class="n">taus</span> <span class="o">=</span> <span class="n">get_lm_f0tau_allmodes</span><span class="p">(</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;final_mass&#39;</span><span class="p">],</span>
+                        <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;final_spin&#39;</span><span class="p">],</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;lmns&#39;</span><span class="p">])</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">Kerr_factor</span><span class="p">(</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;final_mass&#39;</span><span class="p">],</span>
+            <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="s1">&#39;distance&#39;</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> \
+            <span class="k">else</span> <span class="mf">1.</span>
+        <span class="k">for</span> <span class="n">mode</span><span class="p">,</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">freqs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;delta_f</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span> <span class="ow">in</span> <span class="n">input_params</span><span class="p">:</span>
+                <span class="n">freqs</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">+=</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;delta_f</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">)]</span><span class="o">*</span><span class="n">freq</span>
+        <span class="k">for</span> <span class="n">mode</span><span class="p">,</span> <span class="n">tau</span> <span class="ow">in</span> <span class="n">taus</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;delta_tau</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span> <span class="ow">in</span> <span class="n">input_params</span><span class="p">:</span>
+                <span class="n">taus</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span> <span class="o">+=</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;delta_tau</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">)]</span><span class="o">*</span><span class="n">tau</span>
+    <span class="c1"># setup the output</span>
+    <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;td&#39;</span><span class="p">:</span>
+        <span class="n">outplus</span><span class="p">,</span> <span class="n">outcross</span> <span class="o">=</span> <span class="n">td_output_vector</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">taus</span><span class="p">,</span>
+                            <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;taper&#39;</span><span class="p">],</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">],</span>
+                            <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;t_final&#39;</span><span class="p">])</span>
+        <span class="n">sample_times</span> <span class="o">=</span> <span class="n">outplus</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;fd&#39;</span><span class="p">:</span>
+        <span class="n">outplus</span><span class="p">,</span> <span class="n">outcross</span> <span class="o">=</span> <span class="n">fd_output_vector</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">taus</span><span class="p">,</span>
+                            <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">],</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">])</span>
+        <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">])</span>
+        <span class="n">sample_freqs</span> <span class="o">=</span> <span class="n">outplus</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">()[</span><span class="n">kmin</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognised domain argument </span><span class="si">{}</span><span class="s1">; &#39;</span>
+                         <span class="s1">&#39;must be either fd or td&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="p">))</span>
+    <span class="c1"># cyclce over the modes, generating the waveforms</span>
+    <span class="k">for</span> <span class="n">lmn</span> <span class="ow">in</span> <span class="n">freqs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">amps</span><span class="p">[</span><span class="n">lmn</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="c1"># skip</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;td&#39;</span><span class="p">:</span>
+            <span class="n">hplus</span><span class="p">,</span> <span class="n">hcross</span> <span class="o">=</span> <span class="n">td_damped_sinusoid</span><span class="p">(</span>
+                <span class="n">freqs</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">taus</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">amps</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">phis</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">sample_times</span><span class="p">,</span>
+                <span class="n">l</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">m</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+                <span class="n">inclination</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">],</span>
+                <span class="n">azimuthal</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;azimuthal&#39;</span><span class="p">],</span>
+                <span class="n">dphi</span><span class="o">=</span><span class="n">dphis</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">dbeta</span><span class="o">=</span><span class="n">dbetas</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span>
+                <span class="n">harmonics</span><span class="o">=</span><span class="n">harmonics</span><span class="p">,</span> <span class="n">final_spin</span><span class="o">=</span><span class="n">final_spin</span><span class="p">,</span>
+                <span class="n">pol</span><span class="o">=</span><span class="n">pols</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">polnm</span><span class="o">=</span><span class="n">polnms</span><span class="p">[</span><span class="n">lmn</span><span class="p">])</span>
+            <span class="n">outplus</span> <span class="o">+=</span> <span class="n">hplus</span>
+            <span class="n">outcross</span> <span class="o">+=</span> <span class="n">hcross</span>
+        <span class="k">elif</span> <span class="n">domain</span> <span class="o">==</span> <span class="s1">&#39;fd&#39;</span><span class="p">:</span>
+            <span class="n">hplus</span><span class="p">,</span> <span class="n">hcross</span> <span class="o">=</span> <span class="n">fd_damped_sinusoid</span><span class="p">(</span>
+                <span class="n">freqs</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">taus</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">amps</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">phis</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">sample_freqs</span><span class="p">,</span>
+                <span class="n">l</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">m</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">lmn</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+                <span class="n">inclination</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">],</span>
+                <span class="n">azimuthal</span><span class="o">=</span><span class="n">input_params</span><span class="p">[</span><span class="s1">&#39;azimuthal&#39;</span><span class="p">],</span>
+                <span class="n">harmonics</span><span class="o">=</span><span class="n">harmonics</span><span class="p">,</span> <span class="n">final_spin</span><span class="o">=</span><span class="n">final_spin</span><span class="p">,</span>
+                <span class="n">pol</span><span class="o">=</span><span class="n">pols</span><span class="p">[</span><span class="n">lmn</span><span class="p">],</span> <span class="n">polnm</span><span class="o">=</span><span class="n">polnms</span><span class="p">[</span><span class="n">lmn</span><span class="p">])</span>
+            <span class="n">outplus</span><span class="p">[</span><span class="n">kmin</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">hplus</span>
+            <span class="n">outcross</span><span class="p">[</span><span class="n">kmin</span><span class="p">:]</span> <span class="o">+=</span> <span class="n">hcross</span>
+    <span class="k">return</span> <span class="n">norm</span> <span class="o">*</span> <span class="n">outplus</span><span class="p">,</span> <span class="n">norm</span> <span class="o">*</span> <span class="n">outcross</span></div>
+
+
+
+<span class="c1">######################################################</span>
+<span class="c1">#### Approximants</span>
+<span class="c1">######################################################</span>
+
+<div class="viewcode-block" id="get_td_from_final_mass_spin">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.get_td_from_final_mass_spin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_td_from_final_mass_spin</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return time domain ringdown with all the modes specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    final_mass : float</span>
+<span class="sd">        Mass of the final black hole in solar masses.</span>
+<span class="sd">    final_spin : float</span>
+<span class="sd">        Dimensionless spin of the final black hole.</span>
+<span class="sd">    distance : {None, float}, optional</span>
+<span class="sd">        Luminosity distance of the system. If specified, the returned ringdown</span>
+<span class="sd">        will include the Kerr factor (final_mass/distance).</span>
+<span class="sd">    lmns : list</span>
+<span class="sd">        Desired lmn modes as strings. All modes up to l = m = 7 are available.</span>
+<span class="sd">        The n specifies the number of overtones desired for the corresponding</span>
+<span class="sd">        lm pair, not the overtone number; maximum n=8. Example:</span>
+<span class="sd">        lmns = [&#39;223&#39;,&#39;331&#39;] are the modes 220, 221, 222, and 330</span>
+<span class="sd">    ref_amp : str, optional</span>
+<span class="sd">        Which mode to use as the reference for computing amplitudes. Must be</span>
+<span class="sd">        &#39;amp220&#39; if distance is given. Default is &#39;amp220&#39;. The amplitude of</span>
+<span class="sd">        the reference mode should be specified directly, while all other</span>
+<span class="sd">        amplitudes are specified as ratios with respect to that mode.  For</span>
+<span class="sd">        example, if ``ref_amp = &#39;amp220&#39;``, ``lmns = [&#39;221&#39;, &#39;331&#39;]``, and no</span>
+<span class="sd">        distance is provided, then ``amp220 = 1e-22, amp330 = 0.1`` would</span>
+<span class="sd">        result in the 220 mode having a strain amplitude of 1e-22 and the 330</span>
+<span class="sd">        mode having a strain amplitude of 1e-23. If distance is given, the</span>
+<span class="sd">        amplitude of the reference mode will have a completely different order</span>
+<span class="sd">        of magnitude.  See table II in https://arxiv.org/abs/1107.0854 for an</span>
+<span class="sd">        estimate. An amplitude for the reference mode must always be provided,</span>
+<span class="sd">        even if that mode is not being generated. For example, if</span>
+<span class="sd">        ``ref_amp = &#39;amp220&#39;`` and ``lmns = [&#39;331&#39;]`` then both a ``amp220``</span>
+<span class="sd">        and ``amp330`` must be provided even though only the 330 mode will</span>
+<span class="sd">        be created.</span>
+<span class="sd">    amplmn : float</span>
+<span class="sd">        The amplitude of each mode, required for all modes specifed plus the</span>
+<span class="sd">        reference mode. As described above, amplitudes should be specified</span>
+<span class="sd">        relative to the reference mode.</span>
+<span class="sd">    philmn : float</span>
+<span class="sd">        Phase of the lmn overtone, as many as the number of modes.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination of the system in radians. Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle in radians. Ignored if ``harmonics=&#39;arbitrary&#39;``.</span>
+<span class="sd">        Usually this is not necessary to specify since it is degenerate with</span>
+<span class="sd">        initial phase ``philmn``; i.e., this is only useful if you have an</span>
+<span class="sd">        expectation for what the phase of each mode is. Default is 0.</span>
+<span class="sd">    dphi[lmn] : float, optional</span>
+<span class="sd">        The difference in phase between the +m and -m mode. See the</span>
+<span class="sd">        documentation for ``dphi`` in :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">        details. You may specify a</span>
+<span class="sd">        ``dphi{lmn}`` (ex. ``dphi220``) separately for each mode, and/or a</span>
+<span class="sd">        single ``dphi`` (without any lmn) for all modes that do not have</span>
+<span class="sd">        ``dphi`` specified. Default is to use 0 for all modes.</span>
+<span class="sd">    dbeta[lmn] : float, optional</span>
+<span class="sd">        The angular difference in the amplitudes of the +m and -m mode. See the</span>
+<span class="sd">        documentation for ``dbeta`` in :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">        details. You may specify a ``dbeta{lmn}`` (ex. ``dbeta220``)</span>
+<span class="sd">        separately for each mode, and/or a</span>
+<span class="sd">        single ``dbeta`` (without any lmn) for all modes that do not have</span>
+<span class="sd">        ``dbeta`` specified. Default is to use 0 for all modes.</span>
+<span class="sd">    pollmn : float, optional</span>
+<span class="sd">        Angle to use for +m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``pol220 = 0.1``. Only needed if ``harmonics=&#39;arbitrary&#39;``,</span>
+<span class="sd">        ignored otherwise. See :py:func:`spher_harms` for details.</span>
+<span class="sd">    polnmlmn : float, optional</span>
+<span class="sd">        Angle to use for -m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``polnm220 = 0.1``). Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``, ignored otherwise. See :py:func:`spher_harms`</span>
+<span class="sd">        for details.</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        Which harmonics to use. See :py:func:`spher_harms` for details.</span>
+<span class="sd">        Default is spherical.</span>
+<span class="sd">    delta_flmn: {None, float}, optional</span>
+<span class="sd">        GR deviation for the frequency of the lmn mode. If given, the lmn</span>
+<span class="sd">        frequency will be converted to new_flmn = flmn + delta_flmn * flmn,</span>
+<span class="sd">        with flmn the GR predicted value for the corresponding mass and spin.</span>
+<span class="sd">    delta_taulmn: {None, float}, optional</span>
+<span class="sd">        GR deviation for the damping time of the lmn mode. If given, the lmn</span>
+<span class="sd">        tau will be converted to new_taulmn = taulmn + delta_taulmn * taulmn,</span>
+<span class="sd">        with taulmn the GR predicted value for the corresponding mass and spin.</span>
+<span class="sd">    delta_t : {None, float}, optional</span>
+<span class="sd">        The time step used to generate the ringdown.</span>
+<span class="sd">        If None, it will be set to the inverse of the frequency at which the</span>
+<span class="sd">        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).</span>
+<span class="sd">    t_final : {None, float}, optional</span>
+<span class="sd">        The ending time of the output frequency series.</span>
+<span class="sd">        If None, it will be set to the time at which the amplitude</span>
+<span class="sd">        is 1/1000 of the peak amplitude (the maximum of all modes).</span>
+<span class="sd">    taper : bool, optional</span>
+<span class="sd">        Add a rapid ringup with timescale tau/10 at the beginning of the</span>
+<span class="sd">        waveform to avoid the abrupt turn on of the ringdown. Each mode and</span>
+<span class="sd">        overtone will have a different taper depending on its tau,</span>
+<span class="sd">        the final taper being the superposition of all the tapers. Default is</span>
+<span class="sd">        False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hplus : TimeSeries</span>
+<span class="sd">        The plus phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in time domain.</span>
+<span class="sd">    hcross : TimeSeries</span>
+<span class="sd">        The cross phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in time domain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_params</span> <span class="o">=</span> <span class="n">props</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">mass_spin_required_args</span><span class="p">,</span> <span class="n">td_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">multimode_base</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s1">&#39;td&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_fd_from_final_mass_spin">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.get_fd_from_final_mass_spin">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fd_from_final_mass_spin</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return frequency domain ringdown with all the modes specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    final_mass : float</span>
+<span class="sd">        Mass of the final black hole in solar masses.</span>
+<span class="sd">    final_spin : float</span>
+<span class="sd">        Dimensionless spin of the final black hole.</span>
+<span class="sd">    distance : {None, float}, optional</span>
+<span class="sd">        Luminosity distance of the system. If specified, the returned ringdown</span>
+<span class="sd">        will include the Kerr factor (final_mass/distance).</span>
+<span class="sd">    lmns : list</span>
+<span class="sd">        Desired lmn modes as strings. All modes up to l = m = 7 are available.</span>
+<span class="sd">        The n specifies the number of overtones desired for the corresponding</span>
+<span class="sd">        lm pair, not the overtone number; maximum n=8. Example:</span>
+<span class="sd">        lmns = [&#39;223&#39;,&#39;331&#39;] are the modes 220, 221, 222, and 330</span>
+<span class="sd">    ref_amp : str, optional</span>
+<span class="sd">        Which mode to use as the reference for computing amplitudes. Must be</span>
+<span class="sd">        &#39;amp220&#39; if distance is given. Default is &#39;amp220&#39;. The amplitude of</span>
+<span class="sd">        the reference mode should be specified directly, while all other</span>
+<span class="sd">        amplitudes are specified as ratios with respect to that mode.  For</span>
+<span class="sd">        example, if ``ref_amp = &#39;amp220&#39;``, ``lmns = [&#39;221&#39;, &#39;331&#39;]``, and no</span>
+<span class="sd">        distance is provided, then ``amp220 = 1e-22, amp330 = 0.1`` would</span>
+<span class="sd">        result in the 220 mode having a strain amplitude of 1e-22 and the 330</span>
+<span class="sd">        mode having a strain amplitude of 1e-23. If distance is given, the</span>
+<span class="sd">        amplitude of the reference mode will have a completely different order</span>
+<span class="sd">        of magnitude.  See table II in https://arxiv.org/abs/1107.0854 for an</span>
+<span class="sd">        estimate. An amplitude for the reference mode must always be provided,</span>
+<span class="sd">        even if that mode is not being generated. For example, if</span>
+<span class="sd">        ``ref_amp = &#39;amp220&#39;`` and ``lmns = [&#39;331&#39;]`` then both a ``amp220``</span>
+<span class="sd">        and ``amp330`` must be provided even though only the 330 mode will</span>
+<span class="sd">        be created.</span>
+<span class="sd">    amplmn : float</span>
+<span class="sd">        The amplitude of each mode, required for all modes specifed plus the</span>
+<span class="sd">        reference mode. As described above, amplitudes should be specified</span>
+<span class="sd">        relative to the reference mode.</span>
+<span class="sd">    philmn : float</span>
+<span class="sd">        Phase of the lmn overtone, as many as the number of modes.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination of the system in radians. Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle in radians. Ignored if ``harmonics=&#39;arbitrary&#39;``.</span>
+<span class="sd">        Usually this is not necessary to specify since it is degenerate with</span>
+<span class="sd">        initial phase ``philmn``; i.e., this is only useful if you have an</span>
+<span class="sd">        expectation for what the phase of each mode is. Default is 0.</span>
+<span class="sd">    pollmn : float, optional</span>
+<span class="sd">        Angle to use for +m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``pol220 = 0.1``. Only needed if ``harmonics=&#39;arbitrary&#39;``,</span>
+<span class="sd">        ignored otherwise. See :py:func:`spher_harms` for details.</span>
+<span class="sd">    polnmlmn : float, optional</span>
+<span class="sd">        Angle to use for -m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``polnm220 = 0.1``). Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``, ignored otherwise. See :py:func:`spher_harms`</span>
+<span class="sd">        for details.</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        Which harmonics to use. See :py:func:`spher_harms` for details.</span>
+<span class="sd">        Default is spherical.</span>
+<span class="sd">    delta_flmn: {None, float}, optional</span>
+<span class="sd">        GR deviation for the frequency of the lmn mode. If given, the lmn</span>
+<span class="sd">        frequency will be converted to new_flmn = flmn + delta_flmn * flmn,</span>
+<span class="sd">        with flmn the GR predicted value for the corresponding mass and spin.</span>
+<span class="sd">    delta_taulmn: {None, float}, optional</span>
+<span class="sd">        GR deviation for the damping time of the lmn mode. If given, the lmn</span>
+<span class="sd">        tau will be converted to new_taulmn = taulmn + delta_taulmn * taulmn,</span>
+<span class="sd">        with taulmn the GR predicted value for the corresponding mass and spin.</span>
+<span class="sd">    delta_f : {None, float}, optional</span>
+<span class="sd">        The frequency step used to generate the ringdown (not to be confused</span>
+<span class="sd">        with the delta_flmn parameter that simulates GR violations).</span>
+<span class="sd">        If None, it will be set to the inverse of the time at which the</span>
+<span class="sd">        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).</span>
+<span class="sd">    f_lower : {None, float}, optional</span>
+<span class="sd">        The starting frequency of the output frequency series.</span>
+<span class="sd">        If None, it will be set to delta_f.</span>
+<span class="sd">    f_final : {None, float}, optional</span>
+<span class="sd">        The ending frequency of the output frequency series.</span>
+<span class="sd">        If None, it will be set to the frequency at which the amplitude</span>
+<span class="sd">        is 1/1000 of the peak amplitude (the maximum of all modes).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hplustilde : FrequencySeries</span>
+<span class="sd">        The plus phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in frequency domain.</span>
+<span class="sd">    hcrosstilde : FrequencySeries</span>
+<span class="sd">        The cross phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in frequency domain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_params</span> <span class="o">=</span> <span class="n">props</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">mass_spin_required_args</span><span class="p">,</span> <span class="n">fd_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">multimode_base</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s1">&#39;fd&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_td_from_freqtau">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.get_td_from_freqtau">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_td_from_freqtau</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return time domain ringdown with all the modes specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    lmns : list</span>
+<span class="sd">        Desired lmn modes as strings. All modes up to l = m = 7 are available.</span>
+<span class="sd">        The n specifies the number of overtones desired for the corresponding</span>
+<span class="sd">        lm pair, not the overtone number; maximum n=8. Example:</span>
+<span class="sd">        lmns = [&#39;223&#39;,&#39;331&#39;] are the modes 220, 221, 222, and 330</span>
+<span class="sd">    f_lmn : float</span>
+<span class="sd">        Central frequency of the lmn overtone, as many as number of modes.</span>
+<span class="sd">    tau_lmn : float</span>
+<span class="sd">        Damping time of the lmn overtone, as many as number of modes.</span>
+<span class="sd">    ref_amp : str, optional</span>
+<span class="sd">        Which mode to use as the reference for computing amplitudes. Must be</span>
+<span class="sd">        &#39;amp220&#39; if distance is given. Default is &#39;amp220&#39;. The amplitude of</span>
+<span class="sd">        the reference mode should be specified directly, while all other</span>
+<span class="sd">        amplitudes are specified as ratios with respect to that mode.  For</span>
+<span class="sd">        example, if ``ref_amp = &#39;amp220&#39;``, ``lmns = [&#39;221&#39;, &#39;331&#39;]``, and no</span>
+<span class="sd">        distance is provided, then ``amp220 = 1e-22, amp330 = 0.1`` would</span>
+<span class="sd">        result in the 220 mode having a strain amplitude of 1e-22 and the 330</span>
+<span class="sd">        mode having a strain amplitude of 1e-23. If distance is given, the</span>
+<span class="sd">        amplitude of the reference mode will have a completely different order</span>
+<span class="sd">        of magnitude.  See table II in https://arxiv.org/abs/1107.0854 for an</span>
+<span class="sd">        estimate. An amplitude for the reference mode must always be provided,</span>
+<span class="sd">        even if that mode is not being generated. For example, if</span>
+<span class="sd">        ``ref_amp = &#39;amp220&#39;`` and ``lmns = [&#39;331&#39;]`` then both a ``amp220``</span>
+<span class="sd">        and ``amp330`` must be provided even though only the 330 mode will</span>
+<span class="sd">        be created.</span>
+<span class="sd">    amplmn : float</span>
+<span class="sd">        The amplitude of each mode, required for all modes specifed plus the</span>
+<span class="sd">        reference mode. As described above, amplitudes should be specified</span>
+<span class="sd">        relative to the reference mode.</span>
+<span class="sd">    philmn : float</span>
+<span class="sd">        Phase of the lmn overtone, as many as the number of modes.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination of the system in radians. Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle in radians. Ignored if ``harmonics=&#39;arbitrary&#39;``.</span>
+<span class="sd">        Usually this is not necessary to specify since it is degenerate with</span>
+<span class="sd">        initial phase ``philmn``; i.e., this is only useful if you have an</span>
+<span class="sd">        expectation for what the phase of each mode is. Default is 0.</span>
+<span class="sd">    dphi[lmn] : float, optional</span>
+<span class="sd">        The difference in phase between the +m and -m mode. See the</span>
+<span class="sd">        documentation for ``dphi`` in :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">        details. You may specify a</span>
+<span class="sd">        ``dphi{lmn}`` (ex. ``dphi220``) separately for each mode, and/or a</span>
+<span class="sd">        single ``dphi`` (without any lmn) for all modes that do not have</span>
+<span class="sd">        ``dphi`` specified. Default is to use 0 for all modes.</span>
+<span class="sd">    dbeta[lmn] : float, optional</span>
+<span class="sd">        The angular difference in the amplitudes of the +m and -m mode. See the</span>
+<span class="sd">        documentation for ``dbeta`` in :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">        details. You may specify a ``dbeta{lmn}`` (ex. ``dbeta220``)</span>
+<span class="sd">        separately for each mode, and/or a</span>
+<span class="sd">        single ``dbeta`` (without any lmn) for all modes that do not have</span>
+<span class="sd">        ``dbeta`` specified. Default is to use 0 for all modes.</span>
+<span class="sd">    pollmn : float, optional</span>
+<span class="sd">        Angle to use for +m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``pol220 = 0.1``. Only needed if ``harmonics=&#39;arbitrary&#39;``,</span>
+<span class="sd">        ignored otherwise. See :py:func:`spher_harms` for details.</span>
+<span class="sd">    polnmlmn : float, optional</span>
+<span class="sd">        Angle to use for -m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``polnm220 = 0.1``). Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``, ignored otherwise. See :py:func:`spher_harms`</span>
+<span class="sd">        for details.</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        Which harmonics to use. See :py:func:`spher_harms` for details.</span>
+<span class="sd">        Default is spherical.</span>
+<span class="sd">    final_spin : float, optional</span>
+<span class="sd">        Dimensionless spin of the final black hole. This is required if</span>
+<span class="sd">        ``harmonics=&#39;spheroidal&#39;``. Ignored otherwise.</span>
+<span class="sd">    delta_t : {None, float}, optional</span>
+<span class="sd">        The time step used to generate the ringdown.</span>
+<span class="sd">        If None, it will be set to the inverse of the frequency at which the</span>
+<span class="sd">        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).</span>
+<span class="sd">    t_final : {None, float}, optional</span>
+<span class="sd">        The ending time of the output frequency series.</span>
+<span class="sd">        If None, it will be set to the time at which the amplitude</span>
+<span class="sd">        is 1/1000 of the peak amplitude (the maximum of all modes).</span>
+<span class="sd">    taper : bool, optional</span>
+<span class="sd">        Add a rapid ringup with timescale tau/10 at the beginning of the</span>
+<span class="sd">        waveform to avoid the abrupt turn on of the ringdown. Each mode and</span>
+<span class="sd">        overtone will have a different taper depending on its tau,</span>
+<span class="sd">        the final taper being the superposition of all the tapers. Default is</span>
+<span class="sd">        False.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hplus : TimeSeries</span>
+<span class="sd">        The plus phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in time domain.</span>
+<span class="sd">    hcross : TimeSeries</span>
+<span class="sd">        The cross phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in time domain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_params</span> <span class="o">=</span> <span class="n">props</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">freqtau_required_args</span><span class="p">,</span> <span class="n">td_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">multimode_base</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s1">&#39;td&#39;</span><span class="p">,</span> <span class="n">freq_tau_approximant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_fd_from_freqtau">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.ringdown.get_fd_from_freqtau">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fd_from_freqtau</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return frequency domain ringdown with all the modes specified.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    lmns : list</span>
+<span class="sd">        Desired lmn modes as strings. All modes up to l = m = 7 are available.</span>
+<span class="sd">        The n specifies the number of overtones desired for the corresponding</span>
+<span class="sd">        lm pair, not the overtone number; maximum n=8. Example:</span>
+<span class="sd">        lmns = [&#39;223&#39;,&#39;331&#39;] are the modes 220, 221, 222, and 330</span>
+<span class="sd">    f_lmn : float</span>
+<span class="sd">        Central frequency of the lmn overtone, as many as number of modes.</span>
+<span class="sd">    tau_lmn : float</span>
+<span class="sd">        Damping time of the lmn overtone, as many as number of modes.</span>
+<span class="sd">    ref_amp : str, optional</span>
+<span class="sd">        Which mode to use as the reference for computing amplitudes. Must be</span>
+<span class="sd">        &#39;amp220&#39; if distance is given. Default is &#39;amp220&#39;. The amplitude of</span>
+<span class="sd">        the reference mode should be specified directly, while all other</span>
+<span class="sd">        amplitudes are specified as ratios with respect to that mode.  For</span>
+<span class="sd">        example, if ``ref_amp = &#39;amp220&#39;``, ``lmns = [&#39;221&#39;, &#39;331&#39;]``, and no</span>
+<span class="sd">        distance is provided, then ``amp220 = 1e-22, amp330 = 0.1`` would</span>
+<span class="sd">        result in the 220 mode having a strain amplitude of 1e-22 and the 330</span>
+<span class="sd">        mode having a strain amplitude of 1e-23. If distance is given, the</span>
+<span class="sd">        amplitude of the reference mode will have a completely different order</span>
+<span class="sd">        of magnitude.  See table II in https://arxiv.org/abs/1107.0854 for an</span>
+<span class="sd">        estimate. An amplitude for the reference mode must always be provided,</span>
+<span class="sd">        even if that mode is not being generated. For example, if</span>
+<span class="sd">        ``ref_amp = &#39;amp220&#39;`` and ``lmns = [&#39;331&#39;]`` then both a ``amp220``</span>
+<span class="sd">        and ``amp330`` must be provided even though only the 330 mode will</span>
+<span class="sd">        be created.</span>
+<span class="sd">    amplmn : float</span>
+<span class="sd">        The amplitude of each mode, required for all modes specifed plus the</span>
+<span class="sd">        reference mode. As described above, amplitudes should be specified</span>
+<span class="sd">        relative to the reference mode.</span>
+<span class="sd">    philmn : float</span>
+<span class="sd">        Phase of the lmn overtone, as many as the number of modes.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination of the system in radians. Ignored if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``. Default is 0.</span>
+<span class="sd">    azimuthal : float, optional</span>
+<span class="sd">        The azimuthal angle in radians. Ignored if ``harmonics=&#39;arbitrary&#39;``.</span>
+<span class="sd">        Usually this is not necessary to specify since it is degenerate with</span>
+<span class="sd">        initial phase ``philmn``; i.e., this is only useful if you have an</span>
+<span class="sd">        expectation for what the phase of each mode is. Default is 0.</span>
+<span class="sd">    dphi[lmn] : float, optional</span>
+<span class="sd">        The difference in phase between the +m and -m mode. See the</span>
+<span class="sd">        documentation for ``dphi`` in :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">        details. You may specify a</span>
+<span class="sd">        ``dphi{lmn}`` (ex. ``dphi220``) separately for each mode, and/or a</span>
+<span class="sd">        single ``dphi`` (without any lmn) for all modes that do not have</span>
+<span class="sd">        ``dphi`` specified. Default is to use 0 for all modes.</span>
+<span class="sd">    dbeta[lmn] : float, optional</span>
+<span class="sd">        The angular difference in the amplitudes of the +m and -m mode. See the</span>
+<span class="sd">        documentation for ``dbeta`` in :py:func:`td_damped_sinusoid` for</span>
+<span class="sd">        details. You may specify a ``dbeta{lmn}`` (ex. ``dbeta220``)</span>
+<span class="sd">        separately for each mode, and/or a</span>
+<span class="sd">        single ``dbeta`` (without any lmn) for all modes that do not have</span>
+<span class="sd">        ``dbeta`` specified. Default is to use 0 for all modes.</span>
+<span class="sd">    pollmn : float, optional</span>
+<span class="sd">        Angle to use for +m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``pol220 = 0.1``. Only needed if ``harmonics=&#39;arbitrary&#39;``,</span>
+<span class="sd">        ignored otherwise. See :py:func:`spher_harms` for details.</span>
+<span class="sd">    polnmlmn : float, optional</span>
+<span class="sd">        Angle to use for -m arbitrary harmonics of the lmn mode in radians</span>
+<span class="sd">        (example: ``polnm220 = 0.1``). Only needed if</span>
+<span class="sd">        ``harmonics=&#39;arbitrary&#39;``, ignored otherwise. See :py:func:`spher_harms`</span>
+<span class="sd">        for details.</span>
+<span class="sd">    harmonics : {&#39;spherical&#39;, &#39;spheroidal&#39;, &#39;arbitrary&#39;}, optional</span>
+<span class="sd">        Which harmonics to use. See :py:func:`spher_harms` for details.</span>
+<span class="sd">        Default is spherical.</span>
+<span class="sd">    final_spin : float, optional</span>
+<span class="sd">        Dimensionless spin of the final black hole. This is required if</span>
+<span class="sd">        ``harmonics=&#39;spheroidal&#39;``. Ignored otherwise.</span>
+<span class="sd">    delta_f : {None, float}, optional</span>
+<span class="sd">        The frequency step used to generate the ringdown.</span>
+<span class="sd">        If None, it will be set to the inverse of the time at which the</span>
+<span class="sd">        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).</span>
+<span class="sd">    f_lower : {None, float}, optional</span>
+<span class="sd">        The starting frequency of the output frequency series.</span>
+<span class="sd">        If None, it will be set to delta_f.</span>
+<span class="sd">    f_final : {None, float}, optional</span>
+<span class="sd">        The ending frequency of the output frequency series.</span>
+<span class="sd">        If None, it will be set to the frequency at which the amplitude</span>
+<span class="sd">        is 1/1000 of the peak amplitude (the maximum of all modes).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hplustilde : FrequencySeries</span>
+<span class="sd">        The plus phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in frequency domain.</span>
+<span class="sd">    hcrosstilde : FrequencySeries</span>
+<span class="sd">        The cross phase of a ringdown with the lm modes specified and</span>
+<span class="sd">        n overtones in frequency domain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_params</span> <span class="o">=</span> <span class="n">props</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">freqtau_required_args</span><span class="p">,</span> <span class="n">fd_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">multimode_base</span><span class="p">(</span><span class="n">input_params</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="s1">&#39;fd&#39;</span><span class="p">,</span> <span class="n">freq_tau_approximant</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Approximant names ###########################################################</span>
+<span class="n">ringdown_fd_approximants</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;FdQNMfromFinalMassSpin&#39;</span><span class="p">:</span> <span class="n">get_fd_from_final_mass_spin</span><span class="p">,</span>
+    <span class="s1">&#39;FdQNMfromFreqTau&#39;</span><span class="p">:</span> <span class="n">get_fd_from_freqtau</span><span class="p">}</span>
+
+
+<span class="n">ringdown_td_approximants</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;TdQNMfromFinalMassSpin&#39;</span><span class="p">:</span> <span class="n">get_td_from_final_mass_spin</span><span class="p">,</span>
+    <span class="s1">&#39;TdQNMfromFreqTau&#39;</span><span class="p">:</span> <span class="n">get_td_from_freqtau</span><span class="p">}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

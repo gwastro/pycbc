@@ -1,0 +1,1939 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.io package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.live package" href="pycbc.live.html" />
+    <link rel="prev" title="pycbc.inject package" href="pycbc.inject.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.io package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.io.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-io-package">
+<h1>pycbc.io package<a class="headerlink" href="#pycbc-io-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.io.gracedb">
+<span id="pycbc-io-gracedb-module"></span><h2>pycbc.io.gracedb module<a class="headerlink" href="#module-pycbc.io.gracedb" title="Link to this heading"></a></h2>
+<p>Class and function for use in dealing with GraceDB uploads</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.gracedb.CandidateForGraceDB">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.gracedb.</span></span><span class="sig-name descname"><span class="pre">CandidateForGraceDB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coinc_ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coinc_results</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/gracedb.html#CandidateForGraceDB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.gracedb.CandidateForGraceDB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This class provides an interface for uploading candidates to GraceDB.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.gracedb.CandidateForGraceDB.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/gracedb.html#CandidateForGraceDB.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.gracedb.CandidateForGraceDB.save" title="Link to this definition"></a></dt>
+<dd><p>Write a file representing this candidate in a LIGOLW XML format
+compatible with GraceDB.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of file to write to disk.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.gracedb.CandidateForGraceDB.upload">
+<span class="sig-name descname"><span class="pre">upload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gracedb_server</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_strings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AllSky'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/gracedb.html#CandidateForGraceDB.upload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.gracedb.CandidateForGraceDB.upload" title="Link to this definition"></a></dt>
+<dd><p>Upload this candidate to GraceDB, and annotate it with a few useful
+plots and comments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name to give the xml file associated with this trigger</p></li>
+<li><p><strong>gracedb_server</strong> (<em>string</em><em>, </em><em>optional</em>) – URL to the GraceDB web API service for uploading the event.
+If omitted, the default will be used.</p></li>
+<li><p><strong>testing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Switch to determine if the upload should be sent to gracedb as a
+test trigger (True) or a production trigger (False).</p></li>
+<li><p><strong>search</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – String going into the “search” field of the GraceDB event.</p></li>
+<li><p><strong>labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Optional list of labels to tag the new event with.</p></li>
+<li><p><strong>kwargs</strong> (<em>named keyword arguments</em>) – Extra keyword arguments to be passed to GraceDB upload function.
+Can also overwrite reload_certificate and reload_buffer here.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.gracedb.gracedb_tag_with_version">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.gracedb.</span></span><span class="sig-name descname"><span class="pre">gracedb_tag_with_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gracedb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/gracedb.html#gracedb_tag_with_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.gracedb.gracedb_tag_with_version" title="Link to this definition"></a></dt>
+<dd><p>Add a GraceDB log entry reporting PyCBC’s version and install location.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.io.hdf">
+<span id="pycbc-io-hdf-module"></span><h2>pycbc.io.hdf module<a class="headerlink" href="#module-pycbc.io.hdf" title="Link to this heading"></a></h2>
+<p>Convenience classes for accessing hdf5 trigger files</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.DataFromFiles">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">DataFromFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columnlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#DataFromFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.DataFromFiles" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.DataFromFiles.get_column">
+<span class="sig-name descname"><span class="pre">get_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#DataFromFiles.get_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.DataFromFiles.get_column" title="Link to this definition"></a></dt>
+<dd><p>Loop over files getting the requested dataset values from each</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col</strong> (<em>string</em>) – Name of the dataset to be returned</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Values from the dataset, filtered if requested and
+concatenated in order of file list</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.DictArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">DictArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#DictArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.DictArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Utility for organizing sets of arrays of equal length.</p>
+<p>Manages a dictionary of arrays of equal length. This can also
+be instantiated with a set of hdf5 files and the key values. The full
+data is always in memory and all operations create new instances of the
+DictArray.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.DictArray.remove">
+<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#DictArray.remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.DictArray.remove" title="Link to this definition"></a></dt>
+<dd><p>Return a new DictArray that does not contain the indexed values</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.DictArray.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#DictArray.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.DictArray.save" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.DictArray.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#DictArray.select"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.DictArray.select" title="Link to this definition"></a></dt>
+<dd><p>Return a new DictArray containing only the indexed values</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.FileData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">FileData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columnlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#FileData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.FileData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.FileData.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#FileData.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.FileData.close" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.FileData.get_column">
+<span class="sig-name descname"><span class="pre">get_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#FileData.get_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.FileData.get_column" title="Link to this definition"></a></dt>
+<dd><p>Method designed to be analogous to legacy pylal.SnglInspiralUtils
+functionality</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col</strong> (<em>string</em>) – Name of the dataset to be returned</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Values from the dataset, filtered if requested</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.FileData.mask">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mask</span></span><a class="headerlink" href="#pycbc.io.hdf.FileData.mask" title="Link to this definition"></a></dt>
+<dd><p>Create a mask implementing the requested filter on the datasets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True for dataset indices to be returned by the get_column method</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>array of Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">ForegroundTriggers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coinc_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sngl_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_loudest</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'foreground'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_inc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.get_active_segments">
+<span class="sig-name descname"><span class="pre">get_active_segments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.get_active_segments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.get_active_segments" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.get_bankfile_array">
+<span class="sig-name descname"><span class="pre">get_bankfile_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.get_bankfile_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.get_bankfile_array" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.get_coincfile_array">
+<span class="sig-name descname"><span class="pre">get_coincfile_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.get_coincfile_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.get_coincfile_array" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.get_end_time">
+<span class="sig-name descname"><span class="pre">get_end_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.get_end_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.get_end_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.get_ifos">
+<span class="sig-name descname"><span class="pre">get_ifos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.get_ifos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.get_ifos" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of lists of ifo names involved in each foreground event.
+Ifos will be listed in the same order as self.ifos</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>ifos_list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.get_snglfile_array_dict">
+<span class="sig-name descname"><span class="pre">get_snglfile_array_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.get_snglfile_array_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.get_snglfile_array_dict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.sort_arr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sort_arr</span></span><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.sort_arr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.template_id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">template_id</span></span><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.template_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.to_coinc_hdf_object">
+<span class="sig-name descname"><span class="pre">to_coinc_hdf_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.to_coinc_hdf_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.to_coinc_hdf_object" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.to_coinc_xml_object">
+<span class="sig-name descname"><span class="pre">to_coinc_xml_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ForegroundTriggers.to_coinc_xml_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.to_coinc_xml_object" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ForegroundTriggers.trig_id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trig_id</span></span><a class="headerlink" href="#pycbc.io.hdf.ForegroundTriggers.trig_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.HFile">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">HFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'r'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">driver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">libver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">userblock_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swmr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdcc_nslots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdcc_nbytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdcc_w0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs_persist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs_page_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page_buf_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_meta_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_raw_keep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignment_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignment_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta_block_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track_times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#HFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.HFile" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">HGroup</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">File</span></code></p>
+<p>Low level extensions to the capabilities of reading an hdf5 File</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.HFile.select">
+<span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fcn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunksize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">derived</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">premask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#HFile.select"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.HFile.select" title="Link to this definition"></a></dt>
+<dd><p>Return arrays from an hdf5 file that satisfy the given function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fcn</strong> (<em>a function</em>) – A function that accepts the same number of argument as keys given
+and returns a boolean array of the same length.</p></li>
+<li><p><strong>args</strong> (<em>strings</em>) – A variable number of strings that are keys into the hdf5. These must
+refer to arrays of equal length.</p></li>
+<li><p><strong>chunksize</strong> (<em>{10**6</em><em>, </em><em>int}</em><em>, </em><em>optional</em>) – Number of elements to read and process at a time.</p></li>
+<li><p><strong>derived</strong> (<em>dictionary</em>) – Dictionary keyed on argument name (must be given in args), values
+are a tuple of: the function to be computed, and the required
+datasets. The function must take in a dictionary keyed on those
+dataset names.</p></li>
+<li><p><strong>group</strong> (<em>string</em><em>, </em><em>optional</em>) – The group within the h5py file containing the datasets, e.g. in
+standard offline merged trigger files, this would be the IFO. This
+can be included in the args manually, but is required in the case
+of derived functions, e.g. newsnr.</p></li>
+<li><p><strong>return_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em><em>, </em><em>default True</em>) – If True, return the data for elements passing the function.</p></li>
+<li><p><strong>premask</strong> (<em>array</em><em> of </em><em>boolean values</em><em>, </em><em>optional</em>) – The pre-mask to apply to the triggers at read-in.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>indices</strong> (<em>np.ndarray</em>) – An array of indices of elements passing the function.</p></li>
+<li><p><strong>return_tuple</strong> (<em>tuple of np.ndarrays</em>) – A variable number of arrays depending on the number of
+args provided,
+If return_data is True, arrays are the values of each
+arg.
+If return_data is False, this is None.</p></li>
+<li><p><em>&gt;&gt;&gt; f = HFile(filename)</em></p></li>
+<li><p><strong>&gt;&gt;&gt; snr = f.select(lambda snr</strong> (<em>snr &gt; 6, ‘H1/snr’)</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.MultiifoStatmapData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">MultiifoStatmapData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#MultiifoStatmapData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.MultiifoStatmapData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.io.hdf.StatmapData" title="pycbc.io.hdf.StatmapData"><code class="xref py py-class docutils literal notranslate"><span class="pre">StatmapData</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.MultiifoStatmapData.cluster">
+<span class="sig-name descname"><span class="pre">cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#MultiifoStatmapData.cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.MultiifoStatmapData.cluster" title="Link to this definition"></a></dt>
+<dd><p>Cluster the dict array, assuming it has the relevant Coinc colums,
+time1, time2, stat, and timeslide_id</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ReadByTemplate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">ReadByTemplate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">veto_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gating_veto_windows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ReadByTemplate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ReadByTemplate" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ReadByTemplate.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ReadByTemplate.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ReadByTemplate.get_data" title="Link to this definition"></a></dt>
+<dd><p>Get a column of data for template with id ‘num’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of column to read</p></li>
+<li><p><strong>num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The template id to read triggers for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>data</strong> – The requested column of data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.ReadByTemplate.set_template">
+<span class="sig-name descname"><span class="pre">set_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#ReadByTemplate.set_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.ReadByTemplate.set_template" title="Link to this definition"></a></dt>
+<dd><p>Set the active template to read from.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The template id to read triggers for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>trigger_id</strong> – The indices of this templates triggers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">SingleDetTriggers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trig_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bank_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">veto_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">premask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_rank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunksize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Provides easy access to the parameters of single-detector CBC triggers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.and_masks">
+<span class="sig-name descname"><span class="pre">and_masks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logic_mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.and_masks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.and_masks" title="Link to this definition"></a></dt>
+<dd><p>Apply a mask to be combined as a logical and with the current mask.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logic_mask</strong> (<em>boolean array</em><em> or </em><em>numpy array/list</em><em> of </em><em>indices</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.apply_mask">
+<span class="sig-name descname"><span class="pre">apply_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logic_mask</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.apply_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.apply_mask" title="Link to this definition"></a></dt>
+<dd><p>Apply a mask over the top of the current mask</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logic_mask</strong> (<em>boolean array</em><em> or </em><em>numpy array</em><em> of </em><em>indices</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.approximant">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">approximant</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.approximant" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.checkbank">
+<span class="sig-name descname"><span class="pre">checkbank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.checkbank"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.checkbank" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.effective_spin">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">effective_spin</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.effective_spin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.end_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end_time</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.end_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.eta">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eta</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.eta" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.f_lower">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">f_lower</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.f_lower" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.f_seobnrv2_peak">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">f_seobnrv2_peak</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.f_seobnrv2_peak" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.f_seobnrv4_peak">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">f_seobnrv4_peak</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.f_seobnrv4_peak" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.get_column">
+<span class="sig-name descname"><span class="pre">get_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.get_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.get_column" title="Link to this definition"></a></dt>
+<dd><p>Read columns while applying the mask</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.get_param_names">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_param_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.get_param_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.get_param_names" title="Link to this definition"></a></dt>
+<dd><p>Returns a list of plottable CBC parameter variables</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.get_ranking">
+<span class="sig-name descname"><span class="pre">get_ranking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rank_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.get_ranking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.get_ranking" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.inclination">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inclination</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.inclination" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.mask_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mask_size</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.mask_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.mask_to_n_loudest_clustered_events">
+<span class="sig-name descname"><span class="pre">mask_to_n_loudest_clustered_events</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rank_method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">statistic_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_loudest</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.mask_to_n_loudest_clustered_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.mask_to_n_loudest_clustered_events" title="Link to this definition"></a></dt>
+<dd><p>Edits the mask property of the class to point to the N loudest
+single detector events as ranked by ranking statistic.</p>
+<p>Events are clustered so that no more than 1 event within +/-
+cluster_window will be considered. Can apply a threshold on the
+statistic using statistic_threshold</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.mass1">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mass1</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.mass1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.mass2">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mass2</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.mass2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.mchirp">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mchirp</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.mchirp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.mtotal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mtotal</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.mtotal" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.newsnr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">newsnr</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.newsnr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.newsnr_sgveto">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">newsnr_sgveto</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.newsnr_sgveto" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.newsnr_sgveto_psdvar">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">newsnr_sgveto_psdvar</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.newsnr_sgveto_psdvar" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.newsnr_sgveto_psdvar_threshold">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">newsnr_sgveto_psdvar_threshold</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.newsnr_sgveto_psdvar_threshold" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.psd_var_val">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">psd_var_val</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.psd_var_val" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.rchisq">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rchisq</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.rchisq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.sgchisq">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sgchisq</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.sgchisq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.snr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">snr</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.snr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.spin1x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin1x</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.spin1x" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.spin1y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin1y</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.spin1y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.spin1z">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin1z</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.spin1z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.spin2x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin2x</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.spin2x" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.spin2y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin2y</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.spin2y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.spin2z">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin2z</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.spin2z" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.template_duration">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">template_duration</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.template_duration" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.template_id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">template_id</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.template_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.trig_dict">
+<span class="sig-name descname"><span class="pre">trig_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#SingleDetTriggers.trig_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.trig_dict" title="Link to this definition"></a></dt>
+<dd><p>Returns dict of the masked trigger values</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.hdf.SingleDetTriggers.u_vals">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">u_vals</span></span><a class="headerlink" href="#pycbc.io.hdf.SingleDetTriggers.u_vals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.hdf.StatmapData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">StatmapData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('stat',</span> <span class="pre">'time1',</span> <span class="pre">'time2',</span> <span class="pre">'trigger_id1',</span> <span class="pre">'trigger_id2',</span> <span class="pre">'template_id',</span> <span class="pre">'decimation_factor',</span> <span class="pre">'timeslide_id')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#StatmapData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.StatmapData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.io.hdf.DictArray" title="pycbc.io.hdf.DictArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">DictArray</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.StatmapData.cluster">
+<span class="sig-name descname"><span class="pre">cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#StatmapData.cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.StatmapData.cluster" title="Link to this definition"></a></dt>
+<dd><p>Cluster the dict array, assuming it has the relevant Coinc colums,
+time1, time2, stat, and timeslide_id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.hdf.StatmapData.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#StatmapData.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.StatmapData.save" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.combine_and_copy">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">combine_and_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#combine_and_copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.combine_and_copy" title="Link to this definition"></a></dt>
+<dd><p>Combine the same column from multiple files and save to a third</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.dump_pickle_to_hdf">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">dump_pickle_to_hdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memfp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsetname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'state'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#dump_pickle_to_hdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.dump_pickle_to_hdf" title="Link to this definition"></a></dt>
+<dd><p>Dumps pickled data to an hdf5 file object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memfp</strong> (<em>file object</em>) – Bytes stream of pickled data.</p></li>
+<li><p><strong>fp</strong> (<a class="reference external" href="https://docs.h5py.org/en/stable/high/file.html#h5py.File" title="(in h5py v3.15)"><em>h5py.File</em></a>) – An open hdf5 file handler. Must have write capability enabled.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The path (group name) to store the state dataset to. Default (None)
+will result in the array being stored to the top level.</p></li>
+<li><p><strong>dsetname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The name of the dataset to store the binary array to. Default is
+<code class="docutils literal notranslate"><span class="pre">state</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.dump_state">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">dump_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsetname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'state'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">protocol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#dump_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.dump_state" title="Link to this definition"></a></dt>
+<dd><p>Dumps the given state to an hdf5 file handler.</p>
+<p>The state is stored as a raw binary array to <code class="docutils literal notranslate"><span class="pre">{path}/{dsetname}</span></code> in the
+given hdf5 file handler. If a dataset with the same name and path is
+already in the file, the dataset will be resized and overwritten with the
+new state data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state</strong> (<em>any picklable object</em>) – The sampler state to dump to file. Can be the object returned by
+any of the samplers’ <cite>.state</cite> attribute (a dictionary of dictionaries),
+or any picklable object.</p></li>
+<li><p><strong>fp</strong> (<a class="reference external" href="https://docs.h5py.org/en/stable/high/file.html#h5py.File" title="(in h5py v3.15)"><em>h5py.File</em></a>) – An open hdf5 file handler. Must have write capability enabled.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The path (group name) to store the state dataset to. Default (None)
+will result in the array being stored to the top level.</p></li>
+<li><p><strong>dsetname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The name of the dataset to store the binary array to. Default is
+<code class="docutils literal notranslate"><span class="pre">state</span></code>.</p></li>
+<li><p><strong>protocol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – The protocol version to use for pickling. See the <a class="reference external" href="https://docs.python.org/3/library/pickle.html#module-pickle" title="(in Python v3.14)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pickle</span></code></a>
+module for more details.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.get_all_subkeys">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">get_all_subkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#get_all_subkeys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.get_all_subkeys" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.get_chisq_from_file_choice">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">get_chisq_from_file_choice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chisq_choice</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#get_chisq_from_file_choice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.get_chisq_from_file_choice" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the reduced chi-squared values based on the specified choice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hdfile</strong> (<em>HDF file object</em><em>, or </em><em>dictionary</em><em>, or </em><em>ReadByTemplate object</em>) – or SingleDetTriggers object
+The object to retrieve the chi-squared values from.</p></li>
+<li><p><strong>chisq_choice</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The choice of chi-squared values to retrieve.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>chisq</strong> – The reduced chi-squared values based on the specified choice.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.load_hdf5_to_dict">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">load_hdf5_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#load_hdf5_to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.load_hdf5_to_dict" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h5file</strong> – h5py file to be loaded as a dictionary</p></li>
+<li><p><strong>path</strong> – path within h5py file to load: ‘/’ for the whole h5py file</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dictionary with hdf5 file group content</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dic</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.load_state">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">load_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dsetname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'state'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#load_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.load_state" title="Link to this definition"></a></dt>
+<dd><p>Loads a sampler state from the given hdf5 file object.</p>
+<p>The sampler state is expected to be stored as a raw bytes array which can
+be loaded by pickle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fp</strong> (<a class="reference external" href="https://docs.h5py.org/en/stable/high/file.html#h5py.File" title="(in h5py v3.15)"><em>h5py.File</em></a>) – An open hdf5 file handler.</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The path (group name) that the state data is stored to. Default (None)
+is to read from the top level.</p></li>
+<li><p><strong>dsetname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The name of the dataset that the state data is stored to. Default is
+<code class="docutils literal notranslate"><span class="pre">state</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.name_all_datasets">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">name_all_datasets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#name_all_datasets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.name_all_datasets" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.recursively_save_dict_contents_to_group">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">recursively_save_dict_contents_to_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h5file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#recursively_save_dict_contents_to_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.recursively_save_dict_contents_to_group" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h5file</strong> – h5py file to be written to</p></li>
+<li><p><strong>path</strong> – path within h5py file to saved dictionary</p></li>
+<li><p><strong>dic</strong> – python dictionary to be converted to hdf5 format</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.hdf.save_dict_to_hdf5">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.hdf.</span></span><span class="sig-name descname"><span class="pre">save_dict_to_hdf5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/hdf.html#save_dict_to_hdf5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.hdf.save_dict_to_hdf5" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dic</strong> – python dictionary to be converted to hdf5 format</p></li>
+<li><p><strong>filename</strong> – desired name of hdf5 file</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.io.ligolw">
+<span id="pycbc-io-ligolw-module"></span><h2>pycbc.io.ligolw module<a class="headerlink" href="#module-pycbc.io.ligolw" title="Link to this heading"></a></h2>
+<p>Tools for dealing with LIGOLW XML files.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.LIGOLWContentHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">LIGOLWContentHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_handlers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#LIGOLWContentHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.LIGOLWContentHandler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LIGOLWContentHandler</span></code></p>
+<p>Dummy class needed for loading LIGOLW files</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.LIGOLWContentHandler.endElementNS">
+<span class="sig-name descname"><span class="pre">endElementNS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri_localname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">__orig_endElementNS=&lt;function</span> <span class="pre">LIGOLWContentHandler.endElementNS&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.io.ligolw.LIGOLWContentHandler.endElementNS" title="Link to this definition"></a></dt>
+<dd><p>Convert values of &lt;Param&gt; elements from ilwdchar to int.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.LIGOLWContentHandler.startColumn">
+<span class="sig-name descname"><span class="pre">startColumn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">__orig_startColumn=&lt;function</span> <span class="pre">LIGOLWContentHandler.startColumn&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.io.ligolw.LIGOLWContentHandler.startColumn" title="Link to this definition"></a></dt>
+<dd><p>Convert types in &lt;Column&gt; elements from ilwdchar to int.</p>
+<p class="rubric">Notes</p>
+<p>This method is adapted from
+<code class="xref py py-func docutils literal notranslate"><span class="pre">ligo.lw.utils.ilwd.strip_ilwdchar()</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.LIGOLWContentHandler.startStream">
+<span class="sig-name descname"><span class="pre">startStream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">__orig_startStream=&lt;function</span> <span class="pre">LIGOLWContentHandler.startStream&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.io.ligolw.LIGOLWContentHandler.startStream" title="Link to this definition"></a></dt>
+<dd><p>Convert values in table &lt;Stream&gt; elements from ilwdchar to int.</p>
+<p class="rubric">Notes</p>
+<p>This method is adapted from
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ligo.lw.table.TableStream.config()</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.create_process_table">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">create_process_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">document</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">program_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#create_process_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.create_process_table" title="Link to this definition"></a></dt>
+<dd><p>Create a LIGOLW process table with sane defaults, add it to a LIGOLW
+document, and return it.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.default_null_value">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">default_null_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#default_null_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.default_null_value" title="Link to this definition"></a></dt>
+<dd><p>Associate a sensible “null” default value to a given LIGOLW column type.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.get_table_columns">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">get_table_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#get_table_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.get_table_columns" title="Link to this definition"></a></dt>
+<dd><p>Return a list of columns that are present in the given table, in a
+format that can be passed to <cite>igwn_ligolw.Table.new()</cite>.</p>
+<p>The split on “:” is needed for columns like <cite>process:process_id</cite>, which
+must be listed as <cite>process:process_id</cite> in <cite>igwn_ligolw.Table.new()</cite>, but are
+listed as just <cite>process_id</cite> in the <cite>columnnames</cite> attribute of the given
+table.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.legacy_row_id_converter">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">legacy_row_id_converter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ContentHandler</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#legacy_row_id_converter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.legacy_row_id_converter" title="Link to this definition"></a></dt>
+<dd><p>Convert from old-style to new-style row IDs on the fly.</p>
+<p>This is loosely adapted from <code class="xref py py-func docutils literal notranslate"><span class="pre">ligo.lw.utils.ilwd.strip_ilwdchar()</span></code>.</p>
+<p class="rubric">Notes</p>
+<p>When building a ContentHandler, this must be the _outermost_ decorator,
+outside of <code class="xref py py-func docutils literal notranslate"><span class="pre">ligo.lw.lsctables.use_in()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">ligo.lw.param.use_in()</span></code>,
+or <code class="xref py py-func docutils literal notranslate"><span class="pre">ligo.lw.table.use_in()</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.return_empty_sngl">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">return_empty_sngl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nones</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#return_empty_sngl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.return_empty_sngl" title="Link to this definition"></a></dt>
+<dd><p>Function to create a SnglInspiral object where all columns are populated
+but all are set to values that test False (ie. strings to ‘’, floats/ints
+to 0, …). This avoids errors when you try to create a table containing
+columns you don’t care about, but which still need populating. NOTE: This
+will also produce a process_id and event_id with 0 values. For most
+applications these should be set to their correct values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nones</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> (</em><em>False</em><em>)</em>) – If True, just set all columns to None.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The “empty” SnglInspiral object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>lsctables.SnglInspiral</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.ligolw.return_search_summary">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.ligolw.</span></span><span class="sig-name descname"><span class="pre">return_search_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nevents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/ligolw.html#return_search_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.ligolw.return_search_summary" title="Link to this definition"></a></dt>
+<dd><p>Function to create a SearchSummary object where all columns are populated
+but all are set to values that test False (ie. strings to ‘’, floats/ints
+to 0, …). This avoids errors when you try to create a table containing
+columns you don’t care about, but which still need populating. NOTE: This
+will also produce a process_id with 0 values. For most applications these
+should be set to their correct values.</p>
+<p>It then populates columns if given them as options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The “empty” SearchSummary object.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>lsctables.SeachSummary</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.io.live">
+<span id="pycbc-io-live-module"></span><h2>pycbc.io.live module<a class="headerlink" href="#module-pycbc.io.live" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.live.add_live_trigger_selection_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.live.</span></span><span class="sig-name descname"><span class="pre">add_live_trigger_selection_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/live.html#add_live_trigger_selection_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.live.add_live_trigger_selection_options" title="Link to this definition"></a></dt>
+<dd><p>Add options required for obtaining the right set of PyCBC live triggers
+into an argument parser</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.live.find_trigger_files">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.live.</span></span><span class="sig-name descname"><span class="pre">find_trigger_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gps_start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gps_end_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'*'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_directories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_directory_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'%Y_%m_%d'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/live.html#find_trigger_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.live.find_trigger_files" title="Link to this definition"></a></dt>
+<dd><p>Find a list of PyCBC live trigger files which are between the gps
+start and end times given</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.live.find_trigger_files_from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.live.</span></span><span class="sig-name descname"><span class="pre">find_trigger_files_from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/live.html#find_trigger_files_from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.live.find_trigger_files_from_cli" title="Link to this definition"></a></dt>
+<dd><p>Wrapper around the find_trigger_files function to use when called using
+options from the add_live_trigger_selection_options function</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.io.record">
+<span id="pycbc-io-record-module"></span><h2>pycbc.io.record module<a class="headerlink" href="#module-pycbc.io.record" title="Link to this heading"></a></h2>
+<p>This modules provides definitions of, and helper functions for, FieldArray.
+FieldArray are wrappers of numpy recarrays with additional functionality
+useful for storing and retrieving data created by a search for gravitationa
+waves.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.record.</span></span><span class="sig-name descname"><span class="pre">FieldArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zero</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">recarray</span></code></p>
+<p>Subclass of numpy.recarray that adds additional functionality.</p>
+<p>Initialization is done the same way as numpy.recarray, with the addition
+that a “name” attribute can be passed to name the output array. When you
+initialize an array it creates a new zeroed array. This is similar to
+numpy.recarray, except that <code class="docutils literal notranslate"><span class="pre">numpy.recarray(shape)</span></code> will create an empty
+array, whereas here the default is to zero all of the elements (see
+<code class="docutils literal notranslate"><span class="pre">default_zero</span></code> for definition of zero for different data types). If you
+prefer an empty array, set <code class="docutils literal notranslate"><span class="pre">zero=False</span></code> when initializing.</p>
+<p>You cannot pass an array or sequence as input as you do with numpy.array.
+To initialize an FieldArray from an already existing arrays, use the
+<code class="docutils literal notranslate"><span class="pre">FieldArray.from_arrays</span></code> class method. To initialize from a list of
+tuples, use <code class="docutils literal notranslate"><span class="pre">FieldArray.from_records</span></code>. See the docstring for those methods
+for details. For more information on initalizing an empty array, see
+<code class="docutils literal notranslate"><span class="pre">numpy.recarray</span></code> help.</p>
+<p>Some additional features:</p>
+<ul>
+<li><p><strong>Arbitrary functions</strong>:</p>
+<p>You can retrive functions on fields in the same manner that you access
+individual fields. For example, if you have a FieldArray <code class="docutils literal notranslate"><span class="pre">x</span></code> with
+fields <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>, you can access each field with
+<code class="docutils literal notranslate"><span class="pre">x['a'],</span> <span class="pre">x['b']</span></code>.  You can also do <code class="docutils literal notranslate"><span class="pre">x['a*b/(a+b)**2.']</span></code>,
+<code class="docutils literal notranslate"><span class="pre">x[cos(a)*sin(b)]</span></code>, etc. Boolean operations are also possible, e.g.,
+<code class="docutils literal notranslate"><span class="pre">x['(a</span> <span class="pre">&lt;</span> <span class="pre">3)</span> <span class="pre">&amp;</span> <span class="pre">(b</span> <span class="pre">&lt;</span> <span class="pre">2)']</span></code>. Syntax for functions is python. Any numpy
+ufunc, as well as all functions listed in the functionlib attribute, may
+be used. Note that while fields may be accessed as attributes (e.g,
+field <code class="docutils literal notranslate"><span class="pre">a</span></code> can be accessed via <code class="docutils literal notranslate"><span class="pre">x['a']</span></code> or <code class="docutils literal notranslate"><span class="pre">x.a</span></code>), functions on
+multiple fields may not (<code class="docutils literal notranslate"><span class="pre">x.a+b</span></code> does not work, for obvious reasons).</p>
+</li>
+<li><p><strong>Subfields and ‘.’ indexing</strong>:
+Structured arrays, which are the base class for recarrays and, by
+inheritance, FieldArray, allows for fields to themselves have fields. For
+example, an array <code class="docutils literal notranslate"><span class="pre">x</span></code> may have fields <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>, with <code class="docutils literal notranslate"><span class="pre">b</span></code> having
+subfields <code class="docutils literal notranslate"><span class="pre">c</span></code> and <code class="docutils literal notranslate"><span class="pre">d</span></code>. You can access subfields using other index
+notation or attribute notation. So, the subfields <code class="docutils literal notranslate"><span class="pre">d</span></code> may be retrieved
+via <code class="docutils literal notranslate"><span class="pre">x['b']['d']</span></code>, <code class="docutils literal notranslate"><span class="pre">x.b.d</span></code>, <code class="docutils literal notranslate"><span class="pre">x['b'].d</span></code> or <code class="docutils literal notranslate"><span class="pre">x['b.d']</span></code>. Likewise,
+functions can be carried out on the subfields, as they can on fields. If
+<code class="docutils literal notranslate"><span class="pre">d</span></code> is a float field, we could get the log of it via <code class="docutils literal notranslate"><span class="pre">x['log(b.d)']</span></code>.
+There is no limit to the number of subfields. So, <code class="docutils literal notranslate"><span class="pre">c</span></code> could also have
+subfield <code class="docutils literal notranslate"><span class="pre">c0</span></code>, which would be accessed via <code class="docutils literal notranslate"><span class="pre">x.c.c0</span></code>, or any of the
+other methods.</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Record arrays also allow you to set values of a field using attribute
+notation. However, this can lead to unexpected results if you
+accidently misspell the attribute. For example, if <code class="docutils literal notranslate"><span class="pre">x</span></code> has field
+<code class="docutils literal notranslate"><span class="pre">foo</span></code>, and you misspell this when setting, e.g., you try to do
+<code class="docutils literal notranslate"><span class="pre">x.fooo</span> <span class="pre">=</span> <span class="pre">numpy.arange(x.size)</span></code>, <code class="docutils literal notranslate"><span class="pre">foo</span></code> will not be set, nor will
+you get an error. Instead, the attribute <code class="docutils literal notranslate"><span class="pre">fooo</span></code> will be added to
+<code class="docutils literal notranslate"><span class="pre">x</span></code>. If you tried to do this using index notation, however —
+<code class="docutils literal notranslate"><span class="pre">x['fooo']</span> <span class="pre">=</span> <span class="pre">numpy.arange(x.size)</span></code> — you will
+get an <code class="docutils literal notranslate"><span class="pre">AttributeError</span></code> as you might expect. For this reason, it is
+recommended that you always use index notation when <em>setting</em> values;
+you can use either index or attribute notation when <em>retrieving</em>
+values.</p>
+</div>
+<ul class="simple">
+<li><p><strong>Properties and methods as fields</strong>:
+If a propety or instance method is defined for a class that inherits from
+FieldArray, those can be accessed in the same way as fields are. For
+example, define <code class="docutils literal notranslate"><span class="pre">Foo</span></code> as:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">FieldArray</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">narf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>Then if we have an instance: <code class="docutils literal notranslate"><span class="pre">foo</span> <span class="pre">=</span> <span class="pre">Foo(100,</span> <span class="pre">dtype=[('a',</span> <span class="pre">float)])</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">bar</span></code> and <code class="docutils literal notranslate"><span class="pre">narf</span></code> attributes may be accessed via field notation:
+<code class="docutils literal notranslate"><span class="pre">foo.bar</span></code>, <code class="docutils literal notranslate"><span class="pre">foo['bar']</span></code>, <code class="docutils literal notranslate"><span class="pre">foo.narf(10)</span></code> and <code class="docutils literal notranslate"><span class="pre">foo['narf(10)']</span></code>.</p>
+<ul class="simple">
+<li><p><strong>Virtual fields</strong>:
+Virtual fields are methods wrapped as properties that operate on one or
+more fields, thus returning an array of values. To outside code virtual
+fields look the same as fields, and can be called similarily. Internally,
+no additional data is stored; the operation is performed on the fly when
+the virtual field is called. Virtual fields can be added to an array
+instance with the add_virtualfields method. Alternatively, virtual fields
+can be defined by sub-classing FieldArray:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="n">FieldArray</span><span class="p">):</span>
+    <span class="n">_virtualfields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.</span>
+</pre></div>
+</div>
+<p>The fields property returns the names of both fields and virtual fields.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It can happen that a field, virtual field, or function in the
+functionlib have that same name. In that case, precedence is: field,
+virtual field, function. For example, if a function called ‘foo’ is in
+the function library, and a virtual field is added call ‘foo’, then
+<cite>a[‘foo’]</cite> will return the virtual field rather than the function.
+Likewise, if the array is initialized with a field called <cite>foo</cite>, or a
+field with that name is added, <cite>a[‘foo’]</cite> will return that field
+rather than the virtual field and/or the function.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>{int</em><em> | </em><em>tuple}</em>) – The shape of the new array.</p></li>
+<li><p><strong>name</strong> (<em>{None</em><em> | </em><em>str}</em>) – Optional, what to name the new array. The array’s <code class="docutils literal notranslate"><span class="pre">name</span></code> attribute
+is set to this.</p></li>
+<li><p><strong>arguments</strong> (<em>For details on other keyword</em>)</p></li>
+<li><p><strong>help.</strong> (<em>see numpy.recarray</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#pycbc.io.record.FieldArray.name" title="Link to this definition"></a></dt>
+<dd><p>Instance attribute. The name of the array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For some predefined arrays with default fields, see the other
+array classes defined below.</p>
+</div>
+<p>Create an empty array with four rows and two fields called <cite>foo</cite> and
+<cite>bar</cite>, both of which are floats:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>Set/retrieve a fields using index or attribute syntax:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span><span class="mf">2.</span><span class="p">,</span><span class="mf">3.</span><span class="p">,</span><span class="mf">4.</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">5.</span><span class="p">,</span><span class="mf">6.</span><span class="p">,</span><span class="mf">7.</span><span class="p">,</span><span class="mf">8.</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">FieldArray([(1.0, 5.0), (2.0, 6.0), (3.0, 7.0), (4.0, 8.0)],</span>
+<span class="go">      dtype=[(&#39;foo&#39;, &#39;&lt;f8&#39;), (&#39;bar&#39;, &#39;&lt;f8&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">foo</span>
+<span class="go">    array([ 1.,  2.,  3.,  4.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;bar&#39;</span><span class="p">]</span>
+<span class="go">    array([ 5.,  6.,  7.,  8.])</span>
+</pre></div>
+</div>
+<p>Get the names of the fields:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;foo&#39;, &#39;bar&#39;)</span>
+</pre></div>
+</div>
+<p>Rename the fields to <cite>a</cite> and <cite>b</cite>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;a&#39;, &#39;b&#39;)</span>
+</pre></div>
+</div>
+<p>Retrieve a function of the fields as if it were a field:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;sin(a/b)&#39;</span><span class="p">]</span>
+<span class="go">array([ 0.19866933,  0.3271947 ,  0.41557185,  0.47942554])</span>
+</pre></div>
+</div>
+<p>Add a virtual field:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">add_virtualfields</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">fields</span>
+<span class="go">(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">]</span>
+<span class="go">array([  6.,   8.,  10.,  12.])</span>
+</pre></div>
+</div>
+<p>Create an array with subfields:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;hat&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)]),</span> <span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    [&#39;foo.cat&#39;, &#39;foo.hat&#39;, &#39;bar&#39;]</span>
+</pre></div>
+</div>
+<p>Load from a list of arrays (in this case, from an hdf5 file):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bankhdf</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s1">&#39;bank/H1L1-BANK2HDF-1117400416-928800.hdf&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bankhdf</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<span class="go">    [u&#39;mass1&#39;, u&#39;mass2&#39;, u&#39;spin1z&#39;, u&#39;spin2z&#39;, u&#39;template_hash&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">templates</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">bankhdf</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">names</span><span class="o">=</span><span class="n">bankhdf</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">templates</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;mass1&#39;, &#39;mass2&#39;, &#39;spin1z&#39;, &#39;spin2z&#39;, &#39;template_hash&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">templates</span><span class="o">.</span><span class="n">mass1</span>
+<span class="go">array([ 1.71731389,  1.10231435,  2.99999857, ...,  1.67488706,</span>
+<span class="go">        1.00531888,  2.11106491], dtype=float32)</span>
+</pre></div>
+</div>
+<p>Sort by a field without having to worry about also sorting the other
+fields:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">templates</span><span class="p">[[</span><span class="s1">&#39;mass1&#39;</span><span class="p">,</span> <span class="s1">&#39;mass2&#39;</span><span class="p">]]</span>
+<span class="go">array([(1.7173138856887817, 1.2124452590942383),</span>
+<span class="go">       (1.1023143529891968, 1.0074082612991333),</span>
+<span class="go">       (2.9999985694885254, 1.0578444004058838), ...,</span>
+<span class="go">       (1.6748870611190796, 1.1758257150650024),</span>
+<span class="go">       (1.0053188800811768, 1.0020891427993774),</span>
+<span class="go">       (2.111064910888672, 1.0143394470214844)],</span>
+<span class="go">      dtype=[(&#39;mass1&#39;, &#39;&lt;f4&#39;), (&#39;mass2&#39;, &#39;&lt;f4&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">templates</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;mass1&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">templates</span><span class="p">[[</span><span class="s1">&#39;mass1&#39;</span><span class="p">,</span> <span class="s1">&#39;mass2&#39;</span><span class="p">]]</span>
+<span class="go">array([(1.000025987625122, 1.0000133514404297),</span>
+<span class="go">       (1.0002814531326294, 1.0002814531326294),</span>
+<span class="go">       (1.0005437135696411, 1.0005437135696411), ...,</span>
+<span class="go">       (2.999999523162842, 1.371169090270996),</span>
+<span class="go">       (2.999999523162842, 1.4072519540786743), (3.0, 1.4617927074432373)],</span>
+<span class="go">      dtype=[(&#39;mass1&#39;, &#39;&lt;f4&#39;), (&#39;mass2&#39;, &#39;&lt;f4&#39;)])</span>
+</pre></div>
+</div>
+<p>Convert a LIGOLW xml table:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">sim_table</span><span class="p">)</span>
+<span class="go">    igwn_ligolw.lsctables.SimInspiralTable</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_ligolw_table</span><span class="p">(</span><span class="n">sim_table</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span><span class="o">.</span><span class="n">mass1</span>
+<span class="go">array([ 2.27440691,  1.85058105,  1.61507106, ...,  2.0504961 ,</span>
+<span class="go">        2.33554196,  2.02732205], dtype=float32)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span><span class="o">.</span><span class="n">waveform</span>
+<span class="go">array([u&#39;SpinTaylorT2&#39;, u&#39;SpinTaylorT2&#39;, u&#39;SpinTaylorT2&#39;, ...,</span>
+<span class="go">       u&#39;SpinTaylorT2&#39;, u&#39;SpinTaylorT2&#39;, u&#39;SpinTaylorT2&#39;], dtype=object)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="o">.</span><span class="n">from_ligolw_table</span><span class="p">(</span><span class="n">sim_table</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;simulation_id&#39;</span><span class="p">,</span> <span class="s1">&#39;mass1&#39;</span><span class="p">,</span> <span class="s1">&#39;mass2&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span>
+<span class="go">FieldArray([(0, 2.274406909942627, 2.6340370178222656),</span>
+<span class="go">       (1, 1.8505810499191284, 2.8336880207061768),</span>
+<span class="go">       (2, 1.6150710582733154, 2.2336490154266357), ...,</span>
+<span class="go">       (11607, 2.0504961013793945, 2.6019821166992188),</span>
+<span class="go">       (11608, 2.3355419635772705, 1.2164380550384521),</span>
+<span class="go">       (11609, 2.0273220539093018, 2.2453839778900146)],</span>
+<span class="go">      dtype=[(&#39;simulation_id&#39;, &#39;&lt;i8&#39;), (&#39;mass1&#39;, &#39;&lt;f4&#39;), (&#39;mass2&#39;, &#39;&lt;f4&#39;)])</span>
+</pre></div>
+</div>
+<p>Add a field to the array:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">optimal_snrs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">4.</span><span class="p">,</span><span class="mf">40.</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sim_array</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span> <span class="o">=</span> <span class="n">sim_array</span><span class="o">.</span><span class="n">add_fields</span><span class="p">(</span><span class="n">optimal_snrs</span><span class="p">,</span> <span class="s1">&#39;optimal_snrs&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sim_array</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;simulation_id&#39;, &#39;mass1&#39;, &#39;mass2&#39;, &#39;optimal_snrs&#39;)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Input arrays with variable-length strings in one or more fields can be
+tricky to deal with. Numpy arrays are designed to use fixed-length
+datasets, so that quick memory access can be achieved. To deal with
+variable-length strings, there are two options: 1. set the data type to
+object, or 2. set the data type to a string with a fixed length larger
+than the longest string in the input array.</p>
+<p>The first option, using objects, essentially causes the array to store a
+pointer to the string.  This is the most flexible option, as it allows
+strings in the array to be updated to any length. However, operations on
+object fields are slower, as numpy cannot take advantage of its fast
+memory striding abilities (see <a class="reference external" href="http://stackoverflow.com/a/14639568/1366472">this question/answer on stackoverflow</a> for details). Also,
+numpy’s support of object arrays is more limited.  In particular, prior
+to version 1.9.2, you cannot create a view of an array that changes the
+dtype if the array has any fields that are objects, even if the view does
+not affect the object fields. (This has since been relaxed.)</p>
+<p>The second option, using strings of a fixed length, solves the issues
+with object fields. However, if you try to change one of the strings
+after the array is created, the string will be truncated at whatever
+string length is used. Additionally, if you choose too large of a string
+length, you can substantially increase the memory overhead for large
+arrays.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.add_fields">
+<span class="sig-name descname"><span class="pre">add_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assubarray</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.add_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.add_fields" title="Link to this definition"></a></dt>
+<dd><p>Adds the given arrays as new fields to self.  Returns a new instance
+with the new fields added. Note: this array does not change; the
+returned array is a new copy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arrays</strong> (<em>(</em><em>list of</em><em>) </em><em>numpy array</em><em>(</em><em>s</em><em>)</em>) – The arrays to add. If adding multiple arrays, must be a list;
+if adding a single array, can just be that array.</p></li>
+<li><p><strong>names</strong> (<em>(</em><em>list of</em><em>) </em><em>strings</em>) – Optional, the name(s) of the new fields in the output array. If
+adding multiple fields, must be a list of strings with the same
+length as the list of arrays. If None provided, names used will
+be the same as the name of the datatype in the given arrays.
+If the datatype has no name, the new field will be <code class="docutils literal notranslate"><span class="pre">'fi'</span></code> where
+i is the index of the array in arrays.</p></li>
+<li><p><strong>assubarray</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Add the list of arrays as a single subarray field. If True, and
+names provided, names should be a string or a length-1 sequence.
+Default is False, in which case each array will be added as a
+separate field.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>new_array</strong> – A copy of this array with the desired fields added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>new instance of this array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.add_functions">
+<span class="sig-name descname"><span class="pre">add_functions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.add_functions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.add_functions" title="Link to this definition"></a></dt>
+<dd><p>Adds the given functions to the function library.</p>
+<p>Functions are added to this instance of the array; all copies of
+and slices of this array will also have the new functions included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>names</strong> (<em>(</em><em>list of</em><em>) </em><em>string</em><em>(</em><em>s</em><em>)</em>) – Name or list of names of the functions.</p></li>
+<li><p><strong>functions</strong> (<em>(</em><em>list of</em><em>) </em><em>function</em><em>(</em><em>s</em><em>)</em>) – The function(s) to call.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.add_methods">
+<span class="sig-name descname"><span class="pre">add_methods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">methods</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.add_methods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.add_methods" title="Link to this definition"></a></dt>
+<dd><p>Adds the given method(s) as instance method(s) of self. The
+method(s) must take <cite>self</cite> as a first argument.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.add_properties">
+<span class="sig-name descname"><span class="pre">add_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">methods</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.add_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.add_properties" title="Link to this definition"></a></dt>
+<dd><p>Returns a view of self with the given methods added as properties.</p>
+<p>From: &lt;<a class="reference external" href="http://stackoverflow.com/a/2954373/1366472">http://stackoverflow.com/a/2954373/1366472</a>&gt;.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.add_virtualfields">
+<span class="sig-name descname"><span class="pre">add_virtualfields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">methods</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.add_virtualfields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.add_virtualfields" title="Link to this definition"></a></dt>
+<dd><p>Returns a view of this array with the given methods added as virtual
+fields. Specifically, the given methods are added using add_properties
+and their names are added to the list of virtual fields. Virtual fields
+are properties that are assumed to operate on one or more of self’s
+fields, thus returning an array of values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.addattr">
+<span class="sig-name descname"><span class="pre">addattr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attrname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.addattr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.addattr" title="Link to this definition"></a></dt>
+<dd><p>Adds an attribute to self. If persistent is True, the attribute will
+be made a persistent attribute. Persistent attributes are copied
+whenever a view or copy of this array is created. Otherwise, new views
+or copies of this will not have the attribute.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.aliases">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">aliases</span></span><a class="headerlink" href="#pycbc.io.record.FieldArray.aliases" title="Link to this definition"></a></dt>
+<dd><p>Returns a dictionary of the aliases, or “titles”, of the field names
+in self. An alias can be specified by passing a tuple in the name
+part of the dtype. For example, if an array is created with
+<code class="docutils literal notranslate"><span class="pre">dtype=[(('foo',</span> <span class="pre">'bar'),</span> <span class="pre">float)]</span></code>, the array will have a field
+called <cite>bar</cite> that has alias <cite>foo</cite> that can be accessed using
+either <cite>arr[‘foo’]</cite> or <cite>arr[‘bar’]</cite>. Note that the first string
+in the dtype is the alias, the second the name. This function returns
+a dictionary in which the aliases are the keys and the names are the
+values. Only fields that have aliases are returned.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.append" title="Link to this definition"></a></dt>
+<dd><p>Appends another array to this array.</p>
+<p>The returned array will have all of the class methods and virutal
+fields of this array, including any that were added using <cite>add_method</cite>
+or <cite>add_virtualfield</cite>. If this array and other array have one or more
+string fields, the dtype for those fields are updated to a string
+length that can encompass the longest string in both arrays.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Increasing the length of strings only works for fields, not
+sub-fields.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<em>array</em>) – The array to append values from. It must have the same fields and
+dtype as this array, modulo the length of strings. If the other
+array does not have the same dtype, a TypeError is raised.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An array with others values appended to this array’s values. The
+returned array is an instance of the same class as this array,
+including all methods and virtual fields.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.del_functions">
+<span class="sig-name descname"><span class="pre">del_functions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.del_functions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.del_functions" title="Link to this definition"></a></dt>
+<dd><p>Removes the specified function names from the function library.</p>
+<p>Functions are removed from this instance of the array; all copies
+and slices of this array will also have the functions removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>names</strong> (<em>(</em><em>list of</em><em>) </em><em>string</em><em>(</em><em>s</em><em>)</em>) – Name or list of names of the functions to remove.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.fieldnames">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fieldnames</span></span><a class="headerlink" href="#pycbc.io.record.FieldArray.fieldnames" title="Link to this definition"></a></dt>
+<dd><p>Returns a tuple listing the field names in self. Equivalent to
+<cite>array.dtype.names</cite>, where <cite>array</cite> is self.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.fields">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fields</span></span><a class="headerlink" href="#pycbc.io.record.FieldArray.fields" title="Link to this definition"></a></dt>
+<dd><p>Returns a tuple listing the names of fields and virtual fields in
+self.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.from_arrays">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arrays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.from_arrays"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.from_arrays" title="Link to this definition"></a></dt>
+<dd><p>Creates a new instance of self from the given (list of) array(s).
+This is done by calling numpy.rec.fromarrays on the given arrays with
+the given kwargs. The type of the returned array is cast to this
+class, and the name (if provided) is set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arrays</strong> (<em>(</em><em>list of</em><em>) </em><em>numpy array</em><em>(</em><em>s</em><em>)</em>) – A list of the arrays to create the FieldArray from.</p></li>
+<li><p><strong>name</strong> (<em>{None</em><em>|</em><em>str}</em>) – What the output array should be named.</p></li>
+<li><p><strong>parameters</strong> (<em>For other keyword</em>)</p></li>
+<li><p><strong>help.</strong> (<em>see the numpy.rec.fromarrays</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – An array that is an instance of this class in which the field
+data is from the given array(s).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>instance of this class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.from_kwargs">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_kwargs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.from_kwargs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.from_kwargs" title="Link to this definition"></a></dt>
+<dd><p>Creates a new instance of self from the given keyword arguments.
+Each argument will correspond to a field in the returned array, with
+the name of the field given by the keyword, and the value(s) whatever
+the keyword was set to. Each keyword may be set to a single value or
+a list of values. The number of values that each argument is set to
+must be the same; this will be the size of the returned array.</p>
+<p class="rubric">Examples</p>
+<p>Create an array with fields ‘mass1’ and ‘mass2’:
+&gt;&gt;&gt; a = FieldArray.from_kwargs(mass1=[1.1, 3.], mass2=[2., 3.])
+&gt;&gt;&gt; a.fieldnames
+(‘mass1’, ‘mass2’)
+&gt;&gt;&gt; a.mass1, a.mass2
+(array([ 1.1,  3. ]), array([ 2.,  3.]))</p>
+<p>Create an array with only a single element in it:
+&gt;&gt;&gt; a = FieldArray.from_kwargs(mass1=1.1, mass2=2.)
+&gt;&gt;&gt; a.mass1, a.mass2
+(array([ 1.1]), array([ 2.]))</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.from_ligolw_table">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ligolw_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cast_to_dtypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.from_ligolw_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.from_ligolw_table" title="Link to this definition"></a></dt>
+<dd><p>Converts the given ligolw table into an FieldArray. The <cite>tableName</cite>
+attribute is copied to the array’s <cite>name</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<em>LIGOLw table instance</em>) – The table to convert.</p></li>
+<li><p><strong>columns</strong> (<em>{None</em><em>|</em><em>list}</em>) – Optionally specify a list of columns to retrieve. All of the
+columns must be in the table’s validcolumns attribute. If None
+provided, all the columns in the table will be converted.</p></li>
+<li><p><strong>dtype</strong> (<em>{None</em><em> | </em><em>dict}</em>) – Override the columns’ dtypes using the given dictionary. The
+dictionary should be keyed by the column names, with the values
+a tuple that can be understood by numpy.dtype. For example, to
+cast a ligolw column called “foo” to a field called “bar” with
+type float, cast_to_dtypes would be: <code class="docutils literal notranslate"><span class="pre">{&quot;foo&quot;:</span> <span class="pre">(&quot;bar&quot;,</span> <span class="pre">float)}</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – The input table as an FieldArray.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pycbc.io.record.FieldArray" title="pycbc.io.record.FieldArray">FieldArray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.from_records">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.from_records"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.from_records" title="Link to this definition"></a></dt>
+<dd><p>Creates a new instance of self from the given (list of) record(s).</p>
+<p>A “record” is a tuple in which each element is the value of one field
+in the resulting record array. This is done by calling
+<cite>numpy.rec.fromrecords</cite> on the given records with the given kwargs.
+The type of the returned array is cast to this class, and the name
+(if provided) is set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>records</strong> (<em>(</em><em>list of</em><em>) </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>(</em><em>s</em><em>)</em>) – A list of the tuples to create the FieldArray from.</p></li>
+<li><p><strong>name</strong> (<em>{None</em><em>|</em><em>str}</em>) – What the output array should be named.</p></li>
+<li><p><strong>parameters</strong> (<em>For other keyword</em>)</p></li>
+<li><p><strong>help.</strong> (<em>see the numpy.rec.fromrecords</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>array</strong> – An array that is an instance of this class in which the field
+data is from the given record(s).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>instance of this class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.functionlib">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">functionlib</span></span><a class="headerlink" href="#pycbc.io.record.FieldArray.functionlib" title="Link to this definition"></a></dt>
+<dd><p>Returns the library of functions that are available when calling
+items.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.parse_boolargs">
+<span class="sig-name descname"><span class="pre">parse_boolargs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.parse_boolargs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.parse_boolargs" title="Link to this definition"></a></dt>
+<dd><p>Returns an array populated by given values, with the indices of
+those values dependent on given boolen tests on self.</p>
+<p>The given <cite>args</cite> should be a list of tuples, with the first element the
+return value and the second argument a string that evaluates to either
+True or False for each element in self.</p>
+<p>Each boolean argument is evaluated on elements for which every prior
+boolean argument was False. For example, if array <cite>foo</cite> has a field
+<cite>bar</cite>, and <cite>args = [(1, ‘bar &lt; 10’), (2, ‘bar &lt; 20’), (3, ‘bar &lt; 30’)]</cite>,
+then the returned array will have <cite>1`s at the indices for
+which `foo.bar &lt; 10</cite>, <cite>2`s where `foo.bar &lt; 20 and not foo.bar &lt; 10</cite>,
+and <cite>3`s where `foo.bar &lt; 30 and not (foo.bar &lt; 10 or foo.bar &lt; 20)</cite>.</p>
+<p>The last argument in the list may have “else”, an empty string, None,
+or simply list a return value. In any of these cases, any element not
+yet populated will be assigned the last return value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>{</em><em>(</em><em>list of</em><em>) </em><em>tuples</em><em>, </em><em>value}</em>) – One or more return values and boolean argument determining where
+they should go.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>return_values</strong> (<em>array</em>) – An array with length equal to self, with values populated with the
+return values.</p></li>
+<li><p><strong>leftover_indices</strong> (<em>array</em>) – An array of indices that evaluated to False for all arguments.
+These indices will not have been popluated with any value,
+defaulting to whatever numpy uses for a zero for the return
+values’ dtype. If there are no leftovers, an empty array is
+returned.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Given the following array:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;mtotal&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="p">[</span><span class="s1">&#39;mtotal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">5.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">4.</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Return <cite>“TaylorF2”</cite> for all elements with <cite>mtotal &lt; 4</cite> (note that the
+elements 1 and 4 are leftover):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">((</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;4&#39;</span><span class="p">))</span>
+<span class="go">    (array([&#39;TaylorF2&#39;, &#39;&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2&#39;, &#39;&#39;],</span>
+<span class="go">    dtype=&#39;|S8&#39;),</span>
+<span class="go">    array([1, 4]))</span>
+</pre></div>
+</div>
+<p>Return <cite>“TaylorF2”</cite> for all elements with <cite>mtotal &lt; 4</cite>,
+<cite>“SEOBNR_ROM_DoubleSpin”</cite> otherwise:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">([(</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;4&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;SEOBNRv2_ROM_DoubleSpin&#39;</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">)])</span>
+<span class="go">    (array([&#39;TaylorF2&#39;, &#39;SEOBNRv2_ROM_DoubleSpin&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2&#39;,</span>
+<span class="go">    &#39;SEOBNRv2_ROM_DoubleSpin&#39;],</span>
+<span class="go">    dtype=&#39;|S23&#39;),</span>
+<span class="go">    array([], dtype=int64))</span>
+</pre></div>
+</div>
+<p>The following will also return the same:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">([(</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;4&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;SEOBNRv2_ROM_DoubleSpin&#39;</span><span class="p">,)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">([(</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;4&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;SEOBNRv2_ROM_DoubleSpin&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">([(</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;4&#39;</span><span class="p">),</span> <span class="s1">&#39;SEOBNRv2_ROM_DoubleSpin&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Return <cite>“TaylorF2”</cite> for all elements with <cite>mtotal &lt; 3</cite>, <cite>“IMRPhenomD”</cite>
+for all elements with <cite>3 &lt;= mtotal &lt; 4</cite>, <cite>“SEOBNRv2_ROM_DoubleSpin”</cite>
+otherwise:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">([(</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;3&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;IMRPhenomD&#39;</span><span class="p">,</span> <span class="s1">&#39;mtotal&lt;4&#39;</span><span class="p">),</span> <span class="s1">&#39;SEOBNRv2_ROM_DoubleSpin&#39;</span><span class="p">])</span>
+<span class="go">    (array([&#39;IMRPhenomD&#39;, &#39;SEOBNRv2_ROM_DoubleSpin&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2&#39;,</span>
+<span class="go">    &#39;SEOBNRv2_ROM_DoubleSpin&#39;],</span>
+<span class="go">    dtype=&#39;|S23&#39;),</span>
+<span class="go">    array([], dtype=int64))</span>
+</pre></div>
+</div>
+<p>Just return <cite>“TaylorF2”</cite> for all elements:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">arr</span><span class="o">.</span><span class="n">parse_boolargs</span><span class="p">(</span><span class="s1">&#39;TaylorF2&#39;</span><span class="p">)</span>
+<span class="go">    (array([&#39;TaylorF2&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2&#39;, &#39;TaylorF2&#39;],</span>
+<span class="go">    dtype=&#39;|S8&#39;),</span>
+<span class="go">    array([], dtype=int64))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.parse_parameters">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parse_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">possible_fields</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.parse_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.parse_parameters" title="Link to this definition"></a></dt>
+<dd><p>Parses a list of parameters to get the list of fields needed in
+order to evaluate those parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> (<em>(</em><em>list of</em><em>) </em><em>string</em><em>(</em><em>s</em><em>)</em>) – The list of desired parameters. These can be (functions of) fields
+or virtual fields.</p></li>
+<li><p><strong>possible_fields</strong> (<em>(</em><em>list of</em><em>) </em><em>string</em><em>(</em><em>s</em><em>)</em>) – The list of possible fields.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The list of names of the fields that are needed in order to
+evaluate the given parameters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.sort">
+<span class="sig-name descname"><span class="pre">sort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'quicksort'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.sort"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.sort" title="Link to this definition"></a></dt>
+<dd><p>Sort an array, in-place.</p>
+<p>This function extends the standard numpy record array in-place sort
+to allow the basic use of Field array virtual fields. Only a single
+field is currently supported when referencing a virtual field.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) – Axis along which to sort. Default is -1, which means sort along the
+last axis.</p></li>
+<li><p><strong>kind</strong> (<em>{'quicksort'</em><em>, </em><em>'mergesort'</em><em>, </em><em>'heapsort'}</em><em>, </em><em>optional</em>) – Sorting algorithm. Default is ‘quicksort’.</p></li>
+<li><p><strong>order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – When <cite>a</cite> is an array with fields defined, this argument specifies
+which fields to compare first, second, etc.  Not all fields need be
+specified.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.to_array">
+<span class="sig-name descname"><span class="pre">to_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#FieldArray.to_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.FieldArray.to_array" title="Link to this definition"></a></dt>
+<dd><p>Returns an <cite>numpy.ndarray</cite> of self in which the fields are included
+as an extra dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fields</strong> (<em>{None</em><em>, </em><em>(</em><em>list of</em><em>) </em><em>strings}</em>) – The fields to get. All of the fields must have the same datatype.
+If None, will try to return all of the fields.</p></li>
+<li><p><strong>axis</strong> (<em>{0</em><em>, </em><em>int}</em>) – Which dimension to put the fields in in the returned array. For
+example, if <cite>self</cite> has shape <cite>(l,m,n)</cite> and <cite>k</cite> fields, the
+returned array will have shape <cite>(k,l,m,n)</cite> if <cite>axis=0</cite>, <cite>(l,k,m,n)</cite>
+if <cite>axis=1</cite>, etc. Setting <cite>axis=-1</cite> will put the fields in the
+last dimension. Default is 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The desired fields as a numpy array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.FieldArray.virtualfields">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">virtualfields</span></span><a class="headerlink" href="#pycbc.io.record.FieldArray.virtualfields" title="Link to this definition"></a></dt>
+<dd><p>Returns a tuple listing the names of virtual fields in self.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.io.record.</span></span><span class="sig-name descname"><span class="pre">WaveformArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io/record.html#WaveformArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.record.WaveformArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_FieldArrayWithDefaults</span></code></p>
+<p>A FieldArray with some default fields and properties commonly used
+by CBC waveforms. This may be initialized in one of 3 ways:</p>
+<p>1. With just the size of the array. In this case, the returned array will
+have all of the default field names. Example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span> <span class="o">=</span> <span class="n">WaveformArray</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;distance&#39;,</span>
+<span class="go">     &#39;spin2x&#39;,</span>
+<span class="go">     &#39;mass1&#39;,</span>
+<span class="go">     &#39;mass2&#39;,</span>
+<span class="go">     &#39;lambda1&#39;,</span>
+<span class="go">     &#39;polarization&#39;,</span>
+<span class="go">     &#39;spin2y&#39;,</span>
+<span class="go">     &#39;spin2z&#39;,</span>
+<span class="go">     &#39;spin1y&#39;,</span>
+<span class="go">     &#39;spin1x&#39;,</span>
+<span class="go">     &#39;spin1z&#39;,</span>
+<span class="go">     &#39;inclination&#39;,</span>
+<span class="go">     &#39;coa_phase&#39;,</span>
+<span class="go">     &#39;dec&#39;,</span>
+<span class="go">     &#39;tc&#39;,</span>
+<span class="go">     &#39;lambda2&#39;,</span>
+<span class="go">     &#39;ra&#39;)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>With some subset of the default field names. Example:</p></li>
+</ol>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span> <span class="o">=</span> <span class="n">WaveformArray</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">,</span> <span class="s1">&#39;mass2&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;mass1&#39;, &#39;mass2&#39;)</span>
+</pre></div>
+</div>
+<p>The list of names may include virtual fields, and methods, as well as
+functions of these. If one or more virtual fields or methods are specified,
+the source code is analyzed to pull out whatever underlying fields are
+needed. Example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span> <span class="o">=</span> <span class="n">WaveformArray</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mchirp**(5/6)&#39;</span><span class="p">,</span> <span class="s1">&#39;chi_eff&#39;</span><span class="p">,</span> <span class="s1">&#39;cos(coa_phase)&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;spin2z&#39;, &#39;mass1&#39;, &#39;mass2&#39;, &#39;coa_phase&#39;, &#39;spin1z&#39;)</span>
+</pre></div>
+</div>
+<p>3. By specifying a dtype. In this case, only the provided fields will
+be used, even if they are not in the defaults. Example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span> <span class="o">=</span> <span class="n">WaveformArray</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;foo&#39;,)</span>
+</pre></div>
+</div>
+<p>Additional fields can also be specified using the additional_fields
+keyword argument. Example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span> <span class="o">=</span> <span class="n">WaveformArray</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">,</span> <span class="s1">&#39;mass2&#39;</span><span class="p">],</span> <span class="n">additional_fields</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fieldnames</span>
+<span class="go">    (&#39;mass1&#39;, &#39;mass2&#39;, &#39;bar&#39;)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If an array is initialized with all of the default fields (case 1,
+above), then the names come from waveform.parameters; i.e., they
+are actually Parameter instances, not just strings. This means that the
+field names carry all of the metadata that a Parameter has. For
+example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span> <span class="o">=</span> <span class="n">WaveformArray</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">    &#39;distance&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">description</span>
+<span class="go">    &#39;Luminosity distance to the binary (in Mpc).&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">warr</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">label</span>
+<span class="go">    &#39;$d_L$ (Mpc)&#39;</span>
+</pre></div>
+</div>
+</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.chi_eff">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">chi_eff</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.chi_eff" title="Link to this definition"></a></dt>
+<dd><p>Returns the effective spin.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.eta">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eta</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.eta" title="Link to this definition"></a></dt>
+<dd><p>Returns the symmetric mass ratio.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.mchirp">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mchirp</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.mchirp" title="Link to this definition"></a></dt>
+<dd><p>Returns the chirp mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.mtotal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mtotal</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.mtotal" title="Link to this definition"></a></dt>
+<dd><p>Returns the total mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.primary_mass">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">primary_mass</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.primary_mass" title="Link to this definition"></a></dt>
+<dd><p>Returns the larger of self.mass1 and self.mass2.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.q">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.q" title="Link to this definition"></a></dt>
+<dd><p>Returns the mass ratio m1/m2, where m1 &gt;= m2.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.remnant_mass">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">remnant_mass</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.remnant_mass" title="Link to this definition"></a></dt>
+<dd><p>Returns the remnant mass for an NS-BH binary.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.secondary_mass">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">secondary_mass</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.secondary_mass" title="Link to this definition"></a></dt>
+<dd><p>Returns the smaller of self.mass1 and self.mass2.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin1_a">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin1_a</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin1_a" title="Link to this definition"></a></dt>
+<dd><p>Returns the dimensionless spin magnitude of mass 1.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin1_azimuthal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin1_azimuthal</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin1_azimuthal" title="Link to this definition"></a></dt>
+<dd><p>Returns the azimuthal spin angle of mass 1.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin1_polar">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin1_polar</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin1_polar" title="Link to this definition"></a></dt>
+<dd><p>Returns the polar spin angle of mass 1.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin2_a">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin2_a</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin2_a" title="Link to this definition"></a></dt>
+<dd><p>Returns the dimensionless spin magnitude of mass 2.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin2_azimuthal">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin2_azimuthal</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin2_azimuthal" title="Link to this definition"></a></dt>
+<dd><p>Returns the azimuthal spin angle of mass 2.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin2_polar">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin2_polar</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin2_polar" title="Link to this definition"></a></dt>
+<dd><p>Returns the polar spin angle of mass 2.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin_px">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin_px</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin_px" title="Link to this definition"></a></dt>
+<dd><p>Returns the x-component of the spin of the primary mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin_py">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin_py</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin_py" title="Link to this definition"></a></dt>
+<dd><p>Returns the y-component of the spin of the primary mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin_pz">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin_pz</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin_pz" title="Link to this definition"></a></dt>
+<dd><p>Returns the z-component of the spin of the primary mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin_sx">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin_sx</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin_sx" title="Link to this definition"></a></dt>
+<dd><p>Returns the x-component of the spin of the secondary mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin_sy">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin_sy</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin_sy" title="Link to this definition"></a></dt>
+<dd><p>Returns the y-component of the spin of the secondary mass.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pycbc.io.record.WaveformArray.spin_sz">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spin_sz</span></span><a class="headerlink" href="#pycbc.io.record.WaveformArray.spin_sz" title="Link to this definition"></a></dt>
+<dd><p>Returns the z-component of the spin of the secondary mass.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.io">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.io" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.io.get_file">
+<span class="sig-prename descclassname"><span class="pre">pycbc.io.</span></span><span class="sig-name descname"><span class="pre">get_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/io.html#get_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.io.get_file" title="Link to this definition"></a></dt>
+<dd><p>Retrieve file with retry upon failure</p>
+<p>Uses the astropy download_file but adds a retry feature for flaky
+connections. See astropy for full options</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.inject.html" class="btn btn-neutral float-left" title="pycbc.inject package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.live.html" class="btn btn-neutral float-right" title="pycbc.live package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

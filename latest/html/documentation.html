@@ -1,0 +1,185 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documenting PyCBC code &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Creating Releases of PyCBC" href="release.html" />
+    <link rel="prev" title="Documentation for Developers" href="devs.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="devs.html">Documentation for Developers</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Documenting PyCBC code</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sphinx">Sphinx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documenting-the-pycbc-package">Documenting the PyCBC package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documenting-pycbc-modules">Documenting PyCBC modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documenting-pycbc-scripts">Documenting PyCBC scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html">pycbc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build_gh_pages.html">Building Documentation for GitHub Pages</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="devs.html">Documentation for Developers</a></li>
+      <li class="breadcrumb-item active">Documenting PyCBC code</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/documentation.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="documenting-pycbc-code">
+<h1>Documenting PyCBC code<a class="headerlink" href="#documenting-pycbc-code" title="Link to this heading"></a></h1>
+<p>These page contains some details of how to use the pyCBC Sphinx documentation system. This is a very similar to that used by numpy and scipy to document that code.</p>
+<p>All code in PyCBC must be appropriately documented. If you find any documentation to be inadequate, please contact the development team, or improve yourself where possible.</p>
+<section id="sphinx">
+<h2>Sphinx<a class="headerlink" href="#sphinx" title="Link to this heading"></a></h2>
+<p>PyCBC uses the <cite>sphinx</cite> documentation system to produce automatic documentation from all modules and functions, with a layer on top to describe the code appropriately.</p>
+<p>The <a class="reference external" href="http://sphinx-doc.org">sphinx website</a> has a <a class="reference external" href="http://sphinx-doc.org/rest.html#rst-primer">nice tutorial</a> on the reStructuredText format used for documentation.</p>
+</section>
+<section id="documenting-the-pycbc-package">
+<h2>Documenting the PyCBC package<a class="headerlink" href="#documenting-the-pycbc-package" title="Link to this heading"></a></h2>
+<p>The overview documentation pages (e.g. this page), live in the <code class="docutils literal notranslate"><span class="pre">docs</span></code> directory of the git repository. These pages are linked together using internal links.</p>
+<p>For example: the file <code class="docutils literal notranslate"><span class="pre">docs/index.rst</span></code> file is used to build the home page for the documentation, and contains the following block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">toctree</span><span class="p">::</span>
+    <span class="p">:</span><span class="n">maxdepth</span><span class="p">:</span> <span class="mi">1</span>
+
+    <span class="n">install</span>
+    <span class="n">documentation</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">install</span></code> and <code class="docutils literal notranslate"><span class="pre">documentation</span></code> entries refer to the <code class="docutils literal notranslate"><span class="pre">install.rst</span></code> and <code class="docutils literal notranslate"><span class="pre">documentation.rst</span></code> files in the same directory.</p>
+<p>In order to provide readable documentation for all users, each key module in <code class="docutils literal notranslate"><span class="pre">pycbc</span></code> should have its own directory in <code class="docutils literal notranslate"><span class="pre">docs</span></code> that builds upon the automatic documentation built from its classes and functions. For example, the <code class="docutils literal notranslate"><span class="pre">pycbc.frame</span></code> module has it’s own documentation in <code class="docutils literal notranslate"><span class="pre">docs/frame.rst</span></code> that includes some custom text, and a copy of the automatic documentation from its classes and functions.</p>
+<p>How much text goes directly into the module docstrings, and how much is abstracted into a separated <code class="docutils literal notranslate"><span class="pre">rst</span></code> file in the <code class="docutils literal notranslate"><span class="pre">docs/</span></code> directory is a matter of personal taste, and keeping the code readable, but should have little effect on the HTML documentation.</p>
+</section>
+<section id="documenting-pycbc-modules">
+<h2>Documenting PyCBC modules<a class="headerlink" href="#documenting-pycbc-modules" title="Link to this heading"></a></h2>
+<p>All PyCBC modules should be documented using <code class="docutils literal notranslate"><span class="pre">sphinx</span></code> syntax, in the same way that <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy</span></code> and <code class="docutils literal notranslate"><span class="pre">scipy</span></code> functions are listed.</p>
+<p>The numpy github repository includes a <a class="reference external" href="https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt">nice style guide</a> for documenting modules and their members using sphinx.</p>
+</section>
+<section id="documenting-pycbc-scripts">
+<h2>Documenting PyCBC scripts<a class="headerlink" href="#documenting-pycbc-scripts" title="Link to this heading"></a></h2>
+<p>Documenting command-line scripts isn’t ideal in any documentation language, including sphinx.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">PyCBC</span></code>, command-line scripts in the <code class="docutils literal notranslate"><span class="pre">bin</span></code> directory of the git repository should be accompanied by a reStructuredText file in <code class="docutils literal notranslate"><span class="pre">docs/bin</span></code>.</p>
+<p>However, at some point this directory got removed. So what is the current recommendation for documenting scripts??</p>
+<p>This file contains an overview of what the code does, and some other information, with finally a dump of the command-line <code class="docutils literal notranslate"><span class="pre">--help</span></code> message via this directive:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">command</span><span class="o">-</span><span class="n">output</span><span class="p">::</span> <span class="n">pycbc_inspiral</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="devs.html" class="btn btn-neutral float-left" title="Documentation for Developers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="release.html" class="btn btn-neutral float-right" title="Creating Releases of PyCBC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc_generate_mock_data: Generating mock data &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Extending PyCBC with external plugins" href="extend.html" />
+    <link rel="prev" title="pycbc_condition_strain: operations with strain data files" href="pycbc_condition_strain.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="apps.html">Applications and Workflows</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pycbc_make_offline_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc_condition_strain.html"><code class="docutils literal notranslate"><span class="pre">pycbc_condition_strain</span></code>: operations with strain data files</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#generate-mock-data-realizations-for-ground-based-detectors">Generate Mock Data Realizations for Ground-Based Detectors</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#noise-only-mock-data">Noise-only mock data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#signals-embedded-in-noise">Signals embedded in noise</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#signal-only-zero-noise-mock-data">Signal-only (zero-noise) mock data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#example-generating-lisa-mock-data">Example Generating LISA mock data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#noise-only-lisa-mock-data">Noise-only LISA mock data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#signal-noise-lisa-mock-data">Signal + noise LISA mock data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#signal-only-zero-noise-lisa-mock-data">Signal-only (zero-noise) LISA mock data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="apps.html">Applications and Workflows</a></li>
+      <li class="breadcrumb-item active"><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/mock_data_generation.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-generate-mock-data-generating-mock-data">
+<h1><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code>: Generating mock data<a class="headerlink" href="#pycbc-generate-mock-data-generating-mock-data" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">pycbc_generate_mock_data</span></code> is a command-line tool which can be used for
+generating mock data for a network of detectors. It also has a functionality
+to choose from a population model, merger rate, and glitch distribution.
+The basic idea of the tool is to do the following operations:</p>
+<ol class="arabic simple">
+<li><p>Generate noise realizations for a given network of detectors.</p></li>
+<li><p>Inject signal population in the given noise realizations.</p></li>
+<li><p>Provide zero noise realizations of signal and glitch population.</p></li>
+</ol>
+<p>The following sections show concrete examples of common use cases.  For a
+detailed list of all options, and option-specific help, see the output of:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<section id="generate-mock-data-realizations-for-ground-based-detectors">
+<h2>Generate Mock Data Realizations for Ground-Based Detectors<a class="headerlink" href="#generate-mock-data-realizations-for-ground-based-detectors" title="Link to this heading"></a></h2>
+<p>This section demonstrates how to generate simulated strain data for a network
+of ground-based gravitational-wave detectors using
+<strong class="command">pycbc_generate_mock_data</strong>.</p>
+<p>Mock data can include <strong>noise only</strong>, <strong>signals only</strong>, or <strong>signals embedded
+in noise</strong>, depending on the options provided.</p>
+<section id="noise-only-mock-data">
+<h3>Noise-only mock data<a class="headerlink" href="#noise-only-mock-data" title="Link to this heading"></a></h3>
+<p>The following command generates a <strong>100-second noise realization</strong> for the H1,
+L1, and V1 interferometers, without any injected signals or glitches:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> \
+    <span class="o">--</span><span class="n">ifo</span><span class="o">-</span><span class="nb">list</span> <span class="n">H1</span> <span class="n">L1</span> <span class="n">V1</span> \
+    <span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="n">H1</span><span class="p">:</span><span class="mi">20</span> <span class="n">L1</span><span class="p">:</span><span class="mi">20</span> <span class="n">V1</span><span class="p">:</span><span class="mi">20</span> \
+    <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="n">H1</span><span class="p">:</span><span class="n">aLIGOZeroDetHighPower</span> \
+                <span class="n">L1</span><span class="p">:</span><span class="n">aLIGOZeroDetHighPower</span> \
+                <span class="n">V1</span><span class="p">:</span><span class="n">aLIGOZeroDetHighPower</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="n">seed</span> <span class="n">H1</span><span class="p">:</span><span class="mi">1234</span> <span class="n">L1</span><span class="p">:</span><span class="mi">2345</span> <span class="n">V1</span><span class="p">:</span><span class="mi">3456</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1257294808</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1257294908</span> \
+    <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mi">2048</span> \
+    <span class="o">--</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="n">H1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">L1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">V1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+    <span class="o">--</span><span class="n">tag</span> <span class="n">HLV_NOISE</span>
+</pre></div>
+</div>
+<p>This will produce simulated strain data files for each interferometer, tagged
+with <code class="docutils literal notranslate"><span class="pre">HLV_NOISE</span></code> and stored in the default output directory. The GPS start
+and end times determine the duration of the data segment, while the
+<code class="docutils literal notranslate"><span class="pre">--fake-strain-seed</span></code> option ensures that each detector’s noise is drawn from
+an independent random realization.</p>
+</section>
+<section id="signals-embedded-in-noise">
+<h3>Signals embedded in noise<a class="headerlink" href="#signals-embedded-in-noise" title="Link to this heading"></a></h3>
+<p>To generate time series data for a detector network, that contain the signal(s)
+and noise realization, one need to provide an <code class="docutils literal notranslate"><span class="pre">hdf</span></code> injection file containing
+the list of injection parameters. The following command generate the projected
+signals in each detector of the network, embeded in the noise described by PSD
+of each detectors:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> \
+   <span class="o">--</span><span class="n">ifo</span><span class="o">-</span><span class="nb">list</span> <span class="n">H1</span> <span class="n">L1</span> <span class="n">V1</span> \
+   <span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="n">H1</span><span class="p">:</span><span class="mi">20</span> <span class="n">L1</span><span class="p">:</span><span class="mi">20</span> <span class="n">V1</span><span class="p">:</span><span class="mi">20</span> \
+   <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="n">H1</span><span class="p">:</span><span class="n">aLIGOZeroDetHighPower</span> \
+               <span class="n">L1</span><span class="p">:</span><span class="n">aLIGOZeroDetHighPower</span> \
+               <span class="n">V1</span><span class="p">:</span><span class="n">aLIGOZeroDetHighPower</span> \
+   <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="n">seed</span> <span class="n">H1</span><span class="p">:</span><span class="mi">1234</span> <span class="n">L1</span><span class="p">:</span><span class="mi">2345</span> <span class="n">V1</span><span class="p">:</span><span class="mi">3456</span> \
+   <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1257294808</span> \
+   <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1257294908</span> \
+   <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mi">2048</span> \
+   <span class="o">--</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="n">H1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                  <span class="n">L1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                  <span class="n">V1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+   <span class="o">--</span><span class="n">tag</span> <span class="n">HLV_NOISE_SIGNAL</span> \
+   <span class="o">--</span><span class="n">injection</span><span class="o">-</span><span class="n">file</span> <span class="n">injection_hlv_10_bbh</span><span class="o">.</span><span class="n">hdf</span>
+</pre></div>
+</div>
+</section>
+<section id="signal-only-zero-noise-mock-data">
+<h3>Signal-only (zero-noise) mock data<a class="headerlink" href="#signal-only-zero-noise-mock-data" title="Link to this heading"></a></h3>
+<p>The following command generate the projected signals in each detector of the
+network, without the noise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> \
+   <span class="o">--</span><span class="n">ifo</span><span class="o">-</span><span class="nb">list</span> <span class="n">H1</span> <span class="n">L1</span> <span class="n">V1</span> \
+   <span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="n">H1</span><span class="p">:</span><span class="mi">20</span> <span class="n">L1</span><span class="p">:</span><span class="mi">20</span> <span class="n">V1</span><span class="p">:</span><span class="mi">20</span> \
+   <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="n">H1</span><span class="p">:</span><span class="n">zeroNoise</span> \
+               <span class="n">L1</span><span class="p">:</span><span class="n">zeroNoise</span> \
+               <span class="n">V1</span><span class="p">:</span><span class="n">zeroNoise</span> \
+   <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="n">seed</span> <span class="n">H1</span><span class="p">:</span><span class="mi">1234</span> <span class="n">L1</span><span class="p">:</span><span class="mi">2345</span> <span class="n">V1</span><span class="p">:</span><span class="mi">3456</span> \
+   <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">1257294808</span> \
+   <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">1257294908</span> \
+   <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mi">2048</span> \
+   <span class="o">--</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="n">H1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                  <span class="n">L1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                  <span class="n">V1</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+   <span class="o">--</span><span class="n">tag</span> <span class="n">HLV_SIGNAL</span> \
+   <span class="o">--</span><span class="n">injection</span><span class="o">-</span><span class="n">file</span> <span class="n">injection_hlv_10_bbh</span><span class="o">.</span><span class="n">hdf</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="example-generating-lisa-mock-data">
+<h2>Example Generating LISA mock data<a class="headerlink" href="#example-generating-lisa-mock-data" title="Link to this heading"></a></h2>
+<p>Generating mock data for LISA requires providing several LISA-specific options,
+including the spacecraft arm length, optical metrology (OMS) noise, acceleration
+noise, and the Time-Delay Interferometry (TDI) generation. The examples below
+demonstrate how to generate noise-only datasets, signal+noise datasets, and
+signal-only datasets for the LISA TDI channels A, E, and T.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>To generate LISA mock data, you must install the following packages in order
+inside your virtual environment:</p>
+<ol class="arabic simple">
+<li><p><strong>BBHx</strong>
+<a class="reference external" href="https://github.com/mikekatz04/BBHx/tree/v1.0.5">https://github.com/mikekatz04/BBHx/tree/v1.0.5</a></p></li>
+<li><p><strong>BBHx waveform plugin</strong>
+<a class="reference external" href="https://github.com/gwastro/BBHX-waveform-model">https://github.com/gwastro/BBHX-waveform-model</a></p></li>
+</ol>
+</div>
+<section id="noise-only-lisa-mock-data">
+<h3>Noise-only LISA mock data<a class="headerlink" href="#noise-only-lisa-mock-data" title="Link to this heading"></a></h3>
+<p>The following command generates <strong>noise-only</strong> TDI data for the LISA A, E, and T
+channels, using analytical PSD models for the corresponding TDI variables:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> \
+    <span class="o">--</span><span class="n">ifo</span><span class="o">-</span><span class="nb">list</span> <span class="n">LISA_A</span> <span class="n">LISA_E</span> <span class="n">LISA_T</span> \
+    <span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="n">LISA_A</span><span class="p">:</span><span class="mf">1e-4</span> <span class="n">LISA_E</span><span class="p">:</span><span class="mf">1e-4</span> <span class="n">LISA_T</span><span class="p">:</span><span class="mf">1e-4</span> \
+    <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="n">LISA_A</span><span class="p">:</span><span class="n">analytical_psd_lisa_tdi_AE</span> \
+                <span class="n">LISA_E</span><span class="p">:</span><span class="n">analytical_psd_lisa_tdi_AE</span> \
+                <span class="n">LISA_T</span><span class="p">:</span><span class="n">analytical_psd_lisa_tdi_T</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="n">seed</span> <span class="n">LISA_A</span><span class="p">:</span><span class="mi">100</span> <span class="n">LISA_E</span><span class="p">:</span><span class="mi">150</span> <span class="n">LISA_T</span><span class="p">:</span><span class="mi">200</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">0</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">31536000</span> \
+    <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mf">0.2</span> \
+    <span class="o">--</span><span class="nb">len</span><span class="o">-</span><span class="n">arm</span> <span class="mf">2.5e9</span> \
+    <span class="o">--</span><span class="n">acc</span><span class="o">-</span><span class="n">noise</span><span class="o">-</span><span class="n">level</span> <span class="mf">2.4e-15</span> \
+    <span class="o">--</span><span class="n">oms</span><span class="o">-</span><span class="n">noise</span><span class="o">-</span><span class="n">level</span> <span class="mf">7.9e-12</span> \
+    <span class="o">--</span><span class="n">tdi</span> <span class="s1">&#39;2.0&#39;</span> \
+    <span class="o">--</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="n">LISA_A</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">LISA_E</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">LISA_T</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+    <span class="o">--</span><span class="n">tag</span> <span class="n">LISA_NOISE</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="nb">filter</span><span class="o">-</span><span class="n">duration</span> <span class="mi">31536000</span>
+</pre></div>
+</div>
+</section>
+<section id="signal-noise-lisa-mock-data">
+<h3>Signal + noise LISA mock data<a class="headerlink" href="#signal-noise-lisa-mock-data" title="Link to this heading"></a></h3>
+<p>To generate data containing signal+noise, one need to provide an injection
+<code class="docutils literal notranslate"><span class="pre">hdf</span></code> file. This file may contain one or more injections. The following
+command generate the LISA mock data with signals and noise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> \
+    <span class="o">--</span><span class="n">ifo</span><span class="o">-</span><span class="nb">list</span> <span class="n">LISA_A</span> <span class="n">LISA_E</span> <span class="n">LISA_T</span> \
+    <span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="n">LISA_A</span><span class="p">:</span><span class="mf">1e-4</span> <span class="n">LISA_E</span><span class="p">:</span><span class="mf">1e-4</span> <span class="n">LISA_T</span><span class="p">:</span><span class="mf">1e-4</span> \
+    <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="n">LISA_A</span><span class="p">:</span><span class="n">analytical_psd_lisa_tdi_AE</span> \
+                <span class="n">LISA_E</span><span class="p">:</span><span class="n">analytical_psd_lisa_tdi_AE</span> \
+                <span class="n">LISA_T</span><span class="p">:</span><span class="n">analytical_psd_lisa_tdi_T</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="n">seed</span> <span class="n">LISA_A</span><span class="p">:</span><span class="mi">100</span> <span class="n">LISA_E</span><span class="p">:</span><span class="mi">150</span> <span class="n">LISA_T</span><span class="p">:</span><span class="mi">200</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">0</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">31536000</span> \
+    <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mf">0.2</span> \
+    <span class="o">--</span><span class="nb">len</span><span class="o">-</span><span class="n">arm</span> <span class="mf">2.5e9</span> \
+    <span class="o">--</span><span class="n">acc</span><span class="o">-</span><span class="n">noise</span><span class="o">-</span><span class="n">level</span> <span class="mf">2.4e-15</span> \
+    <span class="o">--</span><span class="n">oms</span><span class="o">-</span><span class="n">noise</span><span class="o">-</span><span class="n">level</span> <span class="mf">7.9e-12</span> \
+    <span class="o">--</span><span class="n">tdi</span> <span class="s1">&#39;2.0&#39;</span> \
+    <span class="o">--</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="n">LISA_A</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">LISA_E</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">LISA_T</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+    <span class="o">--</span><span class="n">injection</span><span class="o">-</span><span class="n">file</span> <span class="n">injection_lisa_1_smbhb</span><span class="o">.</span><span class="n">hdf</span> \
+    <span class="o">--</span><span class="n">tag</span> <span class="n">LISA_NOISE_SIGNAL</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="nb">filter</span><span class="o">-</span><span class="n">duration</span> <span class="mi">31536000</span>
+</pre></div>
+</div>
+<p>The command <strong class="command">pycbc_create_injections</strong> can be used to generate such an
+injection configuration file. The example below shows how to create a file
+containing one LISA SMBHB injection:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_create_injections<span class="w"> </span>--verbose<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config-files<span class="w"> </span>injection_lisa_1_smbhb.ini<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ninjections<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output-file<span class="w"> </span>injection_lisa_1_smbhb.hdf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--variable-params-section<span class="w"> </span>variable_params<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--static-params-section<span class="w"> </span>static_params<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dist-section<span class="w"> </span>prior
+</pre></div>
+</div>
+<p>The example <code class="docutils literal notranslate"><span class="pre">injection_lisa_1_smbhb.ini</span></code> file can be downloaded from here:</p>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3 sd-fade-in-slide-down">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Injection Configuration File</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[variable_params]</span>
+
+<span class="k">[static_params]</span>
+<span class="c1">; This assumes all those values are in LISA frame.</span>
+<span class="c1">; You can set &quot;ref_frame = SSB&quot;, but then you should also add it to</span>
+<span class="c1">; &quot;static_params&quot; section in PE .ini file.</span>
+<span class="na">ref_frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">LISA</span>
+<span class="na">approximant</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">BBHX_PhenomD</span>
+<span class="c1">; You can use &quot;1.5&quot; or &quot;2.0&quot; for TDI.</span>
+<span class="c1">; Please use the same TDI version for PSD and static_params in the PE .ini file.</span>
+<span class="na">tdi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">2.0</span>
+<span class="na">mass1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1015522.4376</span>
+<span class="na">mass2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">796849.1091</span>
+<span class="na">spin1z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.597755394865021</span>
+<span class="na">spin2z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.36905807298613247</span>
+<span class="na">distance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">17758.367941273442</span>
+<span class="na">inclination</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1.5970175301911231</span>
+<span class="na">coa_phase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4.275929308696054</span>
+<span class="na">eclipticlongitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">5.4431083771985165</span>
+<span class="na">eclipticlatitude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">-1.2734504596198182</span>
+<span class="na">polarization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.22558110042980073</span>
+<span class="na">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">4799624.274911478</span>
+<span class="na">t_obs_start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">31536000</span>
+<span class="c1">; Put LISA behind the Earth by ~20 degrees.</span>
+<span class="na">t_offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">7365189.431698299</span>
+<span class="na">f_lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-4</span>
+<span class="na">f_ref</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">1e-4</span>
+<span class="na">f_final</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.1</span>
+</pre></div>
+</div>
+<p class="sd-card-text"><a class="reference download internal" download="" href="_downloads/1846f3828de80cbe62193fbcaaa5a668/injection_lisa_1_smbhb.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</div>
+</details></section>
+<section id="signal-only-zero-noise-lisa-mock-data">
+<h3>Signal-only (zero-noise) LISA mock data<a class="headerlink" href="#signal-only-zero-noise-lisa-mock-data" title="Link to this heading"></a></h3>
+<p>To generate <strong>signal-only</strong> mock data (no instrument noise), simply use the
+<code class="docutils literal notranslate"><span class="pre">zeroNoise</span></code> PSD:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pycbc_generate_mock_data</span> \
+    <span class="o">--</span><span class="n">ifo</span><span class="o">-</span><span class="nb">list</span> <span class="n">LISA_A</span> <span class="n">LISA_E</span> <span class="n">LISA_T</span> \
+    <span class="o">--</span><span class="n">low</span><span class="o">-</span><span class="n">frequency</span><span class="o">-</span><span class="n">cutoff</span> <span class="n">LISA_A</span><span class="p">:</span><span class="mf">1e-4</span> <span class="n">LISA_E</span><span class="p">:</span><span class="mf">1e-4</span> <span class="n">LISA_T</span><span class="p">:</span><span class="mf">1e-4</span> \
+    <span class="o">--</span><span class="n">psd</span><span class="o">-</span><span class="n">model</span> <span class="n">LISA_A</span><span class="p">:</span><span class="n">zeroNoise</span> <span class="n">LISA_E</span><span class="p">:</span><span class="n">zeroNoise</span> <span class="n">LISA_T</span><span class="p">:</span><span class="n">zeroNoise</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="n">seed</span> <span class="n">LISA_A</span><span class="p">:</span><span class="mi">100</span> <span class="n">LISA_E</span><span class="p">:</span><span class="mi">150</span> <span class="n">LISA_T</span><span class="p">:</span><span class="mi">200</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">start</span><span class="o">-</span><span class="n">time</span> <span class="mi">0</span> \
+    <span class="o">--</span><span class="n">gps</span><span class="o">-</span><span class="n">end</span><span class="o">-</span><span class="n">time</span> <span class="mi">31536000</span> \
+    <span class="o">--</span><span class="n">sample</span><span class="o">-</span><span class="n">rate</span> <span class="mf">0.2</span> \
+    <span class="o">--</span><span class="nb">len</span><span class="o">-</span><span class="n">arm</span> <span class="mf">2.5e9</span> \
+    <span class="o">--</span><span class="n">acc</span><span class="o">-</span><span class="n">noise</span><span class="o">-</span><span class="n">level</span> <span class="mf">2.4e-15</span> \
+    <span class="o">--</span><span class="n">oms</span><span class="o">-</span><span class="n">noise</span><span class="o">-</span><span class="n">level</span> <span class="mf">7.9e-12</span> \
+    <span class="o">--</span><span class="n">tdi</span> <span class="s1">&#39;2.0&#39;</span> \
+    <span class="o">--</span><span class="n">channel</span><span class="o">-</span><span class="n">name</span> <span class="n">LISA_A</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">LISA_E</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+                   <span class="n">LISA_T</span><span class="p">:</span><span class="n">SIMULATED_STRAIN</span> \
+    <span class="o">--</span><span class="n">injection</span><span class="o">-</span><span class="n">file</span> <span class="n">injection_lisa_1_smbhb</span><span class="o">.</span><span class="n">hdf</span> \
+    <span class="o">--</span><span class="n">tag</span> <span class="n">LISA_ZERONOISE_SIGNAL</span> \
+    <span class="o">--</span><span class="n">fake</span><span class="o">-</span><span class="n">strain</span><span class="o">-</span><span class="nb">filter</span><span class="o">-</span><span class="n">duration</span> <span class="mi">31536000</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc_condition_strain.html" class="btn btn-neutral float-left" title="pycbc_condition_strain: operations with strain data files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="extend.html" class="btn btn-neutral float-right" title="Extending PyCBC with external plugins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1397 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.types.array &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.types.array</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.types.array</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz, Josh Willis, Andrew Miller, Tito Dal Canton</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides a device independent Array class based on PyCUDA and Numpy.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">BACKEND_PREFIX</span><span class="o">=</span><span class="s2">&quot;pycbc.types.array_&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">float32</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">complex64</span><span class="p">,</span> <span class="n">complex128</span><span class="p">,</span> <span class="n">ones</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_scheme</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="kn">import</span> <span class="n">schemed</span><span class="p">,</span> <span class="n">cpuonly</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.opt</span><span class="w"> </span><span class="kn">import</span> <span class="n">LimitedSizeDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_optional</span>
+
+<span class="n">_lal</span> <span class="o">=</span> <span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lal&#39;</span><span class="p">)</span>
+
+<span class="c1">#! FIXME: the uint32 datatype has not been fully tested,</span>
+<span class="c1"># we should restrict any functions that do not allow an</span>
+<span class="c1"># array of uint32 integers</span>
+<span class="n">_ALLOWED_DTYPES</span> <span class="o">=</span> <span class="p">[</span><span class="n">_numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">,</span>
+                   <span class="n">_numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">,</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">uint32</span><span class="p">,</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">_ALLOWED_SCALARS</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">long</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]</span> <span class="o">+</span> <span class="n">_ALLOWED_DTYPES</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="n">_ALLOWED_SCALARS</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">complex</span><span class="p">]</span> <span class="o">+</span> <span class="n">_ALLOWED_DTYPES</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_scheme</span><span class="p">(</span><span class="n">ary</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ary</span><span class="o">.</span><span class="n">_scheme</span><span class="p">,</span> <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
+        <span class="n">converted_array</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">ary</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">ary</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">ary</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">converted_array</span><span class="o">.</span><span class="n">_data</span>
+        <span class="n">ary</span><span class="o">.</span><span class="n">_scheme</span> <span class="o">=</span> <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span>
+      
+<span class="k">def</span><span class="w"> </span><span class="nf">_convert</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">_convert_to_scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">convert</span>
+    
+<span class="k">def</span><span class="w"> </span><span class="nf">_nocomplex</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nocomplex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot; does not support complex types&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nocomplex</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_noreal</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">noreal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot; does not support real types&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">noreal</span>
+
+<div class="viewcode-block" id="force_precision_to_match">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.force_precision_to_match">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">force_precision_to_match</span><span class="p">(</span><span class="n">scalar</span><span class="p">,</span> <span class="n">precision</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">scalar</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">(</span><span class="n">scalar</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">(</span><span class="n">scalar</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">scalar</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">scalar</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="common_kind">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.common_kind">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">common_kind</span><span class="p">(</span><span class="o">*</span><span class="n">dtypes</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">dtypes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dtype</span>
+    <span class="k">return</span> <span class="n">dtypes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+   
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">_to_device</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Move input to device &quot;&quot;&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using the &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_copy_base_array</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Copy a backend array&quot;&quot;&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using the &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_scheme_matches_base_array</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Check that input matches array type for scheme &quot;&quot;&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using the &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+<div class="viewcode-block" id="check_same_len_precision">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.check_same_len_precision">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_same_len_precision</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check that the two arguments have the same length and precision.</span>
+<span class="sd">    Raises ValueError if they do not.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;lengths do not match (</span><span class="si">{}</span><span class="s1"> vs </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">precision</span> <span class="o">!=</span> <span class="n">b</span><span class="o">.</span><span class="n">precision</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;precisions do not match (</span><span class="si">{}</span><span class="s1"> vs </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">precision</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Array</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Array used to do numeric calculations on a various compute</span>
+<span class="sd">    devices. It is a convience wrapper around numpy, and</span>
+<span class="sd">    pycuda.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_array</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; initial_array: An array-like object as specified by NumPy, this</span>
+<span class="sd">        also includes instances of an underlying data type as described in</span>
+<span class="sd">        section 3 or an instance of the PYCBC Array class itself. This</span>
+<span class="sd">        object is used to populate the data of the array.</span>
+
+<span class="sd">        dtype: A NumPy style dtype that describes the type of</span>
+<span class="sd">        encapsulated data (float32,compex64, etc)</span>
+
+<span class="sd">        copy: This defines whether the initial_array is copied to instantiate</span>
+<span class="sd">        the array or is simply referenced. If copy is false, new data is not</span>
+<span class="sd">        created, and so all arguments that would force a copy are ignored.</span>
+<span class="sd">        The default is to copy the given object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span><span class="o">=</span><span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_saved</span> <span class="o">=</span> <span class="n">LimitedSizeDict</span><span class="p">(</span><span class="n">size_limit</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
+        
+        <span class="c1">#Unwrap initial_array</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initial_array</span><span class="p">,</span> <span class="n">Array</span><span class="p">):</span>
+            <span class="n">initial_array</span> <span class="o">=</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">_data</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_scheme_matches_base_array</span><span class="p">(</span><span class="n">initial_array</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Cannot avoid a copy of this array&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">initial_array</span>
+
+            <span class="c1"># Check that the dtype is supported.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ALLOWED_DTYPES</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; is not supported&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dtype</span> <span class="ow">and</span> <span class="n">dtype</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Can only set dtype when allowed to copy data&quot;</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="c1"># First we will check the dtype that we are given</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">initial_array</span><span class="p">,</span> <span class="s1">&#39;dtype&#39;</span><span class="p">):</span>
+                <span class="n">initial_array</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_array</span><span class="p">)</span>
+
+            <span class="c1"># Determine the dtype to use</span>
+            <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ALLOWED_DTYPES</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; is not supported&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s1">&#39;c&#39;</span> <span class="ow">and</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">initial_array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; cannot be cast as &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>          
+            <span class="k">elif</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">_ALLOWED_DTYPES</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
+                    <span class="n">dtype</span> <span class="o">=</span> <span class="n">complex128</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dtype</span> <span class="o">=</span> <span class="n">float64</span>
+                     
+            <span class="c1"># Cast to the final dtype if needed</span>
+            <span class="k">if</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">dtype</span><span class="p">:</span>
+                <span class="n">initial_array</span> <span class="o">=</span> <span class="n">initial_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+                                              
+            <span class="c1">#Create new instance with initial_array as initialization.</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scheme</span><span class="p">),</span> <span class="n">_scheme</span><span class="o">.</span><span class="n">CPUScheme</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">initial_array</span><span class="p">,</span> <span class="s1">&#39;get&#39;</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_array</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_array</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">_scheme_matches_base_array</span><span class="p">(</span><span class="n">initial_array</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">_copy_base_array</span><span class="p">(</span><span class="n">initial_array</span><span class="p">)</span> <span class="c1"># pylint:disable=assignment-from-no-return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">initial_array</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initial_array</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">_to_device</span><span class="p">(</span><span class="n">initial_array</span><span class="p">)</span> <span class="c1"># pylint:disable=assignment-from-no-return</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__array_ufunc__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ufunc</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">*</span><span class="n">inputs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">Array</span><span class="p">)</span> <span class="k">else</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">]</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ufunc</span><span class="p">,</span> <span class="n">method</span><span class="p">)(</span><span class="o">*</span><span class="n">inputs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="s1">&#39;shape&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ret</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__array__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">arr</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">shape</span>
+     
+    <span class="k">def</span><span class="w"> </span><span class="nf">_memoize_single</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">memoize_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+            <span class="n">badh</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">badh</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_saved</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_saved</span><span class="p">[</span><span class="n">badh</span><span class="p">]</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_saved</span><span class="p">[</span><span class="n">badh</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">return</span> <span class="n">memoize_single</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_returnarray</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">returnarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+        <span class="k">return</span> <span class="n">returnarray</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_returntype</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">returntype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">ary</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+            <span class="k">if</span> <span class="n">ary</span> <span class="ow">is</span> <span class="bp">NotImplemented</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">NotImplemented</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">(</span><span class="n">ary</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">returntype</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="nf">_return</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ary</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap the ary to return an Array type &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ary</span><span class="p">,</span> <span class="n">Array</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ary</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">ary</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_checkother</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">checkother</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="n">nargs</span> <span class="o">=</span> <span class="p">()</span>
+            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_typecheck</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_ALLOWED_SCALARS</span><span class="p">:</span>
+                    <span class="n">other</span> <span class="o">=</span> <span class="n">force_precision_to_match</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+                    <span class="n">nargs</span> <span class="o">+=</span><span class="p">(</span><span class="n">other</span><span class="p">,)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Array</span><span class="p">:</span>
+                    <span class="n">check_same_len_precision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+                    <span class="n">_convert_to_scheme</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+                    <span class="n">nargs</span> <span class="o">+=</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_data</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">NotImplemented</span>
+
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">nargs</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+        <span class="k">return</span> <span class="n">checkother</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_vcheckother</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">vcheckother</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="n">nargs</span> <span class="o">=</span> <span class="p">()</span>
+            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_typecheck</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Array</span><span class="p">:</span>
+                    <span class="n">check_same_len_precision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+                    <span class="n">_convert_to_scheme</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+                    <span class="n">nargs</span> <span class="o">+=</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_data</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;array argument required&#39;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">nargs</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+        <span class="k">return</span> <span class="n">vcheckother</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="nf">_vrcheckother</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">vrcheckother</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="n">nargs</span> <span class="o">=</span> <span class="p">()</span>
+            <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Array</span><span class="p">:</span>
+                    <span class="n">check_same_len_precision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+                    <span class="n">_convert_to_scheme</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+                    <span class="n">nargs</span> <span class="o">+=</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">_data</span><span class="p">,)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;array argument required&#39;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">nargs</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+        <span class="k">return</span> <span class="n">vrcheckother</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_icheckother</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">icheckother</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; Checks the input to in-place operations &quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_typecheck</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_ALLOWED_SCALARS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">==</span> <span class="nb">complex</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;dtypes are incompatible&#39;</span><span class="p">)</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="n">force_precision_to_match</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Array</span><span class="p">:</span>
+                <span class="n">check_same_len_precision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;dtypes are incompatible&#39;</span><span class="p">)</span>
+                <span class="n">_convert_to_scheme</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+                <span class="n">other</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">_data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">NotImplemented</span>
+
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="c1"># pylint:disable=not-callable</span>
+        <span class="k">return</span> <span class="n">icheckother</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_typecheck</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Additional typechecking for other. Placeholder for use by derived</span>
+<span class="sd">        types. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Multiply by an Array or a scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">*</span> <span class="n">other</span>
+
+    <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+    <span class="nd">@_convert</span>
+    <span class="nd">@_icheckother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Multiply by an Array or a scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">*=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Add Array to Array or scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">+</span> <span class="n">other</span>
+
+    <span class="fm">__radd__</span> <span class="o">=</span> <span class="fm">__add__</span>
+       
+<div class="viewcode-block" id="Array.fill">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.fill">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fill</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+    <span class="nd">@_convert</span>
+    <span class="nd">@_icheckother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Add Array to Array or scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">+=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="nd">@_returntype</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Divide Array by Array or scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">/</span> <span class="n">other</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Divide Array by Array or scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="fm">__rtruediv__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@_convert</span>
+    <span class="nd">@_icheckother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__itruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Divide Array by Array or scalar and return an Array. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">/=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+        
+    <span class="n">__div__</span> <span class="o">=</span> <span class="fm">__truediv__</span>
+    <span class="n">__idiv__</span> <span class="o">=</span> <span class="fm">__itruediv__</span>
+    <span class="n">__rdiv__</span> <span class="o">=</span> <span class="fm">__rtruediv__</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__neg__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return negation of self &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Subtract Array or scalar from Array and return an Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">-</span> <span class="n">other</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Subtract Array or scalar from Array and return an Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="fm">__rsub__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="nd">@_convert</span>
+    <span class="nd">@_icheckother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Subtract Array or scalar from Array and return an Array. &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">-=</span> <span class="n">other</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_checkother</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Exponentiate Array by scalar &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">**</span> <span class="n">other</span>
+
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__abs__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return absolute value of Array &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return length of Array &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">ndim</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This is the Python special method invoked whenever the &#39;==&#39;</span>
+<span class="sd">        comparison is used.  It will return true if the data of two</span>
+<span class="sd">        PyCBC arrays are identical, and all of the numeric meta-data</span>
+<span class="sd">        are identical, irrespective of whether or not the two</span>
+<span class="sd">        instances live in the same memory (for that comparison, the</span>
+<span class="sd">        Python statement &#39;a is b&#39; should be used instead).</span>
+
+<span class="sd">        Thus, this method returns &#39;True&#39; if the types of both &#39;self&#39;</span>
+<span class="sd">        and &#39;other&#39; are identical, as well as their lengths, dtypes</span>
+<span class="sd">        and the data in the arrays, element by element.  It will always</span>
+<span class="sd">        do the comparison on the CPU, but will *not* move either object</span>
+<span class="sd">        to the CPU if it is not already there, nor change the scheme of</span>
+<span class="sd">        either object. It is possible to compare a CPU object to a GPU</span>
+<span class="sd">        object, and the comparison should be true if the data and</span>
+<span class="sd">        meta-data of the two objects are the same.</span>
+
+<span class="sd">        Note in particular that this function returns a single boolean,</span>
+<span class="sd">        and not an array of booleans as Numpy does.  If the numpy</span>
+<span class="sd">        behavior is instead desired it can be obtained using the numpy()</span>
+<span class="sd">        method of the PyCBC type to get a numpy instance from each</span>
+<span class="sd">        object, and invoking &#39;==&#39; on those two instances.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other: another Python object, that should be tested for equality</span>
+<span class="sd">            with &#39;self&#39;.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boolean: &#39;True&#39; if the types, dtypes, lengths, and data of the</span>
+<span class="sd">            two objects are each identical.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Writing the first test as below allows this method to be safely</span>
+        <span class="c1"># called from subclasses.</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># Now we&#39;ve checked meta-data, so look at the actual data itself:</span>
+        <span class="c1"># The numpy() method call will put a copy of GPU data onto a CPU</span>
+        <span class="c1"># array, and could therefore be slow.  As noted in the help for</span>
+        <span class="c1"># this function we don&#39;t worry about that.</span>
+
+        <span class="n">sary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">oary</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="c1"># Now we know that both sary and oary are numpy arrays. The</span>
+        <span class="c1"># &#39;==&#39; statement returns an array of booleans, and the all()</span>
+        <span class="c1"># method of that array returns &#39;True&#39; only if every element</span>
+        <span class="c1"># of that array of booleans is True.</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">sary</span> <span class="o">==</span> <span class="n">oary</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Array.almost_equal_elem">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.almost_equal_elem">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">almost_equal_elem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">tol</span><span class="p">,</span><span class="n">relative</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare whether two array types are almost equal, element</span>
+<span class="sd">        by element.</span>
+
+<span class="sd">        If the &#39;relative&#39; parameter is &#39;True&#39; (the default) then the</span>
+<span class="sd">        &#39;tol&#39; parameter (which must be positive) is interpreted as a</span>
+<span class="sd">        relative tolerance, and the comparison returns &#39;True&#39; only if</span>
+<span class="sd">        abs(self[i]-other[i]) &lt;= tol*abs(self[i])</span>
+<span class="sd">        for all elements of the array.</span>
+
+<span class="sd">        If &#39;relative&#39; is &#39;False&#39;, then &#39;tol&#39; is an absolute tolerance,</span>
+<span class="sd">        and the comparison is true only if</span>
+<span class="sd">        abs(self[i]-other[i]) &lt;= tol</span>
+<span class="sd">        for all elements of the array.</span>
+
+<span class="sd">        Other meta-data (type, dtype, and length) must be exactly equal.</span>
+<span class="sd">        If either object&#39;s memory lives on the GPU it will be copied to</span>
+<span class="sd">        the CPU for the comparison, which may be slow.  But the original</span>
+<span class="sd">        object itself will not have its memory relocated nor scheme</span>
+<span class="sd">        changed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other</span>
+<span class="sd">            Another Python object, that should be tested for</span>
+<span class="sd">            almost-equality with &#39;self&#39;, element-by-element.</span>
+<span class="sd">        tol</span>
+<span class="sd">            A non-negative number, the tolerance, which is interpreted</span>
+<span class="sd">            as either a relative tolerance (the default) or an absolute</span>
+<span class="sd">            tolerance.</span>
+<span class="sd">        relative</span>
+<span class="sd">            A boolean, indicating whether &#39;tol&#39; should be interpreted</span>
+<span class="sd">            as a relative tolerance (if True, the default if this argument</span>
+<span class="sd">            is omitted) or as an absolute tolerance (if tol is False).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boolean </span>
+<span class="sd">            &#39;True&#39; if the data agree within the tolerance, as</span>
+<span class="sd">            interpreted by the &#39;relative&#39; keyword, and if the types,</span>
+<span class="sd">            lengths, and dtypes are exactly the same.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check that the tolerance is non-negative and raise an</span>
+        <span class="c1"># exception otherwise.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tol</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tolerance cannot be negative&quot;</span><span class="p">)</span>
+        <span class="c1"># Check that the meta-data agree; the type check is written in</span>
+        <span class="c1"># this way so that this method may be safely called from</span>
+        <span class="c1"># subclasses as well.</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># The numpy() method will move any GPU memory onto the CPU.</span>
+        <span class="c1"># Slow, but the user was warned.</span>
+
+        <span class="n">diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">relative</span><span class="p">:</span>
+            <span class="n">cmpary</span> <span class="o">=</span> <span class="n">tol</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cmpary</span> <span class="o">=</span> <span class="n">tol</span><span class="o">*</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">diff</span><span class="o">&lt;=</span><span class="n">cmpary</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Array.almost_equal_norm">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.almost_equal_norm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">almost_equal_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">,</span><span class="n">tol</span><span class="p">,</span><span class="n">relative</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compare whether two array types are almost equal, normwise.</span>
+
+<span class="sd">        If the &#39;relative&#39; parameter is &#39;True&#39; (the default) then the</span>
+<span class="sd">        &#39;tol&#39; parameter (which must be positive) is interpreted as a</span>
+<span class="sd">        relative tolerance, and the comparison returns &#39;True&#39; only if</span>
+<span class="sd">        abs(norm(self-other)) &lt;= tol*abs(norm(self)).</span>
+
+<span class="sd">        If &#39;relative&#39; is &#39;False&#39;, then &#39;tol&#39; is an absolute tolerance,</span>
+<span class="sd">        and the comparison is true only if</span>
+<span class="sd">        abs(norm(self-other)) &lt;= tol</span>
+
+<span class="sd">        Other meta-data (type, dtype, and length) must be exactly equal.</span>
+<span class="sd">        If either object&#39;s memory lives on the GPU it will be copied to</span>
+<span class="sd">        the CPU for the comparison, which may be slow.  But the original</span>
+<span class="sd">        object itself will not have its memory relocated nor scheme</span>
+<span class="sd">        changed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other</span>
+<span class="sd">            another Python object, that should be tested for</span>
+<span class="sd">            almost-equality with &#39;self&#39;, based on their norms.</span>
+<span class="sd">        tol </span>
+<span class="sd">            a non-negative number, the tolerance, which is interpreted</span>
+<span class="sd">            as either a relative tolerance (the default) or an absolute</span>
+<span class="sd">            tolerance.</span>
+<span class="sd">        relative</span>
+<span class="sd">            A boolean, indicating whether &#39;tol&#39; should be interpreted</span>
+<span class="sd">            as a relative tolerance (if True, the default if this argument</span>
+<span class="sd">            is omitted) or as an absolute tolerance (if tol is False).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boolean</span>
+<span class="sd">            &#39;True&#39; if the data agree within the tolerance, as</span>
+<span class="sd">            interpreted by the &#39;relative&#39; keyword, and if the types,</span>
+<span class="sd">            lengths, and dtypes are exactly the same.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check that the tolerance is non-negative and raise an</span>
+        <span class="c1"># exception otherwise.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tol</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tolerance cannot be negative&quot;</span><span class="p">)</span>
+        <span class="c1"># Check that the meta-data agree; the type check is written in</span>
+        <span class="c1"># this way so that this method may be safely called from</span>
+        <span class="c1"># subclasses as well.</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># The numpy() method will move any GPU memory onto the CPU.</span>
+        <span class="c1"># Slow, but the user was warned.</span>
+
+        <span class="n">diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">-</span><span class="n">other</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">dnorm</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">relative</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">dnorm</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="o">*</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">dnorm</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.real">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.real">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">real</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return real part of Array &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">real</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.imag">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.imag">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">imag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return imaginary part of Array &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">imag</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.conj">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.conj">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">conj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return complex conjugate of Array. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span></div>
+
+        
+<div class="viewcode-block" id="Array.squared_norm">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.squared_norm">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">squared_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the elementwise squared norm of the array &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.multiply_and_add">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.multiply_and_add">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_checkother</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multiply_and_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">mult_fac</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return other multiplied by mult_fac and with self added.</span>
+<span class="sd">        Self is modified in place and returned as output.</span>
+<span class="sd">        Precisions of inputs must match.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.inner">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.inner">[docs]</a>
+    <span class="nd">@_vrcheckother</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the inner product of the array with complex conjugation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.vdot">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.vdot">[docs]</a>
+    <span class="nd">@_vrcheckother</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vdot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the inner product of the array with complex conjugation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.clear">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.clear">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Clear out the values of the array. &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.weighted_inner">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.weighted_inner">[docs]</a>
+    <span class="nd">@_vrcheckother</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weighted_inner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">weight</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the inner product of the array with complex conjugation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.sum">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.sum">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the sum of the the array. &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.cumsum">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.cumsum">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the cumulative sum of the the array. &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+     
+<div class="viewcode-block" id="Array.max">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.max">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_nocomplex</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the maximum value in the array. &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+            
+<div class="viewcode-block" id="Array.max_loc">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.max_loc">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_nocomplex</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_loc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the maximum value in the array along with the index location &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.abs_arg_max">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.abs_arg_max">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abs_arg_max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return location of the maximum argument max &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.abs_max_loc">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.abs_max_loc">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abs_max_loc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the maximum elementwise norm in the array along with the index location&quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.min">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.min">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_nocomplex</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the maximum value in the array. &quot;&quot;&quot;</span> 
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="Array.take">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.take">[docs]</a>
+    <span class="nd">@_returnarray</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">take</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.dot">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.dot">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@_vcheckother</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return the dot product&quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+    
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getvalue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to return a single value from an array. May be very</span>
+<span class="sd">           slow if the memory is on a gpu.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="nd">@_memoize_single</span>
+    <span class="nd">@_returntype</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getslice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+    
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return items from the Array. This not guaranteed to be fast for</span>
+<span class="sd">            returning single values. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getslice</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getvalue</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Array.resize">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.resize">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resize self to new_size</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">new_size</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_saved</span> <span class="o">=</span> <span class="n">LimitedSizeDict</span><span class="p">(</span><span class="n">size_limit</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
+            <span class="n">new_arr</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">new_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">new_size</span><span class="p">:</span>
+                <span class="n">new_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_arr</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">new_size</span><span class="p">]</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">new_arr</span><span class="o">.</span><span class="n">_data</span></div>
+
+
+<div class="viewcode-block" id="Array.roll">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.roll">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">roll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;shift vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_arr</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">shift</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">shift</span> <span class="o">=</span> <span class="n">shift</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">shift</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">shift</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="n">new_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">shift</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="n">shift</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span>
+        <span class="n">new_arr</span><span class="p">[</span><span class="n">shift</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="n">shift</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_saved</span> <span class="o">=</span> <span class="n">LimitedSizeDict</span><span class="p">(</span><span class="n">size_limit</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">new_arr</span><span class="o">.</span><span class="n">_data</span></div>
+
+
+<div class="viewcode-block" id="Array.astype">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.astype">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">astype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">==</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span></div>
+
+    
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">self_ref</span><span class="p">,</span> <span class="n">other_ref</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to copy between two arrays. The arrays references</span>
+<span class="sd">           should be bare array types and not `Array` class instances. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+                
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span><span class="n">Array</span><span class="p">):</span>
+            <span class="n">_convert_to_scheme</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot set real value with complex&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="nb">slice</span><span class="p">):</span>          
+                <span class="n">self_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="n">other_ref</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">_data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">self_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">index</span><span class="p">:</span><span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">other_ref</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">_data</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_copy</span><span class="p">(</span><span class="n">self_ref</span><span class="p">,</span> <span class="n">other_ref</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_ALLOWED_SCALARS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">index</span><span class="p">:</span><span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Can only copy data from another Array&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">precision</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">float32</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">complex64</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;single&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;double&#39;</span>        
+                
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">kind</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">float32</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">float64</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;real&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">complex64</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">complex128</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;complex&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;unknown&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the internal python array &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+
+    <span class="nd">@data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span><span class="s1">&#39;dtype&#39;</span><span class="p">):</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">temp</span><span class="o">.</span><span class="n">_data</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ptr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Returns a pointer to the memory of this array &quot;&quot;&quot;</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">itemsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">itemsize</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nbytes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">itemsize</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@cpuonly</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_swighelper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Used internally by SWIG typemaps to ensure @_convert </span>
+<span class="sd">            is called and scheme is correct  </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">;</span>
+
+<div class="viewcode-block" id="Array.numpy">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.numpy">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Returns a Numpy Array that contains this data &quot;&quot;&quot;</span>     
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="Array.lal">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.lal">[docs]</a>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Returns a LAL Object that contains this data &quot;&quot;&quot;</span>
+
+        <span class="n">lal_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">float32</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateREAL4Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">float64</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateREAL8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">complex64</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateCOMPLEX8Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">complex128</span><span class="p">:</span>
+            <span class="n">lal_data</span> <span class="o">=</span> <span class="n">_lal</span><span class="o">.</span><span class="n">CreateCOMPLEX16Vector</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+        <span class="n">lal_data</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">lal_data</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dtype</span>
+    
+<div class="viewcode-block" id="Array.save">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save array to a Numpy .npy, hdf, or text file. When saving a complex array as</span>
+<span class="sd">        text, the real and imaginary parts are saved as the first and second</span>
+<span class="sd">        column respectively. When using hdf format, the data is stored</span>
+<span class="sd">        as a single vector, along with relevant attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            Destination file path. Must end with either .hdf, .npy or .txt.</span>
+<span class="sd">            </span>
+<span class="sd">        group: string </span>
+<span class="sd">            Additional name for internal storage use. Ex. hdf storage uses</span>
+<span class="sd">            this as the key value.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If path does not end in .npy or .txt.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.npy&#39;</span><span class="p">:</span>
+            <span class="n">_numpy</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.txt&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;real&#39;</span><span class="p">:</span>
+                <span class="n">_numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">real</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">imag</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+                <span class="n">_numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">group</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span>
+                                 <span class="n">compression_opts</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Path must end with .npy, .txt, or .hdf&#39;</span><span class="p">)</span></div>
+
+           
+<div class="viewcode-block" id="Array.trim_zeros">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.trim_zeros">[docs]</a>
+    <span class="nd">@_convert</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">trim_zeros</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the leading and trailing zeros.</span>
+<span class="sd">        &quot;&quot;&quot;</span>      
+        <span class="n">tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">_numpy</span><span class="o">.</span><span class="n">trim_zeros</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="s1">&#39;f&#39;</span><span class="p">))</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">_numpy</span><span class="o">.</span><span class="n">trim_zeros</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">trim</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">f</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-</span><span class="n">b</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Array.view">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.view">[docs]</a>
+    <span class="nd">@_returntype</span>
+    <span class="nd">@_convert</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a &#39;view&#39; of the array with its bytes now interpreted according</span>
+<span class="sd">        to &#39;dtype&#39;. The location in memory is unchanged and changing elements</span>
+<span class="sd">        in a view of an array will also change the original array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dtype : numpy dtype (one of float32, float64, complex64 or complex128)</span>
+<span class="sd">            The new dtype that should be used to interpret the bytes of self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Array.copy">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.Array.copy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return copy of this array &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="fm">__lt__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="fm">__le__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="fm">__ne__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="fm">__gt__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="fm">__ge__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+
+            
+<span class="c1"># Convenience functions for determining dtypes</span>
+<div class="viewcode-block" id="real_same_precision_as">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.real_same_precision_as">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">real_same_precision_as</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">float32</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">float64</span></div>
+
+
+<div class="viewcode-block" id="complex_same_precision_as">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.complex_same_precision_as">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">complex_same_precision_as</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">complex64</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">complex128</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_return_array</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">return_array</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">return_array</span>
+
+<div class="viewcode-block" id="zeros">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.zeros">[docs]</a>
+<span class="nd">@_return_array</span>
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">zeros</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float64</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return an Array filled with zeros.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="empty">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.empty">[docs]</a>
+<span class="nd">@_return_array</span>
+<span class="nd">@schemed</span><span class="p">(</span><span class="n">BACKEND_PREFIX</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">empty</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float64</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return an empty Array (no initialization)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;This function is a stub that should be overridden using &quot;</span>
+    <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;the scheme. You shouldn&#39;t be seeing this error!&quot;</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_array">
+<a class="viewcode-back" href="../../../pycbc.types.html#pycbc.types.array.load_array">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_array</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load an Array from an HDF5, ASCII or Numpy file. The file type is</span>
+<span class="sd">    inferred from the file extension, which must be `.hdf`, `.txt` or `.npy`.</span>
+
+<span class="sd">    For ASCII and Numpy files with a single column, a real array is returned.</span>
+<span class="sd">    For files with two columns, the columns are assumed to contain the real</span>
+<span class="sd">    and imaginary parts of a complex array respectively.</span>
+
+<span class="sd">    The default data types will be double precision floating point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : string</span>
+<span class="sd">        Input file path. Must end with either `.npy`, `.txt` or `.hdf`.</span>
+
+<span class="sd">    group: string</span>
+<span class="sd">        Additional name for internal storage use. When reading HDF files, this</span>
+<span class="sd">        is the path to the HDF dataset to read.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If path does not end with a supported extension. For Numpy and ASCII</span>
+<span class="sd">        input files, this is also raised if the array does not have 1 or 2</span>
+<span class="sd">        dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ext</span> <span class="o">=</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.npy&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.txt&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">_numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.hdf&#39;</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">group</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">array</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Path must end with .npy, .hdf, or .txt&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Array</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">data</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;File has </span><span class="si">%s</span><span class="s1"> dimensions, cannot convert to Array, </span><span class="se">\</span>
+<span class="s1">                      must be 1 (real) or 2 (complex)&#39;</span> <span class="o">%</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

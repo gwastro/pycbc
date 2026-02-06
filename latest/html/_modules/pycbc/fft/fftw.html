@@ -1,0 +1,731 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft.fftw &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.fft.fftw</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.fft.fftw</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">zeros</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.scheme</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_scheme</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.libutils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ctypes_library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseFFT</span><span class="p">,</span> <span class="n">_BaseIFFT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..types</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_aligned</span>
+
+<span class="c1"># IMPORTANT NOTE TO PYCBC DEVELOPERS:</span>
+<span class="c1"># Because this module is loaded automatically when present, and because</span>
+<span class="c1"># no FFTW function should be called until the user has had the chance</span>
+<span class="c1"># to set the threading backend, it is ESSENTIAL that simply loading this</span>
+<span class="c1"># module should not actually *call* ANY functions.</span>
+
+<span class="c1"># NOTE:</span>
+<span class="c1"># When loading FFTW we use os.RTLD_DEEPBIND to avoid potential segfaults due</span>
+<span class="c1"># to conflicts with MKL if both are present.</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s1">&#39;RTLD_DEEPBIND&#39;</span><span class="p">):</span>
+    <span class="n">FFTW_RTLD_MODE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">RTLD_DEEPBIND</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">FFTW_RTLD_MODE</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">DEFAULT_MODE</span>
+
+<span class="c1">#FFTW constants, these are pulled from fftw3.h</span>
+<span class="n">FFTW_FORWARD</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">FFTW_BACKWARD</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">FFTW_MEASURE</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">FFTW_DESTROY_INPUT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span>
+<span class="n">FFTW_UNALIGNED</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+<span class="n">FFTW_CONSERVE_MEMORY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
+<span class="n">FFTW_EXHAUSTIVE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span>
+<span class="n">FFTW_PRESERVE_INPUT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span>
+<span class="n">FFTW_PATIENT</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+<span class="n">FFTW_ESTIMATE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span>
+<span class="n">FFTW_WISDOM_ONLY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">21</span>
+
+<span class="c1"># Load the single and double precision libraries</span>
+<span class="c1"># We need to construct them directly with CDLL so</span>
+<span class="c1"># we can give the RTLD_GLOBAL mode, which we must do</span>
+<span class="c1"># in order to use the threaded libraries as well.</span>
+<span class="n">double_lib</span> <span class="o">=</span> <span class="n">get_ctypes_library</span><span class="p">(</span><span class="s1">&#39;fftw3&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;fftw3&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="n">FFTW_RTLD_MODE</span><span class="p">)</span>
+<span class="n">float_lib</span> <span class="o">=</span> <span class="n">get_ctypes_library</span><span class="p">(</span><span class="s1">&#39;fftw3f&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;fftw3f&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="n">FFTW_RTLD_MODE</span><span class="p">)</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">double_lib</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">float_lib</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Unable to find FFTW libraries&quot;</span><span class="p">)</span>
+
+<span class="c1"># Support for FFTW&#39;s two different threading backends</span>
+<span class="n">_fftw_threaded_lib</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_fftw_threaded_set</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">_double_threaded_lib</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_float_threaded_lib</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="n">HAVE_FFTW_THREADED</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># Although we set the number of threads based on the scheme,</span>
+<span class="c1"># we need a private variable that records the last value used so</span>
+<span class="c1"># we know whether we need to call plan_with_nthreads() again.</span>
+<span class="n">_fftw_current_nthreads</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># This function sets the number of threads used internally by FFTW</span>
+<span class="c1"># in planning. It just takes a number of threads, rather than itself</span>
+<span class="c1"># looking at scheme.mgr.num_threads, because it should not be called</span>
+<span class="c1"># directly, but only by functions that get the value they use from</span>
+<span class="c1"># scheme.mgr.num_threads</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fftw_plan_with_nthreads</span><span class="p">(</span><span class="n">nthreads</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">_fftw_current_nthreads</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">HAVE_FFTW_THREADED</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">nthreads</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Threading is NOT enabled, but </span><span class="si">{0}</span><span class="s2"> &gt; 1 threads specified&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nthreads</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pycbc_current_threads</span> <span class="o">=</span> <span class="n">nthreads</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dplanwthr</span> <span class="o">=</span> <span class="n">_double_threaded_lib</span><span class="o">.</span><span class="n">fftw_plan_with_nthreads</span>
+        <span class="n">fplanwthr</span> <span class="o">=</span> <span class="n">_float_threaded_lib</span><span class="o">.</span><span class="n">fftwf_plan_with_nthreads</span>
+        <span class="n">dplanwthr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">fplanwthr</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">dplanwthr</span><span class="p">(</span><span class="n">nthreads</span><span class="p">)</span>
+        <span class="n">fplanwthr</span><span class="p">(</span><span class="n">nthreads</span><span class="p">)</span>
+        <span class="n">_fftw_current_nthreads</span> <span class="o">=</span> <span class="n">nthreads</span>
+
+<span class="c1"># This is a global dict-of-dicts used when initializing threads and</span>
+<span class="c1"># setting the threading library</span>
+
+<span class="n">_fftw_threading_libnames</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;unthreaded&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;double&#39;</span> <span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span> <span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
+                             <span class="s1">&#39;openmp&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;double&#39;</span> <span class="p">:</span> <span class="s1">&#39;fftw3_omp&#39;</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span> <span class="p">:</span> <span class="s1">&#39;fftw3f_omp&#39;</span><span class="p">},</span>
+                             <span class="s1">&#39;pthreads&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;double&#39;</span> <span class="p">:</span> <span class="s1">&#39;fftw3_threads&#39;</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span> <span class="p">:</span> <span class="s1">&#39;fftw3f_threads&#39;</span><span class="p">}}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_init_threads</span><span class="p">(</span><span class="n">backend</span><span class="p">):</span>
+    <span class="c1"># This function actually sets the backend and initializes. It returns zero on</span>
+    <span class="c1"># success and 1 if given a valid backend but that cannot be loaded.  It raises</span>
+    <span class="c1"># an exception if called after the threading backend has already been set, or</span>
+    <span class="c1"># if given an invalid backend.</span>
+    <span class="k">global</span> <span class="n">_fftw_threaded_set</span>
+    <span class="k">global</span> <span class="n">_fftw_threaded_lib</span>
+    <span class="k">global</span> <span class="n">HAVE_FFTW_THREADED</span>
+    <span class="k">global</span> <span class="n">_double_threaded_lib</span>
+    <span class="k">global</span> <span class="n">_float_threaded_lib</span>
+    <span class="k">if</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Threading backend for FFTW already set to </span><span class="si">{0}</span><span class="s2">; cannot be changed&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_fftw_threaded_lib</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">double_threaded_libname</span> <span class="o">=</span> <span class="n">_fftw_threading_libnames</span><span class="p">[</span><span class="n">backend</span><span class="p">][</span><span class="s1">&#39;double&#39;</span><span class="p">]</span>
+        <span class="n">float_threaded_libname</span> <span class="o">=</span>  <span class="n">_fftw_threading_libnames</span><span class="p">[</span><span class="n">backend</span><span class="p">][</span><span class="s1">&#39;float&#39;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Backend </span><span class="si">{0}</span><span class="s2"> for FFTW threading does not exist!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backend</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">double_threaded_libname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># For reasons Ian doesn&#39;t understand we should not load libgomp</span>
+            <span class="c1"># first using RTLD_DEEPBIND, so force loading it here if needed</span>
+            <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s1">&#39;openmp&#39;</span><span class="p">:</span>
+                <span class="n">get_ctypes_library</span><span class="p">(</span><span class="s1">&#39;gomp&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="n">mode</span><span class="o">=</span><span class="n">ctypes</span><span class="o">.</span><span class="n">DEFAULT_MODE</span><span class="p">)</span>
+            <span class="c1"># Note that the threaded libraries don&#39;t have their own pkg-config</span>
+            <span class="c1"># files we must look for them wherever we look for double or single</span>
+            <span class="c1"># FFTW itself.</span>
+            <span class="n">_double_threaded_lib</span> <span class="o">=</span> <span class="n">get_ctypes_library</span><span class="p">(</span>
+                <span class="n">double_threaded_libname</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;fftw3&#39;</span><span class="p">],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">FFTW_RTLD_MODE</span>
+            <span class="p">)</span>
+            <span class="n">_float_threaded_lib</span> <span class="o">=</span>  <span class="n">get_ctypes_library</span><span class="p">(</span>
+                <span class="n">float_threaded_libname</span><span class="p">,</span>
+                <span class="p">[</span><span class="s1">&#39;fftw3f&#39;</span><span class="p">],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">FFTW_RTLD_MODE</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">_double_threaded_lib</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">_float_threaded_lib</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="n">err_str</span> <span class="o">=</span> <span class="s1">&#39;Unable to load threaded libraries&#39;</span>
+                <span class="n">err_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">double_threaded_libname</span><span class="si">}</span><span class="s1"> or &#39;</span>
+                <span class="n">err_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">float_threaded_libname</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">err_str</span><span class="p">)</span>
+            <span class="n">dret</span> <span class="o">=</span> <span class="n">_double_threaded_lib</span><span class="o">.</span><span class="n">fftw_init_threads</span><span class="p">()</span>
+            <span class="n">fret</span> <span class="o">=</span> <span class="n">_float_threaded_lib</span><span class="o">.</span><span class="n">fftwf_init_threads</span><span class="p">()</span>
+            <span class="c1"># FFTW for some reason uses *0* to indicate failure.  In C.</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">dret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">fret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">return</span> <span class="mi">1</span>
+            <span class="n">HAVE_FFTW_THREADED</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">_fftw_threaded_set</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">_fftw_threaded_lib</span> <span class="o">=</span> <span class="n">backend</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># We get here when we were given the &#39;unthreaded&#39; backend</span>
+        <span class="n">HAVE_FFTW_THREADED</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">_fftw_threaded_set</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">_fftw_threaded_lib</span> <span class="o">=</span> <span class="n">backend</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="set_threads_backend">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.set_threads_backend">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_threads_backend</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># This is the user facing function.  If given a backend it just</span>
+    <span class="c1"># calls _init_threads and lets it do the work.  If not (the default)</span>
+    <span class="c1"># then it cycles in order through threaded backends,</span>
+    <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="n">_init_threads</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+        <span class="c1"># Since the user specified this backend raise an exception if the above failed</span>
+        <span class="k">if</span> <span class="n">retval</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not initialize FFTW threading backend </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">backend</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Note that we pop() from the end, so &#39;pthreads&#39;</span>
+        <span class="c1"># is the first thing tried</span>
+        <span class="n">_backend_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;unthreaded&#39;</span><span class="p">,</span><span class="s1">&#39;openmp&#39;</span><span class="p">,</span> <span class="s1">&#39;pthreads&#39;</span><span class="p">]</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+            <span class="n">_next_backend</span> <span class="o">=</span> <span class="n">_backend_list</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">_init_threads</span><span class="p">(</span><span class="n">_next_backend</span><span class="p">)</span></div>
+
+
+<span class="c1"># Function to import system-wide wisdom files.</span>
+
+<div class="viewcode-block" id="import_sys_wisdom">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.import_sys_wisdom">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_sys_wisdom</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+        <span class="n">set_threads_backend</span><span class="p">()</span>
+    <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_import_system_wisdom</span><span class="p">()</span>
+    <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_import_system_wisdom</span><span class="p">()</span></div>
+
+
+<span class="c1"># We provide an interface for changing the &quot;measure level&quot;</span>
+<span class="c1"># By default this is 0, which does no planning,</span>
+<span class="c1"># but we provide functions to read and set it</span>
+
+<span class="n">_default_measurelvl</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="viewcode-block" id="get_measure_level">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.get_measure_level">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_measure_level</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the current &#39;measure level&#39; used in deciding how much effort to put into</span>
+<span class="sd">    creating FFTW plans.  From least effort (and shortest planning time) to most</span>
+<span class="sd">    they are 0 to 3.  No arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_default_measurelvl</span></div>
+
+
+<div class="viewcode-block" id="set_measure_level">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.set_measure_level">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_measure_level</span><span class="p">(</span><span class="n">mlvl</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set the current &#39;measure level&#39; used in deciding how much effort to expend</span>
+<span class="sd">    creating FFTW plans.  Must be an integer from 0 (least effort, shortest time)</span>
+<span class="sd">    to 3 (most effort and time).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_default_measurelvl</span>
+    <span class="k">if</span> <span class="n">mlvl</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Measure level can only be one of 0, 1, 2, or 3&quot;</span><span class="p">)</span>
+    <span class="n">_default_measurelvl</span> <span class="o">=</span> <span class="n">mlvl</span></div>
+
+
+<span class="n">_flag_dict</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">FFTW_ESTIMATE</span><span class="p">,</span>
+              <span class="mi">1</span><span class="p">:</span> <span class="n">FFTW_MEASURE</span><span class="p">,</span>
+              <span class="mi">2</span><span class="p">:</span> <span class="n">FFTW_MEASURE</span><span class="o">|</span><span class="n">FFTW_PATIENT</span><span class="p">,</span>
+              <span class="mi">3</span><span class="p">:</span> <span class="n">FFTW_MEASURE</span><span class="o">|</span><span class="n">FFTW_PATIENT</span><span class="o">|</span><span class="n">FFTW_EXHAUSTIVE</span><span class="p">}</span>
+<div class="viewcode-block" id="get_flag">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.get_flag">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_flag</span><span class="p">(</span><span class="n">mlvl</span><span class="p">,</span><span class="n">aligned</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">aligned</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_flag_dict</span><span class="p">[</span><span class="n">mlvl</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">_flag_dict</span><span class="p">[</span><span class="n">mlvl</span><span class="p">]</span><span class="o">|</span><span class="n">FFTW_UNALIGNED</span><span class="p">)</span></div>
+
+
+<span class="c1"># Add the ability to read/store wisdom to filenames</span>
+
+<div class="viewcode-block" id="wisdom_io">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.wisdom_io">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wisdom_io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">precision</span><span class="p">,</span> <span class="n">action</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Import or export an FFTW plan for single or double precision.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+        <span class="n">set_threads_backend</span><span class="p">()</span>
+    <span class="n">fmap</span> <span class="o">=</span> <span class="p">{(</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="s1">&#39;import&#39;</span><span class="p">):</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_import_wisdom_from_filename</span><span class="p">,</span>
+            <span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="s1">&#39;export&#39;</span><span class="p">):</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_export_wisdom_to_filename</span><span class="p">,</span>
+            <span class="p">(</span><span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="s1">&#39;import&#39;</span><span class="p">):</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_import_wisdom_from_filename</span><span class="p">,</span>
+            <span class="p">(</span><span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="s1">&#39;export&#39;</span><span class="p">):</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_export_wisdom_to_filename</span><span class="p">}</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">fmap</span><span class="p">[(</span><span class="n">precision</span><span class="p">,</span> <span class="n">action</span><span class="p">)]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">]</span>
+    <span class="n">retval</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">retval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">((</span><span class="s1">&#39;Could not </span><span class="si">{0}</span><span class="s1"> wisdom &#39;</span>
+                            <span class="s1">&#39;from file </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="import_single_wisdom_from_filename">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.import_single_wisdom_from_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_single_wisdom_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">wisdom_io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="s1">&#39;import&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="import_double_wisdom_from_filename">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.import_double_wisdom_from_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">import_double_wisdom_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">wisdom_io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="s1">&#39;import&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_single_wisdom_to_filename">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.export_single_wisdom_to_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_single_wisdom_to_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">wisdom_io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="s1">&#39;export&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_double_wisdom_to_filename">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.export_double_wisdom_to_filename">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_double_wisdom_to_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="n">wisdom_io</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;double&#39;</span><span class="p">,</span> <span class="s1">&#39;export&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="set_planning_limit">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.set_planning_limit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_planning_limit</span><span class="p">(</span><span class="n">time</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+        <span class="n">set_threads_backend</span><span class="p">()</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_set_timelimit</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">]</span>
+    <span class="n">f</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_set_timelimit</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">]</span>
+    <span class="n">f</span><span class="p">(</span><span class="n">time</span><span class="p">)</span></div>
+
+
+<span class="c1"># Create function maps for the dtypes</span>
+<span class="n">plan_function</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_dft_r2c_1d</span><span class="p">},</span>
+                 <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_plan_dft_r2c_1d</span><span class="p">},</span>
+                 <span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_dft_c2r_1d</span><span class="p">,</span>
+                               <span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_dft_1d</span><span class="p">},</span>
+                 <span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_plan_dft_c2r_1d</span><span class="p">,</span>
+                                <span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_plan_dft_1d</span><span class="p">}</span>
+                <span class="p">}</span>
+
+<span class="n">execute_function</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_execute_dft_r2c</span><span class="p">},</span>
+                    <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_execute_dft_r2c</span><span class="p">},</span>
+                    <span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_execute_dft_c2r</span><span class="p">,</span>
+                                  <span class="s1">&#39;complex64&#39;</span><span class="p">:</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_execute_dft</span><span class="p">},</span>
+                    <span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_execute_dft_c2r</span><span class="p">,</span>
+                                   <span class="s1">&#39;complex128&#39;</span><span class="p">:</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_execute_dft</span><span class="p">}</span>
+                   <span class="p">}</span>
+
+<div class="viewcode-block" id="plan">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.plan">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plan</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">idtype</span><span class="p">,</span> <span class="n">odtype</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">mlvl</span><span class="p">,</span> <span class="n">aligned</span><span class="p">,</span> <span class="n">nthreads</span><span class="p">,</span> <span class="n">inplace</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+        <span class="n">set_threads_backend</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">nthreads</span> <span class="o">!=</span> <span class="n">_fftw_current_nthreads</span><span class="p">:</span>
+        <span class="n">_fftw_plan_with_nthreads</span><span class="p">(</span><span class="n">nthreads</span><span class="p">)</span>
+    <span class="c1"># Convert a measure-level to flags</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">get_flag</span><span class="p">(</span><span class="n">mlvl</span><span class="p">,</span><span class="n">aligned</span><span class="p">)</span>
+
+    <span class="c1"># We make our arrays of the necessary type and size.  Things can be</span>
+    <span class="c1"># tricky, especially for in-place transforms with one of input or</span>
+    <span class="c1"># output real.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">idtype</span> <span class="o">==</span> <span class="n">odtype</span><span class="p">):</span>
+        <span class="c1"># We&#39;re in the complex-to-complex case, so lengths are the same</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">idtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">ip</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">odtype</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">idtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">odtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;f&#39;</span><span class="p">):</span>
+        <span class="c1"># Complex-to-real (reverse), so size is length of real array.</span>
+        <span class="c1"># However the complex array may be larger (in bytes) and</span>
+        <span class="c1"># should therefore be allocated first and reused for an in-place</span>
+        <span class="c1"># transform</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">idtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">ip</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">odtype</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="n">size</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">odtype</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Real-to-complex (forward), and size is still that of real.</span>
+        <span class="c1"># However it is still true that the complex array may be larger</span>
+        <span class="c1"># (in bytes) and should therefore be allocated first and reused</span>
+        <span class="c1"># for an in-place transform</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">odtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">idtype</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="n">size</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">idtype</span><span class="p">)</span>
+
+    <span class="c1"># Get the plan function</span>
+    <span class="n">idtype</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">idtype</span><span class="p">)</span>
+    <span class="n">odtype</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">odtype</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">plan_function</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">idtype</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">odtype</span><span class="p">)]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+    <span class="c1"># handle the C2C cases (forward and reverse)</span>
+    <span class="k">if</span> <span class="n">idtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">odtype</span><span class="o">.</span><span class="n">kind</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+                      <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+        <span class="n">theplan</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">ip</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+    <span class="c1"># handle the R2C and C2R case</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+                      <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">]</span>
+        <span class="n">theplan</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">ip</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+
+    <span class="c1"># We don&#39;t need ip or op anymore</span>
+    <span class="k">del</span> <span class="n">ip</span><span class="p">,</span> <span class="n">op</span>
+
+    <span class="c1"># Make the destructors</span>
+    <span class="k">if</span> <span class="n">idtype</span><span class="o">.</span><span class="n">char</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">,</span> <span class="s1">&#39;F&#39;</span><span class="p">]:</span>
+        <span class="n">destroy</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_destroy_plan</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">destroy</span> <span class="o">=</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_destroy_plan</span>
+
+    <span class="n">destroy</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">theplan</span><span class="p">,</span> <span class="n">destroy</span></div>
+
+
+
+<span class="c1"># Note that we don&#39;t need to check whether we&#39;ve set the threading backend</span>
+<span class="c1"># in the following functions, since execute is not called directly and</span>
+<span class="c1"># the fft and ifft will call plan first.</span>
+<div class="viewcode-block" id="execute">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.execute">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">):</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">execute_function</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)]</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+    <span class="n">f</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">invec</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.fft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fft</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">prec</span><span class="p">,</span> <span class="n">itype</span><span class="p">,</span> <span class="n">otype</span><span class="p">):</span>
+    <span class="n">theplan</span><span class="p">,</span> <span class="n">destroy</span> <span class="o">=</span> <span class="n">plan</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">invec</span><span class="p">),</span> <span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">FFTW_FORWARD</span><span class="p">,</span>
+                            <span class="n">get_measure_level</span><span class="p">(),(</span><span class="n">check_aligned</span><span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="ow">and</span> <span class="n">check_aligned</span><span class="p">(</span><span class="n">outvec</span><span class="o">.</span><span class="n">data</span><span class="p">)),</span>
+                   <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">num_threads</span><span class="p">,</span> <span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span> <span class="o">==</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">))</span>
+    <span class="n">execute</span><span class="p">(</span><span class="n">theplan</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">)</span>
+    <span class="n">destroy</span><span class="p">(</span><span class="n">theplan</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ifft">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.ifft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ifft</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">prec</span><span class="p">,</span> <span class="n">itype</span><span class="p">,</span> <span class="n">otype</span><span class="p">):</span>
+    <span class="n">theplan</span><span class="p">,</span> <span class="n">destroy</span> <span class="o">=</span> <span class="n">plan</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">outvec</span><span class="p">),</span> <span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">FFTW_BACKWARD</span><span class="p">,</span>
+                            <span class="n">get_measure_level</span><span class="p">(),(</span><span class="n">check_aligned</span><span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="ow">and</span> <span class="n">check_aligned</span><span class="p">(</span><span class="n">outvec</span><span class="o">.</span><span class="n">data</span><span class="p">)),</span>
+                   <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">num_threads</span><span class="p">,</span> <span class="p">(</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span> <span class="o">==</span> <span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span><span class="p">))</span>
+    <span class="n">execute</span><span class="p">(</span><span class="n">theplan</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">)</span>
+    <span class="n">destroy</span><span class="p">(</span><span class="n">theplan</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Class based API</span>
+
+<span class="c1"># First, set up a lot of different ctypes functions:</span>
+<span class="n">plan_many_c2c_f</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_many_dft</span>
+<span class="n">plan_many_c2c_f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">plan_many_c2c_f</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+<span class="n">plan_many_c2c_d</span> <span class="o">=</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_plan_many_dft</span>
+<span class="n">plan_many_c2c_d</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">plan_many_c2c_d</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+<span class="n">plan_many_c2r_f</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_many_dft_c2r</span>
+<span class="n">plan_many_c2r_f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">plan_many_c2r_f</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+<span class="n">plan_many_c2r_d</span> <span class="o">=</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_plan_many_dft_c2r</span>
+<span class="n">plan_many_c2r_d</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">plan_many_c2r_d</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+<span class="n">plan_many_r2c_f</span> <span class="o">=</span> <span class="n">float_lib</span><span class="o">.</span><span class="n">fftwf_plan_many_dft_r2c</span>
+<span class="n">plan_many_r2c_f</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">plan_many_r2c_f</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+<span class="n">plan_many_r2c_d</span> <span class="o">=</span> <span class="n">double_lib</span><span class="o">.</span><span class="n">fftw_plan_many_dft_r2c</span>
+<span class="n">plan_many_r2c_d</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span>
+                            <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint</span><span class="p">]</span>
+<span class="n">plan_many_r2c_d</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span>
+
+<span class="c1"># Now set up a dictionary indexed by (str(input_dtype), str(output_dtype)) to</span>
+<span class="c1"># translate input and output dtypes into the correct planning function.</span>
+
+<span class="n">_plan_funcs_dict</span> <span class="o">=</span> <span class="p">{</span> <span class="p">(</span><span class="s1">&#39;complex64&#39;</span><span class="p">,</span> <span class="s1">&#39;complex64&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="n">plan_many_c2c_f</span><span class="p">,</span>
+                     <span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="s1">&#39;complex64&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="n">plan_many_r2c_f</span><span class="p">,</span>
+                     <span class="p">(</span><span class="s1">&#39;complex64&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="n">plan_many_c2r_f</span><span class="p">,</span>
+                     <span class="p">(</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="s1">&#39;complex128&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="n">plan_many_c2c_d</span><span class="p">,</span>
+                     <span class="p">(</span><span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;complex128&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="n">plan_many_r2c_d</span><span class="p">,</span>
+                     <span class="p">(</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="n">plan_many_c2r_d</span> <span class="p">}</span>
+
+<span class="c1"># To avoid multiple-inheritance, we set up a function that returns much</span>
+<span class="c1"># of the initialization that will need to be handled in __init__ of both</span>
+<span class="c1"># classes.</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fftw_setup</span><span class="p">(</span><span class="n">fftobj</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">fftobj</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">_np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">inembed</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">_np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">onembed</span> <span class="o">=</span> <span class="n">_np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">_np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="n">nthreads</span> <span class="o">=</span> <span class="n">_scheme</span><span class="o">.</span><span class="n">mgr</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">num_threads</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_fftw_threaded_set</span><span class="p">:</span>
+        <span class="n">set_threads_backend</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">nthreads</span> <span class="o">!=</span> <span class="n">_fftw_current_nthreads</span><span class="p">:</span>
+        <span class="n">_fftw_plan_with_nthreads</span><span class="p">(</span><span class="n">nthreads</span><span class="p">)</span>
+    <span class="n">mlvl</span> <span class="o">=</span> <span class="n">get_measure_level</span><span class="p">()</span>
+    <span class="n">aligned</span> <span class="o">=</span> <span class="n">check_aligned</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="ow">and</span> <span class="n">check_aligned</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">get_flag</span><span class="p">(</span><span class="n">mlvl</span><span class="p">,</span> <span class="n">aligned</span><span class="p">)</span>
+    <span class="n">plan_func</span> <span class="o">=</span> <span class="n">_plan_funcs_dict</span><span class="p">[</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span> <span class="p">]</span>
+    <span class="n">tmpin</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="p">),</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">tmpout</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="p">),</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="c1"># C2C</span>
+    <span class="k">if</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span> <span class="ow">and</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;complex&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">forward</span><span class="p">:</span>
+            <span class="n">ffd</span> <span class="o">=</span> <span class="n">FFTW_FORWARD</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ffd</span> <span class="o">=</span> <span class="n">FFTW_BACKWARD</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">plan_func</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">nbatch</span><span class="p">,</span>
+                         <span class="n">tmpin</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">inembed</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">idist</span><span class="p">,</span>
+                         <span class="n">tmpout</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">onembed</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">odist</span><span class="p">,</span>
+                         <span class="n">ffd</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+    <span class="c1"># R2C or C2R (hence no direction argument for plan creation)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="n">plan_func</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">nbatch</span><span class="p">,</span>
+                         <span class="n">tmpin</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">inembed</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">idist</span><span class="p">,</span>
+                         <span class="n">tmpout</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">onembed</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fftobj</span><span class="o">.</span><span class="n">odist</span><span class="p">,</span>
+                         <span class="n">flags</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">tmpin</span>
+    <span class="k">del</span> <span class="n">tmpout</span>
+    <span class="k">return</span> <span class="n">plan</span>
+
+<div class="viewcode-block" id="FFT">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.FFT">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FFT</span><span class="p">(</span><span class="n">_BaseFFT</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FFT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span> <span class="o">=</span> <span class="n">execute_function</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plan</span> <span class="o">=</span> <span class="n">_fftw_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FFT.execute">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.FFT.execute">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optr</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="IFFT">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.IFFT">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IFFT</span><span class="p">(</span><span class="n">_BaseIFFT</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">IFFT</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">invec</span><span class="p">,</span> <span class="n">outvec</span><span class="p">,</span> <span class="n">nbatch</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">ptr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span> <span class="o">=</span> <span class="n">execute_function</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">invec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outvec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plan</span> <span class="o">=</span> <span class="n">_fftw_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IFFT.execute">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.IFFT.execute">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_efunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plan</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iptr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">optr</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="insert_fft_options">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.insert_fft_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_fft_options</span><span class="p">(</span><span class="n">optgroup</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inserts the options that affect the behavior of this backend</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    optgroup: fft_option</span>
+<span class="sd">       OptionParser argument group whose options are extended</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-measure-level&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Determines the measure level used in planning &quot;</span>
+                           <span class="s2">&quot;FFTW FFTs; allowed values are: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]),</span>
+                      <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">_default_measurelvl</span><span class="p">)</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-threads-backend&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Give &#39;openmp&#39;, &#39;pthreads&#39; or &#39;unthreaded&#39; to specify which threaded FFTW to use&quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-input-float-wisdom-file&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Filename from which to read single-precision wisdom&quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-input-double-wisdom-file&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Filename from which to read double-precision wisdom&quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-output-float-wisdom-file&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Filename to which to write single-precision wisdom&quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-output-double-wisdom-file&quot;</span><span class="p">,</span>
+                      <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Filename to which to write double-precision wisdom&quot;</span><span class="p">,</span>
+                      <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">optgroup</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--fftw-import-system-wisdom&quot;</span><span class="p">,</span>
+                          <span class="n">help</span> <span class="o">=</span> <span class="s2">&quot;If given, call fftw[f]_import_system_wisdom()&quot;</span><span class="p">,</span>
+                          <span class="n">action</span> <span class="o">=</span> <span class="s2">&quot;store_true&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="verify_fft_options">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.verify_fft_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_fft_options</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the FFT options and verifies that they are</span>
+<span class="sd">       reasonable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes.</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">fftw_measure_level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> is not a valid FFTW measure level.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">fftw_measure_level</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">fftw_import_system_wisdom</span> <span class="ow">and</span> <span class="p">((</span><span class="n">opt</span><span class="o">.</span><span class="n">fftw_input_float_wisdom_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+                                          <span class="ow">or</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">fftw_input_double_wisdom_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;If --fftw-import-system-wisdom is given, then you cannot give&quot;</span>
+                     <span class="s2">&quot; either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">fftw_threads_backend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">fftw_threads_backend</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;openmp&#39;</span><span class="p">,</span><span class="s1">&#39;pthreads&#39;</span><span class="p">,</span><span class="s1">&#39;unthreaded&#39;</span><span class="p">]:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Invalid threads backend; must be &#39;openmp&#39;, &#39;pthreads&#39; or &#39;unthreaded&#39;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="from_cli">
+<a class="viewcode-back" href="../../../pycbc.fft.html#pycbc.fft.fftw.from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
+    <span class="c1"># Since opt.fftw_threads_backend defaults to None, the following is always</span>
+    <span class="c1"># appropriate:</span>
+    <span class="n">set_threads_backend</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">fftw_threads_backend</span><span class="p">)</span>
+
+    <span class="c1"># Set the user-provided measure level</span>
+    <span class="n">set_measure_level</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">fftw_measure_level</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

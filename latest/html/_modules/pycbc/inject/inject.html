@@ -1,0 +1,1588 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inject.inject &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.inject.inject</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inject.inject</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2012  Alex Nitz, Tito Dal Canton</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;This module provides utilities for injecting signals into data&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">lal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">ligolw_utils</span><span class="p">,</span> <span class="n">ligolw</span><span class="p">,</span> <span class="n">lsctables</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">waveform</span><span class="p">,</span> <span class="n">frame</span><span class="p">,</span> <span class="n">libutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.opt</span><span class="w"> </span><span class="kn">import</span> <span class="n">LimitedSizeDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">get_td_waveform</span><span class="p">,</span> <span class="n">fd_det</span><span class="p">,</span>
+                            <span class="n">get_td_det_waveform_from_fd_det</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span> <span class="k">as</span> <span class="n">wfutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="n">ringdown_td_approximants</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">float64</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">load_timeseries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.detector</span><span class="w"> </span><span class="kn">import</span> <span class="n">Detector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.conversions</span><span class="w"> </span><span class="kn">import</span> <span class="n">tau0_from_mass1_mass2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.filter</span><span class="w"> </span><span class="kn">import</span> <span class="n">resample_to_delta_t</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.io</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGOLWContentHandler</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.inject.inject&#39;</span><span class="p">)</span>
+
+<span class="n">sim</span> <span class="o">=</span> <span class="n">libutils</span><span class="o">.</span><span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lalsimulation&#39;</span><span class="p">)</span>
+
+<span class="n">injection_func_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">float32</span><span class="p">):</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">SimAddInjectionREAL4TimeSeries</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">),</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">float64</span><span class="p">):</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">sim</span><span class="o">.</span><span class="n">SimAddInjectionREAL8TimeSeries</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># Map parameter names used in pycbc to names used in the sim_inspiral</span>
+<span class="c1"># table, if they are different</span>
+<span class="n">sim_inspiral_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;ra&#39;</span><span class="p">:</span> <span class="s1">&#39;longitude&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dec&#39;</span><span class="p">:</span> <span class="s1">&#39;latitude&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;approximant&#39;</span><span class="p">:</span> <span class="s1">&#39;waveform&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="set_sim_data">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.set_sim_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_sim_data</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets data of a SimInspiral instance.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sim_field</span> <span class="o">=</span> <span class="n">sim_inspiral_map</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">sim_field</span> <span class="o">=</span> <span class="n">field</span>
+    <span class="c1"># for tc, map to geocentric times</span>
+    <span class="k">if</span> <span class="n">sim_field</span> <span class="o">==</span> <span class="s1">&#39;tc&#39;</span><span class="p">:</span>
+        <span class="n">inj</span><span class="o">.</span><span class="n">geocent_end_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">inj</span><span class="o">.</span><span class="n">geocent_end_time_ns</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e9</span><span class="o">*</span><span class="p">(</span><span class="n">data</span> <span class="o">%</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="c1"># for spin1 and spin2 we need data to be an array</span>
+    <span class="k">if</span> <span class="n">sim_field</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;spin1&#39;</span><span class="p">,</span> <span class="s1">&#39;spin2&#39;</span><span class="p">]:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">sim_field</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">sim_field</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="projector">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.projector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">projector</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Use the injection row to project the polarizations into the</span>
+<span class="sd">    detector frame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">detector</span> <span class="o">=</span> <span class="n">Detector</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span>
+
+    <span class="n">hp</span> <span class="o">/=</span> <span class="n">distance_scale</span>
+    <span class="n">hc</span> <span class="o">/=</span> <span class="n">distance_scale</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">tc</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">ra</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">dec</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">time_geocent</span>
+        <span class="n">ra</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">longitude</span>
+        <span class="n">dec</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">latitude</span>
+
+    <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">tc</span>
+    <span class="n">hc</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">tc</span>
+
+    <span class="c1"># taper the polarizations</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">hp_tapered</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">taper</span><span class="p">,</span> 
+                                         <span class="n">tapermethod</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                         <span class="n">taper_window</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+        <span class="n">hc_tapered</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">taper</span><span class="p">,</span> 
+                                         <span class="n">tapermethod</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                         <span class="n">taper_window</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">hp_tapered</span> <span class="o">=</span> <span class="n">hp</span>
+        <span class="n">hc_tapered</span> <span class="o">=</span> <span class="n">hc</span>
+
+    <span class="n">projection_method</span> <span class="o">=</span> <span class="s1">&#39;lal&#39;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="s1">&#39;detector_projection_method&#39;</span><span class="p">):</span>
+        <span class="n">projection_method</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">detector_projection_method</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Injecting at </span><span class="si">%s</span><span class="s1">, method is </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">projection_method</span><span class="p">)</span>
+
+    <span class="c1"># compute the detector response and add it to the strain</span>
+    <span class="n">signal</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">project_wave</span><span class="p">(</span><span class="n">hp_tapered</span><span class="p">,</span> <span class="n">hc_tapered</span><span class="p">,</span>
+                                   <span class="n">ra</span><span class="p">,</span> <span class="n">dec</span><span class="p">,</span> <span class="n">inj</span><span class="o">.</span><span class="n">polarization</span><span class="p">,</span>
+                                   <span class="n">method</span><span class="o">=</span><span class="n">projection_method</span><span class="p">,</span>
+                                   <span class="n">reference_time</span><span class="o">=</span><span class="n">tc</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">signal</span></div>
+
+
+<div class="viewcode-block" id="legacy_approximant_name">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.legacy_approximant_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">legacy_approximant_name</span><span class="p">(</span><span class="n">apx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert the old style xml approximant name to a name</span>
+<span class="sd">    and phase_order. Alex: I hate this function. Please delete this when we</span>
+<span class="sd">    use Collin&#39;s new tables.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">apx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">apx</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">GetOrderFromString</span><span class="p">(</span><span class="n">apx</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Could not read phase order from string, using default&quot;</span><span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">GetStringFromApproximant</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">GetApproximantFromString</span><span class="p">(</span><span class="n">apx</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">order</span></div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_XMLInjectionSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages sets of injections: reads injections from LIGOLW XML files</span>
+<span class="sd">    and injects them into time series.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_file : string</span>
+<span class="sd">        Path to a LIGOLW XML file containing a SimInspiralTable</span>
+<span class="sd">        with injection definitions.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    indoc</span>
+<span class="sd">    table</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indoc</span> <span class="o">=</span> <span class="n">ligolw_utils</span><span class="o">.</span><span class="n">load_filename</span><span class="p">(</span>
+            <span class="n">sim_file</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">contenthandler</span><span class="o">=</span><span class="n">LIGOLWContentHandler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SimInspiralTable</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indoc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span> <span class="o">=</span> <span class="n">kwds</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">strain</span><span class="p">,</span>
+        <span class="n">detector_name</span><span class="p">,</span>
+        <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">simulation_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">inj_filter_rejector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">injection_sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">generate_injections</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add injections (as seen by a particular detector) to a time series.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : TimeSeries</span>
+<span class="sd">            Time series to inject signals into, of type float32 or float64.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        f_lower : {None, float}, optional</span>
+<span class="sd">            Low-frequency cutoff for injected signals. If None, use value</span>
+<span class="sd">            provided by each injection.</span>
+<span class="sd">        distance_scale: {1, float}, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default is</span>
+<span class="sd">            no scaling.</span>
+<span class="sd">        simulation_ids: iterable, optional</span>
+<span class="sd">            If given, only inject signals with the given simulation IDs.</span>
+<span class="sd">        inj_filter_rejector: InjFilterRejector instance; optional, default=None</span>
+<span class="sd">            If given send each injected waveform to the InjFilterRejector</span>
+<span class="sd">            instance so that it can store a reduced representation of that</span>
+<span class="sd">            injection if necessary.</span>
+<span class="sd">        injection_sample_rate: float, optional</span>
+<span class="sd">            The sample rate to generate the signal before injection</span>
+<span class="sd">        generate_injections: boolean, optional (default=True)</span>
+<span class="sd">            If this is False, injections will not be added to the data. This</span>
+<span class="sd">            can be used if your data already contains injections, or if you</span>
+<span class="sd">            are separately providing injection strain to add to the data, and</span>
+<span class="sd">            you still want to know injection times to make use of injection</span>
+<span class="sd">            optimizations (mostly through the InjFilterRejector).</span>
+<span class="sd">            Not implemented for XML injections.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid types of `strain`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">generate_injections</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;XML injections do not support the generate_injections &quot;</span>
+                <span class="s2">&quot;key-word argument.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">strain</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">float32</span><span class="p">,</span> <span class="n">float64</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Strain dtype must be float32 or float64, not &quot;</span> \
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+        <span class="n">lalstrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+        <span class="n">earth_travel_time</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">REARTH_SI</span> <span class="o">/</span> <span class="n">lal</span><span class="o">.</span><span class="n">C_SI</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">-</span> <span class="n">earth_travel_time</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span> <span class="o">+</span> <span class="n">earth_travel_time</span>
+
+        <span class="c1"># pick lalsimulation injection function</span>
+        <span class="n">add_injection</span> <span class="o">=</span> <span class="n">injection_func_map</span><span class="p">[</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span>
+
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span>
+        <span class="k">if</span> <span class="n">injection_sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">injection_sample_rate</span>
+
+        <span class="n">injections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span>
+        <span class="k">if</span> <span class="n">simulation_ids</span><span class="p">:</span>
+            <span class="n">injections</span> <span class="o">=</span> <span class="p">[</span><span class="n">inj</span> <span class="k">for</span> <span class="n">inj</span> <span class="ow">in</span> <span class="n">injections</span> \
+                          <span class="k">if</span> <span class="n">inj</span><span class="o">.</span><span class="n">simulation_id</span> <span class="ow">in</span> <span class="n">simulation_ids</span><span class="p">]</span>
+        <span class="n">injection_parameters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">inj</span> <span class="ow">in</span> <span class="n">injections</span><span class="p">:</span>
+            <span class="n">f_l</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">f_lower</span> <span class="k">if</span> <span class="n">f_lower</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">f_lower</span>
+            <span class="c1"># roughly estimate if the injection may overlap with the segment</span>
+            <span class="c1"># Add 2s to end_time to account for ringdown and light-travel delay</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">time_geocent</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="n">inj_length</span> <span class="o">=</span> <span class="n">tau0_from_mass1_mass2</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">inj</span><span class="o">.</span><span class="n">mass2</span><span class="p">,</span> <span class="n">f_l</span><span class="p">)</span>
+            <span class="c1"># Start time is taken as twice approx waveform length with a 1s</span>
+            <span class="c1"># safety buffer</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">time_geocent</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">inj_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">end_time</span> <span class="o">&lt;</span> <span class="n">t0</span> <span class="ow">or</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">t1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_strain_from_inj_object</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span>
+                    <span class="n">detector_name</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="n">f_l</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">)</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">resample_to_delta_t</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;ldas&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">t1</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">signal_lal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+            <span class="n">add_injection</span><span class="p">(</span><span class="n">lalstrain</span><span class="p">,</span> <span class="n">signal_lal</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">injection_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inj</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sid</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">simulation_id</span>
+                <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">generate_short_inj_from_inj</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">sid</span><span class="p">)</span>
+
+        <span class="n">strain</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">lalstrain</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span>
+
+        <span class="n">injected</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">injected</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SimInspiralTable</span><span class="p">()</span>
+        <span class="n">injected</span><span class="o">.</span><span class="n">table</span> <span class="o">+=</span> <span class="n">injection_parameters</span>
+        <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">injection_params</span> <span class="o">=</span> <span class="n">injected</span>
+        <span class="k">return</span> <span class="n">injected</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_strain_from_inj_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                                    <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a h(t) strain time-series from an injection object as read from</span>
+<span class="sd">        a sim_inspiral table, for example.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        inj : injection object</span>
+<span class="sd">            The injection object to turn into a strain h(t).</span>
+<span class="sd">        delta_t : float</span>
+<span class="sd">            Sample rate to make injection at.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        f_lower : {None, float}, optional</span>
+<span class="sd">            Low-frequency cutoff for injected signals. If None, use value</span>
+<span class="sd">            provided by each injection.</span>
+<span class="sd">        distance_scale: {1, float}, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default is</span>
+<span class="sd">            no scaling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        signal : float</span>
+<span class="sd">            h(t) corresponding to the injection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">f_l</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">f_lower</span> <span class="k">if</span> <span class="n">f_lower</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">f_lower</span>
+
+        <span class="n">name</span><span class="p">,</span> <span class="n">phase_order</span> <span class="o">=</span> <span class="n">legacy_approximant_name</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">waveform</span><span class="p">)</span>
+
+        <span class="c1"># compute the waveform time series</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span>
+            <span class="n">inj</span><span class="p">,</span> <span class="n">approximant</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span>
+            <span class="n">phase_order</span><span class="o">=</span><span class="n">phase_order</span><span class="p">,</span>
+            <span class="n">f_lower</span><span class="o">=</span><span class="n">f_l</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">distance</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">projector</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span>
+                         <span class="n">inj</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the end times of all injections&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">inj</span><span class="o">.</span><span class="n">time_geocent</span> <span class="k">for</span> <span class="n">inj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">write_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the injection samples to the given xml.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The name of the file to write to.</span>
+<span class="sd">        samples : io.FieldArray</span>
+<span class="sd">            FieldArray of parameters.</span>
+<span class="sd">        write_params : list, optional</span>
+<span class="sd">            Only write the given parameter names. All given names must be keys</span>
+<span class="sd">            in ``samples``. Default is to write all parameters in ``samples``.</span>
+<span class="sd">        static_args : dict, optional</span>
+<span class="sd">            Dictionary mapping static parameter names to values. These are</span>
+<span class="sd">            written to the ``attrs``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xmldoc</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Document</span><span class="p">()</span>
+        <span class="n">xmldoc</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">LIGO_LW</span><span class="p">())</span>
+        <span class="n">simtable</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SimInspiralTable</span><span class="o">.</span><span class="n">new</span><span class="p">()</span>
+        <span class="n">xmldoc</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">simtable</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">static_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">static_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">write_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">write_params</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">fieldnames</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">sim</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SimInspiral</span><span class="p">()</span>
+            <span class="c1"># initialize all elements to None</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="vm">__slots__</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">write_params</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">ii</span><span class="p">][</span><span class="n">field</span><span class="p">]</span>
+                <span class="n">set_sim_data</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="c1"># set any static args</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">static_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">set_sim_data</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">simtable</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
+        <span class="n">ligolw_utils</span><span class="o">.</span><span class="n">write_filename</span><span class="p">(</span><span class="n">xmldoc</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_HDFInjectionSet</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Manages sets of injections: reads injections from hdf files</span>
+<span class="sd">    and injects them into time series.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_file : string</span>
+<span class="sd">        Path to an hdf file containing injections.</span>
+<span class="sd">    \**kwds :</span>
+<span class="sd">        The rest of the keyword arguments are passed to the waveform generation</span>
+<span class="sd">        function when generating injections.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    table</span>
+<span class="sd">    static_args</span>
+<span class="sd">    extra_args</span>
+<span class="sd">    required_params : tuple</span>
+<span class="sd">        Parameter names that must exist in the injection HDF file in order to</span>
+<span class="sd">        create an injection of that type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_tableclass</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">FieldArray</span>
+    <span class="n">injtype</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">required_params</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_file</span><span class="p">,</span> <span class="n">hdf_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="c1"># open the file</span>
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">HFile</span><span class="p">(</span><span class="n">sim_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">fp</span> <span class="k">if</span> <span class="n">hdf_group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fp</span><span class="p">[</span><span class="n">hdf_group</span><span class="p">]</span>
+        <span class="c1"># get parameters</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># get all injection parameter values</span>
+        <span class="n">injvals</span> <span class="o">=</span> <span class="p">{</span><span class="n">param</span><span class="p">:</span> <span class="n">group</span><span class="p">[</span><span class="n">param</span><span class="p">][()]</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">}</span>
+        <span class="c1"># make sure Numpy S strings are loaded as strings and not bytestrings</span>
+        <span class="c1"># (which could mess with approximant names, for example)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">injvals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">injvals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                <span class="n">injvals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">injvals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+        <span class="c1"># if there were no variable args, then we only have a single injection</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">numinj</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">numinj</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">injvals</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+        <span class="c1"># add any static args in the file</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># ensure parameter names are string types</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">static_args</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;static_args&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">static_args</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">static_args</span><span class="p">)</span>
+        <span class="c1"># we&#39;ll expand the static args to be arrays with the same size as</span>
+        <span class="c1"># the other values</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_args</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+            <span class="c1"># if val is a list or numpy array, we need to store it as an</span>
+            <span class="c1"># object; otherwise, we&#39;ll get a shape mismatch between fields</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">numinj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numinj</span><span class="p">):</span>
+                    <span class="n">arr</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># otherwise, we can just repeat the value the needed number of</span>
+                <span class="c1"># times</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">numinj</span><span class="p">)</span>
+            <span class="c1"># make sure any byte strings are stored as strings instead</span>
+            <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">char</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+            <span class="n">injvals</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
+        <span class="c1"># make sure required parameters are provided</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">required_params</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">injvals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;required parameter(s) </span><span class="si">{}</span><span class="s2"> not found in the given &quot;</span>
+                             <span class="s2">&quot;injection file&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)))</span>
+        <span class="c1"># initialize the table</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tableclass</span><span class="o">.</span><span class="n">from_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">injvals</span><span class="p">)</span>
+        <span class="c1"># save the extra arguments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span> <span class="o">=</span> <span class="n">kwds</span>
+        <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+              <span class="n">simulation_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inj_filter_rejector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds injections to a detector&#39;s time series.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_strain_from_inj_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                                    <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a h(t) strain time-series from an injection object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the end times of all injections&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">supported_approximants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of the supported approximants.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">write_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="o">**</span><span class="n">metadata</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Writes the injection samples to the given hdf file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The name of the file to write to.</span>
+<span class="sd">        samples : io.FieldArray</span>
+<span class="sd">            FieldArray of parameters.</span>
+<span class="sd">        write_params : list, optional</span>
+<span class="sd">            Only write the given parameter names. All given names must be keys</span>
+<span class="sd">            in ``samples``. Default is to write all parameters in ``samples``.</span>
+<span class="sd">        static_args : dict, optional</span>
+<span class="sd">            Dictionary mapping static parameter names to values. These are</span>
+<span class="sd">            written to the ``attrs``.</span>
+<span class="sd">        \**metadata :</span>
+<span class="sd">            All other keyword arguments will be written to the file&#39;s attrs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">HFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="c1"># write metadata</span>
+            <span class="k">if</span> <span class="n">static_args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">static_args</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;static_args&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">static_args</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;injtype&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">injtype</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">if</span> <span class="n">write_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">write_params</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">fieldnames</span>
+            <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">static_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+                <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="c1"># can get this in python 3 if the val was numpy.str_ type</span>
+                    <span class="c1"># try decoding it and writing</span>
+                    <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">write_params</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">fp</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="c1"># can get this in python 3 if the val was a numpy.str_ type</span>
+                    <span class="c1"># we&#39;ll try again as a string type</span>
+                    <span class="k">if</span> <span class="n">samples</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">char</span> <span class="o">==</span> <span class="s1">&#39;U&#39;</span><span class="p">:</span>
+                        <span class="n">fp</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;S&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">e</span>
+
+
+<div class="viewcode-block" id="CBCHDFInjectionSet">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CBCHDFInjectionSet</span><span class="p">(</span><span class="n">_HDFInjectionSet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages CBC injections.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_tableclass</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">WaveformArray</span>
+    <span class="n">injtype</span> <span class="o">=</span> <span class="s1">&#39;cbc&#39;</span>
+    <span class="n">required_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;tc&#39;</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="CBCHDFInjectionSet.apply">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">strain</span><span class="p">,</span>
+        <span class="n">detector_name</span><span class="p">,</span>
+        <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">simulation_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">inj_filter_rejector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">injection_sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">generate_injections</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add injections (as seen by a particular detector) to a time series.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : TimeSeries</span>
+<span class="sd">            Time series to inject signals into, of type float32 or float64.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        f_lower : {None, float}, optional</span>
+<span class="sd">            Low-frequency cutoff for injected signals. If None, use value</span>
+<span class="sd">            provided by each injection.</span>
+<span class="sd">        distance_scale: {1, float}, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default is</span>
+<span class="sd">            no scaling.</span>
+<span class="sd">        simulation_ids: iterable, optional</span>
+<span class="sd">            If given, only inject signals with the given simulation IDs.</span>
+<span class="sd">        inj_filter_rejector: InjFilterRejector instance; optional, default=None</span>
+<span class="sd">            If given send each injected waveform to the InjFilterRejector</span>
+<span class="sd">            instance so that it can store a reduced representation of that</span>
+<span class="sd">            injection if necessary.</span>
+<span class="sd">        injection_sample_rate: float, optional</span>
+<span class="sd">            The sample rate to generate the signal before injection</span>
+<span class="sd">        generate_injections: boolean, optional (default=True)</span>
+<span class="sd">            If this is False, injections will not be added to the data. This</span>
+<span class="sd">            can be used if your data already contains injections, or if you</span>
+<span class="sd">            are separately providing injection strain to add to the data, and</span>
+<span class="sd">            you still want to know injection times to make use of injection</span>
+<span class="sd">            optimizations (mostly through the InjFilterRejector).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid types of `strain`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># There is a case where injections are not added to the data, but</span>
+        <span class="c1"># still need to be generated for the match threshold option in the</span>
+        <span class="c1"># InjFilterRejector. User needs to be careful with this though!</span>
+        <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">match_threshold</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">generate_injections</span><span class="p">:</span>
+                <span class="n">warn_msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;You have asked to use the match threshold option in &quot;</span>
+                    <span class="s2">&quot;InjFilterRejector, but injections are not being &quot;</span>
+                    <span class="s2">&quot;directly added from the supplied injection file. &quot;</span>
+                    <span class="s2">&quot;Be very sure that the injection file exactly matches &quot;</span>
+                    <span class="s2">&quot;how the injections were pregenerated!&quot;</span>
+                <span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+        <span class="n">must_make_injections</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">generate_injections</span> <span class="ow">or</span> <span class="p">(</span>
+               <span class="n">inj_filter_rejector</span> <span class="ow">and</span> <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">match_threshold</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">strain</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">float32</span><span class="p">,</span> <span class="n">float64</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Strain dtype must be float32 or float64, not &quot;</span> \
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fd_det</span><span class="p">:</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">earth_travel_time</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">REARTH_SI</span> <span class="o">/</span> <span class="n">lal</span><span class="o">.</span><span class="n">C_SI</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">-</span> <span class="n">earth_travel_time</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span> <span class="o">+</span> <span class="n">earth_travel_time</span>
+
+
+        <span class="k">if</span> <span class="n">generate_injections</span><span class="p">:</span>
+            <span class="n">lalstrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+
+            <span class="c1"># pick lalsimulation injection function</span>
+            <span class="n">add_injection</span> <span class="o">=</span> <span class="n">injection_func_map</span><span class="p">[</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span>
+
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span>
+        <span class="k">if</span> <span class="n">injection_sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">injection_sample_rate</span>
+
+        <span class="n">injections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span>
+        <span class="k">if</span> <span class="n">simulation_ids</span><span class="p">:</span>
+            <span class="n">injections</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">simulation_ids</span><span class="p">)]</span>
+
+        <span class="n">injected_ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">inj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">injections</span><span class="p">):</span>
+            <span class="n">f_l</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">f_lower</span> <span class="k">if</span> <span class="n">f_lower</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">f_lower</span>
+            <span class="c1"># roughly estimate if the injection may overlap with the segment</span>
+            <span class="c1"># Add 2s to end_time to account for ringdown and light-travel delay</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">tc</span> <span class="o">+</span> <span class="mi">2</span>
+            <span class="n">inj_length</span> <span class="o">=</span> <span class="n">tau0_from_mass1_mass2</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">mass1</span><span class="p">,</span> <span class="n">inj</span><span class="o">.</span><span class="n">mass2</span><span class="p">,</span> <span class="n">f_l</span><span class="p">)</span>
+            <span class="c1"># Start time is taken as twice approx waveform length with a 1s</span>
+            <span class="c1"># safety buffer</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">tc</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">inj_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">end_time</span> <span class="o">&lt;</span> <span class="n">t0</span> <span class="ow">or</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">t1</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">must_make_injections</span><span class="p">:</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_strain_from_inj_object</span><span class="p">(</span>
+                    <span class="n">inj</span><span class="p">,</span>
+                    <span class="n">delta_t</span><span class="p">,</span>
+                    <span class="n">detector_name</span><span class="p">,</span>
+                    <span class="n">f_lower</span><span class="o">=</span><span class="n">f_l</span><span class="p">,</span>
+                    <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">resample_to_delta_t</span><span class="p">(</span>
+                    <span class="n">signal</span><span class="p">,</span>
+                    <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span>
+                    <span class="n">method</span><span class="o">=</span><span class="s1">&#39;ldas&#39;</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">t1</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                <span class="n">injected_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                   <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">generate_short_inj_from_inj</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">ii</span><span class="p">)</span>
+
+
+            <span class="k">if</span> <span class="n">generate_injections</span><span class="p">:</span>
+                <span class="n">signal_lal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+                <span class="n">add_injection</span><span class="p">(</span><span class="n">lalstrain</span><span class="p">,</span> <span class="n">signal_lal</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">generate_injections</span><span class="p">:</span>
+            <span class="n">strain</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">lalstrain</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span>
+
+        <span class="n">injected</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">injected</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">injected_ids</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">inj_filter_rejector</span><span class="p">,</span> <span class="s1">&#39;injected&#39;</span><span class="p">):</span>
+                <span class="n">prev_p</span> <span class="o">=</span> <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">injection_params</span>
+                <span class="n">prev_id</span> <span class="o">=</span> <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">injection_ids</span>
+                <span class="n">injected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">prev_p</span><span class="p">,</span> <span class="n">injected</span><span class="p">])</span>
+                <span class="n">injected_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">prev_id</span><span class="p">,</span> <span class="n">injected_ids</span><span class="p">])</span>
+
+            <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">injection_params</span> <span class="o">=</span> <span class="n">injected</span>
+            <span class="n">inj_filter_rejector</span><span class="o">.</span><span class="n">injection_ids</span> <span class="o">=</span> <span class="n">injected_ids</span>
+        <span class="k">return</span> <span class="n">injected</span></div>
+
+
+<div class="viewcode-block" id="CBCHDFInjectionSet.make_strain_from_inj_object">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet.make_strain_from_inj_object">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_strain_from_inj_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                                    <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a h(t) strain time-series from an injection object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        inj : injection object</span>
+<span class="sd">            The injection object to turn into a strain h(t). Can be any</span>
+<span class="sd">            object which has waveform parameters as attributes, such as an</span>
+<span class="sd">            element in a ``WaveformArray``.</span>
+<span class="sd">        delta_t : float</span>
+<span class="sd">            Sample rate to make injection at.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        f_lower : {None, float}, optional</span>
+<span class="sd">            Low-frequency cutoff for injected signals. If None, use value</span>
+<span class="sd">            provided by each injection.</span>
+<span class="sd">        distance_scale: {1, float}, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default is</span>
+<span class="sd">            no scaling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        signal : float</span>
+<span class="sd">            h(t) corresponding to the injection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">f_lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f_l</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">f_lower</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f_l</span> <span class="o">=</span> <span class="n">f_lower</span>
+
+        <span class="k">if</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">fd_det</span><span class="p">:</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="n">get_td_det_waveform_from_fd_det</span><span class="p">(</span>
+                        <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="n">f_l</span><span class="p">,</span>
+                        <span class="n">ifos</span><span class="o">=</span><span class="n">detector_name</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span><span class="p">)[</span><span class="n">detector_name</span><span class="p">]</span>
+            <span class="n">strain</span> <span class="o">/=</span> <span class="n">distance_scale</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># compute the waveform time series</span>
+            <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">get_td_waveform</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="n">f_l</span><span class="p">,</span>
+                                     <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span><span class="p">)</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="n">projector</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span>
+                               <span class="n">inj</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">strain</span></div>
+
+
+<div class="viewcode-block" id="CBCHDFInjectionSet.end_times">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet.end_times">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the end times of all injections&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">tc</span></div>
+
+
+<div class="viewcode-block" id="CBCHDFInjectionSet.supported_approximants">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet.supported_approximants">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">supported_approximants</span><span class="p">():</span>
+        <span class="n">all_apprxs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[</span><span class="n">waveform</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">td_wav</span><span class="p">,</span> <span class="n">waveform</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">fd_wav</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                <span class="n">all_apprxs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">all_apprxs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">waveform</span><span class="o">.</span><span class="n">fd_det</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">all_apprxs</span><span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RingdownHDFInjectionSet">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RingdownHDFInjectionSet</span><span class="p">(</span><span class="n">_HDFInjectionSet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages a ringdown injection: reads injection from hdf file</span>
+<span class="sd">    and injects it into time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">injtype</span> <span class="o">=</span> <span class="s1">&#39;ringdown&#39;</span>
+    <span class="n">required_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;tc&#39;</span><span class="p">,)</span>
+
+<div class="viewcode-block" id="RingdownHDFInjectionSet.apply">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">strain</span><span class="p">,</span>
+        <span class="n">detector_name</span><span class="p">,</span>
+        <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">simulation_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">inj_filter_rejector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">injection_sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">generate_injections</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add injection (as seen by a particular detector) to a time series.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : TimeSeries</span>
+<span class="sd">            Time series to inject signals into, of type float32 or float64.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        distance_scale: float, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default (=1)</span>
+<span class="sd">            is no scaling.</span>
+<span class="sd">        simulation_ids: iterable, optional</span>
+<span class="sd">            If given, only inject signals with the given simulation IDs.</span>
+<span class="sd">        inj_filter_rejector: InjFilterRejector instance, optional</span>
+<span class="sd">            Not implemented. If not ``None``, a ``NotImplementedError`` will</span>
+<span class="sd">            be raised.</span>
+<span class="sd">        injection_sample_rate: float, optional</span>
+<span class="sd">            The sample rate to generate the signal before injection</span>
+<span class="sd">        generate_injections: boolean, optional (default=True)</span>
+<span class="sd">            If this is False, injections will not be added to the data. This</span>
+<span class="sd">            can be used if your data already contains injections, or if you</span>
+<span class="sd">            are separately providing injection strain to add to the data, and</span>
+<span class="sd">            you still want to know injection times to make use of injection</span>
+<span class="sd">            optimizations (mostly through the InjFilterRejector).</span>
+<span class="sd">            Not yet implemented for Ringdown Injection Files.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        NotImplementedError</span>
+<span class="sd">            If an ``inj_filter_rejector`` is provided.</span>
+<span class="sd">            Or if generate_injections is not True.</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid types of `strain`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Ringdown injections do not support &quot;</span>
+                                      <span class="s2">&quot;inj_filter_rejector&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">generate_injections</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The generate_injections flag is not implemented for Ringdown &quot;</span>
+                <span class="s2">&quot;injections.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">strain</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">float32</span><span class="p">,</span> <span class="n">float64</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Strain dtype must be float32 or float64, not &quot;</span> \
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+        <span class="n">lalstrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+
+        <span class="c1"># pick lalsimulation injection function</span>
+        <span class="n">add_injection</span> <span class="o">=</span> <span class="n">injection_func_map</span><span class="p">[</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span>
+
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span>
+        <span class="k">if</span> <span class="n">injection_sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">injection_sample_rate</span>
+
+        <span class="n">injections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span>
+        <span class="k">if</span> <span class="n">simulation_ids</span><span class="p">:</span>
+            <span class="n">injections</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">simulation_ids</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">injections</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">injection</span> <span class="o">=</span> <span class="n">injections</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_strain_from_inj_object</span><span class="p">(</span>
+                <span class="n">injection</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">)</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">resample_to_delta_t</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;ldas&#39;</span><span class="p">)</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">signal_lal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+            <span class="n">add_injection</span><span class="p">(</span><span class="n">lalstrain</span><span class="p">,</span> <span class="n">signal_lal</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="n">strain</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">lalstrain</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span></div>
+
+
+<div class="viewcode-block" id="RingdownHDFInjectionSet.make_strain_from_inj_object">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet.make_strain_from_inj_object">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_strain_from_inj_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                                    <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a h(t) strain time-series from an injection object as read from</span>
+<span class="sd">        an hdf file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        inj : injection object</span>
+<span class="sd">            The injection object to turn into a strain h(t).</span>
+<span class="sd">        delta_t : float</span>
+<span class="sd">            Sample rate to make injection at.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        distance_scale: float, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default (=1)</span>
+<span class="sd">            is no scaling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        signal : float</span>
+<span class="sd">            h(t) corresponding to the injection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># compute the waveform time series</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">ringdown_td_approximants</span><span class="p">[</span><span class="n">inj</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]](</span>
+            <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">delta_t</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">projector</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span>
+                         <span class="n">inj</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RingdownHDFInjectionSet.end_times">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet.end_times">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the approximate end times of all injections.</span>
+
+<span class="sd">        Currently, this just assumes all ringdowns are 2 seconds long.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># the start times are the tcs</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="o">.</span><span class="n">tc</span>
+        <span class="c1"># FIXME: this could be figured out using the ringdown module</span>
+        <span class="k">return</span> <span class="n">tcs</span> <span class="o">+</span> <span class="mi">2</span></div>
+
+
+<div class="viewcode-block" id="RingdownHDFInjectionSet.supported_approximants">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet.supported_approximants">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">supported_approximants</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">ringdown_td_approximants</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IncoherentFromFileHDFInjectionSet</span><span class="p">(</span><span class="n">_HDFInjectionSet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages injecting an arbitrary time series loaded from a file.</span>
+
+<span class="sd">    The injections must have the following attributes set:</span>
+
+<span class="sd">    * ``filename``: (str) the name of the file to load containing the time</span>
+<span class="sd">      series. The file type and format can be a frame file or anything</span>
+<span class="sd">      understood by :py:func:`pycbc.types.timeseries.load_timeseries`. If a</span>
+<span class="sd">      frame file (ends in ``.gwf``) is specified, a ``channel`` attribute must</span>
+<span class="sd">      also be set.</span>
+
+<span class="sd">    * ``DETECTOR_gps_time``: (float) The GPS time at which the time series</span>
+<span class="sd">      should be added to the ``DETECTOR`` data, where ``DETECTOR`` is the name</span>
+<span class="sd">      of the instrument to inject into (e.g., ``h1_gps_time``). **The time</span>
+<span class="sd">      series will only be injected into a detector if a GPS time is given for</span>
+<span class="sd">      that detector.** Set to -inf, nan, or do not provide a GPS time for a</span>
+<span class="sd">      particular detector if you do not want to inject into that detector.</span>
+
+<span class="sd">    * ``ref_point``: (str or float) What to use as the reference time of the</span>
+<span class="sd">      injected time series. The time series will be injected into the detector</span>
+<span class="sd">      such that the ``ref_point`` in the time series occurs at the specifed</span>
+<span class="sd">      ``DETECTOR_gps_time``. Options are: ``&#39;start&#39;``, ``&#39;end&#39;``, ``&#39;center&#39;``,</span>
+<span class="sd">      ``&#39;absmax&#39;``, or a float giving the number of seconds into the time</span>
+<span class="sd">      series.</span>
+
+<span class="sd">    In addition, the following attributes may optionally be provided:</span>
+
+<span class="sd">    * ``channel``: (str): If the filename points to a frame file, the channel</span>
+<span class="sd">      to load in that file. Must be provided for frame files.</span>
+
+<span class="sd">    * ``DETECTOR_phase_shift``: (float) Apply a phase shift to the time series</span>
+<span class="sd">      before adding it to detector ``DETECTOR``.</span>
+
+<span class="sd">    * ``DETECTOR_amp_scale``: (float) Scale the amplitude by the given amount</span>
+<span class="sd">      before adding it to detector ``DETECTOR``.</span>
+
+<span class="sd">    * ``slice_start``: (float) Slice the time series starting at</span>
+<span class="sd">      ``ref_point + slice_start`` before injecting into the data. Measured in</span>
+<span class="sd">      seconds.</span>
+
+<span class="sd">    * ``slice_end``: (float) Slice the time series ending at</span>
+<span class="sd">      ``ref_point + slice_end`` before injecting into the data. Measured in</span>
+<span class="sd">      seconds.</span>
+
+<span class="sd">    * ``left_taper_width``: (float) Taper the start of the time series (after</span>
+<span class="sd">      slicing) using half a kaiser window over the given number of seconds.</span>
+<span class="sd">      See `:py:func:waveform.utils.td_taper` for more details.</span>
+
+<span class="sd">    * ``right_taper_width``: (float) Taper the end of the time series (after</span>
+<span class="sd">      slicing) using half a kaiser window over the given number of seconds.</span>
+<span class="sd">      See `:py:func:waveform.utils.td_taper` for more details.</span>
+
+<span class="sd">    The signal will be resampled to the same sample rate as the data it is</span>
+<span class="sd">    being injected into.</span>
+
+<span class="sd">    In order to use with ``pycbc_create_injections``, set the ``approximant``</span>
+<span class="sd">    name to ``&#39;incoherent_from_file&#39;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">injtype</span> <span class="o">=</span> <span class="s1">&#39;incoherent_from_file&#39;</span>
+    <span class="n">required_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">,</span> <span class="s1">&#39;ref_point&#39;</span><span class="p">)</span>
+    <span class="n">_buffersize</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">_buffer</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_rtbuffer</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.end_times">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.end_times">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;IncoherentFromFile times cannot be &quot;</span>
+                                  <span class="s2">&quot;determined without loading time series&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.supported_approximants">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.supported_approximants">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">supported_approximants</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;incoherent_from_file&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.loadts">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.loadts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loadts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads an injection time series.</span>
+
+<span class="sd">        After the first time a time series is loaded it will be added to an</span>
+<span class="sd">        internal buffer for faster in case another injection uses the same</span>
+<span class="sd">        series.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># create the buffer</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">LimitedSizeDict</span><span class="p">(</span><span class="n">size_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffersize</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">[</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="c1"># not in buffer, so load</span>
+        <span class="k">if</span> <span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.gwf&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">channel</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">channel</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">_err</span><span class="p">:</span>
+                <span class="c1"># Py3.XX: uncomment the &quot;from _err&quot; when we drop 2.7</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a channel for &quot;</span>
+                                 <span class="s2">&quot;frame files&quot;</span><span class="p">)</span> <span class="c1">#from _err</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">read_frame</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">load_timeseries</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">[</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span>
+        <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.set_ref_time">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.set_ref_time">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_ref_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">ts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets t=0 of the given time series based on what the given</span>
+<span class="sd">        injection&#39;s ``ref_point`` is.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ref_point</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">ref_point</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">_err</span><span class="p">:</span>
+            <span class="c1"># Py3.XX: uncomment the &quot;from _err&quot; when we drop 2.7</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must provide a ref_point for </span><span class="si">{}</span><span class="s2"> injections&quot;</span>
+                             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injtype</span><span class="p">))</span>  <span class="c1">#from _err</span>
+        <span class="c1"># try to get from buffer</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rtbuffer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rtbuffer</span> <span class="o">=</span> <span class="n">LimitedSizeDict</span><span class="p">(</span><span class="n">size_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffersize</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">reftime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rtbuffer</span><span class="p">[</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">ref_point</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ref_point</span> <span class="o">==</span> <span class="s2">&quot;start&quot;</span><span class="p">:</span>
+                <span class="n">reftime</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="k">elif</span> <span class="n">ref_point</span> <span class="o">==</span> <span class="s2">&quot;end&quot;</span><span class="p">:</span>
+                <span class="n">reftime</span> <span class="o">=</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="o">*</span><span class="n">ts</span><span class="o">.</span><span class="n">delta_t</span>
+            <span class="k">elif</span> <span class="n">ref_point</span> <span class="o">==</span> <span class="s2">&quot;center&quot;</span><span class="p">:</span>
+                <span class="n">reftime</span> <span class="o">=</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="o">*</span><span class="n">ts</span><span class="o">.</span><span class="n">delta_t</span><span class="o">/</span><span class="mf">2.</span>
+            <span class="k">elif</span> <span class="n">ref_point</span> <span class="o">==</span> <span class="s2">&quot;absmax&quot;</span><span class="p">:</span>
+                <span class="n">reftime</span> <span class="o">=</span> <span class="o">-</span><span class="n">ts</span><span class="o">.</span><span class="n">abs_arg_max</span><span class="p">()</span><span class="o">*</span><span class="n">ts</span><span class="o">.</span><span class="n">delta_t</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref_point</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+                <span class="n">reftime</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="n">ref_point</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognized ref_point </span><span class="si">{}</span><span class="s2"> provided&quot;</span>
+                                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ref_point</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rtbuffer</span><span class="p">[</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">ref_point</span><span class="p">]</span> <span class="o">=</span> <span class="n">reftime</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">=</span> <span class="n">reftime</span></div>
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.slice_and_taper">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.slice_and_taper">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">slice_and_taper</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">ts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Slices and tapers a timeseries based on the injection settings.</span>
+
+<span class="sd">        This assumes that ``set_ref_time`` has been applied to the timeseries</span>
+<span class="sd">        first. A copy of the time series will be returned even if no slicing</span>
+<span class="sd">        or tapering is done.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tstart</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">slice_start</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">tstart</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">start_time</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tend</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">slice_end</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">tend</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">end_time</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">tstart</span><span class="p">,</span> <span class="n">tend</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># now taper</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">twidth</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">left_taper_width</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">twidth</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">twidth</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">wfutils</span><span class="o">.</span><span class="n">td_taper</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">start_time</span><span class="o">+</span><span class="n">twidth</span><span class="p">,</span>
+                                  <span class="n">side</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">twidth</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">right_taper_width</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">twidth</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">twidth</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">wfutils</span><span class="o">.</span><span class="n">td_taper</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">end_time</span><span class="o">-</span><span class="n">twidth</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">end_time</span><span class="p">,</span>
+                                  <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.apply">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">strain</span><span class="p">,</span>
+        <span class="n">detector_name</span><span class="p">,</span>
+        <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">injection_sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">inj_filter_rejector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">generate_injections</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">inj_filter_rejector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;IncoherentFromFile injections do not &quot;</span>
+                                      <span class="s2">&quot;support inj_filter_rejector&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">generate_injections</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;IncoherentFromFile injections do not support the &quot;</span>
+                <span class="s2">&quot;generate_injections key-word argument.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">injection_sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">injection_sample_rate</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">delta_t</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span>
+        <span class="n">injections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span>
+        <span class="k">for</span> <span class="n">inj</span> <span class="ow">in</span> <span class="n">injections</span><span class="p">:</span>
+            <span class="c1"># Check if we should inject or not...</span>
+            <span class="c1"># loading the time series like this is a bit brute-force, since</span>
+            <span class="c1"># we really only need to know the delta_t and length of the</span>
+            <span class="c1"># timeseries if the ref_point is anything but absmax, but that</span>
+            <span class="c1"># would require adding logic to figure out how to get that metadata</span>
+            <span class="c1"># based on the filetype and ref_point</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loadts</span><span class="p">(</span><span class="n">inj</span><span class="p">)</span>
+            <span class="c1"># set the ref time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_ref_time</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span>
+            <span class="c1"># determine if we inject or not based on the times</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">injtime</span> <span class="o">=</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_gps_time&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">injtime</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">injtime</span><span class="p">):</span>
+                <span class="c1"># nan means don&#39;t inject</span>
+                <span class="n">injtime</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">injtime</span> <span class="o">+</span> <span class="n">ts</span><span class="o">.</span><span class="n">start_time</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">injtime</span> <span class="o">+</span> <span class="n">ts</span><span class="o">.</span><span class="n">end_time</span>
+            <span class="n">inject</span> <span class="o">=</span> <span class="p">(</span><span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">strain</span><span class="o">.</span><span class="n">end_time</span> <span class="ow">and</span>
+                      <span class="n">end_time</span> <span class="o">&gt;</span> <span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">inject</span><span class="p">:</span>
+                <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_strain_from_inj_object</span><span class="p">(</span>
+                    <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                    <span class="n">distance_scale</span><span class="o">=</span><span class="n">distance_scale</span><span class="p">,</span> <span class="n">ts</span><span class="o">=</span><span class="n">ts</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ts</span><span class="o">.</span><span class="n">delta_t</span> <span class="o">!=</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span><span class="p">:</span>
+                    <span class="n">ts</span> <span class="o">=</span> <span class="n">resample_to_delta_t</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;ldas&#39;</span><span class="p">)</span>
+                <span class="n">strain</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IncoherentFromFileHDFInjectionSet.make_strain_from_inj_object">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.make_strain_from_inj_object">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_strain_from_inj_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inj</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span>
+                                    <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">load_timeseries</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_ref_time</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span>
+        <span class="c1"># slice and taper</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slice_and_taper</span><span class="p">(</span><span class="n">inj</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span>
+        <span class="c1"># shift reference to the detector time</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">+=</span> <span class="n">inj</span><span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_gps_time&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="c1"># resample</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">resample_to_delta_t</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">delta_t</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;ldas&#39;</span><span class="p">)</span>
+        <span class="c1"># apply any phase shift</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">phase_shift</span> <span class="o">=</span> <span class="n">inj</span><span class="p">[</span>
+                <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_phase_shift&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">phase_shift</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">phase_shift</span><span class="p">:</span>
+            <span class="n">fs</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">to_frequencyseries</span><span class="p">()</span>
+            <span class="n">fs</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">phase_shift</span><span class="p">)</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_timeseries</span><span class="p">()</span>
+        <span class="c1"># apply any scaling</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">amp_scale</span> <span class="o">=</span> <span class="n">inj</span><span class="p">[</span>
+                <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_amp_scale&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">amp_scale</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">amp_scale</span> <span class="o">/=</span> <span class="n">distance_scale</span>
+        <span class="n">ts</span> <span class="o">*=</span> <span class="n">amp_scale</span>
+        <span class="k">return</span> <span class="n">ts</span></div>
+</div>
+
+
+
+<span class="n">hdfinjtypes</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">CBCHDFInjectionSet</span><span class="o">.</span><span class="n">injtype</span><span class="p">:</span> <span class="n">CBCHDFInjectionSet</span><span class="p">,</span>
+    <span class="n">RingdownHDFInjectionSet</span><span class="o">.</span><span class="n">injtype</span><span class="p">:</span> <span class="n">RingdownHDFInjectionSet</span><span class="p">,</span>
+    <span class="n">IncoherentFromFileHDFInjectionSet</span><span class="o">.</span><span class="n">injtype</span><span class="p">:</span>
+    <span class="n">IncoherentFromFileHDFInjectionSet</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="get_hdf_injtype">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.get_hdf_injtype">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_hdf_injtype</span><span class="p">(</span><span class="n">sim_file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the HDFInjectionSet class to use with the given file.</span>
+
+<span class="sd">    This looks for the ``injtype`` in the given file&#39;s top level ``attrs``. If</span>
+<span class="sd">    that attribute isn&#39;t set, will default to :py:class:`CBCHDFInjectionSet`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_file : str</span>
+<span class="sd">        Name of the file. The file must already exist.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    HDFInjectionSet :</span>
+<span class="sd">        The type of HDFInjectionSet to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">HFile</span><span class="p">(</span><span class="n">sim_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ftype</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;injtype&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">ftype</span> <span class="o">=</span> <span class="n">CBCHDFInjectionSet</span><span class="o">.</span><span class="n">injtype</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hdfinjtypes</span><span class="p">[</span><span class="n">ftype</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="c1"># may get a key error if the file type was stored as unicode instead</span>
+        <span class="c1"># of string; if so, try decoding it</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ftype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ftype</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="c1"># not actually a byte error; passing will reraise the KeyError</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">hdfinjtypes</span><span class="p">[</span><span class="n">ftype</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="hdf_injtype_from_approximant">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.hdf_injtype_from_approximant">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hdf_injtype_from_approximant</span><span class="p">(</span><span class="n">approximant</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gets the HDFInjectionSet class to use with the given approximant.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        Name of the approximant.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    HDFInjectionSet :</span>
+<span class="sd">        The type of HDFInjectionSet to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">retcls</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">hdfinjtypes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">supported_approximants</span><span class="p">():</span>
+            <span class="n">retcls</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="k">if</span> <span class="n">retcls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># none were found, raise an error</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Injection file type unknown for approximant </span><span class="si">{}</span><span class="s2">&quot;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">approximant</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">retcls</span></div>
+
+
+
+<div class="viewcode-block" id="InjectionSet">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.InjectionSet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InjectionSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Manages sets of injections and injects them into time series.</span>
+
+<span class="sd">    Injections are read from either LIGOLW XML files or HDF files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_file : string</span>
+<span class="sd">        Path to an hdf file or a LIGOLW XML file that contains a</span>
+<span class="sd">        SimInspiralTable.</span>
+<span class="sd">    \**kwds :</span>
+<span class="sd">        The rest of the keyword arguments are passed to the waveform generation</span>
+<span class="sd">        function when generating injections.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    table</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">sim_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;.xml.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;.xmlgz&#39;</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span> <span class="o">=</span> <span class="n">_XMLInjectionSet</span><span class="p">(</span><span class="n">sim_file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indoc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span><span class="o">.</span><span class="n">indoc</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># assume hdf file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span> <span class="o">=</span> <span class="n">get_hdf_injtype</span><span class="p">(</span><span class="n">sim_file</span><span class="p">)(</span><span class="n">sim_file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span><span class="o">.</span><span class="n">table</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span><span class="o">.</span><span class="n">extra_args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span><span class="o">.</span><span class="n">apply</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_strain_from_inj_object</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span><span class="o">.</span><span class="n">make_strain_from_inj_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_injhandler</span><span class="o">.</span><span class="n">end_times</span>
+
+<div class="viewcode-block" id="InjectionSet.write">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.InjectionSet.write">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">write_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">static_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+              <span class="n">injtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">metadata</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Writes the injection samples to the given hdf file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            The name of the file to write to.</span>
+<span class="sd">        samples : io.FieldArray</span>
+<span class="sd">            FieldArray of parameters.</span>
+<span class="sd">        write_params : list, optional</span>
+<span class="sd">            Only write the given parameter names. All given names must be keys</span>
+<span class="sd">            in ``samples``. Default is to write all parameters in ``samples``.</span>
+<span class="sd">        static_args : dict, optional</span>
+<span class="sd">            Dictionary mapping static parameter names to values. These are</span>
+<span class="sd">            written to the ``attrs``.</span>
+<span class="sd">        injtype : str, optional</span>
+<span class="sd">            Specify which `HDFInjectionSet` class to use for writing. If not</span>
+<span class="sd">            provided, will try to determine it by looking for an approximant in</span>
+<span class="sd">            the ``static_args``, followed by the ``samples``.</span>
+<span class="sd">        \**metadata :</span>
+<span class="sd">            All other keyword arguments will be written to the file&#39;s attrs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># DELETE the following &quot;if&quot; once xml is dropped</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ext</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;.xml.gz&#39;</span><span class="p">,</span> <span class="s1">&#39;.xmlgz&#39;</span><span class="p">)):</span>
+            <span class="n">_XMLInjectionSet</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">write_params</span><span class="p">,</span>
+                                   <span class="n">static_args</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># try determine the injtype if it isn&#39;t given</span>
+            <span class="k">if</span> <span class="n">injtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">static_args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;approximant&#39;</span> <span class="ow">in</span> <span class="n">static_args</span><span class="p">:</span>
+                    <span class="n">injcls</span> <span class="o">=</span> <span class="n">hdf_injtype_from_approximant</span><span class="p">(</span>
+                        <span class="n">static_args</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="s1">&#39;approximant&#39;</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">:</span>
+                    <span class="n">apprxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">])</span>
+                    <span class="c1"># make sure they all correspond to the same injection type</span>
+                    <span class="n">injcls</span> <span class="o">=</span> <span class="p">[</span><span class="n">hdf_injtype_from_approximant</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">apprxs</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">injcls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">injcls</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;injections must all be of the same &quot;</span>
+                                         <span class="s2">&quot;type&quot;</span><span class="p">)</span>
+                    <span class="n">injcls</span> <span class="o">=</span> <span class="n">injcls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not find an approximant in the &quot;</span>
+                                     <span class="s2">&quot;static args or samples to determine the &quot;</span>
+                                     <span class="s2">&quot;injection type. Please specify an &quot;</span>
+                                     <span class="s2">&quot;injtype instead.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">injcls</span> <span class="o">=</span> <span class="n">hdfinjtypes</span><span class="p">[</span><span class="n">injtype</span><span class="p">]</span>
+            <span class="n">injcls</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">write_params</span><span class="p">,</span> <span class="n">static_args</span><span class="p">,</span>
+                         <span class="o">**</span><span class="n">metadata</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InjectionSet.from_cli">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.InjectionSet.from_cli">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an instance of InjectionSet configured as specified</span>
+<span class="sd">        on the command line.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">kwa</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_f_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">kwa</span><span class="p">[</span><span class="s1">&#39;f_ref&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_f_ref</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_f_final</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">kwa</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">injection_f_final</span>
+        <span class="k">return</span> <span class="n">InjectionSet</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">injection_file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwa</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SGBurstInjectionSet">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.SGBurstInjectionSet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SGBurstInjectionSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages sets of sine-Gaussian burst injections: reads injections</span>
+<span class="sd">    from LIGOLW XML files and injects them into time series.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sim_file : string</span>
+<span class="sd">        Path to a LIGOLW XML file containing a SimBurstTable</span>
+<span class="sd">        with injection definitions.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    indoc</span>
+<span class="sd">    table</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim_file</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">indoc</span> <span class="o">=</span> <span class="n">ligolw_utils</span><span class="o">.</span><span class="n">load_filename</span><span class="p">(</span>
+            <span class="n">sim_file</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">contenthandler</span><span class="o">=</span><span class="n">LIGOLWContentHandler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">SimBurstTable</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indoc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_args</span> <span class="o">=</span> <span class="n">kwds</span>
+
+<div class="viewcode-block" id="SGBurstInjectionSet.apply">
+<a class="viewcode-back" href="../../../pycbc.inject.html#pycbc.inject.inject.SGBurstInjectionSet.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">f_lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">distance_scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add injections (as seen by a particular detector) to a time series.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : TimeSeries</span>
+<span class="sd">            Time series to inject signals into, of type float32 or float64.</span>
+<span class="sd">        detector_name : string</span>
+<span class="sd">            Name of the detector used for projecting injections.</span>
+<span class="sd">        f_lower : {None, float}, optional</span>
+<span class="sd">            Low-frequency cutoff for injected signals. If None, use value</span>
+<span class="sd">            provided by each injection.</span>
+<span class="sd">        distance_scale: {1, foat}, optional</span>
+<span class="sd">            Factor to scale the distance of an injection with. The default is</span>
+<span class="sd">            no scaling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError</span>
+<span class="sd">            For invalid types of `strain`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">strain</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">float32</span><span class="p">,</span> <span class="n">float64</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Strain dtype must be float32 or float64, not &quot;</span> \
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+        <span class="n">lalstrain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+        <span class="c1">#detector = Detector(detector_name)</span>
+        <span class="n">earth_travel_time</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">REARTH_SI</span> <span class="o">/</span> <span class="n">lal</span><span class="o">.</span><span class="n">C_SI</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">-</span> <span class="n">earth_travel_time</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span> <span class="o">+</span> <span class="n">earth_travel_time</span>
+
+        <span class="c1"># pick lalsimulation injection function</span>
+        <span class="n">add_injection</span> <span class="o">=</span> <span class="n">injection_func_map</span><span class="p">[</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">inj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">:</span>
+            <span class="c1"># roughly estimate if the injection may overlap with the segment</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">inj</span><span class="o">.</span><span class="n">time_geocent</span>
+            <span class="c1">#CHECK: This is a hack (10.0s); replace with an accurate estimate</span>
+            <span class="n">inj_length</span> <span class="o">=</span> <span class="mf">10.0</span>
+            <span class="n">eccentricity</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">polarization</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">inj_length</span>
+            <span class="k">if</span> <span class="n">end_time</span> <span class="o">&lt;</span> <span class="n">t0</span> <span class="ow">or</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">t1</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># compute the waveform time series</span>
+            <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SimBurstSineGaussian</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">q</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">frequency</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">inj</span><span class="o">.</span><span class="n">hrss</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">eccentricity</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">polarization</span><span class="p">),</span><span class="nb">float</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">delta_t</span><span class="p">))</span>
+            <span class="n">hp</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:],</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">hp</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">hp</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="n">hc</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">hc</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:],</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">hc</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">hc</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="n">hp</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+            <span class="n">hc</span><span class="o">.</span><span class="n">_epoch</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">t1</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># compute the detector response, taper it if requested</span>
+            <span class="c1"># and add it to the strain</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="n">strain</span><span class="o">.</span><span class="n">taper_timeseries</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">taper</span><span class="p">,</span> 
+                                             <span class="n">tapermethod</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_method&#39;</span><span class="p">,</span> <span class="s1">&#39;lal&#39;</span><span class="p">),</span> 
+                                             <span class="n">taper_window</span><span class="o">=</span><span class="n">inj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;taper_window&#39;</span><span class="p">))</span>
+            <span class="n">signal_lal</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">lal</span><span class="p">()</span>
+            <span class="n">add_injection</span><span class="p">(</span><span class="n">lalstrain</span><span class="p">,</span> <span class="n">signal_lal</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">strain</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">lalstrain</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

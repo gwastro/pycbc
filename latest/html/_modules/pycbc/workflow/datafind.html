@@ -1,0 +1,1263 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.datafind &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.datafind</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.datafind</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013  Ian Harry</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is responsible for querying a datafind server to determine the</span>
+<span class="sd">availability of the data that the code is attempting to run on. It also</span>
+<span class="sd">performs a number of tests and can act on these as described below. Full</span>
+<span class="sd">documentation for this function can be found here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">urllib.parse</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">segments</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">igwn_ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">ligolw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gwdatafind</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_urls</span> <span class="k">as</span> <span class="n">find_frame_urls</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.workflow.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">SegFile</span><span class="p">,</span> <span class="n">File</span><span class="p">,</span> <span class="n">FileList</span><span class="p">,</span> <span class="n">make_analysis_dir</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.io.ligolw</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIGOLWContentHandler</span>
+
+<span class="c1"># NOTE urllib is weird. For some reason it only allows known schemes and will</span>
+<span class="c1"># give *wrong* results, rather then failing, if you use something like gsiftp</span>
+<span class="c1"># We can add schemes explicitly, as below, but be careful with this!</span>
+<span class="c1"># (urllib is used indirectly through lal.Cache objects)</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">uses_relative</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;osdf&#39;</span><span class="p">)</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">uses_netloc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;osdf&#39;</span><span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.datafind&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="setup_datafind_workflow">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.setup_datafind_workflow">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_datafind_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">,</span> <span class="n">seg_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Setup datafind section of the workflow. This section is responsible for</span>
+<span class="sd">    generating, or setting up the workflow to generate, a list of files that</span>
+<span class="sd">    record the location of the frame files needed to perform the analysis.</span>
+<span class="sd">    There could be multiple options here, the datafind jobs could be done at</span>
+<span class="sd">    run time or could be put into a dag. The subsequent jobs will know</span>
+<span class="sd">    what was done here from the OutFileList containing the datafind jobs</span>
+<span class="sd">    (and the Dagman nodes if appropriate.</span>
+<span class="sd">    For now the only implemented option is to generate the datafind files at</span>
+<span class="sd">    runtime. This module can also check if the frameFiles actually exist, check</span>
+<span class="sd">    whether the obtained segments line up with the original ones and update the</span>
+<span class="sd">    science segments to reflect missing data files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workflow: pycbc.workflow.core.Workflow</span>
+<span class="sd">        The workflow class that stores the jobs that will be run.</span>
+<span class="sd">    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        This contains the times that the workflow is expected to analyse.</span>
+<span class="sd">    outputDir : path</span>
+<span class="sd">        All output files written by datafind processes will be written to this</span>
+<span class="sd">        directory.</span>
+<span class="sd">    seg_file : SegFile, optional (default=None)</span>
+<span class="sd">        The file returned by get_science_segments containing the science</span>
+<span class="sd">        segments and the associated segment_summary. This will</span>
+<span class="sd">        be used for the segment_summary test and is required if, and only if,</span>
+<span class="sd">        performing that test.</span>
+<span class="sd">    tags : list of string, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniqueify the actual filename.</span>
+<span class="sd">        FIXME: Filenames may not be unique with current codes!</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafindOuts : OutGroupList</span>
+<span class="sd">        List of all the datafind output files for use later in the pipeline.</span>
+<span class="sd">    sci_avlble_file : SegFile</span>
+<span class="sd">        SegFile containing the analysable time after checks in the datafind</span>
+<span class="sd">        module are applied to the input segment list. For production runs this</span>
+<span class="sd">        is expected to be equal to the input segment list.</span>
+<span class="sd">    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        This contains the times that the workflow is expected to analyse. If</span>
+<span class="sd">        the updateSegmentTimes kwarg is given this will be updated to reflect</span>
+<span class="sd">        any instances of missing data.</span>
+<span class="sd">    sci_avlble_name : string</span>
+<span class="sd">        The name with which the analysable time is stored in the</span>
+<span class="sd">        sci_avlble_file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Entering datafind module&quot;</span><span class="p">)</span>
+    <span class="n">make_analysis_dir</span><span class="p">(</span><span class="n">outputDir</span><span class="p">)</span>
+    <span class="n">cp</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">cp</span>
+
+    <span class="c1"># Parse for options in ini file</span>
+    <span class="n">datafind_method</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                     <span class="s2">&quot;datafind-method&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;datafind-check-segment-gaps&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">checkSegmentGaps</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                          <span class="s2">&quot;datafind-check-segment-gaps&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">checkSegmentGaps</span> <span class="o">=</span> <span class="s2">&quot;no_test&quot;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;datafind-check-frames-exist&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">checkFramesExist</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                          <span class="s2">&quot;datafind-check-frames-exist&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">checkFramesExist</span> <span class="o">=</span> <span class="s2">&quot;no_test&quot;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;datafind-check-segment-summary&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">checkSegmentSummary</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                       <span class="s2">&quot;datafind-check-segment-summary&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">checkSegmentSummary</span> <span class="o">=</span> <span class="s2">&quot;no_test&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting datafind with setup_datafind_runtime_generated&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_MULTIPLE_CACHES&quot;</span><span class="p">:</span>
+        <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span> <span class="o">=</span> \
+            <span class="n">setup_datafind_runtime_cache_multi_calls_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                          <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_SINGLE_CACHES&quot;</span><span class="p">:</span>
+        <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span> <span class="o">=</span> \
+            <span class="n">setup_datafind_runtime_cache_single_call_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                          <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_MULTIPLE_FRAMES&quot;</span><span class="p">:</span>
+        <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span> <span class="o">=</span> \
+            <span class="n">setup_datafind_runtime_frames_multi_calls_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                          <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_SINGLE_FRAMES&quot;</span><span class="p">:</span>
+        <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span> <span class="o">=</span> \
+            <span class="n">setup_datafind_runtime_frames_single_call_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                          <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_FAKE_DATA&quot;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;FROM_PREGENERATED_LCF_FILES&quot;</span><span class="p">:</span>
+        <span class="n">ifos</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span> <span class="o">=</span> \
+            <span class="n">setup_datafind_from_pregenerated_lcf_files</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span>
+                                                       <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Entry datafind-method in [workflow-datafind] does not have &quot;</span>
+<span class="s2">              expected value. Valid values are </span>
+<span class="s2">              AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES </span>
+<span class="s2">              AT_RUNTIME_MULTIPLE_CACHES, AT_RUNTIME_SINGLE_CACHES,</span>
+<span class="s2">              FROM_PREGENERATED_LCF_FILES, or AT_RUNTIME_FAKE_DATA.</span>
+<span class="s2">              Consult the documentation for more info.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+    <span class="n">using_backup_server</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_MULTIPLE_FRAMES&quot;</span> <span class="ow">or</span> \
+                                  <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_SINGLE_FRAMES&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;datafind-backup-datafind-server&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+            <span class="n">using_backup_server</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">backup_server</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                      <span class="s2">&quot;datafind-backup-datafind-server&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">)</span>
+            <span class="n">cp_new</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+            <span class="n">cp_new</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;datafind-ligo-datafind-server&quot;</span><span class="p">,</span> <span class="n">backup_server</span><span class="p">)</span>
+            <span class="n">cp_new</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;datafind&#39;</span><span class="p">,</span> <span class="s1">&#39;urltype&#39;</span><span class="p">,</span> <span class="s1">&#39;gsiftp&#39;</span><span class="p">)</span>
+            <span class="n">backup_datafindcaches</span><span class="p">,</span> <span class="n">backup_datafindouts</span> <span class="o">=</span>\
+                <span class="n">setup_datafind_runtime_frames_single_call_perifo</span><span class="p">(</span><span class="n">cp_new</span><span class="p">,</span>
+                                             <span class="n">scienceSegs</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+            <span class="n">backup_datafindouts</span> <span class="o">=</span> <span class="n">datafind_keep_unique_backups</span><span class="p">(</span>\
+                                             <span class="n">backup_datafindouts</span><span class="p">,</span> <span class="n">datafindouts</span><span class="p">)</span>
+            <span class="n">datafindcaches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">backup_datafindcaches</span><span class="p">)</span>
+            <span class="n">datafindouts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">backup_datafindouts</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;setup_datafind_runtime_generated completed&quot;</span><span class="p">)</span>
+    <span class="c1"># If we don&#39;t have frame files covering all times we can update the science</span>
+    <span class="c1"># segments.</span>
+    <span class="k">if</span> <span class="n">checkSegmentGaps</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;warn&#39;</span><span class="p">,</span><span class="s1">&#39;update_times&#39;</span><span class="p">,</span><span class="s1">&#39;raise_error&#39;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking science segments against datafind output....&quot;</span><span class="p">)</span>
+        <span class="n">newScienceSegs</span> <span class="o">=</span> <span class="n">get_science_segs_from_datafind_outs</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;New segments calculated from data find output.....&quot;</span><span class="p">)</span>
+        <span class="n">missingData</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">scienceSegs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># If no science segments in input then do nothing</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;No science segments are present for ifo </span><span class="si">%s</span><span class="s2">, &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;the segment metadata indicates there is no analyzable&quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot; strain data between the selected GPS start and end &quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;times.&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">newScienceSegs</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;No data frames were found corresponding to the science &quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;segments for ifo </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">missingData</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="n">checkSegmentGaps</span> <span class="o">==</span> <span class="s1">&#39;update_times&#39;</span><span class="p">:</span>
+                    <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">()</span>
+                <span class="k">continue</span>
+            <span class="n">missing</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">newScienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">missing</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;From ifo </span><span class="si">%s</span><span class="s2"> we are missing frames covering:&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">missing</span><span class="p">))</span>
+                <span class="n">missingData</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">checkSegmentGaps</span> <span class="o">==</span> <span class="s1">&#39;update_times&#39;</span><span class="p">:</span>
+                    <span class="c1"># Remove missing time, so that we can carry on if desired</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Updating science segments for ifo </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+                    <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">missing</span>
+
+        <span class="k">if</span> <span class="n">checkSegmentGaps</span> <span class="o">==</span> <span class="s1">&#39;raise_error&#39;</span> <span class="ow">and</span> <span class="n">missingData</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Workflow cannot find needed data, exiting.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done checking, any discrepancies are reported above.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">checkSegmentGaps</span> <span class="o">==</span> <span class="s1">&#39;no_test&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;checkSegmentGaps kwarg must take a value from &#39;no_test&#39;, &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;&#39;warn&#39;, &#39;update_times&#39; or &#39;raise_error&#39;.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="c1"># Do all of the frame files that were returned actually exist?</span>
+    <span class="k">if</span> <span class="n">checkFramesExist</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;warn&#39;</span><span class="p">,</span><span class="s1">&#39;update_times&#39;</span><span class="p">,</span><span class="s1">&#39;raise_error&#39;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Verifying that all frames exist on disk.&quot;</span><span class="p">)</span>
+        <span class="n">missingFrSegs</span><span class="p">,</span> <span class="n">missingFrames</span> <span class="o">=</span> \
+                          <span class="n">get_missing_segs_from_frame_file_cache</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">)</span>
+        <span class="n">missingFlag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">missingFrames</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># If no data in the input then do nothing</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="c1"># If using a backup server, does the frame exist remotely?</span>
+            <span class="k">if</span> <span class="n">using_backup_server</span><span class="p">:</span>
+                <span class="c1"># WARNING: This will be slow, but hopefully it will not occur</span>
+                <span class="c1">#          for too many frames. This could be optimized if</span>
+                <span class="c1">#          it becomes necessary.</span>
+                <span class="n">new_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">missingFrames</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                    <span class="k">for</span> <span class="n">dfout</span> <span class="ow">in</span> <span class="n">datafindouts</span><span class="p">:</span>
+                        <span class="n">dfout_pfns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dfout</span><span class="o">.</span><span class="n">pfns</span><span class="p">)</span>
+                        <span class="n">dfout_urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">url</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">dfout_pfns</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">frame</span><span class="o">.</span><span class="n">url</span> <span class="ow">in</span> <span class="n">dfout_urls</span><span class="p">:</span>
+                            <span class="n">pfn</span> <span class="o">=</span> <span class="n">dfout_pfns</span><span class="p">[</span><span class="n">dfout_urls</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">)]</span>
+                            <span class="n">dfout</span><span class="o">.</span><span class="n">removePFN</span><span class="p">(</span><span class="n">pfn</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfout</span><span class="o">.</span><span class="n">pfns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">new_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Frame </span><span class="si">%s</span><span class="s2"> not found locally. &quot;</span>\
+                                                                  <span class="o">%</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">,)</span>
+                                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;Replacing with remote url(s) </span><span class="si">%s</span><span class="s2">.&quot;</span> \
+                                           <span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">url</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">dfout</span><span class="o">.</span><span class="n">pfns</span><span class="p">]),)</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">new_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+                <span class="n">missingFrames</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_list</span>
+            <span class="k">if</span> <span class="n">missingFrames</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;From ifo </span><span class="si">%s</span><span class="s2"> we are missing the following frames:&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">+=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">url</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">missingFrames</span><span class="p">[</span><span class="n">ifo</span><span class="p">]])</span>
+                <span class="n">missingFlag</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">checkFramesExist</span> <span class="o">==</span> <span class="s1">&#39;update_times&#39;</span><span class="p">:</span>
+                <span class="c1"># Remove missing times, so that we can carry on if desired</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Updating science times for ifo </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+                <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">missingFrSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">checkFramesExist</span> <span class="o">==</span> <span class="s1">&#39;raise_error&#39;</span> <span class="ow">and</span> <span class="n">missingFlag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Workflow cannot find all frames, exiting.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished checking frames.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">checkFramesExist</span> <span class="o">==</span> <span class="s1">&#39;no_test&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;checkFramesExist kwarg must take a value from &#39;no_test&#39;, &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;&#39;warn&#39;, &#39;update_times&#39; or &#39;raise_error&#39;.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="c1"># Check if there are cases where frames exist, but no entry in the segment</span>
+    <span class="c1"># summary table are present.</span>
+    <span class="k">if</span> <span class="n">checkSegmentSummary</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;warn&#39;</span><span class="p">,</span> <span class="s1">&#39;raise_error&#39;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Checking the segment summary table against frames.&quot;</span><span class="p">)</span>
+        <span class="n">dfScienceSegs</span> <span class="o">=</span> <span class="n">get_science_segs_from_datafind_outs</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">)</span>
+        <span class="n">missingFlag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># NOTE: Should this be overrideable in the config file?</span>
+        <span class="n">sci_seg_name</span> <span class="o">=</span> <span class="s2">&quot;SCIENCE&quot;</span>
+        <span class="k">if</span> <span class="n">seg_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;You must provide the science segments SegFile object &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;if using the datafind-check-segment-summary option.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seg_file</span><span class="o">.</span><span class="n">seg_summ_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;The provided science segments SegFile object must &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;contain a valid segment_summary table if using the &quot;</span>
+            <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;datafind-check-segment-summary option.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+        <span class="n">seg_summary_times</span> <span class="o">=</span> <span class="n">seg_file</span><span class="o">.</span><span class="n">seg_summ_dict</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">dfScienceSegs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">curr_seg_summ_times</span> <span class="o">=</span> <span class="n">seg_summary_times</span><span class="p">[</span><span class="n">ifo</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">sci_seg_name</span><span class="p">]</span>
+            <span class="n">missing</span> <span class="o">=</span> <span class="p">(</span><span class="n">dfScienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">seg_file</span><span class="o">.</span><span class="n">valid_segments</span><span class="p">)</span>
+            <span class="n">missing</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="n">missing</span> <span class="o">=</span> <span class="n">missing</span> <span class="o">-</span> <span class="n">curr_seg_summ_times</span>
+            <span class="n">missing</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="n">scienceButNotFrame</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">dfScienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+            <span class="n">scienceButNotFrame</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="n">missing2</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">-</span> <span class="n">scienceButNotFrame</span>
+            <span class="n">missing2</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="n">missing2</span> <span class="o">=</span> <span class="n">missing2</span> <span class="o">-</span> <span class="n">curr_seg_summ_times</span>
+            <span class="n">missing2</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">missing</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;From ifo </span><span class="si">%s</span><span class="s2"> the following times have frames, &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;but are not covered in the segment summary table.&quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">missing</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">missingFlag</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">missing2</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;From ifo </span><span class="si">%s</span><span class="s2"> the following times have frames, &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;are science, and are not covered in the segment &quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;summary table.&quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">missing2</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="n">missingFlag</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">checkSegmentSummary</span> <span class="o">==</span> <span class="s1">&#39;raise_error&#39;</span> <span class="ow">and</span> <span class="n">missingFlag</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Segment_summary discrepancy detected, exiting.&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">checkSegmentSummary</span> <span class="o">==</span> <span class="s1">&#39;no_test&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;checkSegmentSummary kwarg must take a value from &#39;no_test&#39;, &quot;</span>
+        <span class="n">errMsg</span> <span class="o">+=</span> <span class="s2">&quot;&#39;warn&#39;, or &#39;raise_error&#39;.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="c1"># Now need to create the file for SCIENCE_AVAILABLE</span>
+    <span class="n">sci_avlble_dict</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">()</span>
+    <span class="c1"># NOTE: Should this be overrideable in the config file?</span>
+    <span class="n">sci_avlble_name</span> <span class="o">=</span> <span class="s2">&quot;SCIENCE_AVAILABLE&quot;</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">scienceSegs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">sci_avlble_dict</span><span class="p">[</span><span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">sci_avlble_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+
+    <span class="n">sci_avlble_file</span> <span class="o">=</span> <span class="n">SegFile</span><span class="o">.</span><span class="n">from_segment_list_dict</span><span class="p">(</span><span class="s1">&#39;SCIENCE_AVAILABLE&#39;</span><span class="p">,</span>
+                            <span class="n">sci_avlble_dict</span><span class="p">,</span> <span class="n">ifo_list</span> <span class="o">=</span> <span class="n">scienceSegs</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                            <span class="n">valid_segment</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">analysis_time</span><span class="p">,</span>
+                            <span class="n">extension</span><span class="o">=</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="n">outputDir</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Leaving datafind module&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">datafind_method</span> <span class="o">==</span> <span class="s2">&quot;AT_RUNTIME_FAKE_DATA&quot;</span><span class="p">:</span>
+        <span class="n">datafindouts</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">datafindouts</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">(</span><span class="n">datafindouts</span><span class="p">)</span> 
+
+
+    <span class="k">return</span> <span class="n">datafindouts</span><span class="p">,</span> <span class="n">sci_avlble_file</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span> <span class="n">sci_avlble_name</span></div>
+
+
+
+<div class="viewcode-block" id="setup_datafind_runtime_cache_multi_calls_perifo">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.setup_datafind_runtime_cache_multi_calls_perifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_datafind_runtime_cache_multi_calls_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                    <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function uses the `gwdatafind` library to obtain the location of all</span>
+<span class="sd">    the frame files that will be needed to cover the analysis of the data</span>
+<span class="sd">    given in scienceSegs. This function will not check if the returned frames</span>
+<span class="sd">    cover the whole time requested, such sanity checks are done in the</span>
+<span class="sd">    pycbc.workflow.setup_datafind_workflow entry function. As opposed to</span>
+<span class="sd">    setup_datafind_runtime_single_call_perifo this call will one call to the</span>
+<span class="sd">    datafind server for every science segment. This function will return a list</span>
+<span class="sd">    of output files that correspond to the cache .lcf files that are produced,</span>
+<span class="sd">    which list the locations of all frame files. This will cause problems with</span>
+<span class="sd">    pegasus, which expects to know about all input files (ie. the frame files</span>
+<span class="sd">    themselves.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    cp : ConfigParser.ConfigParser instance</span>
+<span class="sd">        This contains a representation of the information stored within the</span>
+<span class="sd">        workflow configuration files</span>
+<span class="sd">    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        This contains the times that the workflow is expected to analyse.</span>
+<span class="sd">    outputDir : path</span>
+<span class="sd">        All output files written by datafind processes will be written to this</span>
+<span class="sd">        directory.</span>
+<span class="sd">    tags : list of strings, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniqueify the actual filename.</span>
+<span class="sd">        FIXME: Filenames may not be unique with current codes!</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafindcaches : list of glue.lal.Cache instances</span>
+<span class="sd">       The glue.lal.Cache representations of the various calls to the datafind</span>
+<span class="sd">       server and the returned frame files.</span>
+<span class="sd">    datafindOuts : pycbc.workflow.core.FileList</span>
+<span class="sd">        List of all the datafind output files for use later in the pipeline.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Now ready to loop over the input segments</span>
+    <span class="n">datafindouts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">datafindcaches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Querying datafind server for all science segments.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">scienceSegsIfo</span> <span class="ow">in</span> <span class="n">scienceSegs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">observatory</span> <span class="o">=</span> <span class="n">ifo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="n">frameType</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;datafind-</span><span class="si">%s</span><span class="s2">-frame-type&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">()),</span> <span class="n">tags</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">scienceSegsIfo</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Finding data between </span><span class="si">%d</span><span class="s2"> and </span><span class="si">%d</span><span class="s2"> &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">seg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">seg</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s2">&quot;for ifo </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="c1"># WARNING: For now the workflow will expect times to be in integer seconds</span>
+            <span class="n">startTime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seg</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">endTime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seg</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># Sometimes the connection can drop, so try a backup here</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cache</span><span class="p">,</span> <span class="n">cache_file</span> <span class="o">=</span> <span class="n">run_datafind_instance</span><span class="p">(</span>
+                    <span class="n">cp</span><span class="p">,</span>
+                    <span class="n">outputDir</span><span class="p">,</span>
+                    <span class="n">observatory</span><span class="p">,</span>
+                    <span class="n">frameType</span><span class="p">,</span>
+                    <span class="n">startTime</span><span class="p">,</span>
+                    <span class="n">endTime</span><span class="p">,</span>
+                    <span class="n">ifo</span><span class="p">,</span>
+                    <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+                <span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">cache</span><span class="p">,</span> <span class="n">cache_file</span> <span class="o">=</span> <span class="n">run_datafind_instance</span><span class="p">(</span>
+                    <span class="n">cp</span><span class="p">,</span>
+                    <span class="n">outputDir</span><span class="p">,</span>
+                    <span class="n">observatory</span><span class="p">,</span>
+                    <span class="n">frameType</span><span class="p">,</span>
+                    <span class="n">startTime</span><span class="p">,</span>
+                    <span class="n">endTime</span><span class="p">,</span>
+                    <span class="n">ifo</span><span class="p">,</span>
+                    <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+                <span class="p">)</span>
+            <span class="n">datafindouts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cache_file</span><span class="p">)</span>
+            <span class="n">datafindcaches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span></div>
+
+
+<div class="viewcode-block" id="setup_datafind_runtime_cache_single_call_perifo">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.setup_datafind_runtime_cache_single_call_perifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_datafind_runtime_cache_single_call_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">,</span>
+                                              <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function uses the `gwdatafind` library to obtain the location of all</span>
+<span class="sd">    the frame files that will be needed to cover the analysis of the data</span>
+<span class="sd">    given in scienceSegs. This function will not check if the returned frames</span>
+<span class="sd">    cover the whole time requested, such sanity checks are done in the</span>
+<span class="sd">    pycbc.workflow.setup_datafind_workflow entry function. As opposed to</span>
+<span class="sd">    setup_datafind_runtime_generated this call will only run one call to</span>
+<span class="sd">    datafind per ifo, spanning the whole time. This function will return a list</span>
+<span class="sd">    of output files that correspond to the cache .lcf files that are produced,</span>
+<span class="sd">    which list the locations of all frame files. This will cause problems with</span>
+<span class="sd">    pegasus, which expects to know about all input files (ie. the frame files</span>
+<span class="sd">    themselves.)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    cp : ConfigParser.ConfigParser instance</span>
+<span class="sd">        This contains a representation of the information stored within the</span>
+<span class="sd">        workflow configuration files</span>
+<span class="sd">    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        This contains the times that the workflow is expected to analyse.</span>
+<span class="sd">    outputDir : path</span>
+<span class="sd">        All output files written by datafind processes will be written to this</span>
+<span class="sd">        directory.</span>
+<span class="sd">    tags : list of strings, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniqueify the actual filename.</span>
+<span class="sd">        FIXME: Filenames may not be unique with current codes!</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafindcaches : list of glue.lal.Cache instances</span>
+<span class="sd">       The glue.lal.Cache representations of the various calls to the datafind</span>
+<span class="sd">       server and the returned frame files.</span>
+<span class="sd">    datafindOuts : pycbc.workflow.core.FileList</span>
+<span class="sd">        List of all the datafind output files for use later in the pipeline.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># We want to ignore gaps as the detectors go up and down and calling this</span>
+    <span class="c1"># way will give gaps. See the setup_datafind_runtime_generated function</span>
+    <span class="c1"># for datafind calls that only query for data that will exist</span>
+    <span class="n">cp</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;datafind&quot;</span><span class="p">,</span><span class="s2">&quot;on_gaps&quot;</span><span class="p">,</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Now ready to loop over the input segments</span>
+    <span class="n">datafindouts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">datafindcaches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Querying datafind server for all science segments.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">scienceSegsIfo</span> <span class="ow">in</span> <span class="n">scienceSegs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">observatory</span> <span class="o">=</span> <span class="n">ifo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="n">checked_times</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([])</span>
+        <span class="n">frame_types</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span>
+            <span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;datafind-</span><span class="si">%s</span><span class="s2">-frame-type&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">()),</span> <span class="n">tags</span>
+        <span class="p">)</span>
+        <span class="c1"># Check if this is one type, or time varying</span>
+        <span class="n">frame_types</span> <span class="o">=</span> <span class="n">frame_types</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ftype</span> <span class="ow">in</span> <span class="n">frame_types</span><span class="p">:</span>
+            <span class="c1"># Check the times, default to full time initially</span>
+            <span class="c1"># This REQUIRES a coalesced segment list to work</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scienceSegsIfo</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scienceSegsIfo</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Then check for limits. We&#39;re expecting something like:</span>
+            <span class="c1"># value[start:end], so need to extract value, start and end</span>
+            <span class="k">if</span> <span class="s1">&#39;[&#39;</span> <span class="ow">in</span> <span class="n">ftype</span><span class="p">:</span>
+                <span class="c1"># This gets start and end out</span>
+                <span class="n">bopt</span> <span class="o">=</span> <span class="n">ftype</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">newstart</span><span class="p">,</span> <span class="n">newend</span> <span class="o">=</span> <span class="n">bopt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                <span class="c1"># Then check if the times are within science time</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">newstart</span><span class="p">),</span> <span class="n">start</span><span class="p">)</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">newend</span><span class="p">),</span> <span class="n">end</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># This extracts value</span>
+                <span class="n">ftype</span> <span class="o">=</span> <span class="n">ftype</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;[&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">curr_times</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
+            <span class="c1"># The times here must be distinct. We cannot have two different</span>
+            <span class="c1"># frame files at the same time from the same ifo.</span>
+            <span class="k">if</span> <span class="n">checked_times</span><span class="o">.</span><span class="n">intersects_segment</span><span class="p">(</span><span class="n">curr_times</span><span class="p">):</span>
+                <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Different frame types cannot overlap in time.&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+            <span class="n">checked_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_times</span><span class="p">)</span>
+
+            <span class="c1"># Ask datafind where the frames are</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cache</span><span class="p">,</span> <span class="n">cache_file</span> <span class="o">=</span> <span class="n">run_datafind_instance</span><span class="p">(</span>
+                    <span class="n">cp</span><span class="p">,</span>
+                    <span class="n">outputDir</span><span class="p">,</span>
+                    <span class="n">observatory</span><span class="p">,</span>
+                    <span class="n">ftype</span><span class="p">,</span>
+                    <span class="n">start</span><span class="p">,</span>
+                    <span class="n">end</span><span class="p">,</span>
+                    <span class="n">ifo</span><span class="p">,</span>
+                    <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+                <span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">cache</span><span class="p">,</span> <span class="n">cache_file</span> <span class="o">=</span> <span class="n">run_datafind_instance</span><span class="p">(</span>
+                    <span class="n">cp</span><span class="p">,</span>
+                    <span class="n">outputDir</span><span class="p">,</span>
+                    <span class="n">observatory</span><span class="p">,</span>
+                    <span class="n">ftype</span><span class="p">,</span>
+                    <span class="n">start</span><span class="p">,</span>
+                    <span class="n">end</span><span class="p">,</span>
+                    <span class="n">ifo</span><span class="p">,</span>
+                    <span class="n">tags</span><span class="o">=</span><span class="n">tags</span>
+                <span class="p">)</span>
+
+            <span class="n">datafindouts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cache_file</span><span class="p">)</span>
+            <span class="n">datafindcaches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span></div>
+
+
+<div class="viewcode-block" id="setup_datafind_runtime_frames_single_call_perifo">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.setup_datafind_runtime_frames_single_call_perifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_datafind_runtime_frames_single_call_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                              <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function uses the `gwdatafind` library to obtain the location of all</span>
+<span class="sd">    the frame files that will be needed to cover the analysis of the data</span>
+<span class="sd">    given in scienceSegs. This function will not check if the returned frames</span>
+<span class="sd">    cover the whole time requested, such sanity checks are done in the</span>
+<span class="sd">    pycbc.workflow.setup_datafind_workflow entry function. As opposed to</span>
+<span class="sd">    setup_datafind_runtime_generated this call will only run one call to</span>
+<span class="sd">    datafind per ifo, spanning the whole time. This function will return a list</span>
+<span class="sd">    of files corresponding to the individual frames returned by the datafind</span>
+<span class="sd">    query. This will allow pegasus to more easily identify all the files used</span>
+<span class="sd">    as input, but may cause problems for codes that need to take frame cache</span>
+<span class="sd">    files as input.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    cp : ConfigParser.ConfigParser instance</span>
+<span class="sd">        This contains a representation of the information stored within the</span>
+<span class="sd">        workflow configuration files</span>
+<span class="sd">    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        This contains the times that the workflow is expected to analyse.</span>
+<span class="sd">    outputDir : path</span>
+<span class="sd">        All output files written by datafind processes will be written to this</span>
+<span class="sd">        directory.</span>
+<span class="sd">    tags : list of strings, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniqueify the actual filename.</span>
+<span class="sd">        FIXME: Filenames may not be unique with current codes!</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafindcaches : list of glue.lal.Cache instances</span>
+<span class="sd">       The glue.lal.Cache representations of the various calls to the datafind</span>
+<span class="sd">       server and the returned frame files.</span>
+<span class="sd">    datafindOuts : pycbc.workflow.core.FileList</span>
+<span class="sd">        List of all the datafind output files for use later in the pipeline.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+        <span class="n">setup_datafind_runtime_cache_single_call_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                        <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">datafindouts</span> <span class="o">=</span> <span class="n">convert_cachelist_to_filelist</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span></div>
+
+
+<div class="viewcode-block" id="setup_datafind_runtime_frames_multi_calls_perifo">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.setup_datafind_runtime_frames_multi_calls_perifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_datafind_runtime_frames_multi_calls_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                     <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function uses the `gwdatafind` library to obtain the location of all</span>
+<span class="sd">    the frame files that will be needed to cover the analysis of the data</span>
+<span class="sd">    given in scienceSegs. This function will not check if the returned frames</span>
+<span class="sd">    cover the whole time requested, such sanity checks are done in the</span>
+<span class="sd">    pycbc.workflow.setup_datafind_workflow entry function. As opposed to</span>
+<span class="sd">    setup_datafind_runtime_single_call_perifo this call will one call to the</span>
+<span class="sd">    datafind server for every science segment. This function will return a list</span>
+<span class="sd">    of files corresponding to the individual frames returned by the datafind</span>
+<span class="sd">    query. This will allow pegasus to more easily identify all the files used</span>
+<span class="sd">    as input, but may cause problems for codes that need to take frame cache</span>
+<span class="sd">    files as input.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    cp : ConfigParser.ConfigParser instance</span>
+<span class="sd">        This contains a representation of the information stored within the</span>
+<span class="sd">        workflow configuration files</span>
+<span class="sd">    scienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        This contains the times that the workflow is expected to analyse.</span>
+<span class="sd">    outputDir : path</span>
+<span class="sd">        All output files written by datafind processes will be written to this</span>
+<span class="sd">        directory.</span>
+<span class="sd">    tags : list of strings, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniqueify the actual filename.</span>
+<span class="sd">        FIXME: Filenames may not be unique with current codes!</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafindcaches : list of glue.lal.Cache instances</span>
+<span class="sd">       The glue.lal.Cache representations of the various calls to the datafind</span>
+<span class="sd">       server and the returned frame files.</span>
+<span class="sd">    datafindOuts : pycbc.workflow.core.FileList</span>
+<span class="sd">        List of all the datafind output files for use later in the pipeline.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+        <span class="n">setup_datafind_runtime_cache_multi_calls_perifo</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">scienceSegs</span><span class="p">,</span>
+                                                        <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+
+    <span class="n">datafindouts</span> <span class="o">=</span> <span class="n">convert_cachelist_to_filelist</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span></div>
+
+
+<div class="viewcode-block" id="setup_datafind_from_pregenerated_lcf_files">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.setup_datafind_from_pregenerated_lcf_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_datafind_from_pregenerated_lcf_files</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used if you want to run with pregenerated lcf frame</span>
+<span class="sd">    cache files.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    cp : ConfigParser.ConfigParser instance</span>
+<span class="sd">        This contains a representation of the information stored within the</span>
+<span class="sd">        workflow configuration files</span>
+<span class="sd">    ifos : list of ifo strings</span>
+<span class="sd">        List of ifos to get pregenerated files for.</span>
+<span class="sd">    outputDir : path</span>
+<span class="sd">        All output files written by datafind processes will be written to this</span>
+<span class="sd">        directory. Currently this sub-module writes no output.</span>
+<span class="sd">    tags : list of strings, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniqueify the actual filename.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafindcaches : list of glue.lal.Cache instances</span>
+<span class="sd">       The glue.lal.Cache representations of the various calls to the datafind</span>
+<span class="sd">       server and the returned frame files.</span>
+<span class="sd">    datafindOuts : pycbc.workflow.core.FileList</span>
+<span class="sd">        List of all the datafind output files for use later in the pipeline.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">glue</span><span class="w"> </span><span class="kn">import</span> <span class="n">lal</span>
+
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">datafindcaches</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">search_string</span> <span class="o">=</span> <span class="s2">&quot;datafind-pregenerated-cache-file-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">(),)</span>
+        <span class="n">frame_cache_file_name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                                                <span class="n">search_string</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+        <span class="n">curr_cache</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">fromfilenames</span><span class="p">([</span><span class="n">frame_cache_file_name</span><span class="p">],</span>
+                                             <span class="n">coltype</span><span class="o">=</span><span class="n">lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">)</span>
+        <span class="n">curr_cache</span><span class="o">.</span><span class="n">ifo</span> <span class="o">=</span> <span class="n">ifo</span>
+        <span class="n">datafindcaches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_cache</span><span class="p">)</span>
+    <span class="n">datafindouts</span> <span class="o">=</span> <span class="n">convert_cachelist_to_filelist</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datafindcaches</span><span class="p">,</span> <span class="n">datafindouts</span></div>
+
+
+<div class="viewcode-block" id="convert_cachelist_to_filelist">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.convert_cachelist_to_filelist">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_cachelist_to_filelist</span><span class="p">(</span><span class="n">datafindcache_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take as input a list of glue.lal.Cache objects and return a pycbc FileList</span>
+<span class="sd">    containing all frames within those caches.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    datafindcache_list : list of glue.lal.Cache objects</span>
+<span class="sd">        The list of cache files to convert.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    datafind_filelist : FileList of frame File objects</span>
+<span class="sd">        The list of frame files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">prev_file</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">prev_name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">this_name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">datafind_filelist</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+
+    <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">datafindcache_list</span><span class="p">:</span>
+        <span class="c1"># sort the cache into time sequential order</span>
+        <span class="n">cache</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">curr_ifo</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">ifo</span>
+        <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
+            <span class="c1"># Pegasus doesn&#39;t like &quot;localhost&quot; in URLs.</span>
+            <span class="n">frame</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;file://localhost&#39;</span><span class="p">,</span> <span class="s1">&#39;file://&#39;</span><span class="p">)</span>
+            <span class="c1"># Not sure why it happens in OSDF URLs!!</span>
+            <span class="c1"># May need to remove use of Cache objects</span>
+            <span class="n">frame</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;osdf://localhost/&#39;</span><span class="p">,</span> <span class="s1">&#39;osdf:///&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Create one File() object for each unique frame file that we</span>
+            <span class="c1"># get back in the cache.</span>
+            <span class="k">if</span> <span class="n">prev_file</span><span class="p">:</span>
+                <span class="n">prev_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">prev_file</span><span class="o">.</span><span class="n">cache_entry</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+                <span class="n">this_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">prev_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">prev_name</span> <span class="o">!=</span> <span class="n">this_name</span><span class="p">):</span>
+                <span class="n">currFile</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">curr_ifo</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                    <span class="n">frame</span><span class="o">.</span><span class="n">segment</span><span class="p">,</span> <span class="n">file_url</span><span class="o">=</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">use_tmp_subdirs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">datafind_filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currFile</span><span class="p">)</span>
+                <span class="n">prev_file</span> <span class="o">=</span> <span class="n">currFile</span>
+
+            <span class="c1"># Populate the PFNs for the File() we just created</span>
+            <span class="n">cvmfs_urls</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;file:///cvmfs/&#39;</span><span class="p">,</span> <span class="s1">&#39;osdf://&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">cvmfs_urls</span><span class="p">):</span>
+                <span class="c1"># Frame is on CVMFS/OSDF, so let all sites read it directly.</span>
+                <span class="n">currFile</span><span class="o">.</span><span class="n">add_pfn</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;file://&#39;</span><span class="p">):</span>
+                <span class="c1"># Frame not on CVMFS, so may need transferring.</span>
+                <span class="c1"># Be careful here! If all your frames files are on site</span>
+                <span class="c1"># = local and you try to run on OSG, it will likely</span>
+                <span class="c1"># overwhelm the condor file transfer process!</span>
+                <span class="n">currFile</span><span class="o">.</span><span class="n">add_pfn</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Frame is at some unknown URL. Pegasus will decide how to deal</span>
+                <span class="c1"># with this, but will likely transfer to local site first, and</span>
+                <span class="c1"># from there transfer to remote sites as needed.</span>
+                <span class="n">currFile</span><span class="o">.</span><span class="n">add_pfn</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s1">&#39;notlocal&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">datafind_filelist</span></div>
+
+
+
+<div class="viewcode-block" id="get_science_segs_from_datafind_outs">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.get_science_segs_from_datafind_outs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_science_segs_from_datafind_outs</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will calculate the science segments that are covered in</span>
+<span class="sd">    the OutGroupList containing the frame files returned by various</span>
+<span class="sd">    calls to the datafind server. This can then be used to check whether this</span>
+<span class="sd">    list covers what it is expected to cover.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    datafindcaches : OutGroupList</span>
+<span class="sd">        List of all the datafind output files.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    newScienceSegs : Dictionary of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        The times covered by the frames found in datafindOuts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newScienceSegs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">datafindcaches</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">groupSegs</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">segment</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">)</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="n">ifo</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">ifo</span>
+            <span class="k">if</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">newScienceSegs</span><span class="p">:</span>
+                <span class="n">newScienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">groupSegs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">newScienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">groupSegs</span><span class="p">)</span>
+                <span class="n">newScienceSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">newScienceSegs</span></div>
+
+
+<div class="viewcode-block" id="get_missing_segs_from_frame_file_cache">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.get_missing_segs_from_frame_file_cache">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_missing_segs_from_frame_file_cache</span><span class="p">(</span><span class="n">datafindcaches</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will use os.path.isfile to determine if all the frame files</span>
+<span class="sd">    returned by the local datafind server actually exist on the disk. This can</span>
+<span class="sd">    then be used to update the science times if needed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    datafindcaches : OutGroupList</span>
+<span class="sd">        List of all the datafind output files.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    missingFrameSegs : Dict. of ifo keyed igwn_segments.segmentlist instances</span>
+<span class="sd">        The times corresponding to missing frames found in datafindOuts.</span>
+<span class="sd">    missingFrames: Dict. of ifo keyed lal.Cache instances</span>
+<span class="sd">        The list of missing frames</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">glue</span><span class="w"> </span><span class="kn">import</span> <span class="n">lal</span>
+
+    <span class="n">missingFrameSegs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">missingFrames</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">datafindcaches</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t bother if these are not file:// urls, assume all urls in</span>
+            <span class="c1"># one cache file must be the same type</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span><span class="p">:</span>
+                <span class="n">warn_msg</span> <span class="o">=</span> <span class="s2">&quot;We have </span><span class="si">%s</span><span class="s2"> entries in the &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">cache</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">scheme</span><span class="p">,)</span>
+                <span class="n">warn_msg</span> <span class="o">+=</span> <span class="s2">&quot;cache file. I do not check if these exist.&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warn_msg</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">currMissingFrames</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">checkfilesexist</span><span class="p">(</span><span class="n">on_missing</span><span class="o">=</span><span class="s2">&quot;warn&quot;</span><span class="p">)</span>
+            <span class="n">missingSegs</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">segment</span> \
+                                         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">currMissingFrames</span><span class="p">)</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+            <span class="n">ifo</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">ifo</span>
+            <span class="k">if</span> <span class="n">ifo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">missingFrameSegs</span><span class="p">:</span>
+                <span class="n">missingFrameSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">missingSegs</span>
+                <span class="n">missingFrames</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">Cache</span><span class="p">(</span><span class="n">currMissingFrames</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">missingFrameSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">missingSegs</span><span class="p">)</span>
+                <span class="c1"># NOTE: This .coalesce probably isn&#39;t needed as the segments</span>
+                <span class="c1"># should be disjoint. If speed becomes an issue maybe remove it?</span>
+                <span class="n">missingFrameSegs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+                <span class="n">missingFrames</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">currMissingFrames</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">missingFrameSegs</span><span class="p">,</span> <span class="n">missingFrames</span></div>
+
+
+
+<div class="viewcode-block" id="get_segment_summary_times">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.get_segment_summary_times">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_segment_summary_times</span><span class="p">(</span><span class="n">scienceFile</span><span class="p">,</span> <span class="n">segmentName</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will find the times for which the segment_summary is set</span>
+<span class="sd">    for the flag given by segmentName.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    scienceFile : SegFile</span>
+<span class="sd">        The segment file that we want to use to determine this.</span>
+<span class="sd">    segmentName : string</span>
+<span class="sd">        The DQ flag to search for times in the segment_summary table.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ---------</span>
+<span class="sd">    summSegList : igwn_segments.segmentlist</span>
+<span class="sd">        The times that are covered in the segment summary table.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse the segmentName</span>
+    <span class="n">segmentName</span> <span class="o">=</span> <span class="n">segmentName</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">segmentName</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid channel name </span><span class="si">{</span><span class="n">segmentName</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">ifo</span> <span class="o">=</span> <span class="n">segmentName</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">segmentName</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segmentName</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">segmentName</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="c1"># Load the filename</span>
+    <span class="n">xmldoc</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_filename</span><span class="p">(</span>
+        <span class="n">scienceFile</span><span class="o">.</span><span class="n">cache_entry</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+        <span class="n">compress</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span>
+        <span class="n">contenthandler</span><span class="o">=</span><span class="n">LIGOLWContentHandler</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Get the segment_def_id for the segmentName</span>
+    <span class="n">segmentDefTable</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">xmldoc</span><span class="p">,</span> <span class="s2">&quot;segment_definer&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">segmentDefTable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">ifos</span> <span class="o">==</span> <span class="n">ifo</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">channel</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segmentName</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">version</span><span class="o">==</span><span class="n">version</span><span class="p">):</span>
+                <span class="n">segDefID</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">segment_def_id</span>
+                <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot find channel </span><span class="si">%s</span><span class="s2"> in segment_definer table.&quot;</span>\
+                         <span class="o">%</span><span class="p">(</span><span class="n">segmentName</span><span class="p">))</span>
+
+    <span class="c1"># Get the segmentlist corresponding to this segmentName in segment_summary</span>
+    <span class="n">segmentSummTable</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">xmldoc</span><span class="p">,</span> <span class="s2">&quot;segment_summary&quot;</span><span class="p">)</span>
+    <span class="n">summSegList</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">([])</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">segmentSummTable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">segment_def_id</span> <span class="o">==</span> <span class="n">segDefID</span><span class="p">:</span>
+            <span class="n">segment</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+            <span class="n">summSegList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+    <span class="n">summSegList</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">summSegList</span></div>
+
+
+<div class="viewcode-block" id="run_datafind_instance">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.run_datafind_instance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_datafind_instance</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">outputDir</span><span class="p">,</span> <span class="n">observatory</span><span class="p">,</span> <span class="n">frameType</span><span class="p">,</span>
+                          <span class="n">startTime</span><span class="p">,</span> <span class="n">endTime</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will query the datafind server once to find frames between</span>
+<span class="sd">    the specified times for the specified frame type and observatory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : ConfigParser instance</span>
+<span class="sd">        Source for any kwargs that should be sent to the datafind module</span>
+<span class="sd">    outputDir : Output cache files will be written here. We also write the</span>
+<span class="sd">        commands for reproducing what is done in this function to this</span>
+<span class="sd">        directory.</span>
+<span class="sd">    observatory : string</span>
+<span class="sd">        The observatory to query frames for. Ex. &#39;H&#39;, &#39;L&#39; or &#39;V&#39;.  NB: not</span>
+<span class="sd">        &#39;H1&#39;, &#39;L1&#39;, &#39;V1&#39; which denote interferometers.</span>
+<span class="sd">    frameType : string</span>
+<span class="sd">        The frame type to query for.</span>
+<span class="sd">    startTime : int</span>
+<span class="sd">        Integer start time to query the datafind server for frames.</span>
+<span class="sd">    endTime : int</span>
+<span class="sd">        Integer end time to query the datafind server for frames.</span>
+<span class="sd">    ifo : string</span>
+<span class="sd">        The interferometer to use for naming output. Ex. &#39;H1&#39;, &#39;L1&#39;, &#39;V1&#39;.</span>
+<span class="sd">        Maybe this could be merged with the observatory string, but this</span>
+<span class="sd">        could cause issues if running on old &#39;H2&#39; and &#39;H1&#39; data.</span>
+<span class="sd">    tags : list of string, optional (default=None)</span>
+<span class="sd">        Use this to specify tags. This can be used if this module is being</span>
+<span class="sd">        called more than once to give call specific configuration (by setting</span>
+<span class="sd">        options in [workflow-datafind-${TAG}] rather than [workflow-datafind]).</span>
+<span class="sd">        This is also used to tag the Files returned by the class to uniqueify</span>
+<span class="sd">        the Files and uniquify the actual filename.</span>
+<span class="sd">        FIXME: Filenames may not be unique with current codes!</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    dfCache : glue.lal.Cache instance</span>
+<span class="sd">       The glue.lal.Cache representation of the call to the datafind</span>
+<span class="sd">       server and the returned frame files.</span>
+<span class="sd">    cacheFile : pycbc.workflow.core.File</span>
+<span class="sd">        Cache file listing all of the datafind output files for use later in the pipeline.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">glue</span><span class="w"> </span><span class="kn">import</span> <span class="n">lal</span>
+
+    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Determine if we should override the default datafind server</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option_tags</span><span class="p">(</span><span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;datafind-ligo-datafind-server&quot;</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="n">datafind_server</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tags</span><span class="p">(</span>
+            <span class="s2">&quot;workflow-datafind&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;datafind-ligo-datafind-server&quot;</span><span class="p">,</span>
+            <span class="n">tags</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">datafind_server</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">seg</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">([</span><span class="n">startTime</span><span class="p">,</span> <span class="n">endTime</span><span class="p">])</span>
+    <span class="c1"># Take the datafind kwargs from config (usually urltype=file is</span>
+    <span class="c1"># given).</span>
+    <span class="n">dfKwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># By default ignore missing frames, this case is dealt with outside of here</span>
+    <span class="n">dfKwargs</span><span class="p">[</span><span class="s1">&#39;on_gaps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ignore&#39;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s2">&quot;datafind&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">&quot;datafind&quot;</span><span class="p">):</span>
+            <span class="n">dfKwargs</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;datafind-</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">tag</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">&quot;datafind-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">tag</span><span class="p">)):</span>
+                <span class="n">dfKwargs</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="c1"># It is useful to print the corresponding command to the logs</span>
+    <span class="c1"># directory to check if this was expected.</span>
+    <span class="n">log_datafind_command</span><span class="p">(</span><span class="n">observatory</span><span class="p">,</span> <span class="n">frameType</span><span class="p">,</span> <span class="n">startTime</span><span class="p">,</span> <span class="n">endTime</span><span class="p">,</span>
+                         <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span><span class="s1">&#39;logs&#39;</span><span class="p">),</span> <span class="o">**</span><span class="n">dfKwargs</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Asking datafind server for frames.&quot;</span><span class="p">)</span>
+    <span class="n">dfCache</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">Cache</span><span class="o">.</span><span class="n">from_urls</span><span class="p">(</span>
+        <span class="n">find_frame_urls</span><span class="p">(</span>
+            <span class="n">observatory</span><span class="p">,</span>
+            <span class="n">frameType</span><span class="p">,</span>
+            <span class="n">startTime</span><span class="p">,</span>
+            <span class="n">endTime</span><span class="p">,</span>
+            <span class="n">host</span><span class="o">=</span><span class="n">datafind_server</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">dfKwargs</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Frames returned&quot;</span><span class="p">)</span>
+    <span class="c1"># workflow format output file</span>
+    <span class="n">cache_file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span><span class="n">ifo</span><span class="p">,</span> <span class="s1">&#39;DATAFIND&#39;</span><span class="p">,</span> <span class="n">seg</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="s1">&#39;lcf&#39;</span><span class="p">,</span>
+                      <span class="n">directory</span><span class="o">=</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
+    <span class="n">cache_file</span><span class="o">.</span><span class="n">add_pfn</span><span class="p">(</span><span class="n">cache_file</span><span class="o">.</span><span class="n">cache_entry</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+
+    <span class="n">dfCache</span><span class="o">.</span><span class="n">ifo</span> <span class="o">=</span> <span class="n">ifo</span>
+    <span class="c1"># Dump output to file</span>
+    <span class="n">fP</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">cache_file</span><span class="o">.</span><span class="n">storage_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="c1"># FIXME: CANNOT use dfCache.tofile because it will print 815901601.00000</span>
+    <span class="c1">#        as a gps time which is incompatible with the lal cache format</span>
+    <span class="c1">#        (and the C codes) which demand an integer.</span>
+    <span class="c1">#dfCache.tofile(fP)</span>
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">dfCache</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">segment</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">segment</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> \
+              <span class="o">%</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">observatory</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">url</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">fP</span><span class="p">)</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">segment</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">segment</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">segment</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="n">fP</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">dfCache</span><span class="p">,</span> <span class="n">cache_file</span></div>
+
+
+
+<div class="viewcode-block" id="log_datafind_command">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.log_datafind_command">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_datafind_command</span><span class="p">(</span><span class="n">observatory</span><span class="p">,</span> <span class="n">frameType</span><span class="p">,</span> <span class="n">startTime</span><span class="p">,</span> <span class="n">endTime</span><span class="p">,</span>
+                         <span class="n">outputDir</span><span class="p">,</span> <span class="o">**</span><span class="n">dfKwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This command will print an equivalent gw_data_find command to disk that</span>
+<span class="sd">    can be used to debug why the internal datafind module is not working.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># FIXME: This does not accurately reproduce the call as assuming the</span>
+    <span class="c1"># kwargs will be the same is wrong, so some things need to be converted</span>
+    <span class="c1"># &quot;properly&quot; to the command line equivalent.</span>
+    <span class="n">gw_command</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;gw_data_find&#39;</span><span class="p">,</span> <span class="s1">&#39;--observatory&#39;</span><span class="p">,</span> <span class="n">observatory</span><span class="p">,</span>
+                  <span class="s1">&#39;--type&#39;</span><span class="p">,</span> <span class="n">frameType</span><span class="p">,</span>
+                  <span class="s1">&#39;--gps-start-time&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">startTime</span><span class="p">),</span>
+                  <span class="s1">&#39;--gps-end-time&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">endTime</span><span class="p">)]</span>
+
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dfKwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;match&#39;</span><span class="p">:</span>
+            <span class="n">gw_command</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--match&quot;</span><span class="p">)</span>
+            <span class="n">gw_command</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;urltype&#39;</span><span class="p">:</span>
+            <span class="n">gw_command</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--url-type&quot;</span><span class="p">)</span>
+            <span class="n">gw_command</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;on_gaps&#39;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">errMsg</span> <span class="o">=</span> <span class="s2">&quot;Unknown datafind kwarg given: </span><span class="si">%s</span><span class="s2">. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">errMsg</span><span class="o">+=</span> <span class="s2">&quot;This argument is stripped in the logged .sh command.&quot;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+
+    <span class="n">fileName</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-</span><span class="si">%s</span><span class="s2">-</span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2">.sh&quot;</span> \
+               <span class="o">%</span><span class="p">(</span><span class="n">observatory</span><span class="p">,</span> <span class="n">frameType</span><span class="p">,</span> <span class="n">startTime</span><span class="p">,</span> <span class="n">endTime</span><span class="o">-</span><span class="n">startTime</span><span class="p">)</span>
+    <span class="n">filePath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">fileName</span><span class="p">)</span>
+    <span class="n">fP</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filePath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">fP</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gw_command</span><span class="p">))</span>
+    <span class="n">fP</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="datafind_keep_unique_backups">
+<a class="viewcode-back" href="../../../workflow/datafind.html#pycbc.workflow.datafind.datafind_keep_unique_backups">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">datafind_keep_unique_backups</span><span class="p">(</span><span class="n">backup_outs</span><span class="p">,</span> <span class="n">orig_outs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function will take a list of backup datafind files, presumably</span>
+<span class="sd">    obtained by querying a remote datafind server, e.g. CIT, and compares</span>
+<span class="sd">    these against a list of original datafind files, presumably obtained by</span>
+<span class="sd">    querying the local datafind server. Only the datafind files in the backup</span>
+<span class="sd">    list that do not appear in the original list are returned. This allows us</span>
+<span class="sd">    to use only files that are missing from the local cluster.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    backup_outs : FileList</span>
+<span class="sd">        List of datafind files from the remote datafind server.</span>
+<span class="sd">    orig_outs : FileList</span>
+<span class="sd">        List of datafind files from the local datafind server.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    FileList</span>
+<span class="sd">        List of datafind files in backup_outs and not in orig_outs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># NOTE: This function is not optimized and could be made considerably</span>
+    <span class="c1">#       quicker if speed becomes in issue. With 4s frame files this might</span>
+    <span class="c1">#       be slow, but for &gt;1000s files I don&#39;t foresee any issue, so I keep</span>
+    <span class="c1">#       this simple.</span>
+    <span class="n">return_list</span> <span class="o">=</span> <span class="n">FileList</span><span class="p">([])</span>
+    <span class="c1"># We compare the LFNs to determine uniqueness</span>
+    <span class="c1"># Is there a way to associate two paths with one LFN??</span>
+    <span class="n">orig_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">orig_outs</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">backup_outs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">orig_names</span><span class="p">:</span>
+            <span class="n">return_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">index_num</span> <span class="o">=</span> <span class="n">orig_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">orig_out</span> <span class="o">=</span> <span class="n">orig_outs</span><span class="p">[</span><span class="n">index_num</span><span class="p">]</span>
+            <span class="n">pfns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">pfns</span><span class="p">)</span>
+            <span class="c1"># This shouldn&#39;t happen, but catch if it does</span>
+            <span class="k">assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pfns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">orig_out</span><span class="o">.</span><span class="n">add_pfn</span><span class="p">(</span><span class="n">pfns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s1">&#39;notlocal&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">return_list</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

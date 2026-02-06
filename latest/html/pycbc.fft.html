@@ -1,0 +1,987 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.fft package &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=751f435e"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/typed.min.js?v=edb71f0b"></script>
+      <script src="_static/terminal.css?v=d691274a"></script>
+      <script src="_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.filter package" href="pycbc.filter.html" />
+    <link rel="prev" title="pycbc.events package" href="pycbc.events.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.coordinates.html">pycbc.coordinates package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.detector.html">pycbc.detector package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.live.html">pycbc.live package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.neutron_stars.html">pycbc.neutron_stars package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.constants">pycbc.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.time">pycbc.time module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="pycbc.html">pycbc package</a></li>
+      <li class="breadcrumb-item active">pycbc.fft package</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/gwastro/pycbc/blob/master/docs/pycbc.fft.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbc-fft-package">
+<h1>pycbc.fft package<a class="headerlink" href="#pycbc-fft-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pycbc.fft.backend_cpu">
+<span id="pycbc-fft-backend-cpu-module"></span><h2>pycbc.fft.backend_cpu module<a class="headerlink" href="#module-pycbc.fft.backend_cpu" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_cpu.get_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_cpu.</span></span><span class="sig-name descname"><span class="pre">get_backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_cpu.html#get_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_cpu.get_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_cpu.set_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_cpu.</span></span><span class="sig-name descname"><span class="pre">set_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_cpu.html#set_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_cpu.set_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.backend_cupy">
+<span id="pycbc-fft-backend-cupy-module"></span><h2>pycbc.fft.backend_cupy module<a class="headerlink" href="#module-pycbc.fft.backend_cupy" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_cupy.get_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_cupy.</span></span><span class="sig-name descname"><span class="pre">get_backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_cupy.html#get_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_cupy.get_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_cupy.set_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_cupy.</span></span><span class="sig-name descname"><span class="pre">set_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_cupy.html#set_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_cupy.set_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.backend_mkl">
+<span id="pycbc-fft-backend-mkl-module"></span><h2>pycbc.fft.backend_mkl module<a class="headerlink" href="#module-pycbc.fft.backend_mkl" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_mkl.get_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_mkl.</span></span><span class="sig-name descname"><span class="pre">get_backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_mkl.html#get_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_mkl.get_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_mkl.set_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_mkl.</span></span><span class="sig-name descname"><span class="pre">set_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_mkl.html#set_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_mkl.set_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.backend_support">
+<span id="pycbc-fft-backend-support-module"></span><h2>pycbc.fft.backend_support module<a class="headerlink" href="#module-pycbc.fft.backend_support" title="Link to this heading"></a></h2>
+<p>This package provides a front-end to various fast Fourier transform
+implementations within PyCBC.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_support.get_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_support.</span></span><span class="sig-name descname"><span class="pre">get_backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_support.html#get_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_support.get_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_support.get_backend_modules">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_support.</span></span><span class="sig-name descname"><span class="pre">get_backend_modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_support.html#get_backend_modules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_support.get_backend_modules" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_support.get_backend_names">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_support.</span></span><span class="sig-name descname"><span class="pre">get_backend_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_support.html#get_backend_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_support.get_backend_names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.backend_support.set_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.backend_support.</span></span><span class="sig-name descname"><span class="pre">set_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/backend_support.html#set_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.backend_support.set_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.class_api">
+<span id="pycbc-fft-class-api-module"></span><h2>pycbc.fft.class_api module<a class="headerlink" href="#module-pycbc.fft.class_api" title="Link to this heading"></a></h2>
+<p>This package provides a front-end to various fast Fourier transform
+implementations within PyCBC.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.class_api.FFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.class_api.</span></span><span class="sig-name descname"><span class="pre">FFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/class_api.html#FFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.class_api.FFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Create a forward FFT  engine</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> (<em>complex64</em><em> or </em><em>float32</em>) – Input pycbc.types.Array (or subclass); its FFT will be computed</p></li>
+<li><p><strong>outvec</strong> (<em>complex64</em>) – Output pycbc.types.Array (or subclass); it will hold the FFT of invec</p></li>
+<li><p><strong>nbatch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default 1</em><em>)</em>) – When not one, specifies that invec and outvec should each be interpreted
+as nbatch distinct vectors. The total length of invec and outvec should
+then be that appropriate to a single vector, multiplied by nbatch</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default None</em><em>)</em>) – When nbatch is not 1, this parameter gives the logical size of each
+transform.  If nbatch is 1 (the default) this can be None, and the
+logical size is the length of invec.</p></li>
+<li><p><strong>by</strong> (<em>The addresses in memory</em><em> of </em><em>both vectors should be divisible</em>)</p></li>
+<li><p><strong>pycbc.PYCBC_ALIGNMENT.</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.class_api.IFFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.class_api.</span></span><span class="sig-name descname"><span class="pre">IFFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/class_api.html#IFFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.class_api.IFFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Create a reverse FFT  engine</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> (<em>complex64</em>) – Input pycbc.types.Array (or subclass); its IFFT will be computed</p></li>
+<li><p><strong>outvec</strong> (<em>complex64</em><em> or </em><em>float32</em>) – Output pycbc.types.Array (or subclass); it will hold the IFFT of invec</p></li>
+<li><p><strong>nbatch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default 1</em><em>)</em>) – When not one, specifies that invec and outvec should each be interpreted
+as nbatch distinct vectors. The total length of invec and outvec should
+then be that appropriate to a single vector, multiplied by nbatch</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> (</em><em>default None</em><em>)</em>) – When nbatch is not 1, this parameter gives the logical size of each
+transform.  If nbatch is 1 (the default) this can be None, and the
+logical size is the length of outvec.</p></li>
+<li><p><strong>by</strong> (<em>The addresses in memory</em><em> of </em><em>both vectors should be divisible</em>)</p></li>
+<li><p><strong>pycbc.PYCBC_ALIGNMENT.</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.fft.core">
+<span id="pycbc-fft-core-module"></span><h2>pycbc.fft.core module<a class="headerlink" href="#module-pycbc.fft.core" title="Link to this heading"></a></h2>
+<p>This package provides a front-end to various fast Fourier transform
+implementations within PyCBC.</p>
+</section>
+<section id="module-pycbc.fft.cupyfft">
+<span id="pycbc-fft-cupyfft-module"></span><h2>pycbc.fft.cupyfft module<a class="headerlink" href="#module-pycbc.fft.cupyfft" title="Link to this heading"></a></h2>
+<p>This module provides the cupy backend of the fast Fourier transform
+for the PyCBC package.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.cupyfft.FFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.cupyfft.</span></span><span class="sig-name descname"><span class="pre">FFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/cupyfft.html#FFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.cupyfft.FFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseFFT</span></code></p>
+<p>Class for performing FFTs via the cupy interface.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.cupyfft.FFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/cupyfft.html#FFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.cupyfft.FFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (forward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.cupyfft.IFFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.cupyfft.</span></span><span class="sig-name descname"><span class="pre">IFFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/cupyfft.html#IFFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.cupyfft.IFFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseIFFT</span></code></p>
+<p>Class for performing IFFTs via the cupy interface.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.cupyfft.IFFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/cupyfft.html#IFFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.cupyfft.IFFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (backward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.cupyfft.fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.cupyfft.</span></span><span class="sig-name descname"><span class="pre">fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/cupyfft.html#fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.cupyfft.fft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.cupyfft.ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.cupyfft.</span></span><span class="sig-name descname"><span class="pre">ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/cupyfft.html#ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.cupyfft.ifft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.fft_callback">
+<span id="pycbc-fft-fft-callback-module"></span><h2>pycbc.fft.fft_callback module<a class="headerlink" href="#module-pycbc.fft.fft_callback" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.c2c_correlate_ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fft_callback.</span></span><span class="sig-name descname"><span class="pre">c2c_correlate_ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fft_callback.html#c2c_correlate_ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fft_callback.c2c_correlate_ifft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.c2c_half_correlate_ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fft_callback.</span></span><span class="sig-name descname"><span class="pre">c2c_half_correlate_ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">htilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stilde</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fft_callback.html#c2c_half_correlate_ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fft_callback.c2c_half_correlate_ifft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.compile">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fft_callback.</span></span><span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fft_callback.html#compile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fft_callback.compile" title="Link to this definition"></a></dt>
+<dd><p>Compile the string source code into a shared object linked against
+the static version of cufft for callback support.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.get_fn_plan">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fft_callback.</span></span><span class="sig-name descname"><span class="pre">get_fn_plan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pycbc_cufft'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fft_callback.html#get_fn_plan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fft_callback.get_fn_plan" title="Link to this definition"></a></dt>
+<dd><p>Get the IFFT execute and plan functions</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.fft_callback.</span></span><span class="sig-name descname"><span class="pre">param</span></span><a class="reference internal" href="_modules/pycbc/fft/fft_callback.html#param"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fft_callback.param" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Structure</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param.htilde">
+<span class="sig-name descname"><span class="pre">htilde</span></span><a class="headerlink" href="#pycbc.fft.fft_callback.param.htilde" title="Link to this definition"></a></dt>
+<dd><p>Structure/Union member</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.fft_callback.</span></span><span class="sig-name descname"><span class="pre">param2</span></span><a class="reference internal" href="_modules/pycbc/fft/fft_callback.html#param2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fft_callback.param2" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Structure</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param2.htilde">
+<span class="sig-name descname"><span class="pre">htilde</span></span><a class="headerlink" href="#pycbc.fft.fft_callback.param2.htilde" title="Link to this definition"></a></dt>
+<dd><p>Structure/Union member</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param2.in_kmax">
+<span class="sig-name descname"><span class="pre">in_kmax</span></span><a class="headerlink" href="#pycbc.fft.fft_callback.param2.in_kmax" title="Link to this definition"></a></dt>
+<dd><p>Structure/Union member</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param2.out_kmax">
+<span class="sig-name descname"><span class="pre">out_kmax</span></span><a class="headerlink" href="#pycbc.fft.fft_callback.param2.out_kmax" title="Link to this definition"></a></dt>
+<dd><p>Structure/Union member</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pycbc.fft.fft_callback.param2.out_kmin">
+<span class="sig-name descname"><span class="pre">out_kmin</span></span><a class="headerlink" href="#pycbc.fft.fft_callback.param2.out_kmin" title="Link to this definition"></a></dt>
+<dd><p>Structure/Union member</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pycbc.fft.fftw">
+<span id="pycbc-fft-fftw-module"></span><h2>pycbc.fft.fftw module<a class="headerlink" href="#module-pycbc.fft.fftw" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.FFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">FFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#FFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.FFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseFFT</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.FFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#FFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.FFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (forward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.IFFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">IFFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#IFFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.IFFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseIFFT</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.IFFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#IFFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.IFFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (backward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.execute">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.execute" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.export_double_wisdom_to_filename">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">export_double_wisdom_to_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#export_double_wisdom_to_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.export_double_wisdom_to_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.export_single_wisdom_to_filename">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">export_single_wisdom_to_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#export_single_wisdom_to_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.export_single_wisdom_to_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.fft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.from_cli" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.get_flag">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">get_flag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mlvl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aligned</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#get_flag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.get_flag" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.get_measure_level">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">get_measure_level</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#get_measure_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.get_measure_level" title="Link to this definition"></a></dt>
+<dd><p>Get the current ‘measure level’ used in deciding how much effort to put into
+creating FFTW plans.  From least effort (and shortest planning time) to most
+they are 0 to 3.  No arguments.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.ifft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.import_double_wisdom_from_filename">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">import_double_wisdom_from_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#import_double_wisdom_from_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.import_double_wisdom_from_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.import_single_wisdom_from_filename">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">import_single_wisdom_from_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#import_single_wisdom_from_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.import_single_wisdom_from_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.import_sys_wisdom">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">import_sys_wisdom</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#import_sys_wisdom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.import_sys_wisdom" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.insert_fft_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">insert_fft_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optgroup</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#insert_fft_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.insert_fft_options" title="Link to this definition"></a></dt>
+<dd><p>Inserts the options that affect the behavior of this backend</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>optgroup</strong> (<em>fft_option</em>) – OptionParser argument group whose options are extended</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.plan">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">plan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">odtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlvl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aligned</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nthreads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#plan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.plan" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.set_measure_level">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">set_measure_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mlvl</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#set_measure_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.set_measure_level" title="Link to this definition"></a></dt>
+<dd><p>Set the current ‘measure level’ used in deciding how much effort to expend
+creating FFTW plans.  Must be an integer from 0 (least effort, shortest time)
+to 3 (most effort and time).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.set_planning_limit">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">set_planning_limit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#set_planning_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.set_planning_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.set_threads_backend">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">set_threads_backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#set_threads_backend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.set_threads_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.verify_fft_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">verify_fft_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#verify_fft_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.verify_fft_options" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Parses the FFT options and verifies that they are</dt><dd><p>reasonable.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes.</p></li>
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw.wisdom_io">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw.</span></span><span class="sig-name descname"><span class="pre">wisdom_io</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw.html#wisdom_io"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw.wisdom_io" title="Link to this definition"></a></dt>
+<dd><p>Import or export an FFTW plan for single or double precision.</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.fft.fftw_pruned">
+<span id="pycbc-fft-fftw-pruned-module"></span><h2>pycbc.fft.fftw_pruned module<a class="headerlink" href="#module-pycbc.fft.fftw_pruned" title="Link to this heading"></a></h2>
+<p>This module provides a functions to perform a pruned FFT based on FFTW</p>
+<p>This should be considered a test and example module, as the functionality
+can and should be generalized to other FFT backends, and precisions.</p>
+<p>These functions largely implemented the generic FFT decomposition as
+described rather nicely by wikipedia.</p>
+<p><a class="reference external" href="http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm">http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm</a></p>
+<p>I use a similar naming convention here, with minor simplifications to the
+twiddle factors.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.fft_transpose">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">fft_transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.fft.fftw_pruned.fft_transpose" title="Link to this definition"></a></dt>
+<dd><p>Perform an FFT transpose from vec into outvec.
+(Alex to provide more details in a write-up.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vec</strong> (<em>array</em>) – Input array.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>outvec</strong> – Transposed output array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.fft_transpose_fftw">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">fft_transpose_fftw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#fft_transpose_fftw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.fft_transpose_fftw" title="Link to this definition"></a></dt>
+<dd><p>Perform an FFT transpose from vec into outvec.
+(Alex to provide more details in a write-up.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vec</strong> (<em>array</em>) – Input array.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>outvec</strong> – Transposed output array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.first_phase">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">first_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#first_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.first_phase" title="Link to this definition"></a></dt>
+<dd><p>This implements the first phase of the FFT decomposition, using
+the standard FFT many plans.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> (<em>array</em>) – The input array.</p></li>
+<li><p><strong>outvec</strong> (<em>array</em>) – The output array.</p></li>
+<li><p><strong>N1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of rows.</p></li>
+<li><p><strong>N2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of columns.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.plan_first_phase">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">plan_first_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#plan_first_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.plan_first_phase" title="Link to this definition"></a></dt>
+<dd><p>Create a plan for the first stage of the pruned FFT operation.
+(Alex to provide a write up with more details.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>N1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of rows.</p></li>
+<li><p><strong>N2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of columns.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>plan</strong> – The plan for performing the first phase FFT.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>FFTWF plan</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.plan_transpose">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">plan_transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#plan_transpose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.plan_transpose" title="Link to this definition"></a></dt>
+<dd><p>Create a plan for transposing internally to the pruned_FFT calculation.
+(Alex to provide a write up with more details.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>N1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of rows.</p></li>
+<li><p><strong>N2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of columns.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>plan</strong> – The plan for performing the FFTW transpose.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>FFTWF plan</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.pruned_c2cifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">pruned_c2cifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretransposed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#pruned_c2cifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.pruned_c2cifft" title="Link to this definition"></a></dt>
+<dd><p>Perform a pruned iFFT, only valid for power of 2 iffts as the
+decomposition is easier to choose. This is not a strict requirement of the
+functions, but it is unlikely to the optimal to use anything but power
+of 2. (Alex to provide more details in write up.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> (<em>array</em>) – The input vector. This should be the correlation between the data and
+the template at full sample rate. Ideally this is pre-transposed, but
+if not this will be transposed in this function.</p></li>
+<li><p><strong>outvec</strong> (<em>array</em>) – The output of the first phase of the pruned FFT.</p></li>
+<li><p><strong>indices</strong> (<em>array</em><em> of </em><em>ints</em>) – The indexes at which to calculate the full sample-rate SNR.</p></li>
+<li><p><strong>pretransposed</strong> (<em>boolean</em><em>, </em><em>default=False</em>) – Used to indicate whether or not invec is pretransposed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>SNRs</strong> – The complex SNRs at the indexes given by indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.second_phase">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">second_phase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#second_phase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.second_phase" title="Link to this definition"></a></dt>
+<dd><p>This is the second phase of the FFT decomposition that actually performs
+the pruning. It is an explicit calculation for the subset of points. Note
+that there seem to be some numerical accumulation issues at various values
+of N1 and N2.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> – The result of the first phase FFT</p></li>
+<li><p><strong>indices</strong> (<em>array</em><em> of </em><em>ints</em>) – The index locations to calculate the FFT</p></li>
+<li><p><strong>N1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The length of the second phase “FFT”</p></li>
+<li><p><strong>N2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The length of the first phase FFT</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array of floats</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned.splay">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned.</span></span><span class="sig-name descname"><span class="pre">splay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/fftw_pruned.html#splay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.fftw_pruned.splay" title="Link to this definition"></a></dt>
+<dd><p>Determine two lengths to split stride the input vector by</p>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.fft.fftw_pruned_cython">
+<span id="pycbc-fft-fftw-pruned-cython-module"></span><h2>pycbc.fft.fftw_pruned_cython module<a class="headerlink" href="#module-pycbc.fft.fftw_pruned_cython" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.fftw_pruned_cython.second_phase_cython">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.fftw_pruned_cython.</span></span><span class="sig-name descname"><span class="pre">second_phase_cython</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">NI</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.fft.fftw_pruned_cython.second_phase_cython" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.func_api">
+<span id="pycbc-fft-func-api-module"></span><h2>pycbc.fft.func_api module<a class="headerlink" href="#module-pycbc.fft.func_api" title="Link to this heading"></a></h2>
+<p>This package provides a front-end to various fast Fourier transform
+implementations within PyCBC.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.func_api.fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.func_api.</span></span><span class="sig-name descname"><span class="pre">fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/func_api.html#fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.func_api.fft" title="Link to this definition"></a></dt>
+<dd><p>Fourier transform from invec to outvec.</p>
+<p>Perform a fourier transform. The type of transform is determined
+by the dtype of invec and outvec.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector.</p></li>
+<li><p><strong>outvec</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The output.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.func_api.ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.func_api.</span></span><span class="sig-name descname"><span class="pre">ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/func_api.html#ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.func_api.ifft" title="Link to this definition"></a></dt>
+<dd><p>Inverse fourier transform from invec to outvec.</p>
+<p>Perform an inverse fourier transform. The type of transform is determined
+by the dtype of invec and outvec.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>invec</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The input vector.</p></li>
+<li><p><strong>outvec</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a><em> or </em><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – The output.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.fft.mkl">
+<span id="pycbc-fft-mkl-module"></span><h2>pycbc.fft.mkl module<a class="headerlink" href="#module-pycbc.fft.mkl" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.FFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.mkl.</span></span><span class="sig-name descname"><span class="pre">FFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#FFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.FFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseFFT</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.FFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#FFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.FFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (forward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.IFFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.mkl.</span></span><span class="sig-name descname"><span class="pre">IFFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#IFFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.IFFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseIFFT</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.IFFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#IFFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.IFFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (backward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.check_status">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.mkl.</span></span><span class="sig-name descname"><span class="pre">check_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">status</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#check_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.check_status" title="Link to this definition"></a></dt>
+<dd><p>Check the status of a mkl functions and raise a python exeption if
+there is an error.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.create_descriptor">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.mkl.</span></span><span class="sig-name descname"><span class="pre">create_descriptor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">odtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#create_descriptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.create_descriptor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.mkl.</span></span><span class="sig-name descname"><span class="pre">fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.fft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.mkl.ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.mkl.</span></span><span class="sig-name descname"><span class="pre">ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/mkl.html#ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.mkl.ifft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.npfft">
+<span id="pycbc-fft-npfft-module"></span><h2>pycbc.fft.npfft module<a class="headerlink" href="#module-pycbc.fft.npfft" title="Link to this heading"></a></h2>
+<p>This module provides the numpy backend of the fast Fourier transform
+for the PyCBC package.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.npfft.FFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.npfft.</span></span><span class="sig-name descname"><span class="pre">FFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/npfft.html#FFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.npfft.FFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseFFT</span></code></p>
+<p>Class for performing FFTs via the numpy interface.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.npfft.FFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/npfft.html#FFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.npfft.FFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (forward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pycbc.fft.npfft.IFFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pycbc.fft.npfft.</span></span><span class="sig-name descname"><span class="pre">IFFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/npfft.html#IFFT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.npfft.IFFT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_BaseIFFT</span></code></p>
+<p>Class for performing IFFTs via the numpy interface.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pycbc.fft.npfft.IFFT.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/npfft.html#IFFT.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.npfft.IFFT.execute" title="Link to this definition"></a></dt>
+<dd><p>Compute the (backward) FFT of the input vector specified at object
+instantiation, putting the output into the output vector specified
+at objet instantiation. The intention is that this method should
+be called many times, with the contents of the input vector
+changing between invocations, but not the locations in memory or
+length of either input or output vector.</p>
+<p><em>Unlike</em> the function based API, the class based API does NOT rescale
+its output by the input vector’s delta_t (when input is a TimeSeries)
+or delta_f (when input is a FrequencySeries).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.npfft.fft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.npfft.</span></span><span class="sig-name descname"><span class="pre">fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/npfft.html#fft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.npfft.fft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.npfft.ifft">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.npfft.</span></span><span class="sig-name descname"><span class="pre">ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outvec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">otype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/npfft.html#ifft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.npfft.ifft" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-pycbc.fft.parser_support">
+<span id="pycbc-fft-parser-support-module"></span><h2>pycbc.fft.parser_support module<a class="headerlink" href="#module-pycbc.fft.parser_support" title="Link to this heading"></a></h2>
+<p>This package provides a front-end to various fast Fourier transform
+implementations within PyCBC.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.parser_support.from_cli">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.parser_support.</span></span><span class="sig-name descname"><span class="pre">from_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/parser_support.html#from_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.parser_support.from_cli" title="Link to this definition"></a></dt>
+<dd><p>Parses the command line options and sets the FFT backend
+for each (available) scheme. Aside from setting the default
+backed for this context, this function will also call (if
+it exists) the from_cli function of the specified backends in
+the <em>current</em> scheme; typically one would only call this function
+once inside of a scheme context manager, but if it is desired
+to perform FFTs both inside and outside of a context, then
+this function would need to be called again.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with
+the required attributes.</p></li>
+<li><p><strong>Returns</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.parser_support.insert_fft_option_group">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.parser_support.</span></span><span class="sig-name descname"><span class="pre">insert_fft_option_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/parser_support.html#insert_fft_option_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.parser_support.insert_fft_option_group" title="Link to this definition"></a></dt>
+<dd><p>Adds the options used to choose an FFT backend. This should be used
+if your program supports the ability to select the FFT backend; otherwise
+you may simply call the fft and ifft functions and rely on default
+choices.  This function will also attempt to add any options exported
+by available backends through a function called insert_fft_options.
+These submodule functions should take the fft_group object as argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pycbc.fft.parser_support.verify_fft_options">
+<span class="sig-prename descclassname"><span class="pre">pycbc.fft.parser_support.</span></span><span class="sig-name descname"><span class="pre">verify_fft_options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parser</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/fft/parser_support.html#verify_fft_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pycbc.fft.parser_support.verify_fft_options" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Parses the FFT options and verifies that they are</dt><dd><p>reasonable.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes.</p></li>
+<li><p><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – OptionParser instance.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pycbc.fft">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.fft" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.events.html" class="btn btn-neutral float-left" title="pycbc.events package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.filter.html" class="btn btn-neutral float-right" title="pycbc.filter package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,749 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.psd &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.psd</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.psd</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Alex Nitz, Andrew Miller, Tito Dal Canton</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 2 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">igwn_segments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">segments</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd.read</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd.analytical</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd.analytical_space</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd.estimate</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.psd.variation</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">float32</span><span class="p">,</span><span class="n">float64</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDetOptionAppendAction</span><span class="p">,</span> <span class="n">MultiDetOptionAction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">DictOptionAction</span><span class="p">,</span> <span class="n">MultiDetDictOptionAction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">copy_opts_for_single_ifo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">required_opts</span><span class="p">,</span> <span class="n">required_opts_multi_ifo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_one_opt</span><span class="p">,</span> <span class="n">ensure_one_opt_multi_ifo</span>
+
+<div class="viewcode-block" id="from_cli">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.from_cli">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span>
+             <span class="n">strain</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dyn_range_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the CLI options related to the noise PSD and returns a</span>
+<span class="sd">    FrequencySeries with the corresponding PSD. If necessary, the PSD is</span>
+<span class="sd">    linearly interpolated to achieve the resolution specified in the CLI.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes (psd_model, psd_file, asd_file, psd_estimation,</span>
+<span class="sd">        psd_segment_length, psd_segment_stride, psd_inverse_length,</span>
+<span class="sd">        psd_output).</span>
+<span class="sd">    length : int</span>
+<span class="sd">        The length in samples of the output PSD.</span>
+<span class="sd">    delta_f : float</span>
+<span class="sd">        The frequency step of the output PSD in hertz.</span>
+<span class="sd">    low_frequency_cutoff: float</span>
+<span class="sd">        The low frequency cutoff to use when calculating the PSD, in hertz.</span>
+<span class="sd">    strain : {None, TimeSeries}</span>
+<span class="sd">        Time series containing the data from which the PSD should be measured,</span>
+<span class="sd">        when psd_estimation is in use.</span>
+<span class="sd">    dyn_range_factor : {1, float}</span>
+<span class="sd">        For PSDs taken from models or text files, if `dyn_range_factor` is</span>
+<span class="sd">        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.</span>
+<span class="sd">    precision : str, choices (None,&#39;single&#39;,&#39;double&#39;)</span>
+<span class="sd">        If not specified, or specified as None, the precision of the returned</span>
+<span class="sd">        PSD will match the precision of the data, if measuring a PSD, or will</span>
+<span class="sd">        match the default precision of the model if using an analytical PSD.</span>
+<span class="sd">        If &#39;single&#39; the PSD will be converted to float32, if not already in</span>
+<span class="sd">        that precision. If &#39;double&#39; the PSD will be converted to float64, if</span>
+<span class="sd">        not already in that precision.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    psd : FrequencySeries</span>
+<span class="sd">        The frequency series containing the PSD.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f_low</span> <span class="o">=</span> <span class="n">low_frequency_cutoff</span>
+    <span class="n">sample_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">delta_f</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">psd_estimation</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_estimation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">psd_estimation</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">exclusive_opts</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_model</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_file</span><span class="p">,</span> <span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span><span class="p">,</span>
+                      <span class="n">psd_estimation</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">exclusive_opts</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;You must specify exactly one of &#39;--psd-file&#39;, &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;&#39;--psd-model&#39;, &#39;--asd-file&#39;, &#39;--psd-estimation&#39;&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_model</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_file</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span><span class="p">):</span>
+        <span class="c1"># PSD from lalsimulation or file</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_model</span><span class="p">:</span>
+            <span class="n">psd</span> <span class="o">=</span> <span class="n">from_string</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_model</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">f_low</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_extra_args</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_file</span> <span class="ow">or</span> <span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span><span class="p">:</span>
+                <span class="n">psd_file_name</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">psd_file_name</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_file</span>
+            <span class="k">if</span> <span class="n">psd_file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="s1">&#39;.txt&#39;</span><span class="p">)):</span>
+                <span class="n">is_asd_file</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span><span class="p">)</span>
+                <span class="n">psd</span> <span class="o">=</span> <span class="n">from_txt</span><span class="p">(</span><span class="n">psd_file_name</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span>
+                               <span class="n">delta_f</span><span class="p">,</span> <span class="n">f_low</span><span class="p">,</span> <span class="n">is_asd_file</span><span class="o">=</span><span class="n">is_asd_file</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">opt</span><span class="o">.</span><span class="n">asd_file</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;ASD files must be in ASCII format (extension .dat or &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;.txt). Got </span><span class="si">{</span><span class="n">psd_file_name</span><span class="si">}</span><span class="s2"> instead&quot;</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">psd_file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s1">&#39;.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;.xml.gz&#39;</span><span class="p">)):</span>
+                <span class="n">psd</span> <span class="o">=</span> <span class="n">from_xml</span><span class="p">(</span><span class="n">psd_file_name</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">f_low</span><span class="p">,</span>
+                               <span class="n">ifo_string</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_file_xml_ifo_string</span><span class="p">,</span>
+                               <span class="n">root_name</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_file_xml_root_name</span><span class="p">)</span>
+        <span class="c1"># Set values &lt; flow to the value at flow (if flow &gt; 0)</span>
+        <span class="n">kmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">low_frequency_cutoff</span> <span class="o">/</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kmin</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">psd</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">kmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">psd</span><span class="p">[</span><span class="n">kmin</span><span class="p">]</span>
+
+        <span class="n">psd</span> <span class="o">*=</span> <span class="n">dyn_range_factor</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="k">elif</span> <span class="n">psd_estimation</span><span class="p">:</span>
+        <span class="c1"># estimate PSD from data</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">welch</span><span class="p">(</span><span class="n">strain</span><span class="p">,</span> <span class="n">avg_method</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_estimation</span><span class="p">,</span>
+                    <span class="n">seg_len</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_segment_length</span> <span class="o">*</span> <span class="n">sample_rate</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="n">seg_stride</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_segment_stride</span> <span class="o">*</span> <span class="n">sample_rate</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">),</span>
+                    <span class="n">num_segments</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_num_segments</span><span class="p">,</span>
+                    <span class="n">require_exact_data_fit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">delta_f</span> <span class="o">!=</span> <span class="n">psd</span><span class="o">.</span><span class="n">delta_f</span><span class="p">:</span>
+            <span class="n">psd</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Shouldn&#39;t be possible to get here</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Shouldn&#39;t be possible to raise this!&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_inverse_length</span><span class="p">:</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">inverse_spectrum_truncation</span><span class="p">(</span><span class="n">psd</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_inverse_length</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">),</span>
+            <span class="n">low_frequency_cutoff</span><span class="o">=</span><span class="n">f_low</span><span class="p">,</span>
+            <span class="n">trunc_method</span><span class="o">=</span><span class="n">opt</span><span class="o">.</span><span class="n">invpsd_trunc_method</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="s1">&#39;psd_output&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_output</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">psd</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">float64</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dyn_range_factor</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_output</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">precision</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">psd</span>
+    <span class="k">elif</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;single&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">psd</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;double&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">psd</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">&quot;If provided, the precision kwarg must be either &#39;single&#39; or &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;&#39;double&#39;. You provided </span><span class="si">{</span><span class="n">precision</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="from_cli_single_ifo">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.from_cli_single_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli_single_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span>
+             <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the PSD for a single ifo when using the multi-detector CLI</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">single_det_opt</span> <span class="o">=</span> <span class="n">copy_opts_for_single_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">from_cli</span><span class="p">(</span><span class="n">single_det_opt</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">low_frequency_cutoff</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="from_cli_multi_ifos">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.from_cli_multi_ifos">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_cli_multi_ifos</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">length_dict</span><span class="p">,</span> <span class="n">delta_f_dict</span><span class="p">,</span>
+                        <span class="n">low_frequency_cutoff_dict</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">strain_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the PSD for all ifos when using the multi-detector CLI</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">psd</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">strain_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="n">strain_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">psd</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">from_cli_single_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">length_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">delta_f_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                       <span class="n">low_frequency_cutoff_dict</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">ifo</span><span class="p">,</span>
+                                       <span class="n">strain</span><span class="o">=</span><span class="n">strain</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">psd</span></div>
+
+
+<div class="viewcode-block" id="insert_psd_option_group">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.insert_psd_option_group">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_psd_option_group</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">include_data_options</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to call the pycbc.psd.from_cli function to an</span>
+<span class="sd">    optparser as an OptionGroup. This should be used if you</span>
+<span class="sd">    want to use these options in your code.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">psd_options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+                          <span class="s2">&quot;Options to select the method of PSD generation&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;The options --psd-model, --psd-file, --asd-file, &quot;</span>
+                          <span class="s2">&quot;and --psd-estimation are mutually exclusive.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-model&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Get PSD from given analytical model. &quot;</span><span class="p">,</span>
+                             <span class="n">choices</span><span class="o">=</span><span class="n">get_psd_model_list</span><span class="p">())</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-extra-args&quot;</span><span class="p">,</span>
+                             <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">DictOptionAction</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;PARAM:VALUE&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{},</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(optional) Extra arguments passed to &quot;</span>
+                             <span class="s2">&quot;the PSD models.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-file&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Get PSD using given PSD ASCII file&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--asd-file&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Get PSD using given ASD ASCII file&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-inverse-length&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional) The maximum length of the &quot;</span>
+                             <span class="s2">&quot;impulse response of the overwhitening &quot;</span>
+                             <span class="s2">&quot;filter (s)&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--invpsd-trunc-method&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hann&quot;</span><span class="p">],</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional) What truncation method to use &quot;</span>
+                                  <span class="s2">&quot;when applying psd-inverse-length. If not &quot;</span>
+                                  <span class="s2">&quot;provided, a hard truncation will be used.&quot;</span><span class="p">)</span>
+    <span class="c1"># Options specific to XML PSD files</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-file-xml-ifo-string&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If using an XML PSD file, use the PSD in &quot;</span>
+                                  <span class="s2">&quot;the file&#39;s PSD dictionary with this &quot;</span>
+                                  <span class="s2">&quot;ifo string. If not given and only one &quot;</span>
+                                  <span class="s2">&quot;PSD present in the file return that, if &quot;</span>
+                                  <span class="s2">&quot;not given and multiple (or zero) PSDs &quot;</span>
+                                  <span class="s2">&quot;present an exception will be raised.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-file-xml-root-name&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;psd&#39;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If given use this as the root name for &quot;</span>
+                                  <span class="s2">&quot;the PSD XML file. If this means nothing &quot;</span>
+                                  <span class="s2">&quot;to you, then it is probably safe to &quot;</span>
+                                  <span class="s2">&quot;ignore this option.&quot;</span><span class="p">)</span>
+    <span class="c1"># Options for PSD variation</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-segment&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Length of segment &quot;</span>
+                             <span class="s2">&quot;for mean square calculation of PSD variation.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-short-segment&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Length of short segment &quot;</span>
+                             <span class="s2">&quot;for outliers removal in PSD variability &quot;</span>
+                             <span class="s2">&quot;calculation.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-long-segment&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Length of long segment &quot;</span>
+                             <span class="s2">&quot;when calculating the PSD variability.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-psd-duration&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Duration of short &quot;</span>
+                             <span class="s2">&quot;segments for PSD estimation.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-psd-stride&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Separation between PSD &quot;</span>
+                             <span class="s2">&quot;estimation segments.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-low-freq&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;HERTZ&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum frequency to consider in strain &quot;</span>
+                             <span class="s2">&quot;bandpass.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-high-freq&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;HERTZ&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum frequency to consider in strain &quot;</span>
+                             <span class="s2">&quot;bandpass.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">include_data_options</span> <span class="p">:</span>
+        <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-estimation&quot;</span><span class="p">,</span>
+                                 <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Measure PSD from the data, using &quot;</span>
+                                 <span class="s2">&quot;given average method.&quot;</span><span class="p">,</span>
+                                 <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="s2">&quot;median-mean&quot;</span><span class="p">])</span>
+        <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-segment-length&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                                 <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Required for --psd-estimation) The &quot;</span>
+                                 <span class="s2">&quot;segment length for PSD estimation (s)&quot;</span><span class="p">)</span>
+        <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-segment-stride&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                                 <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Required for --psd-estimation) &quot;</span>
+                                 <span class="s2">&quot;The separation between consecutive &quot;</span>
+                                 <span class="s2">&quot;segments (s)&quot;</span><span class="p">)</span>
+        <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-num-segments&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional, used only with &quot;</span>
+                                 <span class="s2">&quot;--psd-estimation). If given, PSDs will &quot;</span>
+                                 <span class="s2">&quot;be estimated using only this number of &quot;</span>
+                                 <span class="s2">&quot;segments. If more data is given than &quot;</span>
+                                 <span class="s2">&quot;needed to make this number of segments &quot;</span>
+                                 <span class="s2">&quot;then excess data will not be used in &quot;</span>
+                                 <span class="s2">&quot;the PSD estimate. If not enough data &quot;</span>
+                                 <span class="s2">&quot;is given, the code will fail.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+        <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-output&quot;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional) Write PSD to specified file&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">psd_options</span></div>
+
+
+<div class="viewcode-block" id="insert_psd_option_group_multi_ifo">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.insert_psd_option_group_multi_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">insert_psd_option_group_multi_ifo</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds the options used to call the pycbc.psd.from_cli function to an</span>
+<span class="sd">    optparser as an OptionGroup. This should be used if you</span>
+<span class="sd">    want to use these options in your code.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">psd_options</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+                          <span class="s2">&quot;Options to select the method of PSD generation&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;The options --psd-model, --psd-file, --asd-file, &quot;</span>
+                          <span class="s2">&quot;and --psd-estimation are mutually exclusive.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-model&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:MODEL&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Get PSD from given analytical model. &quot;</span>
+                          <span class="s2">&quot;Choose from </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_psd_model_list</span><span class="p">()),))</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-extra-args&quot;</span><span class="p">,</span>
+                             <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetDictOptionAction</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;DETECTOR:PARAM:VALUE&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
+                             <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(optional) Extra arguments &quot;</span>
+                             <span class="s2">&quot;passed to the PSD models.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-file&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:FILE&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Get PSD using given PSD ASCII file&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--asd-file&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:FILE&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Get PSD using given ASD ASCII file&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-estimation&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:FILE&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Measure PSD from the data, using given &quot;</span>
+                          <span class="s2">&quot;average method. Choose from &quot;</span>
+                          <span class="s2">&quot;mean, median or median-mean.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-segment-length&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:LENGTH&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Required for --psd-estimation) The segment &quot;</span>
+                               <span class="s2">&quot;length for PSD estimation (s)&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-segment-stride&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:STRIDE&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Required for --psd-estimation) The separation&quot;</span>
+                               <span class="s2">&quot; between consecutive segments (s)&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-num-segments&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:NUM&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional, used only with --psd-estimation). &quot;</span>
+                               <span class="s2">&quot;If given PSDs will be estimated using only &quot;</span>
+                               <span class="s2">&quot;this number of segments. If more data is &quot;</span>
+                               <span class="s2">&quot;given than needed to make this number of &quot;</span>
+                               <span class="s2">&quot;segments than excess data will not be used in &quot;</span>
+                               <span class="s2">&quot;the PSD estimate. If not enough data is given &quot;</span>
+                               <span class="s2">&quot;the code will fail.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-inverse-length&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:LENGTH&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional) The maximum length of the impulse&quot;</span>
+                          <span class="s2">&quot; response of the overwhitening filter (s)&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--invpsd-trunc-method&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;hann&quot;</span><span class="p">],</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional) What truncation method to use &quot;</span>
+                                  <span class="s2">&quot;when applying psd-inverse-length. If not &quot;</span>
+                                  <span class="s2">&quot;provided, a hard truncation will be used.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psd-output&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+                          <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;IFO:FILE&#39;</span><span class="p">,</span>
+                          <span class="n">help</span><span class="o">=</span><span class="s2">&quot;(Optional) Write PSD to specified file&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Options for PSD variation</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-segment&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Length of segment &quot;</span>
+                             <span class="s2">&quot;when calculating the PSD variability.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-short-segment&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Length of short segment &quot;</span>
+                             <span class="s2">&quot;for outliers removal in PSD variability &quot;</span>
+                             <span class="s2">&quot;calculation.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-long-segment&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Length of long segment &quot;</span>
+                             <span class="s2">&quot;when calculating the PSD variability.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-psd-duration&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Duration of short &quot;</span>
+                             <span class="s2">&quot;segments for PSD estimation.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-psd-stride&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                             <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECONDS&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Separation between PSD &quot;</span>
+                             <span class="s2">&quot;estimation segments.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-low-freq&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;HERTZ&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Minimum frequency to consider in strain &quot;</span>
+                             <span class="s2">&quot;bandpass.&quot;</span><span class="p">)</span>
+    <span class="n">psd_options</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--psdvar-high-freq&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;HERTZ&quot;</span><span class="p">,</span>
+                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Maximum frequency to consider in strain &quot;</span>
+                             <span class="s2">&quot;bandpass.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">psd_options</span></div>
+
+
+<span class="n">ensure_one_opt_groups</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">ensure_one_opt_groups</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;--psd-file&#39;</span><span class="p">,</span> <span class="s1">&#39;--psd-model&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;--psd-estimation&#39;</span><span class="p">,</span> <span class="s1">&#39;--asd-file&#39;</span><span class="p">])</span>
+
+<div class="viewcode-block" id="verify_psd_options">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.verify_psd_options">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_psd_options</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the CLI options and verifies that they are consistent and</span>
+<span class="sd">    reasonable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes (psd_model, psd_file, asd_file, psd_estimation,</span>
+<span class="sd">        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">psd_estimation</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_estimation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">psd_estimation</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">for</span> <span class="n">opt_group</span> <span class="ow">in</span> <span class="n">ensure_one_opt_groups</span><span class="p">:</span>
+        <span class="n">ensure_one_opt</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">opt_group</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">psd_estimation</span><span class="p">:</span>
+        <span class="n">required_opts</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span>
+                      <span class="p">[</span><span class="s1">&#39;--psd-segment-stride&#39;</span><span class="p">,</span> <span class="s1">&#39;--psd-segment-length&#39;</span><span class="p">],</span>
+                      <span class="n">required_by</span> <span class="o">=</span> <span class="s2">&quot;--psd-estimation&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="verify_psd_options_multi_ifo">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.verify_psd_options_multi_ifo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_psd_options_multi_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses the CLI options and verifies that they are consistent and</span>
+<span class="sd">    reasonable.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes (psd_model, psd_file, asd_file, psd_estimation,</span>
+<span class="sd">        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</span>
+<span class="sd">    parser : object</span>
+<span class="sd">        OptionParser instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">opt_group</span> <span class="ow">in</span> <span class="n">ensure_one_opt_groups</span><span class="p">:</span>
+            <span class="n">ensure_one_opt_multi_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">opt_group</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_estimation</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+            <span class="n">required_opts_multi_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span>
+                      <span class="p">[</span><span class="s1">&#39;--psd-segment-stride&#39;</span><span class="p">,</span> <span class="s1">&#39;--psd-segment-length&#39;</span><span class="p">],</span>
+                          <span class="n">required_by</span> <span class="o">=</span> <span class="s2">&quot;--psd-estimation&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_overlapping_psds">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.generate_overlapping_psds">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_overlapping_psds</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">gwstrain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span>
+                              <span class="n">dyn_range_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a set of overlapping PSDs to cover a stretch of data. This</span>
+<span class="sd">    allows one to analyse a long stretch of data with PSD measurements that</span>
+<span class="sd">    change with time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes (psd_model, psd_file, asd_file, psd_estimation,</span>
+<span class="sd">        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</span>
+<span class="sd">    gwstrain : Strain object</span>
+<span class="sd">        The timeseries of raw data on which to estimate PSDs.</span>
+<span class="sd">    flen : int</span>
+<span class="sd">        The length in samples of the output PSDs.</span>
+<span class="sd">    delta_f : float</span>
+<span class="sd">        The frequency step of the output PSDs in hertz.</span>
+<span class="sd">    flow: float</span>
+<span class="sd">        The low frequency cutoff to use when calculating the PSD, in hertz.</span>
+<span class="sd">    dyn_range_factor : {1, float}</span>
+<span class="sd">        For PSDs taken from models or text files, if `dyn_range_factor` is</span>
+<span class="sd">        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.</span>
+<span class="sd">    precision : str, choices (None,&#39;single&#39;,&#39;double&#39;)</span>
+<span class="sd">        If not specified, or specified as None, the precision of the returned</span>
+<span class="sd">        PSD will match the precision of the data, if measuring a PSD, or will</span>
+<span class="sd">        match the default precision of the model if using an analytical PSD.</span>
+<span class="sd">        If &#39;single&#39; the PSD will be converted to float32, if not already in</span>
+<span class="sd">        that precision. If &#39;double&#39; the PSD will be converted to float64, if</span>
+<span class="sd">        not already in that precision.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    psd_and_times : list of (start, end, PSD) tuples</span>
+<span class="sd">        This is a list of tuples containing one entry for each PSD. The first</span>
+<span class="sd">        and second entries (start, end) in each tuple represent the index</span>
+<span class="sd">        range of the gwstrain data that was used to estimate that PSD. The</span>
+<span class="sd">        third entry (psd) contains the PSD estimate between that interval.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_estimation</span><span class="p">:</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">strain</span><span class="o">=</span><span class="n">gwstrain</span><span class="p">,</span>
+                       <span class="n">dyn_range_factor</span><span class="o">=</span><span class="n">dyn_range_factor</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>
+        <span class="n">psds_and_times</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">gwstrain</span><span class="p">),</span> <span class="n">psd</span><span class="p">)</span> <span class="p">]</span>
+        <span class="k">return</span> <span class="n">psds_and_times</span>
+
+    <span class="c1"># Figure out the data length used for PSD generation</span>
+    <span class="n">seg_stride</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_segment_stride</span> <span class="o">*</span> <span class="n">gwstrain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">seg_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_segment_length</span> <span class="o">*</span> <span class="n">gwstrain</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+    <span class="n">input_data_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gwstrain</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">psd_num_segments</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># FIXME: Should we make --psd-num-segments mandatory?</span>
+        <span class="c1">#        err_msg = &quot;You must supply --num-segments.&quot;</span>
+        <span class="c1">#        raise ValueError(err_msg)</span>
+        <span class="n">num_segments</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_data_len</span> <span class="o">//</span> <span class="n">seg_stride</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">num_segments</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">psd_num_segments</span><span class="p">)</span>
+
+    <span class="n">psd_data_len</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_segments</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">seg_stride</span> <span class="o">+</span> <span class="n">seg_len</span>
+
+    <span class="c1"># How many unique PSD measurements is this?</span>
+    <span class="n">psds_and_times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">input_data_len</span> <span class="o">&lt;</span> <span class="n">psd_data_len</span><span class="p">:</span>
+        <span class="n">err_msg</span> <span class="o">=</span> <span class="s2">&quot;Input data length must be longer than data length needed &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;to estimate a PSD. You specified that a PSD should be &quot;</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;estimated with </span><span class="si">%d</span><span class="s2"> seconds. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">psd_data_len</span><span class="p">)</span>
+        <span class="n">err_msg</span> <span class="o">+=</span> <span class="s2">&quot;Input data length is </span><span class="si">%d</span><span class="s2"> seconds. &quot;</span> <span class="o">%</span><span class="p">(</span><span class="n">input_data_len</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">input_data_len</span> <span class="o">==</span> <span class="n">psd_data_len</span><span class="p">:</span>
+        <span class="n">num_psd_measurements</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">psd_stride</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">num_psd_measurements</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">input_data_len</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">psd_data_len</span><span class="p">)</span>
+        <span class="n">psd_stride</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">input_data_len</span> <span class="o">-</span> <span class="n">psd_data_len</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_psd_measurements</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_psd_measurements</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_psd_measurements</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">start_idx</span> <span class="o">=</span> <span class="n">input_data_len</span> <span class="o">-</span> <span class="n">psd_data_len</span>
+            <span class="n">end_idx</span> <span class="o">=</span> <span class="n">input_data_len</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start_idx</span> <span class="o">=</span> <span class="n">psd_stride</span> <span class="o">*</span> <span class="n">idx</span>
+            <span class="n">end_idx</span> <span class="o">=</span> <span class="n">psd_data_len</span> <span class="o">+</span> <span class="n">psd_stride</span> <span class="o">*</span> <span class="n">idx</span>
+        <span class="n">strain_part</span> <span class="o">=</span> <span class="n">gwstrain</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
+        <span class="n">psd</span> <span class="o">=</span> <span class="n">from_cli</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">strain</span><span class="o">=</span><span class="n">strain_part</span><span class="p">,</span>
+                       <span class="n">dyn_range_factor</span><span class="o">=</span><span class="n">dyn_range_factor</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>
+        <span class="n">psds_and_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">start_idx</span><span class="p">,</span> <span class="n">end_idx</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">psds_and_times</span></div>
+
+
+<div class="viewcode-block" id="associate_psds_to_segments">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.associate_psds_to_segments">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">associate_psds_to_segments</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">fd_segments</span><span class="p">,</span> <span class="n">gwstrain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span>
+                               <span class="n">dyn_range_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a set of overlapping PSDs covering the data in GWstrain.</span>
+<span class="sd">    Then associate these PSDs with the appropriate segment in strain_segments.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    opt : object</span>
+<span class="sd">        Result of parsing the CLI with OptionParser, or any object with the</span>
+<span class="sd">        required attributes (psd_model, psd_file, asd_file, psd_estimation,</span>
+<span class="sd">        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</span>
+<span class="sd">    fd_segments : StrainSegments.fourier_segments() object</span>
+<span class="sd">        The fourier transforms of the various analysis segments. The psd</span>
+<span class="sd">        attribute of each segment is updated to point to the appropriate PSD.</span>
+<span class="sd">    gwstrain : Strain object</span>
+<span class="sd">        The timeseries of raw data on which to estimate PSDs.</span>
+<span class="sd">    flen : int</span>
+<span class="sd">        The length in samples of the output PSDs.</span>
+<span class="sd">    delta_f : float</span>
+<span class="sd">        The frequency step of the output PSDs.</span>
+<span class="sd">    flow: float</span>
+<span class="sd">        The low frequency cutoff to use when calculating the PSD, in hertz.</span>
+<span class="sd">    dyn_range_factor : {1, float}</span>
+<span class="sd">        For PSDs taken from models or text files, if `dyn_range_factor` is</span>
+<span class="sd">        not None, then the PSD is multiplied by `dyn_range_factor` ** 2.</span>
+<span class="sd">    precision : str, choices (None,&#39;single&#39;,&#39;double&#39;)</span>
+<span class="sd">        If not specified, or specified as None, the precision of the returned</span>
+<span class="sd">        PSD will match the precision of the data, if measuring a PSD, or will</span>
+<span class="sd">        match the default precision of the model if using an analytical PSD.</span>
+<span class="sd">        If &#39;single&#39; the PSD will be converted to float32, if not already in</span>
+<span class="sd">        that precision. If &#39;double&#39; the PSD will be converted to float64, if</span>
+<span class="sd">        not already in that precision.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">psds_and_times</span> <span class="o">=</span> <span class="n">generate_overlapping_psds</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">gwstrain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span> <span class="n">delta_f</span><span class="p">,</span>
+                                       <span class="n">flow</span><span class="p">,</span> <span class="n">dyn_range_factor</span><span class="o">=</span><span class="n">dyn_range_factor</span><span class="p">,</span>
+                                       <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">fd_segment</span> <span class="ow">in</span> <span class="n">fd_segments</span><span class="p">:</span>
+        <span class="n">best_psd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">psd_overlap</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">inp_seg</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">fd_segment</span><span class="o">.</span><span class="n">seg_slice</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                                   <span class="n">fd_segment</span><span class="o">.</span><span class="n">seg_slice</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">start_idx</span><span class="p">,</span> <span class="n">end_idx</span><span class="p">,</span> <span class="n">psd</span> <span class="ow">in</span> <span class="n">psds_and_times</span><span class="p">:</span>
+            <span class="n">psd_seg</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">start_idx</span><span class="p">,</span> <span class="n">end_idx</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">psd_seg</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">inp_seg</span><span class="p">):</span>
+                <span class="n">curr_overlap</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">inp_seg</span> <span class="o">&amp;</span> <span class="n">psd_seg</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">curr_overlap</span> <span class="o">&gt;</span> <span class="n">psd_overlap</span><span class="p">:</span>
+                    <span class="n">psd_overlap</span> <span class="o">=</span> <span class="n">curr_overlap</span>
+                    <span class="n">best_psd</span> <span class="o">=</span> <span class="n">psd</span>
+        <span class="k">if</span> <span class="n">best_psd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No PSDs found intersecting segment!&quot;</span><span class="p">)</span>
+        <span class="n">fd_segment</span><span class="o">.</span><span class="n">psd</span> <span class="o">=</span> <span class="n">best_psd</span></div>
+
+
+<div class="viewcode-block" id="associate_psds_to_single_ifo_segments">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.associate_psds_to_single_ifo_segments">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">associate_psds_to_single_ifo_segments</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">fd_segments</span><span class="p">,</span> <span class="n">gwstrain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span>
+                                          <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span>
+                                          <span class="n">dyn_range_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Associate PSDs to segments for a single ifo when using the multi-detector</span>
+<span class="sd">    CLI</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">single_det_opt</span> <span class="o">=</span> <span class="n">copy_opts_for_single_ifo</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">ifo</span><span class="p">)</span>
+    <span class="n">associate_psds_to_segments</span><span class="p">(</span><span class="n">single_det_opt</span><span class="p">,</span> <span class="n">fd_segments</span><span class="p">,</span> <span class="n">gwstrain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span>
+                               <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">dyn_range_factor</span><span class="o">=</span><span class="n">dyn_range_factor</span><span class="p">,</span>
+                               <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="associate_psds_to_multi_ifo_segments">
+<a class="viewcode-back" href="../../pycbc.psd.html#pycbc.psd.associate_psds_to_multi_ifo_segments">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">associate_psds_to_multi_ifo_segments</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">fd_segments</span><span class="p">,</span> <span class="n">gwstrain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span>
+                                         <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span>
+                                         <span class="n">dyn_range_factor</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Associate PSDs to segments for all ifos when using the multi-detector CLI</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">gwstrain</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="n">gwstrain</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">strain</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">fd_segments</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">segments</span> <span class="o">=</span> <span class="n">fd_segments</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">segments</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">associate_psds_to_single_ifo_segments</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="n">segments</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">flen</span><span class="p">,</span>
+                <span class="n">delta_f</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">dyn_range_factor</span><span class="o">=</span><span class="n">dyn_range_factor</span><span class="p">,</span>
+                <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,634 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.waveform.waveform_modes &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.waveform.waveform_modes</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.waveform.waveform_modes</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2020  Collin Capano, Alex Nitz</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;Provides functions and utilities for generating waveforms mode-by-mode.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">string</span><span class="w"> </span><span class="kn">import</span> <span class="n">Formatter</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lal</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc</span><span class="w"> </span><span class="kn">import</span> <span class="n">libutils</span><span class="p">,</span> <span class="n">pnutils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">TimeSeries</span><span class="p">,</span> <span class="n">FrequencySeries</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MSUN_SI</span><span class="p">,</span> <span class="n">PC_SI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.waveform</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">_check_lal_pars</span><span class="p">,</span> <span class="n">check_args</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">parameters</span>
+
+<span class="n">lalsimulation</span> <span class="o">=</span> <span class="n">libutils</span><span class="o">.</span><span class="n">import_optional</span><span class="p">(</span><span class="s1">&#39;lalsimulation&#39;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_formatdocstr</span><span class="p">(</span><span class="n">docstr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility for formatting docstrings with parameter information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">docstr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="o">**</span><span class="p">{</span><span class="n">_p</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">_p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">docstr</span><span class="p">(</span>
+            <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;    &quot;</span><span class="p">,</span> <span class="n">include_label</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+           <span class="k">for</span> <span class="n">_p</span> <span class="ow">in</span> <span class="n">Formatter</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">docstr</span><span class="p">)</span> <span class="k">if</span> <span class="n">_p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+           <span class="p">})</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_formatdocstrlist</span><span class="p">(</span><span class="n">docstr</span><span class="p">,</span> <span class="n">paramlist</span><span class="p">,</span> <span class="n">skip_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility for formatting docstrings with parameter information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">skip_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">skip_params</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pl</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">_p</span><span class="o">.</span><span class="n">docstr</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;    &quot;</span><span class="p">,</span> <span class="n">include_label</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">_p</span> <span class="ow">in</span> <span class="n">paramlist</span> <span class="k">if</span> <span class="n">_p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_params</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">docstr</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">pl</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="sum_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.sum_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sum_modes</span><span class="p">(</span><span class="n">hlms</span><span class="p">,</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies spherical harmonics and sums modes to produce a plus and cross</span>
+<span class="sd">    polarization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hlms : dict</span>
+<span class="sd">        Dictionary of ``(l, m)`` -&gt; complex ``hlm``. The ``hlm`` may be a</span>
+<span class="sd">        complex number or array, or complex ``TimeSeries``. All modes in the</span>
+<span class="sd">        dictionary will be summed.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        The inclination to use.</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        The phase to use.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    complex float or array</span>
+<span class="sd">        The plus and cross polarization as a complex number. The real part</span>
+<span class="sd">        gives the plus, the negative imaginary part the cross.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">hlms</span><span class="p">:</span>
+        <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">hlms</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span>
+        <span class="n">ylm</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">SpinWeightedSphericalHarmonic</span><span class="p">(</span><span class="n">inclination</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">ylm</span> <span class="o">*</span> <span class="n">hlm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">+=</span> <span class="n">ylm</span> <span class="o">*</span> <span class="n">hlm</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<div class="viewcode-block" id="default_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.default_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_modes</span><span class="p">(</span><span class="n">approximant</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the default modes for the given approximant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># FIXME: this should be replaced to a call to a lalsimulation function,</span>
+    <span class="c1"># whenever that&#39;s added</span>
+    <span class="k">if</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;IMRPhenomXPHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IMRPhenomXHM&#39;</span><span class="p">]:</span>
+        <span class="c1"># according to arXiv:2004.06503</span>
+        <span class="n">ma</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span>
+        <span class="c1"># add the -m modes</span>
+        <span class="n">ma</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="o">-</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ma</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">approximant</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;IMRPhenomPv3HM&#39;</span><span class="p">,</span> <span class="s1">&#39;IMRPhenomHM&#39;</span><span class="p">]:</span>
+        <span class="c1"># according to arXiv:1911.06050</span>
+        <span class="n">ma</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)]</span>
+        <span class="c1"># add the -m modes</span>
+        <span class="n">ma</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="o">-</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ma</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">approximant</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;NRSur7dq4&#39;</span><span class="p">):</span>
+        <span class="c1"># according to arXiv:1905.09300</span>
+        <span class="n">ma</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">approximant</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;NRHybSur3dq8&#39;</span><span class="p">):</span>
+        <span class="c1"># according to arXiv:1812.07865</span>
+        <span class="n">ma</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+              <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;I don&#39;t know what the default modes are for &quot;</span>
+                         <span class="s2">&quot;approximant </span><span class="si">{}</span><span class="s2">, sorry!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">approximant</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ma</span></div>
+
+
+
+<div class="viewcode-block" id="get_glm">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_glm">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_glm</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The maginitude of the :math:`{}_{-2}Y_{\ell m}`.</span>
+
+<span class="sd">    The spin-weighted spherical harmonics can be written as</span>
+<span class="sd">    :math:`{}_{-2}Y_{\ell m}(\theta, \phi) = g_{\ell m}(\theta)e^{i m \phi}`.</span>
+<span class="sd">    This returns the `g_{\ell m}(\theta)` part. Note that this is real.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    l : int</span>
+<span class="sd">        The :math:`\ell` index of the spherical harmonic.</span>
+<span class="sd">    m : int</span>
+<span class="sd">        The :math:`m` index of the spherical harmonic.</span>
+<span class="sd">    theta : float</span>
+<span class="sd">        The polar angle (in radians).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float :</span>
+<span class="sd">        The amplitude of the harmonic at the given polar angle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">lal</span><span class="o">.</span><span class="n">SpinWeightedSphericalHarmonic</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="n">real</span></div>
+
+
+
+<div class="viewcode-block" id="get_nrsur_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_nrsur_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_nrsur_modes</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates NRSurrogate waveform mode-by-mode.</span>
+
+<span class="sd">    All waveform parameters should be provided as keyword arguments.</span>
+<span class="sd">    Recognized parameters are listed below. Unrecognized arguments are ignored.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template: object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        The approximant to generate. Must be one of the ``NRSur*`` models.</span>
+<span class="sd">    {delta_t}</span>
+<span class="sd">    {mass1}</span>
+<span class="sd">    {mass2}</span>
+<span class="sd">    {spin1x}</span>
+<span class="sd">    {spin1y}</span>
+<span class="sd">    {spin1z}</span>
+<span class="sd">    {spin2x}</span>
+<span class="sd">    {spin2y}</span>
+<span class="sd">    {spin2z}</span>
+<span class="sd">    {f_lower}</span>
+<span class="sd">    {f_ref}</span>
+<span class="sd">    {distance}</span>
+<span class="sd">    {mode_array}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of ``(l, m)`` -&gt; ``(h_+, -h_x)`` ``TimeSeries``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">laldict</span> <span class="o">=</span> <span class="n">_check_lal_pars</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">SimInspiralPrecessingNRSurModes</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_ref&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">1e6</span><span class="o">*</span><span class="n">PC_SI</span><span class="p">,</span> <span class="n">laldict</span><span class="p">,</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">lalsimulation</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">hlms</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">while</span> <span class="n">ret</span><span class="p">:</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span>
+                         <span class="n">epoch</span><span class="o">=</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="n">hlms</span><span class="p">[</span><span class="n">ret</span><span class="o">.</span><span class="n">l</span><span class="p">,</span> <span class="n">ret</span><span class="o">.</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hlm</span><span class="o">.</span><span class="n">real</span><span class="p">(),</span> <span class="n">hlm</span><span class="o">.</span><span class="n">imag</span><span class="p">())</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span><span class="o">.</span><span class="n">next</span>
+    <span class="k">return</span> <span class="n">hlms</span></div>
+
+
+<div class="viewcode-block" id="get_nrhybsur_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_nrhybsur_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_nrhybsur_modes</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates NRHybSur3dq8 waveform mode-by-mode.</span>
+
+<span class="sd">    All waveform parameters should be provided as keyword arguments.</span>
+<span class="sd">    Recognized parameters are listed below. Unrecognized arguments are ignored.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template: object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        The approximant to generate. Must be one of the ``NRHyb*`` models.</span>
+<span class="sd">    {delta_t}</span>
+<span class="sd">    {mass1}</span>
+<span class="sd">    {mass2}</span>
+<span class="sd">    {spin1z}</span>
+<span class="sd">    {spin2z}</span>
+<span class="sd">    {f_lower}</span>
+<span class="sd">    {f_ref}</span>
+<span class="sd">    {distance}</span>
+<span class="sd">    {mode_array}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of ``(l, m)`` -&gt; ``(h_+, -h_x)`` ``TimeSeries``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">laldict</span> <span class="o">=</span> <span class="n">_check_lal_pars</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">SimIMRNRHybSur3dq8Modes</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_ref&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">1e6</span><span class="o">*</span><span class="n">PC_SI</span><span class="p">,</span> <span class="n">laldict</span>
+    <span class="p">)</span>
+    <span class="n">hlms</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">while</span> <span class="n">ret</span><span class="p">:</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span>
+                         <span class="n">epoch</span><span class="o">=</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="n">hlms</span><span class="p">[</span><span class="n">ret</span><span class="o">.</span><span class="n">l</span><span class="p">,</span> <span class="n">ret</span><span class="o">.</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hlm</span><span class="o">.</span><span class="n">real</span><span class="p">(),</span> <span class="n">hlm</span><span class="o">.</span><span class="n">imag</span><span class="p">())</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span><span class="o">.</span><span class="n">next</span>
+    <span class="k">return</span> <span class="n">hlms</span></div>
+
+
+
+<span class="n">get_nrsur_modes</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_formatdocstr</span><span class="p">(</span><span class="n">get_nrsur_modes</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+<span class="n">get_nrhybsur_modes</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_formatdocstr</span><span class="p">(</span><span class="n">get_nrhybsur_modes</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_lalsimulation_approximant">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_lalsimulation_approximant">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_lalsimulation_approximant</span><span class="p">(</span><span class="n">approximant</span><span class="p">):</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">lalsimulation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ls</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;EOBNRv2&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">EOBNRv2</span><span class="p">,</span>
+        <span class="s1">&#39;EOBNRv2HM&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">EOBNRv2HM</span><span class="p">,</span>
+        <span class="s1">&#39;IMRPhenomTPHM&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">IMRPhenomTPHM</span><span class="p">,</span>
+        <span class="s1">&#39;NRSur7dq2&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">NRSur7dq2</span><span class="p">,</span>
+        <span class="s1">&#39;NRSur7dq4&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">NRSur7dq4</span><span class="p">,</span>
+        <span class="s1">&#39;NRHybSur3dq8&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">NRHybSur3dq8</span><span class="p">,</span>
+        <span class="s1">&#39;pSEOBNRv4HM_PA&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">pSEOBNRv4HM_PA</span><span class="p">,</span>
+        <span class="s1">&#39;SEOBNRv4HM_PA&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">SEOBNRv4HM_PA</span><span class="p">,</span>
+        <span class="s1">&#39;SEOBNRv4P&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">SEOBNRv4P</span><span class="p">,</span>
+        <span class="s1">&#39;SEOBNRv4PHM&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">SEOBNRv4PHM</span><span class="p">,</span>
+        <span class="s1">&#39;SpinTaylorT1&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">SpinTaylorT1</span><span class="p">,</span>
+        <span class="s1">&#39;SpinTaylorT4&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">SpinTaylorT4</span><span class="p">,</span>
+        <span class="s1">&#39;SpinTaylorT5&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">SpinTaylorT5</span><span class="p">,</span>
+        <span class="s1">&#39;TaylorT1&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">TaylorT1</span><span class="p">,</span>
+        <span class="s1">&#39;TaylorT2&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">TaylorT2</span><span class="p">,</span>
+        <span class="s1">&#39;TaylorT3&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">TaylorT3</span><span class="p">,</span>
+        <span class="s1">&#39;TaylorT4&#39;</span><span class="p">:</span> <span class="n">ls</span><span class="o">.</span><span class="n">TaylorT4</span><span class="p">,</span>
+        <span class="p">}[</span><span class="n">approximant</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_lalsimulation_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_lalsimulation_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_lalsimulation_modes</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates approximant waveform mode-by-mode.</span>
+
+<span class="sd">    All waveform parameters should be provided as keyword arguments.</span>
+<span class="sd">    Recognized parameters are listed below. Unrecognized arguments are ignored.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template: object</span>
+<span class="sd">        An object that has attached properties. This can be used to substitute</span>
+<span class="sd">        for keyword arguments. A common example would be a row in an xml table.</span>
+<span class="sd">    approximant : str</span>
+<span class="sd">        The approximant to generate. Must be available in ``lalsimulation``.</span>
+<span class="sd">    {delta_t}</span>
+<span class="sd">    {mass1}</span>
+<span class="sd">    {mass2}</span>
+<span class="sd">    {spin1x}</span>
+<span class="sd">    {spin1y}</span>
+<span class="sd">    {spin1z}</span>
+<span class="sd">    {spin2x}</span>
+<span class="sd">    {spin2y}</span>
+<span class="sd">    {spin2z}</span>
+<span class="sd">    {f_lower}</span>
+<span class="sd">    {f_ref}</span>
+<span class="sd">    {distance}</span>
+<span class="sd">    {mode_array}</span>
+<span class="sd">    {ell_max}</span>
+<span class="sd">    {approximant}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict :</span>
+<span class="sd">        Dictionary of ``(l, m)`` -&gt; ``(h_+, -h_x)`` ``TimeSeries``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ell_max</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">if</span> <span class="s1">&#39;ell_max&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="n">ell_max</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ell_max&#39;</span><span class="p">]</span>
+    <span class="n">laldict</span> <span class="o">=</span> <span class="n">_check_lal_pars</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">SimInspiralChooseTDModes</span><span class="p">(</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;coa_phase&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;delta_t&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">MSUN_SI</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1x&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1y&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2x&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2y&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_ref&#39;</span><span class="p">],</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">1e6</span><span class="o">*</span><span class="n">PC_SI</span><span class="p">,</span> <span class="n">laldict</span><span class="p">,</span>
+        <span class="n">ell_max</span><span class="p">,</span>
+        <span class="n">get_lalsimulation_approximant</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">hlms</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">while</span> <span class="n">ret</span><span class="p">:</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span>
+                         <span class="n">epoch</span><span class="o">=</span><span class="n">ret</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="n">hlms</span><span class="p">[(</span><span class="n">ret</span><span class="o">.</span><span class="n">l</span><span class="p">,</span> <span class="n">ret</span><span class="o">.</span><span class="n">m</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hlm</span><span class="o">.</span><span class="n">real</span><span class="p">(),</span> <span class="n">hlm</span><span class="o">.</span><span class="n">imag</span><span class="p">())</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ret</span><span class="o">.</span><span class="n">next</span>
+    <span class="k">return</span> <span class="n">hlms</span></div>
+
+
+<div class="viewcode-block" id="get_imrphenomxh_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_imrphenomxh_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_imrphenomxh_modes</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates ``IMRPhenomXHM`` waveforms mode-by-mode. &quot;&quot;&quot;</span>
+    <span class="n">approx</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">approx</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;IMRPhenomX&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unsupported approximant&quot;</span><span class="p">)</span>
+    <span class="n">mode_array</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;mode_array&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mode_array</span> <span class="o">=</span> <span class="n">default_modes</span><span class="p">(</span><span class="n">approx</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;f_final&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="c1"># setting to 0 will default to ringdown frequency</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">hlms</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="ow">in</span> <span class="n">mode_array</span><span class="p">:</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mode_array&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[(</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">)]</span>
+        <span class="n">laldict</span> <span class="o">=</span> <span class="n">_check_lal_pars</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">lalsimulation</span><span class="o">.</span><span class="n">SimIMRPhenomXHMGenerateFDOneMode</span><span class="p">(</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">pnutils</span><span class="o">.</span><span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass1&#39;</span><span class="p">])),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">pnutils</span><span class="o">.</span><span class="n">solar_mass_to_kg</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;mass2&#39;</span><span class="p">])),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin1z&#39;</span><span class="p">]),</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;spin2z&#39;</span><span class="p">]),</span> <span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span>
+            <span class="n">pnutils</span><span class="o">.</span><span class="n">megaparsecs_to_meters</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;distance&#39;</span><span class="p">])),</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_lower&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_final&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;delta_f&#39;</span><span class="p">],</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;coa_phase&#39;</span><span class="p">],</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;f_ref&#39;</span><span class="p">],</span>
+            <span class="n">laldict</span><span class="p">)</span>
+        <span class="n">hlm</span> <span class="o">=</span> <span class="n">FrequencySeries</span><span class="p">(</span><span class="n">hlm</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_f</span><span class="o">=</span><span class="n">hlm</span><span class="o">.</span><span class="n">deltaF</span><span class="p">,</span>
+                              <span class="n">epoch</span><span class="o">=</span><span class="n">hlm</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># Plus, cross strains without Y_lm.</span>
+        <span class="c1"># (-1)**(l) factor ALREADY included in FDOneMode</span>
+        <span class="n">hplm</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">hlm</span>  <span class="c1"># Plus strain</span>
+        <span class="n">hclm</span> <span class="o">=</span> <span class="mf">0.5</span><span class="n">j</span> <span class="o">*</span> <span class="n">hlm</span>  <span class="c1"># Cross strain</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hclm</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">hlms</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hplm</span><span class="p">,</span> <span class="n">hclm</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hlms</span></div>
+
+
+
+<span class="n">_mode_waveform_td</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;EOBNRv2&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;EOBNRv2HM&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;IMRPhenomTPHM&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;NRSur7dq2&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;NRSur7dq4&#39;</span><span class="p">:</span> <span class="n">get_nrsur_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;NRHybSur3dq8&#39;</span><span class="p">:</span> <span class="n">get_nrhybsur_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;pSEOBNRv4HM_PA&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;SEOBNRv4HM_PA&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;SEOBNRv4P&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;SEOBNRv4PHM&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;SpinTaylorT1&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;SpinTaylorT4&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;SpinTaylorT5&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;TaylorT1&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;TaylorT2&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;TaylorT3&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="s1">&#39;TaylorT4&#39;</span><span class="p">:</span> <span class="n">get_lalsimulation_modes</span><span class="p">,</span>
+                     <span class="p">}</span>
+<span class="n">_mode_waveform_fd</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;IMRPhenomXHM&#39;</span><span class="p">:</span> <span class="n">get_imrphenomxh_modes</span><span class="p">,</span>
+                     <span class="p">}</span>
+<span class="c1"># &#39;IMRPhenomXPHM&#39;:get_imrphenomhm_modes needs to be implemented</span>
+<span class="c1"># LAL function do not split strain mode by mode</span>
+
+<div class="viewcode-block" id="fd_waveform_mode_approximants">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.fd_waveform_mode_approximants">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fd_waveform_mode_approximants</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Frequency domain approximants that will return separate modes.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_mode_waveform_fd</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="td_waveform_mode_approximants">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.td_waveform_mode_approximants">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">td_waveform_mode_approximants</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Time domain approximants that will return separate modes.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_mode_waveform_td</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="get_fd_waveform_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_fd_waveform_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_fd_waveform_modes</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates frequency domain waveforms, but does not sum over the modes.</span>
+
+<span class="sd">    The returned values are the frequency-domain equivalents of the real and</span>
+<span class="sd">    imaginary parts of the complex :math:`\mathfrak{{h}}_{{\ell m}}(t)` time</span>
+<span class="sd">    series. In other words, the returned values are equivalent to the Fourier</span>
+<span class="sd">    Transform of the two time series returned by</span>
+<span class="sd">    :py:func:`get_td_waveform_modes`; see that function for more details.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template: object</span>
+<span class="sd">        An object that has attached properties. This can be used to subsitute</span>
+<span class="sd">        for keyword arguments.</span>
+
+<span class="sd">    {params}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ulm : dict</span>
+<span class="sd">        Dictionary of mode tuples -&gt; fourier transform of the real part of the</span>
+<span class="sd">        hlm time series, as a :py:class:`pycbc.types.FrequencySeries`.</span>
+<span class="sd">    vlm : dict</span>
+<span class="sd">        Dictionary of mode tuples -&gt; fourier transform of the imaginary part of</span>
+<span class="sd">        the hlm time series, as a :py:class:`pycbc.types.FrequencySeries`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">props</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">fd_required</span>
+    <span class="n">check_args</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span>
+    <span class="n">apprx</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">apprx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_mode_waveform_fd</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;I don&#39;t support approximant </span><span class="si">{}</span><span class="s2">, sorry&quot;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">apprx</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_mode_waveform_fd</span><span class="p">[</span><span class="n">apprx</span><span class="p">](</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
+
+
+
+<span class="n">get_fd_waveform_modes</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_formatdocstrlist</span><span class="p">(</span>
+    <span class="n">get_fd_waveform_modes</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">parameters</span><span class="o">.</span><span class="n">fd_waveform_params</span><span class="p">,</span>
+    <span class="n">skip_params</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">,</span> <span class="s1">&#39;coa_phase&#39;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="get_td_waveform_modes">
+<a class="viewcode-back" href="../../../pycbc.waveform.html#pycbc.waveform.waveform_modes.get_td_waveform_modes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_td_waveform_modes</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates time domain waveforms, but does not sum over the modes.</span>
+
+<span class="sd">    The returned values are the real and imaginary parts of the complex</span>
+<span class="sd">    :math:`\mathfrak{{h}}_{{\ell m}}(t)`. These are defined such that the plus</span>
+<span class="sd">    and cross polarizations :math:`h_{{+,\times}}` are:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       h_{{+,\times}}(\theta, \phi; t) = (\Re, -\Im) \sum_{{\ell m}}</span>
+<span class="sd">        {{}}_{{-2}}Y_{{\ell m}}(\theta, \phi) \mathfrak{{h}}_{{\ell m}}(t).</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template: object</span>
+<span class="sd">        An object that has attached properties. This can be used to subsitute</span>
+<span class="sd">        for keyword arguments.</span>
+
+<span class="sd">    {params}</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ulm : dict</span>
+<span class="sd">        Dictionary of mode tuples -&gt; real part of the hlm, as a</span>
+<span class="sd">        :py:class:`pycbc.types.TimeSeries`.</span>
+<span class="sd">    vlm : dict</span>
+<span class="sd">        Dictionary of mode tuples -&gt; imaginary part of the hlm, as a</span>
+<span class="sd">        :py:class:`pycbc.types.TimeSeries`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">props</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">td_required</span>
+    <span class="n">check_args</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span>
+    <span class="n">apprx</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;approximant&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">apprx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_mode_waveform_td</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;I don&#39;t support approximant </span><span class="si">{}</span><span class="s2">, sorry&quot;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">apprx</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_mode_waveform_td</span><span class="p">[</span><span class="n">apprx</span><span class="p">](</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
+
+
+
+<span class="n">get_td_waveform_modes</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_formatdocstrlist</span><span class="p">(</span>
+    <span class="n">get_td_waveform_modes</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">parameters</span><span class="o">.</span><span class="n">td_waveform_params</span><span class="p">,</span>
+    <span class="n">skip_params</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;inclination&#39;</span><span class="p">,</span> <span class="s1">&#39;coa_phase&#39;</span><span class="p">])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

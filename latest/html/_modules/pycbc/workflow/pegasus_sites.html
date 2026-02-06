@@ -1,0 +1,449 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.pegasus_sites &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.workflow.pegasus_sites</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.pegasus_sites</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2021 The PyCBC development team</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot; This module provides default site catalogs, which should be suitable for</span>
+<span class="sd">most use cases. You can override individual details here. It should also be</span>
+<span class="sd">possible to implement a new site, but not sure how that would work in practice.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">urllib.parse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shutil</span><span class="w"> </span><span class="kn">import</span> <span class="n">which</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urljoin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.request</span><span class="w"> </span><span class="kn">import</span> <span class="n">pathname2url</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">Pegasus.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Directory</span><span class="p">,</span> <span class="n">FileServer</span><span class="p">,</span> <span class="n">Site</span><span class="p">,</span> <span class="n">Operation</span><span class="p">,</span> <span class="n">Namespace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Pegasus.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Arch</span><span class="p">,</span> <span class="n">OS</span><span class="p">,</span> <span class="n">SiteCatalog</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">last_release</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">release</span>  <span class="c1"># noqa</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.workflow.pegasus_sites&#39;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">release</span><span class="p">:</span>
+    <span class="n">sing_version</span> <span class="o">=</span> <span class="n">version</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">sing_version</span> <span class="o">=</span> <span class="n">last_release</span>
+
+<span class="c1"># NOTE urllib is weird. For some reason it only allows known schemes and will</span>
+<span class="c1"># give *wrong* results, rather then failing, if you use something like gsiftp</span>
+<span class="c1"># We can add schemes explicitly, as below, but be careful with this!</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">uses_relative</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;gsiftp&#39;</span><span class="p">)</span>
+<span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">uses_netloc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;gsiftp&#39;</span><span class="p">)</span>
+
+<span class="n">KNOWN_SITES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="s1">&#39;condorpool_symlink&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;condorpool_copy&#39;</span><span class="p">,</span> <span class="s1">&#39;condorpool_shared&#39;</span><span class="p">,</span> <span class="s1">&#39;osg&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="add_site_pegasus_profile">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_site_pegasus_profile">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_site_pegasus_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add options from [pegasus_profile] in configparser to site&quot;&quot;&quot;</span>
+    <span class="c1"># Add global profile information</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;pegasus_profile&#39;</span><span class="p">):</span>
+        <span class="n">add_ini_site_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;pegasus_profile&#39;</span><span class="p">)</span>
+    <span class="c1"># Add site-specific profile information</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s1">&#39;pegasus_profile-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">)):</span>
+        <span class="n">add_ini_site_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="s1">&#39;pegasus_profile-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">site</span><span class="o">.</span><span class="n">name</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="add_ini_site_profile">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_ini_site_profile">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_ini_site_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">sec</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add options from sec in configparser to site&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">cp</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">sec</span><span class="p">):</span>
+        <span class="n">namespace</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">namespace</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;pycbc&#39;</span><span class="p">,</span> <span class="s1">&#39;container&#39;</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">opt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_local_site">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_local_site">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_local_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">local_url</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add the local site to site catalog&quot;&quot;&quot;</span>
+    <span class="c1"># local_url must end with a &#39;/&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">local_url</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">):</span>
+        <span class="n">local_url</span> <span class="o">=</span> <span class="n">local_url</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+
+    <span class="n">local</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">&quot;local&quot;</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">Arch</span><span class="o">.</span><span class="n">X86_64</span><span class="p">,</span> <span class="n">os_type</span><span class="o">=</span><span class="n">OS</span><span class="o">.</span><span class="n">LINUX</span><span class="p">)</span>
+    <span class="n">add_site_pegasus_profile</span><span class="p">(</span><span class="n">local</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="n">local_dir</span> <span class="o">=</span> <span class="n">Directory</span><span class="p">(</span><span class="n">Directory</span><span class="o">.</span><span class="n">SHARED_SCRATCH</span><span class="p">,</span>
+                          <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="s1">&#39;local-site-scratch&#39;</span><span class="p">))</span>
+    <span class="n">local_file_serv</span> <span class="o">=</span> <span class="n">FileServer</span><span class="p">(</span><span class="n">urljoin</span><span class="p">(</span><span class="n">local_url</span><span class="p">,</span> <span class="s1">&#39;local-site-scratch&#39;</span><span class="p">),</span>
+                                 <span class="n">Operation</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span>
+    <span class="n">local_dir</span><span class="o">.</span><span class="n">add_file_servers</span><span class="p">(</span><span class="n">local_file_serv</span><span class="p">)</span>
+    <span class="n">local</span><span class="o">.</span><span class="n">add_directories</span><span class="p">(</span><span class="n">local_dir</span><span class="p">)</span>
+
+    <span class="n">local</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;condor&quot;</span><span class="p">)</span>
+    <span class="n">local</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;getenv&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">sitecat</span><span class="o">.</span><span class="n">add_sites</span><span class="p">(</span><span class="n">local</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_condorpool_symlink_site">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_condorpool_symlink_site">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_condorpool_symlink_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add condorpool_symlink site to site catalog&quot;&quot;&quot;</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">&quot;condorpool_symlink&quot;</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">Arch</span><span class="o">.</span><span class="n">X86_64</span><span class="p">,</span> <span class="n">os_type</span><span class="o">=</span><span class="n">OS</span><span class="o">.</span><span class="n">LINUX</span><span class="p">)</span>
+    <span class="n">add_site_pegasus_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;condor&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;data.configuration&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;nonsharedfs&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;transfer.bypass.input.staging&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;auxillary.local&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.OpenScienceGrid&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;False&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;should_transfer_files&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Yes&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;when_to_transfer_output&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;ON_EXIT_OR_EVICT&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;getenv&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.DESIRED_Sites&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s1">&#39;&quot;nogrid&quot;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.IS_GLIDEIN&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s1">&#39;&quot;False&quot;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.flock_local&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">DAGMAN</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;retry&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>
+    <span class="n">sitecat</span><span class="o">.</span><span class="n">add_sites</span><span class="p">(</span><span class="n">site</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_condorpool_copy_site">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_condorpool_copy_site">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_condorpool_copy_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add condorpool_copy site to site catalog&quot;&quot;&quot;</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">&quot;condorpool_copy&quot;</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">Arch</span><span class="o">.</span><span class="n">X86_64</span><span class="p">,</span> <span class="n">os_type</span><span class="o">=</span><span class="n">OS</span><span class="o">.</span><span class="n">LINUX</span><span class="p">)</span>
+    <span class="n">add_site_pegasus_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;condor&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;data.configuration&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;nonsharedfs&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;transfer.bypass.input.staging&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="c1"># This explicitly disables symlinking</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;nosymlink&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;auxillary.local&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.OpenScienceGrid&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;False&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;should_transfer_files&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Yes&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;when_to_transfer_output&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;ON_EXIT_OR_EVICT&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;getenv&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.DESIRED_Sites&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s1">&#39;&quot;nogrid&quot;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.IS_GLIDEIN&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s1">&#39;&quot;False&quot;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.flock_local&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">DAGMAN</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;retry&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>
+    <span class="n">sitecat</span><span class="o">.</span><span class="n">add_sites</span><span class="p">(</span><span class="n">site</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_condorpool_shared_site">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_condorpool_shared_site">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_condorpool_shared_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">local_url</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add condorpool_shared site to site catalog&quot;&quot;&quot;</span>
+    <span class="c1"># local_url must end with a &#39;/&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">local_url</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">):</span>
+        <span class="n">local_url</span> <span class="o">=</span> <span class="n">local_url</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+
+    <span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">&quot;condorpool_shared&quot;</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">Arch</span><span class="o">.</span><span class="n">X86_64</span><span class="p">,</span> <span class="n">os_type</span><span class="o">=</span><span class="n">OS</span><span class="o">.</span><span class="n">LINUX</span><span class="p">)</span>
+    <span class="n">add_site_pegasus_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+
+    <span class="c1"># It&#39;s annoying that this is needed!</span>
+    <span class="n">local_dir</span> <span class="o">=</span> <span class="n">Directory</span><span class="p">(</span><span class="n">Directory</span><span class="o">.</span><span class="n">SHARED_SCRATCH</span><span class="p">,</span>
+                          <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="s1">&#39;cpool-site-scratch&#39;</span><span class="p">))</span>
+    <span class="n">local_file_serv</span> <span class="o">=</span> <span class="n">FileServer</span><span class="p">(</span><span class="n">urljoin</span><span class="p">(</span><span class="n">local_url</span><span class="p">,</span> <span class="s1">&#39;cpool-site-scratch&#39;</span><span class="p">),</span>
+                                 <span class="n">Operation</span><span class="o">.</span><span class="n">ALL</span><span class="p">)</span>
+    <span class="n">local_dir</span><span class="o">.</span><span class="n">add_file_servers</span><span class="p">(</span><span class="n">local_file_serv</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_directories</span><span class="p">(</span><span class="n">local_dir</span><span class="p">)</span>
+
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;condor&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;data.configuration&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;sharedfs&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;transfer.bypass.input.staging&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;auxillary.local&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.OpenScienceGrid&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;False&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;should_transfer_files&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Yes&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;when_to_transfer_output&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;ON_EXIT_OR_EVICT&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;getenv&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.DESIRED_Sites&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s1">&#39;&quot;nogrid&quot;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.IS_GLIDEIN&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s1">&#39;&quot;False&quot;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.flock_local&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">DAGMAN</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;retry&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;2&quot;</span><span class="p">)</span>
+    <span class="c1"># Need to set PEGASUS_HOME</span>
+    <span class="n">peg_home</span> <span class="o">=</span> <span class="n">which</span><span class="p">(</span><span class="s1">&#39;pegasus-plan&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">peg_home</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s1">&#39;pegasus-plan command not found. &#39;</span>
+            <span class="s1">&#39;Make sure Pegasus is correctly installed.&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">peg_home</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;bin/pegasus-plan&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;path to pegasus-plan is weird: </span><span class="si">{</span><span class="n">peg_home</span><span class="si">}</span><span class="s1">. &#39;</span>
+            <span class="s1">&#39;Make sure Pegasus is correctly installed.&#39;</span>
+        <span class="p">)</span>
+    <span class="n">peg_home</span> <span class="o">=</span> <span class="n">peg_home</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;bin/pegasus-plan&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">ENV</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;PEGASUS_HOME&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">peg_home</span><span class="p">)</span>
+    <span class="n">sitecat</span><span class="o">.</span><span class="n">add_sites</span><span class="p">(</span><span class="n">site</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># NOTE: We should now be able to add a nonfs site. I&#39;ll leave this for a</span>
+<span class="c1">#       future patch/as demanded feature though. The setup would largely be</span>
+<span class="c1">#       the same as the OSG site, except without the OSG specific things.</span>
+
+<span class="c1"># def add_condorpool_nonfs_site(sitecat, cp):</span>
+
+
+<div class="viewcode-block" id="add_osg_site">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_osg_site">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_osg_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add osg site to site catalog&quot;&quot;&quot;</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">&quot;osg&quot;</span><span class="p">,</span> <span class="n">arch</span><span class="o">=</span><span class="n">Arch</span><span class="o">.</span><span class="n">X86_64</span><span class="p">,</span> <span class="n">os_type</span><span class="o">=</span><span class="n">OS</span><span class="o">.</span><span class="n">LINUX</span><span class="p">)</span>
+    <span class="n">add_site_pegasus_profile</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;condor&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;data.configuration&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;condorio&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">PEGASUS</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;transfer.bypass.input.staging&#39;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;should_transfer_files&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Yes&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;when_to_transfer_output&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;ON_SUCCESS&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;success_exit_code&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.OpenScienceGrid&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;getenv&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;False&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;ulog_execute_attrs&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;GLIDEIN_Site&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.InitializeModulesEnv&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;False&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.SingularityCleanEnv&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="c1"># These numbers below correspond to the codes in table B.2 here:</span>
+    <span class="c1"># https://htcondor.readthedocs.io/en/24.0/codes-other-values/job-event-log-codes.html</span>
+    <span class="c1"># Values recommended by a condor expert</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.DAGManNodesMask&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">0,1,2,4,5,7,8,9,10,11,12,13,16,17,24,27,35,36,40</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;Requirements&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;(HAS_SINGULARITY =?= TRUE) &amp;&amp; &quot;</span>
+                            <span class="s2">&quot;(IS_GLIDEIN =?= True)&quot;</span><span class="p">)</span>
+    <span class="n">cvmfs_loc</span> <span class="o">=</span> <span class="s1">&#39;&quot;/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v&#39;</span>
+    <span class="n">cvmfs_loc</span> <span class="o">+=</span> <span class="n">sing_version</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">CONDOR</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;My.SingularityImage&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="n">cvmfs_loc</span><span class="p">)</span>
+    <span class="c1"># On OSG failure rate is high</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">DAGMAN</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;retry&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;4&quot;</span><span class="p">)</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">ENV</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;LAL_DATA_PATH&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation&quot;</span><span class="p">)</span>
+    <span class="c1"># Add MKL location to LD_LIBRARY_PATH for OSG</span>
+    <span class="n">site</span><span class="o">.</span><span class="n">add_profiles</span><span class="p">(</span><span class="n">Namespace</span><span class="o">.</span><span class="n">ENV</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;LD_LIBRARY_PATH&quot;</span><span class="p">,</span>
+                      <span class="n">value</span><span class="o">=</span><span class="s2">&quot;/usr/local/lib:/.singularity.d/libs&quot;</span><span class="p">)</span>
+    <span class="n">sitecat</span><span class="o">.</span><span class="n">add_sites</span><span class="p">(</span><span class="n">site</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_site">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.add_site">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">sitename</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add site sitename to site catalog&quot;&quot;&quot;</span>
+    <span class="c1"># Allow local site scratch to be overriden for any site which uses it</span>
+    <span class="n">sec</span> <span class="o">=</span> <span class="s1">&#39;pegasus_profile-</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sitename</span><span class="p">)</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="s1">&#39;pycbc|site-scratch&#39;</span>
+    <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+        <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="n">opt</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">has_option</span><span class="p">(</span><span class="n">sec</span><span class="p">,</span> <span class="s1">&#39;pycbc|unique-scratch&#39;</span><span class="p">):</span>
+            <span class="n">scratchdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;pycbc-tmp_&#39;</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">scratchdir</span><span class="p">,</span> <span class="mo">0o755</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">scratchdir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">-site-scratch&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sitename</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">out_dir</span> <span class="o">=</span> <span class="n">scratchdir</span>
+    <span class="k">elif</span> <span class="n">out_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="n">local_url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="s1">&#39;file://&#39;</span><span class="p">,</span> <span class="n">pathname2url</span><span class="p">(</span><span class="n">out_dir</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">sitename</span> <span class="o">==</span> <span class="s1">&#39;local&#39;</span><span class="p">:</span>
+        <span class="n">add_local_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">local_url</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sitename</span> <span class="o">==</span> <span class="s1">&#39;condorpool_symlink&#39;</span><span class="p">:</span>
+        <span class="n">add_condorpool_symlink_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sitename</span> <span class="o">==</span> <span class="s1">&#39;condorpool_copy&#39;</span><span class="p">:</span>
+        <span class="n">add_condorpool_copy_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sitename</span> <span class="o">==</span> <span class="s1">&#39;condorpool_shared&#39;</span><span class="p">:</span>
+        <span class="n">add_condorpool_shared_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">,</span> <span class="n">local_url</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sitename</span> <span class="o">==</span> <span class="s1">&#39;osg&#39;</span><span class="p">:</span>
+        <span class="n">add_osg_site</span><span class="p">(</span><span class="n">sitecat</span><span class="p">,</span> <span class="n">cp</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Do not recognize site </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sitename</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="make_catalog">
+<a class="viewcode-back" href="../../../pycbc.workflow.html#pycbc.workflow.pegasus_sites.make_catalog">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_catalog</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make combined catalog of built-in known sites&quot;&quot;&quot;</span>
+    <span class="n">catalog</span> <span class="o">=</span> <span class="n">SiteCatalog</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">KNOWN_SITES</span><span class="p">:</span>
+        <span class="n">add_site</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="n">out_dir</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">catalog</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

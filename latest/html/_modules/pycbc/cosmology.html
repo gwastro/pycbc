@@ -1,0 +1,711 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.cosmology &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.cosmology</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.cosmology</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2017  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules provides functions for computing cosmological quantities, such as</span>
+<span class="sd">redshift. This is mostly a wrapper around ``astropy.cosmology``.</span>
+
+<span class="sd">Note: in all functions, ``distance`` is short hand for ``luminosity_distance``.</span>
+<span class="sd">Any other distance measure is explicitly named; e.g., ``comoving_distance``.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.cosmology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">CosmologyError</span><span class="p">,</span> <span class="n">parameters</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pycbc.conversions</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.cosmology&#39;</span><span class="p">)</span>
+
+<span class="n">DEFAULT_COSMOLOGY</span> <span class="o">=</span> <span class="s1">&#39;Planck15&#39;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_cosmology</span><span class="p">(</span><span class="n">cosmology</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Gets an astropy cosmology class.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cosmology : str or astropy.cosmology.FlatLambdaCDM, optional</span>
+<span class="sd">        The name of the cosmology to use. For the list of options, see</span>
+<span class="sd">        :py:attr:`astropy.cosmology.parameters.available`. If None, and no</span>
+<span class="sd">        other keyword arguments are provided, will default to</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`. If an instance of</span>
+<span class="sd">        :py:class:`astropy.cosmology.FlatLambdaCDM`, will just return that.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        If any other keyword arguments are provided they will be passed to</span>
+<span class="sd">        :py:attr:`astropy.cosmology.FlatLambdaCDM` to create a custom</span>
+<span class="sd">        cosmology.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    astropy.cosmology.FlatLambdaCDM</span>
+<span class="sd">        The cosmology to use.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Use the default:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.cosmology import get_cosmology</span>
+<span class="sd">    &gt;&gt;&gt; get_cosmology()</span>
+<span class="sd">    FlatLambdaCDM(name=&quot;Planck15&quot;, H0=67.7 km / (Mpc s), Om0=0.307,</span>
+<span class="sd">                  Tcmb0=2.725 K, Neff=3.05, m_nu=[0.   0.   0.06] eV,</span>
+<span class="sd">                  Ob0=0.0486)</span>
+
+<span class="sd">    Use properties measured by WMAP instead:</span>
+
+<span class="sd">    &gt;&gt;&gt; get_cosmology(&quot;WMAP9&quot;)</span>
+<span class="sd">    FlatLambdaCDM(name=&quot;WMAP9&quot;, H0=69.3 km / (Mpc s), Om0=0.286, Tcmb0=2.725 K,</span>
+<span class="sd">                  Neff=3.04, m_nu=[0. 0. 0.] eV, Ob0=0.0463)</span>
+
+<span class="sd">    Create your own cosmology (see :py:class:`astropy.cosmology.FlatLambdaCDM`</span>
+<span class="sd">    for details on the default values used):</span>
+
+<span class="sd">    &gt;&gt;&gt; get_cosmology(H0=70., Om0=0.3)</span>
+<span class="sd">    FlatLambdaCDM(H0=70 km / (Mpc s), Om0=0.3, Tcmb0=0 K, Neff=3.04, m_nu=None,</span>
+<span class="sd">                  Ob0=None)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">cosmology</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;if providing custom cosmological parameters, do &quot;</span>
+                         <span class="s2">&quot;not provide a `cosmology` argument&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cosmology</span><span class="p">,</span> <span class="n">astropy</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">FlatLambdaCDM</span><span class="p">):</span>
+        <span class="c1"># just return</span>
+        <span class="k">return</span> <span class="n">cosmology</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">cosmology</span> <span class="o">=</span> <span class="n">astropy</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">FlatLambdaCDM</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cosmology</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cosmology</span> <span class="o">=</span> <span class="n">DEFAULT_COSMOLOGY</span>
+        <span class="k">if</span> <span class="n">cosmology</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">available</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;unrecognized cosmology </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cosmology</span><span class="p">))</span>
+        <span class="n">cosmology</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">astropy</span><span class="o">.</span><span class="n">cosmology</span><span class="p">,</span> <span class="n">cosmology</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cosmology</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">z_at_value</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">fval</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">zmax</span><span class="o">=</span><span class="mf">1000.</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Wrapper around astropy.cosmology.z_at_value to handle numpy arrays.</span>
+
+<span class="sd">    Getting a z for a cosmological quantity involves numerically inverting</span>
+<span class="sd">    ``func``. The ``zmax`` argument sets how large of a z to guess (see</span>
+<span class="sd">    :py:func:`astropy.cosmology.z_at_value` for details). If a z is larger than</span>
+<span class="sd">    ``zmax``, this will try a larger zmax up to ``zmax * 10**5``. If that still</span>
+<span class="sd">    is not large enough, will just return ``numpy.inf``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : function or method</span>
+<span class="sd">        A function that takes redshift as input.</span>
+<span class="sd">    fval : float</span>
+<span class="sd">        The value of ``func(z)``.</span>
+<span class="sd">    unit : astropy.unit</span>
+<span class="sd">        The unit of ``fval``.</span>
+<span class="sd">    zmax : float, optional</span>
+<span class="sd">        The initial maximum search limit for ``z``. Default is 1000.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to</span>
+<span class="sd">        :py:func:``astropy.cosmology.z_at_value``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The redshift at the requested values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fval</span><span class="p">,</span> <span class="n">input_is_array</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">conversions</span><span class="o">.</span><span class="n">ensurearray</span><span class="p">(</span><span class="n">fval</span><span class="p">)</span>
+    <span class="c1"># make sure fval is atleast 1D</span>
+    <span class="k">if</span> <span class="n">fval</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">fval</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fval</span> <span class="o">=</span> <span class="n">fval</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">zs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fval</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># the output array</span>
+    <span class="k">if</span> <span class="s1">&#39;method&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="c1"># workaround for https://github.com/astropy/astropy/issues/14249</span>
+        <span class="c1"># FIXME remove when fixed in astropy/scipy</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;bounded&#39;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fval</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">zs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">astropy</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">z_at_value</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">val</span><span class="o">*</span><span class="n">unit</span><span class="p">,</span> <span class="n">zmax</span><span class="o">=</span><span class="n">zmax</span><span class="p">,</span>
+                                                  <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CosmologyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ii</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># if zs[ii] is less than but very close to zmax, let&#39;s say</span>
+                <span class="c1"># zs[ii] is the last element in the [zmin, zmax],</span>
+                <span class="c1"># `z_at_value` will also returns &quot;CosmologyError&quot;, please</span>
+                <span class="c1"># see (https://docs.astropy.org/en/stable/api/astropy.</span>
+                <span class="c1"># cosmology.z_at_value.html), in order to avoid bumping up</span>
+                <span class="c1"># zmax, just set zs equals to previous value, we assume</span>
+                <span class="c1"># the `func` is smooth</span>
+                <span class="n">zs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">zs</span><span class="p">[</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># we&#39;ll get this if the z was larger than zmax; in that</span>
+                <span class="c1"># case we&#39;ll try bumping up zmax later to get a value</span>
+                <span class="n">zs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+    <span class="c1"># check if there were any zs &gt; zmax</span>
+    <span class="n">replacemask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+    <span class="c1"># try bumping up zmax to get a result</span>
+    <span class="k">if</span> <span class="n">replacemask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="c1"># we&#39;ll keep bumping up the maxz until we can get a result</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># to prevent running forever</span>
+        <span class="k">while</span> <span class="n">replacemask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;zmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">zmax</span>
+            <span class="n">zmax</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">zmax</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">replacemask</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">fval</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">zs</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">astropy</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">z_at_value</span><span class="p">(</span>
+                        <span class="n">func</span><span class="p">,</span> <span class="n">val</span><span class="o">*</span><span class="n">unit</span><span class="p">,</span> <span class="n">zmax</span><span class="o">=</span><span class="n">zmax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">replacemask</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">except</span> <span class="n">CosmologyError</span><span class="p">:</span>
+                    <span class="c1"># didn&#39;t work, try on next loop</span>
+                    <span class="k">pass</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">counter</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="c1"># give up and warn the user</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;One or more values correspond to a &quot;</span>
+                               <span class="s2">&quot;redshift &gt; </span><span class="si">{0:.1e}</span><span class="s2">. The redshift for these &quot;</span>
+                               <span class="s2">&quot;have been set to inf. If you would like &quot;</span>
+                               <span class="s2">&quot;better precision, call God.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">zmax</span><span class="p">))</span>
+                <span class="k">break</span>
+    <span class="k">return</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">conversions</span><span class="o">.</span><span class="n">formatreturn</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">input_is_array</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_redshift</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Uses astropy to get redshift from the given luminosity distance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distance : float</span>
+<span class="sd">        The luminosity distance, in Mpc.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float :</span>
+<span class="sd">        The redshift corresponding to the given luminosity distance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">z_at_value</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">Mpc</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DistToZ</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Interpolates luminosity distance as a function of redshift to allow for</span>
+<span class="sd">    fast conversion.</span>
+
+<span class="sd">    The :mod:`astropy.cosmology` module provides methods for converting any</span>
+<span class="sd">    cosmological parameter (like luminosity distance) to redshift. This can be</span>
+<span class="sd">    very slow when operating on a large array, as it involves numerically</span>
+<span class="sd">    inverting :math:`z(D)` (where :math:`D` is the luminosity distance). This</span>
+<span class="sd">    class speeds that up by pre-interpolating :math:`D(z)`. It works by setting</span>
+<span class="sd">    up a dense grid of redshifts, then using linear interpolation to find the</span>
+<span class="sd">    inverse function.  The interpolation uses a grid linear in z for z &lt; 1, and</span>
+<span class="sd">    log in z for ``default_maxz`` &gt; z &gt; 1. This interpolater is setup the first</span>
+<span class="sd">    time `get_redshift` is called.  If a distance is requested that results in</span>
+<span class="sd">    a z &gt; ``default_maxz``, the class falls back to calling astropy directly.</span>
+
+<span class="sd">    Instances of this class can be called like a function on luminosity</span>
+<span class="sd">    distances, which will return the corresponding redshifts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    default_maxz : float, optional</span>
+<span class="sd">        The maximum z to interpolate up to before falling back to calling</span>
+<span class="sd">        astropy directly. Default is 1000.</span>
+<span class="sd">    numpoints : int, optional</span>
+<span class="sd">        The number of points to use in the linear interpolation between 0 to 1</span>
+<span class="sd">        and 1 to ``default_maxz``. Default is 10000.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_maxz</span><span class="o">=</span><span class="mf">1000.</span><span class="p">,</span> <span class="n">numpoints</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numpoints</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpoints</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_maxz</span> <span class="o">=</span> <span class="n">default_maxz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># the interpolating functions; we&#39;ll set them to None for now, then set</span>
+        <span class="c1"># them up when get_redshift is first called</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearby_d2z</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">faraway_d2z</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_maxdist</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_interpolant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the z(d) interpolation.&quot;&quot;&quot;</span>
+        <span class="c1"># for computing nearby (z &lt; 1) redshifts</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpoints</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearby_d2z</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                                                <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># for computing far away (z &gt; 1) redshifts</span>
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_maxz</span><span class="p">),</span>
+                            <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpoints</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">faraway_d2z</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">zs</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                                                 <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># store the default maximum distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_maxdist</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_redshift</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the redshift for the given distance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dist</span><span class="p">,</span> <span class="n">input_is_array</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">conversions</span><span class="o">.</span><span class="n">ensurearray</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">zs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearby_d2z</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># interpolant hasn&#39;t been setup yet</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_interpolant</span><span class="p">()</span>
+            <span class="n">zs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearby_d2z</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="c1"># if any points had red shifts beyond the nearby, will have nans;</span>
+        <span class="c1"># replace using the faraway interpolation</span>
+        <span class="n">replacemask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">replacemask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">zs</span><span class="p">[</span><span class="n">replacemask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">faraway_d2z</span><span class="p">(</span><span class="n">dist</span><span class="p">[</span><span class="n">replacemask</span><span class="p">])</span>
+            <span class="n">replacemask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+        <span class="c1"># if we still have nans, means that some distances are beyond our</span>
+        <span class="c1"># furthest default; fall back to using astropy</span>
+        <span class="k">if</span> <span class="n">replacemask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="c1"># well... check that the distance is positive and finite first</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">dist</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="ow">and</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;distance must be finite and &gt; 0&quot;</span><span class="p">)</span>
+            <span class="n">zs</span><span class="p">[</span><span class="n">replacemask</span><span class="p">]</span> <span class="o">=</span> <span class="n">_redshift</span><span class="p">(</span><span class="n">dist</span><span class="p">[</span><span class="n">replacemask</span><span class="p">],</span>
+                                        <span class="n">cosmology</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">conversions</span><span class="o">.</span><span class="n">formatreturn</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">input_is_array</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dist</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_redshift</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+
+
+<span class="c1"># set up D(z) interpolating classes for the standard cosmologies</span>
+<span class="n">_d2zs</span> <span class="o">=</span> <span class="p">{</span><span class="n">_c</span><span class="p">:</span> <span class="n">DistToZ</span><span class="p">(</span><span class="n">cosmology</span><span class="o">=</span><span class="n">_c</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">available</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="redshift">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.cosmology.redshift">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">redshift</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the redshift associated with the given luminosity distance.</span>
+
+<span class="sd">    If the requested cosmology is one of the pre-defined ones in</span>
+<span class="sd">    :py:attr:`astropy.cosmology.parameters.available`, :py:class:`DistToZ` is</span>
+<span class="sd">    used to provide a fast interpolation. This takes a few seconds to setup</span>
+<span class="sd">    on the first call.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distance : float</span>
+<span class="sd">        The luminosity distance, in Mpc.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float :</span>
+<span class="sd">        The redshift corresponding to the given distance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_d2zs</span><span class="p">[</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span><span class="p">](</span><span class="n">distance</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="c1"># not a standard cosmology, call the redshift function</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">_redshift</span><span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="n">cosmology</span><span class="o">=</span><span class="n">cosmology</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">z</span></div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ComovingVolInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Interpolates comoving volume to distance or redshift.</span>
+
+<span class="sd">    The :mod:`astropy.cosmology` module provides methods for converting any</span>
+<span class="sd">    cosmological parameter (like luminosity distance) to redshift. This can be</span>
+<span class="sd">    very slow when operating on a large array, as it involves numerically</span>
+<span class="sd">    inverting :math:`z(D)` (where :math:`D` is the luminosity distance). This</span>
+<span class="sd">    class speeds that up by pre-interpolating :math:`D(z)`. It works by setting</span>
+<span class="sd">    up a dense grid of redshifts, then using linear interpolation to find the</span>
+<span class="sd">    inverse function.  The interpolation uses a grid linear in z for z &lt; 1, and</span>
+<span class="sd">    log in z for ``default_maxz`` &gt; z &gt; 1. This interpolater is setup the first</span>
+<span class="sd">    time `get_redshift` is called.  If a distance is requested that results in</span>
+<span class="sd">    a z &gt; ``default_maxz``, the class falls back to calling astropy directly.</span>
+
+<span class="sd">    Instances of this class can be called like a function on luminosity</span>
+<span class="sd">    distances, which will return the corresponding redshifts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parameter : {&#39;luminosity_distance&#39;, &#39;redshift&#39;}</span>
+<span class="sd">        What parameter to interpolate.</span>
+<span class="sd">    default_maxz : float, optional</span>
+<span class="sd">        The maximum z to interpolate up to before falling back to calling</span>
+<span class="sd">        astropy directly. Default is 10.</span>
+<span class="sd">    numpoints : int, optional</span>
+<span class="sd">    The number of points to use in the linear interpolation between 0 to 1</span>
+<span class="sd">        and 1 to ``default_maxz``. Default is 1000.</span>
+<span class="sd">    vol_func: function, optional</span>
+<span class="sd">        Optionally set how the volume is calculated by providing a function</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">default_maxz</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> <span class="n">numpoints</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                 <span class="n">vol_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span> <span class="o">=</span> <span class="n">parameter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numpoints</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpoints</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_maxz</span> <span class="o">=</span> <span class="n">default_maxz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># the interpolating functions; we&#39;ll set them to None for now, then set</span>
+        <span class="c1"># them up when get_redshift is first called</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearby_interp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">faraway_interp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_maxvol</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">vol_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span> <span class="o">=</span> <span class="n">vol_func</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span><span class="o">.</span><span class="n">comoving_volume</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vol_units</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">unit</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_interpolant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minz</span><span class="p">,</span> <span class="n">maxz</span><span class="p">):</span>
+        <span class="n">minlogv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span><span class="p">(</span><span class="n">minz</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">maxlogv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span><span class="p">(</span><span class="n">maxz</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">logvs</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minlogv</span><span class="p">,</span> <span class="n">maxlogv</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">numpoints</span><span class="p">)</span>
+
+        <span class="n">zs</span> <span class="o">=</span> <span class="n">z_at_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logvs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vol_units</span><span class="p">,</span> <span class="n">maxz</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span> <span class="o">!=</span> <span class="s1">&#39;redshift&#39;</span><span class="p">:</span>
+            <span class="n">ys</span> <span class="o">=</span> <span class="n">cosmological_quantity_from_redshift</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ys</span> <span class="o">=</span> <span class="n">zs</span>
+
+        <span class="k">return</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp1d</span><span class="p">(</span><span class="n">logvs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                                    <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_interpolant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the z(d) interpolation.&quot;&quot;&quot;</span>
+        <span class="c1"># get VC bounds</span>
+        <span class="c1"># for computing nearby (z &lt; 1) redshifts</span>
+        <span class="n">minz</span> <span class="o">=</span> <span class="mf">0.001</span>
+        <span class="n">maxz</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nearby_interp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_interpolant</span><span class="p">(</span><span class="n">minz</span><span class="p">,</span> <span class="n">maxz</span><span class="p">)</span>
+        <span class="c1"># for computing far away (z &gt; 1) redshifts</span>
+        <span class="n">minz</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="n">maxz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_maxz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">faraway_interp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_interpolant</span><span class="p">(</span><span class="n">minz</span><span class="p">,</span> <span class="n">maxz</span><span class="p">)</span>
+        <span class="c1"># store the default maximum volume</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_maxvol</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span><span class="p">(</span><span class="n">maxz</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_value_from_logv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logv</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the redshift for the given distance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logv</span><span class="p">,</span> <span class="n">input_is_array</span> <span class="o">=</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">conversions</span><span class="o">.</span><span class="n">ensurearray</span><span class="p">(</span><span class="n">logv</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearby_interp</span><span class="p">(</span><span class="n">logv</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="c1"># interpolant hasn&#39;t been setup yet</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_interpolant</span><span class="p">()</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearby_interp</span><span class="p">(</span><span class="n">logv</span><span class="p">)</span>
+        <span class="c1"># if any points had red shifts beyond the nearby, will have nans;</span>
+        <span class="c1"># replace using the faraway interpolation</span>
+        <span class="n">replacemask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">replacemask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">vals</span><span class="p">[</span><span class="n">replacemask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">faraway_interp</span><span class="p">(</span><span class="n">logv</span><span class="p">[</span><span class="n">replacemask</span><span class="p">])</span>
+            <span class="n">replacemask</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="c1"># if we still have nans, means that some distances are beyond our</span>
+        <span class="c1"># furthest default; fall back to using astropy</span>
+        <span class="k">if</span> <span class="n">replacemask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="c1"># well... check that the logv is finite first</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">logv</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;comoving volume must be finite and &gt; 0&quot;</span><span class="p">)</span>
+            <span class="n">zs</span> <span class="o">=</span> <span class="n">z_at_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vol_func</span><span class="p">,</span>
+                            <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logv</span><span class="p">[</span><span class="n">replacemask</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">vol_units</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span> <span class="o">==</span> <span class="s1">&#39;redshift&#39;</span><span class="p">:</span>
+                <span class="n">vals</span><span class="p">[</span><span class="n">replacemask</span><span class="p">]</span> <span class="o">=</span> <span class="n">zs</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vals</span><span class="p">[</span><span class="n">replacemask</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cosmology</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="p">)(</span><span class="n">zs</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">conversions</span><span class="o">.</span><span class="n">formatreturn</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">input_is_array</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value_from_logv</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">volume</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+
+
+<span class="c1"># set up D(z) interpolating classes for the standard cosmologies</span>
+<span class="n">_v2ds</span> <span class="o">=</span> <span class="p">{</span><span class="n">_c</span><span class="p">:</span> <span class="n">ComovingVolInterpolator</span><span class="p">(</span><span class="s1">&#39;luminosity_distance&#39;</span><span class="p">,</span> <span class="n">cosmology</span><span class="o">=</span><span class="n">_c</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">available</span><span class="p">}</span>
+
+<span class="n">_v2zs</span> <span class="o">=</span> <span class="p">{</span><span class="n">_c</span><span class="p">:</span> <span class="n">ComovingVolInterpolator</span><span class="p">(</span><span class="s1">&#39;redshift&#39;</span><span class="p">,</span> <span class="n">cosmology</span><span class="o">=</span><span class="n">_c</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">available</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="redshift_from_comoving_volume">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.cosmology.redshift_from_comoving_volume">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">redshift_from_comoving_volume</span><span class="p">(</span><span class="n">vc</span><span class="p">,</span> <span class="n">interp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the redshift from the given comoving volume.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    vc : float</span>
+<span class="sd">        The comoving volume, in units of cubed Mpc.</span>
+<span class="sd">    interp : bool, optional</span>
+<span class="sd">        If true, this will setup an interpolator between redshift and comoving</span>
+<span class="sd">        volume the first time this function is called. This is useful when</span>
+<span class="sd">        making many successive calls to this function (and is necessary when</span>
+<span class="sd">        using this function in a transform when doing parameter estimation).</span>
+<span class="sd">        However, setting up the interpolator the first time takes O(10)s of</span>
+<span class="sd">        seconds. If you will only be making a single call to this function, or</span>
+<span class="sd">        will only run it on an array with &lt; ~100000 elements, it is faster to</span>
+<span class="sd">        not use the interpolator (i.e., set ``interp=False``). Default is</span>
+<span class="sd">        ``True``.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float :</span>
+<span class="sd">        The redshift at the given comoving volume.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">lookup</span> <span class="o">=</span> <span class="n">_v2zs</span> <span class="k">if</span> <span class="n">interp</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">lookup</span><span class="p">[</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span><span class="p">](</span><span class="n">vc</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="c1"># not using interp or not a standard cosmology,</span>
+        <span class="c1"># call the redshift function directly</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">z_at_value</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">comoving_volume</span><span class="p">,</span> <span class="n">vc</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">Mpc</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">z</span></div>
+
+
+
+<div class="viewcode-block" id="distance_from_comoving_volume">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.cosmology.distance_from_comoving_volume">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">distance_from_comoving_volume</span><span class="p">(</span><span class="n">vc</span><span class="p">,</span> <span class="n">interp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the luminosity distance from the given comoving volume.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    vc : float</span>
+<span class="sd">        The comoving volume, in units of cubed Mpc.</span>
+<span class="sd">    interp : bool, optional</span>
+<span class="sd">        If true, this will setup an interpolator between distance and comoving</span>
+<span class="sd">        volume the first time this function is called. This is useful when</span>
+<span class="sd">        making many successive calls to this function (such as when using this</span>
+<span class="sd">        function in a transform for parameter estimation).  However, setting up</span>
+<span class="sd">        the interpolator the first time takes O(10)s of seconds. If you will</span>
+<span class="sd">        only be making a single call to this function, or will only run it on</span>
+<span class="sd">        an array with &lt; ~100000 elements, it is faster to not use the</span>
+<span class="sd">        interpolator (i.e., set ``interp=False``). Default is ``True``.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float :</span>
+<span class="sd">        The luminosity distance at the given comoving volume.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">lookup</span> <span class="o">=</span> <span class="n">_v2ds</span> <span class="k">if</span> <span class="n">interp</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">lookup</span><span class="p">[</span><span class="n">cosmology</span><span class="o">.</span><span class="n">name</span><span class="p">](</span><span class="n">vc</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="c1"># not using interp or not a standard cosmology,</span>
+        <span class="c1"># call the redshift function directly</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">z_at_value</span><span class="p">(</span><span class="n">cosmology</span><span class="o">.</span><span class="n">comoving_volume</span><span class="p">,</span> <span class="n">vc</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">Mpc</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">cosmology</span><span class="o">.</span><span class="n">luminosity_distance</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">return</span> <span class="n">dist</span></div>
+
+
+
+<div class="viewcode-block" id="cosmological_quantity_from_redshift">
+<a class="viewcode-back" href="../../pycbc.html#pycbc.cosmology.cosmological_quantity_from_redshift">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cosmological_quantity_from_redshift</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">strip_unit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Returns the value of a cosmological quantity (e.g., age) at a redshift.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    z : float</span>
+<span class="sd">        The redshift.</span>
+<span class="sd">    quantity : str</span>
+<span class="sd">        The name of the quantity to get. The name may be any attribute of</span>
+<span class="sd">        :py:class:`astropy.cosmology.FlatLambdaCDM`.</span>
+<span class="sd">    strip_unit : bool, optional</span>
+<span class="sd">        Just return the value of the quantity, sans units. Default is True.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword args are passed to :py:func:`get_cosmology` to</span>
+<span class="sd">        select a cosmology. If none provided, will use</span>
+<span class="sd">        :py:attr:`DEFAULT_COSMOLOGY`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float or astropy.units.quantity :</span>
+<span class="sd">        The value of the quantity at the requested value. If ``strip_unit`` is</span>
+<span class="sd">        ``True``, will return the value. Otherwise, will return the value with</span>
+<span class="sd">        units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cosmology</span> <span class="o">=</span> <span class="n">get_cosmology</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">cosmology</span><span class="p">,</span> <span class="n">quantity</span><span class="p">)(</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">strip_unit</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">return</span> <span class="n">val</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">,</span> <span class="s1">&#39;redshift_from_comoving_volume&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;distance_from_comoving_volume&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;cosmological_quantity_from_redshift&#39;</span><span class="p">,</span>
+           <span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

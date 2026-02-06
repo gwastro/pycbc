@@ -1,0 +1,1089 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.detector.space &mdash; PyCBC 2.10.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=751f435e"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../searches.html">PyCBC searches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.detector.space</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.detector.space</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: UTF-8 -*-</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides utilities for simulating the GW response of space-based</span>
+<span class="sd">observatories.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.coordinates.space</span><span class="w"> </span><span class="kn">import</span> <span class="n">TIME_OFFSET_20_DEGREES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pycbc.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeries</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">constants</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="get_available_space_detectors">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.space.get_available_space_detectors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_available_space_detectors</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List the available space detectors&quot;&quot;&quot;</span>
+    <span class="n">dets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_space_detectors</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dets</span><span class="p">:</span>
+        <span class="n">aliases</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_space_detectors</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;aliases&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">dets</span> <span class="o">+</span> <span class="n">aliases</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_det_name</span><span class="p">(</span><span class="n">detector_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a string into a detector name and TDI channel.</span>
+<span class="sd">       The input is assumed to look like &#39;{detector name}_{channel name}.&#39;&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">detector_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">chan</span> <span class="o">=</span> <span class="n">out</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="c1"># detector_name is just the detector, so save channel name as None</span>
+        <span class="n">chan</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">det</span><span class="p">,</span> <span class="n">chan</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_polarization</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">polarization</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply polarization rotation matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hp : array</span>
+<span class="sd">        The plus polarization of the GW.</span>
+
+<span class="sd">    hc : array</span>
+<span class="sd">        The cross polarization of the GW.</span>
+
+<span class="sd">    polarization : float</span>
+<span class="sd">        The SSB polarization angle of the GW in radians.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (array, array)</span>
+<span class="sd">        The plus and cross polarizations of the GW rotated by the</span>
+<span class="sd">        polarization angle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cphi</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">polarization</span><span class="p">)</span>
+    <span class="n">sphi</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">polarization</span><span class="p">)</span>
+
+    <span class="n">hp_ssb</span> <span class="o">=</span> <span class="n">hp</span><span class="o">*</span><span class="n">cphi</span> <span class="o">-</span> <span class="n">hc</span><span class="o">*</span><span class="n">sphi</span>
+    <span class="n">hc_ssb</span> <span class="o">=</span> <span class="n">hp</span><span class="o">*</span><span class="n">sphi</span> <span class="o">+</span> <span class="n">hc</span><span class="o">*</span><span class="n">cphi</span>
+
+    <span class="k">return</span> <span class="n">hp_ssb</span><span class="p">,</span> <span class="n">hc_ssb</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_signal_times</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">orbit_start_time</span><span class="p">,</span> <span class="n">orbit_end_time</span><span class="p">,</span>
+                       <span class="n">offset</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">,</span> <span class="n">pad_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="mf">1e4</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure that input signal lies within the provided orbital window. This</span>
+<span class="sd">    assumes that the start times of hp and hc are relative to the detector</span>
+<span class="sd">    mission start time.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hp : pycbc.types.TimeSeries</span>
+<span class="sd">        The plus polarization of the GW.</span>
+
+<span class="sd">    hc : pycbc.types.TimeSeries</span>
+<span class="sd">        The cross polarization of the GW.</span>
+
+<span class="sd">    orbit_start_time : float</span>
+<span class="sd">        SSB start time in seconds of the orbital data. By convention,</span>
+<span class="sd">        t = 0 corresponds to the mission start time of the detector.</span>
+
+<span class="sd">    orbit_end_time : float</span>
+<span class="sd">        SSB end time in seconds of the orbital data.</span>
+
+<span class="sd">    polarization : float (optional)</span>
+<span class="sd">        The polarization in radians of the GW. Default 0.</span>
+
+<span class="sd">    offset : float (optional)</span>
+<span class="sd">        Time offset in seconds to apply to SSB times to ensure proper</span>
+<span class="sd">        orientation of the constellation at t=0. Default 7365189.431698299</span>
+<span class="sd">        for a 20 degree offset from Earth.</span>
+
+<span class="sd">    pad_data : bool (optional)</span>
+<span class="sd">        Flag whether to pad the input GW data with time length t0</span>
+<span class="sd">        worth of zeros. Default False.</span>
+
+<span class="sd">    t0 : float (optional)</span>
+<span class="sd">        Time duration in seconds by which to pad the data if pad_data</span>
+<span class="sd">        is True. Default 1e4.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (pycbc.types.TimeSeries, pycbc.types.TimeSeries)</span>
+<span class="sd">        The plus and cross polarizations of the GW in the SSB frame,</span>
+<span class="sd">        padded as requested and/or truncated to fit in the orbital window.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">delta_t</span>
+
+    <span class="c1"># apply offsets to wfs</span>
+    <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">offset</span>
+    <span class="n">hc</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">offset</span>
+
+    <span class="c1"># pad the data with zeros</span>
+    <span class="k">if</span> <span class="n">pad_data</span><span class="p">:</span>
+        <span class="n">pad_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">t0</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">hp</span><span class="o">.</span><span class="n">prepend_zeros</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span>
+        <span class="n">hp</span><span class="o">.</span><span class="n">append_zeros</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span>
+        <span class="n">hc</span><span class="o">.</span><span class="n">prepend_zeros</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span>
+        <span class="n">hc</span><span class="o">.</span><span class="n">append_zeros</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">)</span>
+
+    <span class="c1"># make sure signal lies within orbit length</span>
+    <span class="k">if</span> <span class="n">hp</span><span class="o">.</span><span class="n">duration</span> <span class="o">+</span> <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">orbit_end_time</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Time of signal end is greater than end of orbital &#39;</span> <span class="o">+</span>
+                        <span class="sa">f</span><span class="s1">&#39;data. Cutting signal at </span><span class="si">{</span><span class="n">orbit_end_time</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># cut off data succeeding orbit end time</span>
+        <span class="n">end_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">orbit_end_time</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[:</span><span class="n">end_idx</span><span class="p">]</span>
+        <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[:</span><span class="n">end_idx</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">orbit_start_time</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Time of signal start is less than start of orbital &#39;</span> <span class="o">+</span>
+                        <span class="sa">f</span><span class="s1">&#39;data. Cutting signal at </span><span class="si">{</span><span class="n">orbit_start_time</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># cut off data preceding orbit start time</span>
+        <span class="n">start_idx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">orbit_start_time</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:]</span>
+        <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:]</span>
+
+    <span class="k">return</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_channels</span><span class="p">(</span><span class="n">tdi_dict</span><span class="p">,</span> <span class="n">remove_garbage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="mf">1e4</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cut TDI channels if needed.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tdi_dict : dict</span>
+<span class="sd">        The TDI channels, formatted as a dictionary of TimeSeries arrays</span>
+<span class="sd">        keyed by the channel label.</span>
+
+<span class="sd">    remove_garbage : bool, str (optional)</span>
+<span class="sd">        Flag whether to remove data from the edges of the channels. If True,</span>
+<span class="sd">        time length t0 is cut from the start and end. If &#39;zero&#39;, time length</span>
+<span class="sd">        t0 is zeroed at the start and end. If False, channels are unmodified.</span>
+<span class="sd">        Default False.</span>
+
+<span class="sd">    t0 : float (optional)</span>
+<span class="sd">        Time in seconds to cut/zero from data if remove_garbage is True/&#39;zero&#39;.</span>
+<span class="sd">        Default 1e4.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="n">tdi_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">remove_garbage</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">tdi_dict</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span><span class="o">.</span><span class="n">delta_t</span>
+            <span class="n">pad_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">t0</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">remove_garbage</span> <span class="o">==</span> <span class="s1">&#39;zero&#39;</span><span class="p">:</span>
+                <span class="c1"># zero the edge data</span>
+                <span class="n">tdi_dict</span><span class="p">[</span><span class="n">chan</span><span class="p">][:</span><span class="n">pad_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">tdi_dict</span><span class="p">[</span><span class="n">chan</span><span class="p">][</span><span class="o">-</span><span class="n">pad_idx</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">remove_garbage</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="c1"># cut the edge data</span>
+                <span class="n">slc</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pad_idx</span><span class="p">,</span> <span class="o">-</span><span class="n">pad_idx</span><span class="p">)</span>
+                <span class="n">tdi_dict</span><span class="p">[</span><span class="n">chan</span><span class="p">]</span> <span class="o">=</span> <span class="n">tdi_dict</span><span class="p">[</span><span class="n">chan</span><span class="p">][</span><span class="n">slc</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;remove_garbage arg must be a bool or &quot;zero&quot;&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tdi_dict</span>
+
+<span class="n">_space_detectors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;LISA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;armlength&#39;</span><span class="p">:</span> <span class="mf">2.5e9</span><span class="p">,</span>
+                             <span class="s1">&#39;aliases&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;LISA_A&#39;</span><span class="p">,</span> <span class="s1">&#39;LISA_E&#39;</span><span class="p">,</span> <span class="s1">&#39;LISA_T&#39;</span><span class="p">,</span>
+                                         <span class="s1">&#39;LISA_X&#39;</span><span class="p">,</span> <span class="s1">&#39;LISA_Y&#39;</span><span class="p">,</span> <span class="s1">&#39;LISA_Z&#39;</span><span class="p">],</span>
+                            <span class="p">},</span>
+                   <span class="p">}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AbsSpaceDet</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class to set structure for space detector classes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detector_name : str</span>
+<span class="sd">        The name of the detector. Accepts any output from</span>
+<span class="sd">        `get_available_space_detectors`.</span>
+<span class="sd">    </span>
+<span class="sd">    reference_time : float (optional)</span>
+<span class="sd">        The reference time in seconds of the signal in the SSB frame. This is</span>
+<span class="sd">        defined such that the detector mission start time corresponds to 0.</span>
+<span class="sd">        Default None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chan</span> <span class="o">=</span> <span class="n">parse_det_name</span><span class="p">(</span><span class="n">detector_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">get_available_space_detectors</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Unrecognized detector. &#39;</span><span class="p">,</span>
+                                      <span class="s1">&#39;Currently accepts: &#39;</span><span class="p">,</span>
+                                      <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">get_available_space_detectors</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_time</span> <span class="o">=</span> <span class="n">reference_time</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sky_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List the sky coordinate names for the detector class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">project_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Placeholder for evaluating the TDI channels from the GW projections.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_LDC_detector</span><span class="p">(</span><span class="n">AbsSpaceDet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    LISA detector modeled using LDC software. Constellation orbits are</span>
+<span class="sd">    generated using LISA Orbits (https://pypi.org/project/lisaorbits/).</span>
+<span class="sd">    Link projections are generated using LISA GW Response</span>
+<span class="sd">    (10.5281/zenodo.6423435). TDI channels are generated using pyTDI</span>
+<span class="sd">    (10.5281/zenodo.6351736).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detector_name : str</span>
+<span class="sd">        The name of the detector. Accepts any output from</span>
+<span class="sd">        `get_available_space_detectors`.</span>
+<span class="sd">    </span>
+<span class="sd">    reference_time : float (optional)</span>
+<span class="sd">        The reference time in seconds of the signal in the SSB frame. This is</span>
+<span class="sd">        defined such that the detector mission start time corresponds to 0.</span>
+<span class="sd">        Default None.</span>
+
+<span class="sd">    apply_offset : bool (optional)</span>
+<span class="sd">        Flag whether to shift the times of the input waveforms by</span>
+<span class="sd">        a given value. Some backends require this such that the</span>
+<span class="sd">        detector is oriented correctly at t = 0. Default False.</span>
+
+<span class="sd">    offset : float (optional)</span>
+<span class="sd">        The time in seconds by which to offset the input waveform if</span>
+<span class="sd">        apply_offset is True. Default 7365189.431698299.</span>
+<span class="sd">    </span>
+<span class="sd">    orbits : str (optional)</span>
+<span class="sd">        The constellation orbital data used for generating projections</span>
+<span class="sd">        and TDI. See self.orbits_init for accepted inputs. Default</span>
+<span class="sd">        &#39;EqualArmlength&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_offset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">offset</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">,</span>
+                 <span class="n">orbits</span><span class="o">=</span><span class="s1">&#39;EqualArmlength&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span> <span class="o">==</span> <span class="s1">&#39;LISA&#39;</span><span class="p">,</span> <span class="s1">&#39;LDC backend only works with LISA detector&#39;</span>
+
+        <span class="c1"># specify whether to apply offsets to GPS times</span>
+        <span class="k">if</span> <span class="n">apply_offset</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="c1"># orbits properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span> <span class="o">=</span> <span class="n">orbits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># waveform properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># pre- and post-processing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad_data</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_garbage</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="mf">1e4</span>
+
+        <span class="c1"># class initialization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tdi_chan</span> <span class="o">=</span> <span class="s1">&#39;AET&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chan</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">chan</span> <span class="ow">in</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_chan</span> <span class="o">=</span> <span class="s1">&#39;XYZ&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sky_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;eclipticlongitude&#39;</span><span class="p">,</span> <span class="s1">&#39;eclipticlatitude&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">orbits_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orbits</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">316</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">100000.0</span><span class="p">,</span> <span class="n">t_init</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the orbital information for the constellation. Defualt args</span>
+<span class="sd">        generate roughly 1 year worth of data starting at LISA mission</span>
+<span class="sd">        start time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        orbits : str</span>
+<span class="sd">            The type of orbit to read in. If &quot;EqualArmlength&quot; or &quot;Keplerian&quot;,</span>
+<span class="sd">            a file is generating using the corresponding method from LISA</span>
+<span class="sd">            Orbits. Else, the input is treated as a file path following LISA</span>
+<span class="sd">            Orbits format. Default &quot;EqualArmlength&quot;.</span>
+
+<span class="sd">        length : int (optional)</span>
+<span class="sd">            The number of samples to generate if creating a new orbit file.</span>
+<span class="sd">            Default 316.</span>
+
+<span class="sd">        dt : float (optional)</span>
+<span class="sd">            The time step in seconds to use if generating a new orbit file.</span>
+<span class="sd">            Default 100000.</span>
+
+<span class="sd">        t_init : float (optional)</span>
+<span class="sd">            The start time in seconds to use if generating a new orbit file.</span>
+<span class="sd">            Default 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;EqualArmlength&#39;</span><span class="p">,</span> <span class="s1">&#39;Keplerian&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">orbits</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;Must input either a file path as &#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;str, &quot;EqualArmlength&quot;, or &quot;Keplerian&quot;&#39;</span><span class="p">)</span>
+
+        <span class="c1"># generate a new file</span>
+        <span class="k">if</span> <span class="n">orbits</span> <span class="ow">in</span> <span class="n">defaults</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">lisaorbits</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;lisaorbits not found&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">orbits</span> <span class="o">==</span> <span class="s1">&#39;EqualArmlength&#39;</span><span class="p">:</span>
+                <span class="n">o</span> <span class="o">=</span> <span class="n">lisaorbits</span><span class="o">.</span><span class="n">EqualArmlengthOrbits</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">orbits</span> <span class="o">==</span> <span class="s1">&#39;Keplerian&#39;</span><span class="p">:</span>
+                <span class="n">o</span> <span class="o">=</span> <span class="n">lisaorbits</span><span class="o">.</span><span class="n">KeplerianOrbits</span><span class="p">()</span>
+            <span class="n">o</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;orbits.h5&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="n">t_init</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="n">ofile</span> <span class="o">=</span> <span class="s1">&#39;orbits.h5&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span> <span class="o">=</span> <span class="n">t_init</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span> <span class="o">=</span> <span class="n">t_init</span> <span class="o">+</span> <span class="n">size</span><span class="o">*</span><span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span> <span class="o">=</span> <span class="n">ofile</span>
+
+        <span class="c1"># read in from an existing file path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+            <span class="n">ofile</span> <span class="o">=</span> <span class="n">orbits</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">ofile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;t0&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbit_start_time</span> <span class="o">+</span> \
+                                       <span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">f</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span>
+
+        <span class="c1"># add light travel buffer times</span>
+        <span class="n">lisa_arm</span> <span class="o">=</span> <span class="n">_space_detectors</span><span class="p">[</span><span class="s1">&#39;LISA&#39;</span><span class="p">][</span><span class="s1">&#39;armlength&#39;</span><span class="p">]</span>
+        <span class="n">ltt_au</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">au</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="n">constants</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">ltt_arm</span> <span class="o">=</span> <span class="n">lisa_arm</span> <span class="o">/</span> <span class="n">constants</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span> <span class="o">+=</span> <span class="n">ltt_arm</span> <span class="o">+</span> <span class="n">ltt_au</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span> <span class="o">+=</span> <span class="n">ltt_au</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">strain_container</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">orbits</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read in the necessary link and orbit information for generating TDI</span>
+<span class="sd">        channels. Replicates the functionality of `pyTDI.Data.from_gws()`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        response : array</span>
+<span class="sd">            The laser link projections of the GW. Uses get_links output format.</span>
+
+<span class="sd">        orbits : str, optional</span>
+<span class="sd">            The path to the file containing orbital information for the LISA</span>
+<span class="sd">            constellation. Default to orbits class attribute.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict, array</span>
+<span class="sd">            The arguments and measurements associated with the link and orbital</span>
+<span class="sd">            data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pytdi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Data</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;pyTDI required for TDI combinations&#39;</span><span class="p">)</span>
+
+        <span class="n">links</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;31&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">,</span> <span class="s1">&#39;32&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">]</span>
+
+        <span class="c1"># format the measurements from link data</span>
+        <span class="n">measurements</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">link</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">links</span><span class="p">):</span>
+            <span class="n">measurements</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;isi_</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="n">measurements</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;isi_sb_</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="n">measurements</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;tmi_</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">measurements</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;rfi_</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+            <span class="n">measurements</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;rfi_sb_</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+        <span class="n">t_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span>
+
+        <span class="c1"># call in the orbital data using pyTDI</span>
+        <span class="k">if</span> <span class="n">orbits</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">orbits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span>
+        <span class="k">return</span> <span class="n">Data</span><span class="o">.</span><span class="n">from_orbits</span><span class="p">(</span><span class="n">orbits</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">t_init</span><span class="p">,</span> <span class="s1">&#39;tcb/ltt&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">measurements</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">polarization</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Project a radiation frame waveform to the LISA constellation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hp : pycbc.types.TimeSeries</span>
+<span class="sd">            The plus polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        hc : pycbc.types.TimeSeries</span>
+<span class="sd">            The cross polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        lamb : float</span>
+<span class="sd">            The ecliptic longitude of the source in the SSB frame.</span>
+
+<span class="sd">        beta : float</span>
+<span class="sd">            The ecliptic latitude of the source in the SSB frame.</span>
+
+<span class="sd">        polarization : float (optional)</span>
+<span class="sd">            The polarization angle of the GW in radians. Default 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray</span>
+<span class="sd">            The waveform projected to the LISA laser links. Shape is (6, N)</span>
+<span class="sd">            for input waveforms with N total samples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">lisagwresponse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReadStrain</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;LISA GW Response not found&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">delta_t</span>
+
+        <span class="c1"># configure orbits and signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_init</span><span class="p">(</span><span class="n">orbits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">check_signal_times</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+                                    <span class="n">pad_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pad_data</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="c1"># apply polarization</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">apply_polarization</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">polarization</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># initialize the class</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span> <span class="o">=</span> <span class="n">ReadStrain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span>
+                                        <span class="n">gw_beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">gw_lambda</span><span class="o">=</span><span class="n">lamb</span><span class="p">,</span>
+                                        <span class="n">orbits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># update params in the initialized class</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span><span class="o">.</span><span class="n">gw_beta</span> <span class="o">=</span> <span class="n">beta</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span><span class="o">.</span><span class="n">gw_lambda</span> <span class="o">=</span> <span class="n">lamb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span><span class="o">.</span><span class="n">set_strain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span>
+
+        <span class="c1"># project the signal</span>
+        <span class="n">wf_proj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span><span class="o">.</span><span class="n">compute_gw_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span><span class="p">,</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">proj_init</span><span class="o">.</span><span class="n">LINKS</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wf_proj</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">project_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">polarization</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                     <span class="n">tdi</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">tdi_chan</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">remove_garbage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the TDI observables.</span>
+
+<span class="sd">        The TDI generation requires some startup time at the start and end of</span>
+<span class="sd">        the waveform, creating erroneous ringing or &quot;garbage&quot; at the edges of</span>
+<span class="sd">        the signal. By default, this method will cut off a time length t0 from</span>
+<span class="sd">        the start and end to remove this garbage, which may delete sensitive</span>
+<span class="sd">        data at the edges of the input strains (e.g., the late inspiral and</span>
+<span class="sd">        ringdown of a binary merger). Thus, the default output will be shorter</span>
+<span class="sd">        than the input by (2*t0) seconds. See pad_data and remove_garbage to</span>
+<span class="sd">        modify this behavior.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hp : pycbc.types.TimeSeries</span>
+<span class="sd">            The plus polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        hc : pycbc.types.TimeSeries</span>
+<span class="sd">            The cross polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        lamb : float</span>
+<span class="sd">            The ecliptic longitude in the SSB frame.</span>
+
+<span class="sd">        beta : float</span>
+<span class="sd">            The ecliptic latitude in the SSB frame.</span>
+
+<span class="sd">        polarization : float</span>
+<span class="sd">            The polarization angle of the GW in radians.</span>
+
+<span class="sd">        tdi : float (optional)</span>
+<span class="sd">            TDI channel configuration. Accepts 1.5 for 1st generation TDI or</span>
+<span class="sd">            2 for 2nd generation TDI. Default 1.5.</span>
+
+<span class="sd">        tdi_chan : str (optional)</span>
+<span class="sd">            The TDI observables to calculate. Accepts &#39;XYZ&#39;, &#39;AET&#39;, or &#39;AE&#39;.</span>
+<span class="sd">            Default &#39;AET&#39;.</span>
+
+<span class="sd">        pad_data : bool (optional)</span>
+<span class="sd">            Flag whether to pad the data with time length t0 of zeros at the</span>
+<span class="sd">            start and end. Default False.</span>
+
+<span class="sd">        remove_garbage : bool, str (optional)</span>
+<span class="sd">            Flag whether to remove gaps in TDI from start and end. If True,</span>
+<span class="sd">            time length t0 worth of data at the start and end of the waveform</span>
+<span class="sd">            will be cut from TDI channels. If &#39;zero&#39;, time length t0 worth of</span>
+<span class="sd">            edge data will be zeroed. If False, TDI channels will not be</span>
+<span class="sd">            modified. Default False.</span>
+
+<span class="sd">        t0 : float (optional)</span>
+<span class="sd">            Time length in seconds to pad/cut from the start and end of</span>
+<span class="sd">            the data if pad_data/remove_garbage is True. Default 1e4.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict ({str: pycbc.types.TimeSeries})</span>
+<span class="sd">            The TDI observables as TimeSeries objects keyed by their</span>
+<span class="sd">            corresponding TDI channel name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">pytdi</span><span class="w"> </span><span class="kn">import</span> <span class="n">michelson</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;pyTDI not found&#39;</span><span class="p">)</span>
+
+        <span class="c1"># set TDI generation</span>
+        <span class="k">if</span> <span class="n">tdi</span> <span class="o">==</span> <span class="mf">1.5</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">michelson</span><span class="o">.</span><span class="n">X1</span><span class="p">,</span> <span class="n">michelson</span><span class="o">.</span><span class="n">Y1</span><span class="p">,</span> <span class="n">michelson</span><span class="o">.</span><span class="n">Z1</span>
+        <span class="k">elif</span> <span class="n">tdi</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">michelson</span><span class="o">.</span><span class="n">X2</span><span class="p">,</span> <span class="n">michelson</span><span class="o">.</span><span class="n">Y2</span><span class="p">,</span> <span class="n">michelson</span><span class="o">.</span><span class="n">Z2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unrecognized TDI generation input. &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;Please input either 1 or 2.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># set TDI channels</span>
+        <span class="k">if</span> <span class="n">tdi_chan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tdi_chan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tdi_chan</span>
+
+        <span class="c1"># generate the Doppler time series</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad_data</span> <span class="o">=</span> <span class="n">pad_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_garbage</span> <span class="o">=</span> <span class="n">remove_garbage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="n">t0</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_links</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span>
+                                  <span class="n">polarization</span><span class="o">=</span><span class="n">polarization</span><span class="p">)</span>
+
+        <span class="c1"># load in data using response measurements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strain_container</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="p">)</span>
+
+        <span class="c1"># generate the XYZ TDI channels</span>
+        <span class="n">chanx</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">args</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">measurements</span><span class="p">)</span>
+        <span class="n">chany</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">args</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">measurements</span><span class="p">)</span>
+        <span class="n">chanz</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">args</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">measurements</span><span class="p">)</span>
+
+        <span class="c1"># convert to AET if specified</span>
+        <span class="k">if</span> <span class="n">tdi_chan</span> <span class="o">==</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">:</span>
+            <span class="n">tdi_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;LISA_X&#39;</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chanx</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">),</span>
+                        <span class="s1">&#39;LISA_Y&#39;</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chany</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">),</span>
+                        <span class="s1">&#39;LISA_Z&#39;</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chanz</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">)}</span>
+        <span class="k">elif</span> <span class="n">tdi_chan</span> <span class="o">==</span> <span class="s1">&#39;AET&#39;</span><span class="p">:</span>
+            <span class="n">chana</span> <span class="o">=</span> <span class="p">(</span><span class="n">chanz</span> <span class="o">-</span> <span class="n">chanx</span><span class="p">)</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">chane</span> <span class="o">=</span> <span class="p">(</span><span class="n">chanx</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">chany</span> <span class="o">+</span> <span class="n">chanz</span><span class="p">)</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+            <span class="n">chant</span> <span class="o">=</span> <span class="p">(</span><span class="n">chanx</span> <span class="o">+</span> <span class="n">chany</span> <span class="o">+</span> <span class="n">chanz</span><span class="p">)</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">tdi_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;LISA_A&#39;</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chana</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">),</span>
+                        <span class="s1">&#39;LISA_E&#39;</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chane</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">),</span>
+                        <span class="s1">&#39;LISA_T&#39;</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">chant</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                             <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">)}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unrecognized TDI channel input. &#39;</span> <span class="o">+</span>
+                             <span class="s1">&#39;Please input either &quot;XYZ&quot; or &quot;AET&quot;.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># processing</span>
+        <span class="n">tdi_dict</span> <span class="o">=</span> <span class="n">cut_channels</span><span class="p">(</span><span class="n">tdi_dict</span><span class="p">,</span> <span class="n">remove_garbage</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remove_garbage</span><span class="p">,</span>
+                                <span class="n">t0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tdi_dict</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_FLR_detector</span><span class="p">(</span><span class="n">AbsSpaceDet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    LISA detector modeled using FastLISAResponse. Constellation orbits are</span>
+<span class="sd">    generated using LISA Analysis Tools (10.5281/zenodo.10930979). Link</span>
+<span class="sd">    projections and TDI channels are generated using FastLISAResponse</span>
+<span class="sd">    (https://arxiv.org/abs/2204.06633).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detector_name : str</span>
+<span class="sd">        The name of the detector. Accepts any output from</span>
+<span class="sd">        `get_available_space_detectors`.</span>
+<span class="sd">    </span>
+<span class="sd">    reference_time : float (optional)</span>
+<span class="sd">        The reference time in seconds of the signal in the SSB frame. This is</span>
+<span class="sd">        defined such that the detector mission start time corresponds to 0.</span>
+<span class="sd">        Default None.</span>
+
+<span class="sd">    apply_offset : bool (optional)</span>
+<span class="sd">        Flag whether to shift the times of the input waveforms by</span>
+<span class="sd">        a given value. Some backends require this such that the</span>
+<span class="sd">        detector is oriented correctly at t = 0. Default False.</span>
+
+<span class="sd">    offset : float (optional)</span>
+<span class="sd">        The time in seconds by which to offset the input waveform if</span>
+<span class="sd">        apply_offset is True. Default 7365189.431698299.</span>
+
+<span class="sd">    use_gpu : bool (optional)</span>
+<span class="sd">        Specify whether to run class on GPU support via CuPy. Default False.</span>
+
+<span class="sd">    orbits : str (optional)</span>
+<span class="sd">        The constellation orbital data used for generating projections</span>
+<span class="sd">        and TDI. See self.orbits_init for accepted inputs. Default</span>
+<span class="sd">        &#39;EqualArmlength&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_offset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">offset</span><span class="o">=</span><span class="n">TIME_OFFSET_20_DEGREES</span><span class="p">,</span>
+                 <span class="n">orbits</span><span class="o">=</span><span class="s1">&#39;EqualArmlength&#39;</span><span class="p">,</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;WARNING: FastLISAResponse TDI implementation is a &#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;work in progress. Currently unable to reproduce LDC &#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;or BBHx waveforms.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_gpu</span> <span class="o">=</span> <span class="n">use_gpu</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">det</span> <span class="o">==</span> <span class="s1">&#39;LISA&#39;</span><span class="p">,</span> <span class="s1">&#39;FLR backend only works with LISA detector&#39;</span>
+
+        <span class="c1"># specify whether to apply offsets to GPS times</span>
+        <span class="k">if</span> <span class="n">apply_offset</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="c1"># orbits properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span> <span class="o">=</span> <span class="n">orbits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># waveform properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># pre- and post-processing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad_data</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_garbage</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="mf">1e4</span>
+
+        <span class="c1"># class initialization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tdi_chan</span> <span class="o">=</span> <span class="s1">&#39;AET&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;tdi_chan&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tdi_chan&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tdi_chan&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tdi_chan</span> <span class="o">=</span> <span class="s1">&#39;XYZ&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sky_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;eclipticlongitude&#39;</span><span class="p">,</span> <span class="s1">&#39;eclipticlatitude&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">orbits_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orbits</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the orbital information for the constellation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        orbits : str</span>
+<span class="sd">            The type of orbit to read in. If &quot;EqualArmlength&quot; or &quot;ESA&quot;, the</span>
+<span class="sd">            corresponding Orbits class from LISA Analysis Tools is called.</span>
+<span class="sd">            Else, the input is treated as a file path following LISA</span>
+<span class="sd">            Orbits format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># if orbits are already a class instance, skip this</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">str</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">lisatools</span><span class="w"> </span><span class="kn">import</span> <span class="n">detector</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;LISA Analysis Tools required for FLR orbits&quot;</span><span class="p">)</span>
+
+        <span class="c1"># load an orbit from lisatools</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;EqualArmlength&#39;</span><span class="p">,</span> <span class="s1">&#39;ESA&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">orbits</span> <span class="ow">in</span> <span class="n">defaults</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">orbits</span> <span class="o">==</span> <span class="s1">&#39;EqualArmlength&#39;</span><span class="p">:</span>
+                <span class="n">o</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">EqualArmlengthOrbits</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">orbits</span> <span class="o">==</span> <span class="s1">&#39;ESA&#39;</span><span class="p">:</span>
+                <span class="n">o</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">ESAOrbits</span><span class="p">()</span>
+
+        <span class="c1"># create a new orbits instance for file input</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">class</span><span class="w"> </span><span class="nc">CustomOrbits</span><span class="p">(</span><span class="n">detector</span><span class="o">.</span><span class="n">Orbits</span><span class="p">):</span>
+                <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orbits</span><span class="p">)</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">CustomOrbits</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span> <span class="o">=</span> <span class="n">o</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="o">.</span><span class="n">t_base</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="o">.</span><span class="n">t_base</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">polarization</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Project a radiation frame waveform to the LISA constellation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hp : pycbc.types.TimeSeries</span>
+<span class="sd">            The plus polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        hc : pycbc.types.TimeSeries</span>
+<span class="sd">            The cross polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        lamb : float</span>
+<span class="sd">            The ecliptic longitude of the source in the SSB frame.</span>
+
+<span class="sd">        beta : float</span>
+<span class="sd">            The ecliptic latitude of the source in the SSB frame.</span>
+
+<span class="sd">        polarization : float (optional)</span>
+<span class="sd">            The polarization angle of the GW in radians. Default 0.</span>
+
+<span class="sd">        use_gpu : bool (optional)</span>
+<span class="sd">            Flag whether to use GPU support. Default to class input.</span>
+<span class="sd">            CuPy is required if use_gpu is True.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray</span>
+<span class="sd">            The waveform projected to the LISA laser links. Shape is (6, N)</span>
+<span class="sd">            for input waveforms with N total samples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">fastlisaresponse</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyResponseTDI</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;FastLISAResponse not found&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">delta_t</span>
+
+        <span class="c1"># configure the orbit and signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits_init</span><span class="p">(</span><span class="n">orbits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">check_signal_times</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits_start_time</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">orbits_end_time</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span>
+                                    <span class="n">pad_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pad_data</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        
+        <span class="c1"># apply polarization</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span> <span class="o">=</span> <span class="n">apply_polarization</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">polarization</span><span class="p">)</span>
+
+        <span class="c1"># interpolate orbital data to signal sample times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">t_arr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_times</span><span class="p">)</span>
+
+        <span class="c1"># format wf to hp + i*hc</span>
+        <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">hc</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">hp</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">hc</span>
+
+        <span class="k">if</span> <span class="n">use_gpu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">use_gpu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_gpu</span>
+
+        <span class="c1"># convert to cupy if needed</span>
+        <span class="k">if</span> <span class="n">use_gpu</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">cupy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># initialize the class</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span> <span class="o">=</span> <span class="n">pyResponseTDI</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">wf</span><span class="p">),</span>
+                                          <span class="n">orbits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">orbits</span><span class="p">,</span>
+                                          <span class="n">use_gpu</span><span class="o">=</span><span class="n">use_gpu</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># update params in the initialized class</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">sampling_frequency</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">num_pts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">orbits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orbits</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">use_gpu</span> <span class="o">=</span> <span class="n">use_gpu</span>
+
+        <span class="c1"># project the signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">get_projections</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t0</span><span class="p">)</span>
+        <span class="n">wf_proj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">y_gw</span>
+
+        <span class="k">return</span> <span class="n">wf_proj</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">project_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">polarization</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                     <span class="n">tdi</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">tdi_chan</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_gpu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">remove_garbage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the TDI observables.</span>
+
+<span class="sd">        The TDI generation requires some startup time at the start and end of</span>
+<span class="sd">        the waveform, creating erroneous ringing or &quot;garbage&quot; at the edges of</span>
+<span class="sd">        the signal. By default, this method will cut off a time length t0 from</span>
+<span class="sd">        the start and end to remove this garbage, which may delete sensitive</span>
+<span class="sd">        data at the edges of the input strains (e.g., the late inspiral and</span>
+<span class="sd">        ringdown of a binary merger). Thus, the default output will be shorter</span>
+<span class="sd">        than the input by (2*t0) seconds. See pad_data and remove_garbage to</span>
+<span class="sd">        modify this behavior.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hp : pycbc.types.TimeSeries</span>
+<span class="sd">            The plus polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        hc : pycbc.types.TimeSeries</span>
+<span class="sd">            The cross polarization of the GW in the radiation frame.</span>
+
+<span class="sd">        lamb : float</span>
+<span class="sd">            The ecliptic longitude in the SSB frame.</span>
+
+<span class="sd">        beta : float</span>
+<span class="sd">            The ecliptic latitude in the SSB frame.</span>
+
+<span class="sd">        polarization : float (optional)</span>
+<span class="sd">            The polarization angle of the GW in radians.</span>
+
+<span class="sd">        tdi : float(optional)</span>
+<span class="sd">            TDI channel configuration. Accepts 1.5 for 1st generation TDI or</span>
+<span class="sd">            2 for 2nd generation TDI. Default 1.5.</span>
+
+<span class="sd">        tdi_chan : str (optional)</span>
+<span class="sd">            The TDI observables to calculate. Accepts &#39;XYZ&#39;, &#39;AET&#39;, or &#39;AE&#39;.</span>
+<span class="sd">            Default &#39;AET&#39;.</span>
+
+<span class="sd">        use_gpu : bool (optional)</span>
+<span class="sd">            Flag whether to use GPU support. Default False.</span>
+
+<span class="sd">        pad_data : bool (optional)</span>
+<span class="sd">            Flag whether to pad the data with time length t0 of zeros at the</span>
+<span class="sd">            start and end. Default False.</span>
+
+<span class="sd">        remove_garbage : bool, str (optional)</span>
+<span class="sd">            Flag whether to remove gaps in TDI from start and end. If True,</span>
+<span class="sd">            time length t0 worth of data at the start and end of the waveform</span>
+<span class="sd">            will be cut from TDI channels. If &#39;zero&#39;, time length t0 worth of</span>
+<span class="sd">            edge data will be zeroed. If False, TDI channels will not be</span>
+<span class="sd">            modified. Default False.</span>
+
+<span class="sd">        t0 : float (optional)</span>
+<span class="sd">            Time length in seconds to pad/cut from the start and end of</span>
+<span class="sd">            the data if pad_data/remove_garbage is True. Default 1e4.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict ({str: pycbc.types.TimeSeries})</span>
+<span class="sd">            The TDI observables as TimeSeries objects keyed by their</span>
+<span class="sd">            corresponding TDI channel name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># set use_gpu</span>
+        <span class="k">if</span> <span class="n">use_gpu</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">use_gpu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_gpu</span>
+
+        <span class="c1"># generate the Doppler time series</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pad_data</span> <span class="o">=</span> <span class="n">pad_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_garbage</span> <span class="o">=</span> <span class="n">remove_garbage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="n">t0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_links</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">polarization</span><span class="o">=</span><span class="n">polarization</span><span class="p">,</span>
+                       <span class="n">use_gpu</span><span class="o">=</span><span class="n">use_gpu</span><span class="p">)</span>
+
+        <span class="c1"># set TDI configuration (let FLR handle if not 1 or 2)</span>
+        <span class="k">if</span> <span class="n">tdi</span> <span class="o">==</span> <span class="mf">1.5</span><span class="p">:</span>
+            <span class="n">tdi_opt</span> <span class="o">=</span> <span class="s1">&#39;1st generation&#39;</span>
+        <span class="k">elif</span> <span class="n">tdi</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">tdi_opt</span> <span class="o">=</span> <span class="s1">&#39;2nd generation&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tdi_opt</span> <span class="o">=</span> <span class="n">tdi</span>
+
+        <span class="k">if</span> <span class="n">tdi_opt</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">tdi</span><span class="p">:</span>
+            <span class="c1"># update TDI in existing tdi_init class</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">tdi</span> <span class="o">=</span> <span class="n">tdi_opt</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">_init_TDI_delays</span><span class="p">()</span>
+
+        <span class="c1"># set TDI channels</span>
+        <span class="k">if</span> <span class="n">tdi_chan</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tdi_chan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tdi_chan</span>
+
+        <span class="k">if</span> <span class="n">tdi_chan</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;XYZ&#39;</span><span class="p">,</span> <span class="s1">&#39;AET&#39;</span><span class="p">,</span> <span class="s1">&#39;AE&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">tdi_chan</span> <span class="o">=</span> <span class="n">tdi_chan</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;TDI channels must be one of: XYZ, AET, AE&#39;</span><span class="p">)</span>
+
+        <span class="c1"># generate the TDI channels</span>
+        <span class="n">tdi_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tdi_init</span><span class="o">.</span><span class="n">get_tdi_delays</span><span class="p">()</span>
+
+        <span class="c1"># processing</span>
+        <span class="n">tdi_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">chan</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tdi_chan</span><span class="p">):</span>
+            <span class="c1"># save as TimeSeries</span>
+            <span class="n">tdi_dict</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;LISA_</span><span class="si">{</span><span class="n">chan</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">tdi_obs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">delta_t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                           <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+
+        <span class="n">tdi_dict</span> <span class="o">=</span> <span class="n">cut_channels</span><span class="p">(</span><span class="n">tdi_dict</span><span class="p">,</span> <span class="n">remove_garbage</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">remove_garbage</span><span class="p">,</span> 
+                                <span class="n">t0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">t0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tdi_dict</span>
+
+
+<span class="n">_backends</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;LISA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;LDC&#39;</span><span class="p">:</span> <span class="n">_LDC_detector</span><span class="p">,</span>
+                      <span class="s1">&#39;FLR&#39;</span><span class="p">:</span> <span class="n">_FLR_detector</span><span class="p">,</span>
+                     <span class="p">},</span>
+            <span class="p">}</span>
+
+<div class="viewcode-block" id="SpaceDetector">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.space.SpaceDetector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpaceDetector</span><span class="p">(</span><span class="n">AbsSpaceDet</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Space-based detector.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    detector_name : str</span>
+<span class="sd">        The name of the detector. Accepts any output from</span>
+<span class="sd">        `get_available_space_detectors`.</span>
+<span class="sd">    </span>
+<span class="sd">    reference_time : float (optional)</span>
+<span class="sd">        The reference time in seconds of the signal in the SSB frame. This is</span>
+<span class="sd">        defined such that the detector mission start time corresponds to 0.</span>
+<span class="sd">        Default None.</span>
+
+<span class="sd">    backend : str (optional)</span>
+<span class="sd">        The backend architecture to use for generating TDI. Accepts &#39;LDC&#39;</span>
+<span class="sd">        or &#39;FLR&#39;. Default &#39;LDC&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;LDC&#39;</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">backend</span> <span class="ow">in</span> <span class="n">_backends</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">_backends</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">][</span><span class="n">backend</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">c</span><span class="p">(</span><span class="n">detector_name</span><span class="p">,</span> <span class="n">reference_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Detector </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="si">}</span><span class="s1"> does not support backend &#39;</span><span class="p">,</span>
+                             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">backend</span><span class="si">}</span><span class="s1">.This detector accepts: &#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">_backends</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">det</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sky_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">sky_coords</span>
+
+<div class="viewcode-block" id="SpaceDetector.get_links">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.space.SpaceDetector.get_links">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">get_links</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpaceDetector.project_wave">
+<a class="viewcode-back" href="../../../pycbc.detector.html#pycbc.detector.space.SpaceDetector.project_wave">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">project_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">project_wave</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">lamb</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;get_available_space_detectors&#39;</span><span class="p">,</span> <span class="s1">&#39;SpaceDetector&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;_space_detectors&#39;</span><span class="p">,]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Feb 06, 2026.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
